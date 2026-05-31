@@ -12,7 +12,7 @@ const foodStyles = [
     label: "Người Săn Món Phố",
     icon: "store",
     image:
-      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1750315606996-9f42c4c81a20?auto=format&fit=crop&w=900&q=80",
     description:
       "Bạn mê hàng quán địa phương, vị cay nồng, món ăn nhanh và năng lượng náo nhiệt của phố xá.",
     result: "Hôm nay bạn là Người Săn Món Phố",
@@ -22,7 +22,7 @@ const foodStyles = [
     label: "Tín Đồ Cơm Nhà",
     icon: "home",
     image:
-      "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1775148582534-44e3700ed081?auto=format&fit=crop&w=900&q=80",
     description:
       "Bạn thích những bữa cơm ấm áp, công thức quen thuộc và hương vị gợi nhớ gia đình.",
     result: "Hôm nay bạn là Tín Đồ Cơm Nhà",

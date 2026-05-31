@@ -1,8 +1,8 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import newsItems from '../data/news.json'
 import AppIcon from '../components/AppIcon.vue'
+import api, { getApiError } from '../services/api'
 
 const keyword = ref('')
 const selectedDate = ref('')
@@ -11,47 +11,46 @@ const currentPage = ref(1)
 const pageSize = 4
 const route = useRoute()
 const router = useRouter()
-
-const categories = computed(() => {
-  return [...new Set(newsItems.map((item) => item.category))]
-})
+const newsItems = ref([])
+const categories = ref([])
+const totalPages = ref(1)
+const totalItems = ref(0)
+const isLoading = ref(false)
+const errorMessage = ref('')
 
 function normalizeCategory(value) {
   if (!value) {
     return 'all'
   }
 
+  if (categories.value.length === 0) {
+    return value
+  }
+
   return categories.value.includes(value) ? value : 'all'
 }
 
-const filteredNews = computed(() => {
-  const query = keyword.value.trim().toLowerCase()
+function getDateParts(value) {
+  const date = new Date(`${value}T00:00:00`)
+  const month = String(date.getMonth() + 1).padStart(2, '0')
 
-  return newsItems.filter((item) => {
-    const searchableText = [
-      item.date,
-      item.title,
-      item.content,
-      item.category,
-      item.shortDate,
-    ]
-      .join(' ')
-      .toLowerCase()
+  return {
+    day: String(date.getDate()).padStart(2, '0'),
+    month: `TH.${month}`,
+    year: String(date.getFullYear()),
+  }
+}
 
-    const matchesKeyword = !query || searchableText.includes(query)
-    const matchesDate = !selectedDate.value || item.date === selectedDate.value
-    const matchesCategory =
-      selectedCategory.value === 'all' || item.category === selectedCategory.value
-
-    return matchesKeyword && matchesDate && matchesCategory
+const displayNews = computed(() => {
+  return newsItems.value.map((item) => {
+    const date = item.published_date || item.date
+    return {
+      ...item,
+      date,
+      ...getDateParts(date),
+      shortDate: date,
+    }
   })
-})
-
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredNews.value.length / pageSize)))
-
-const paginatedNews = computed(() => {
-  const start = (currentPage.value - 1) * pageSize
-  return filteredNews.value.slice(start, start + pageSize)
 })
 
 const pageNumbers = computed(() => {
@@ -60,17 +59,39 @@ const pageNumbers = computed(() => {
 
 const popularTags = ['miền bắc', 'miền nam', 'công thức', 'bún bò', 'cà phê', 'lẩu']
 
-function goToPage(page) {
-  currentPage.value = Math.min(Math.max(page, 1), totalPages.value)
+async function fetchNews(page = currentPage.value) {
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    const response = await api.get('/news', {
+      params: {
+        page,
+        pageSize,
+        search: keyword.value.trim(),
+        date: selectedDate.value,
+        category: selectedCategory.value,
+      },
+    })
+    newsItems.value = response.data.items
+    categories.value = response.data.categories || categories.value
+    currentPage.value = response.data.currentPage
+    totalPages.value = response.data.totalPages
+    totalItems.value = response.data.totalItems
+  } catch (error) {
+    errorMessage.value = getApiError(error, 'Unable to load news.')
+  } finally {
+    isLoading.value = false
+  }
 }
 
-watch([keyword, selectedDate, selectedCategory], () => {
-  currentPage.value = 1
-})
+function goToPage(page) {
+  const nextPage = Math.min(Math.max(page, 1), totalPages.value)
+  fetchNews(nextPage)
+}
 
 watch(
-  [() => route.query.category, categories],
-  ([value]) => {
+  () => route.query.category,
+  (value) => {
     const normalized = normalizeCategory(typeof value === 'string' ? value : '')
     if (selectedCategory.value !== normalized) {
       selectedCategory.value = normalized
@@ -78,6 +99,11 @@ watch(
   },
   { immediate: true },
 )
+
+watch([keyword, selectedDate, selectedCategory], () => {
+  currentPage.value = 1
+  fetchNews(1)
+})
 
 watch(selectedCategory, (value) => {
   const normalizedRoute = normalizeCategory(
@@ -97,6 +123,10 @@ watch(selectedCategory, (value) => {
   }
 
   router.replace({ query: nextQuery })
+})
+
+onMounted(() => {
+  fetchNews(1)
 })
 </script>
 
@@ -145,31 +175,36 @@ watch(selectedCategory, (value) => {
 
     <div class="news-layout">
       <section class="news-list" aria-live="polite">
-        <article v-for="item in paginatedNews" :key="item.id" class="news-card">
-          <time :datetime="item.date">
-            <strong>{{ item.day }}</strong>
-            <span>{{ item.month }}</span>
-            <small>{{ item.year }}</small>
-          </time>
-          <div>
-            <span class="category-label">
-              <AppIcon name="tags" size="14" />
-              {{ item.category }}
-            </span>
-            <h2>{{ item.title }}</h2>
-            <p>{{ item.content }}</p>
-            <RouterLink :to="{ name: 'news-detail', params: { id: item.id } }">
-              <span>Đọc thêm</span>
-              <AppIcon name="arrow-right" size="16" />
-            </RouterLink>
-          </div>
-        </article>
+        <p v-if="isLoading" class="status-panel">Loading news from FoodStory API...</p>
+        <p v-else-if="errorMessage" class="form-error" role="alert">{{ errorMessage }}</p>
 
-        <p v-if="filteredNews.length === 0" class="empty-state">
+        <template v-else>
+          <article v-for="item in displayNews" :key="item.id" class="news-card">
+            <time :datetime="item.date">
+              <strong>{{ item.day }}</strong>
+              <span>{{ item.month }}</span>
+              <small>{{ item.year }}</small>
+            </time>
+            <div>
+              <span class="category-label">
+                <AppIcon name="tags" size="14" />
+                {{ item.category }}
+              </span>
+              <h2>{{ item.title }}</h2>
+              <p>{{ item.content }}</p>
+              <RouterLink :to="{ name: 'news-detail', params: { id: item.id } }">
+                <span>Đọc thêm</span>
+                <AppIcon name="arrow-right" size="16" />
+              </RouterLink>
+            </div>
+          </article>
+        </template>
+
+        <p v-if="!isLoading && !errorMessage && totalItems === 0" class="empty-state">
           Không tìm thấy tin phù hợp.
         </p>
 
-        <nav class="pagination" aria-label="News pagination">
+        <nav v-if="totalItems > 0" class="pagination" aria-label="News pagination">
           <button :disabled="currentPage === 1" type="button" @click="goToPage(currentPage - 1)">
             <AppIcon name="arrow-left" size="16" />
             <span>Trước</span>

@@ -1,5 +1,11 @@
 <script setup>
+import { onMounted, ref } from "vue";
 import AppIcon from "../components/AppIcon.vue";
+import { fetchDailyMeal } from "../services/mealApi";
+
+const dailyMeal = ref(null);
+const dailyMealLoading = ref(false);
+const dailyMealError = ref("");
 
 const featuredRecipes = [
   {
@@ -44,6 +50,27 @@ const categories = [
   { label: "Xu Hướng", icon: "trending-up", accent: "orange" },
   { label: "Nguyên Liệu", icon: "leaf", accent: "green" },
 ];
+
+const fallbackMeal = {
+  title: "Steak and Kidney Pie",
+  image: "https://www.themealdb.com/images/media/meals/qysyss1511558054.jpg",
+  category: "British",
+  area: "Beef",
+  description:
+    "Một món bánh mặn giàu hương vị, gợi ý cho ngày muốn đổi bữa nhưng vẫn giữ cảm giác ấm cúng của căn bếp gia đình.",
+};
+
+onMounted(async () => {
+  dailyMealLoading.value = true;
+  try {
+    dailyMeal.value = await fetchDailyMeal();
+  } catch (error) {
+    dailyMealError.value = "Không thể tải gợi ý từ TheMealDB, đang hiển thị món dự phòng.";
+    dailyMeal.value = fallbackMeal;
+  } finally {
+    dailyMealLoading.value = false;
+  }
+});
 </script>
 
 <template>
@@ -120,28 +147,30 @@ const categories = [
 
   <section class="section random-section page-pad">
     <div class="section-heading">
-      <p class="eyebrow">Hôm Nay Nấu Gì?</p>
-      <h2>Món Ăn Ngẫu Nhiên Hôm Nay</h2>
+      <p class="eyebrow">TheMealDB API</p>
+      <h2>Daily Inspiration</h2>
     </div>
 
-    <article class="random-card">
+    <p v-if="dailyMealLoading" class="status-panel">Đang tải món ăn hôm nay...</p>
+    <p v-if="dailyMealError" class="form-error" role="status">{{ dailyMealError }}</p>
+
+    <article v-if="dailyMeal" class="random-card">
       <img
-        src="https://www.themealdb.com/images/media/meals/qysyss1511558054.jpg"
-        alt="Steak and kidney pie on a table"
+        :src="dailyMeal.image"
+        :alt="`Meal inspiration: ${dailyMeal.title}`"
       />
       <div>
         <div class="pill-row">
-          <span>British</span>
-          <span>Beef</span>
+          <span>{{ dailyMeal.category || "Meal" }}</span>
+          <span>{{ dailyMeal.area || "Global" }}</span>
         </div>
-        <h3>Steak and Kidney Pie</h3>
+        <h3>{{ dailyMeal.title }}</h3>
         <p>
-          Một món bánh mặn giàu hương vị, gợi ý cho ngày muốn đổi bữa nhưng vẫn
-          giữ cảm giác ấm cúng của căn bếp gia đình.
+          {{ dailyMeal.description.slice(0, 220) }}...
         </p>
-        <RouterLink class="btn btn-primary" to="/news">
+        <RouterLink class="btn btn-primary" to="/recipes">
           <AppIcon name="utensils" size="19" />
-          <span>Discover Recipe</span>
+          <span>Explore Recipes</span>
         </RouterLink>
       </div>
     </article>

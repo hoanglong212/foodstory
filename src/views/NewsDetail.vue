@@ -1,14 +1,36 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import newsItems from '../data/news.json'
 import AppIcon from '../components/AppIcon.vue'
+import api, { getApiError } from '../services/api'
 
 const route = useRoute()
+const newsItem = ref(null)
+const isLoading = ref(false)
+const errorMessage = ref('')
 
-const newsItem = computed(() => {
-  const id = Number(route.params.id)
-  return newsItems.find((item) => item.id === id)
+const displayDate = computed(() => {
+  if (!newsItem.value?.published_date) {
+    return ''
+  }
+
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(`${newsItem.value.published_date}T00:00:00`))
+})
+
+onMounted(async () => {
+  isLoading.value = true
+  try {
+    const response = await api.get(`/news/${route.params.id}`)
+    newsItem.value = response.data.item
+  } catch (error) {
+    errorMessage.value = getApiError(error, 'Unable to load this news item.')
+  } finally {
+    isLoading.value = false
+  }
 })
 </script>
 
@@ -19,16 +41,19 @@ const newsItem = computed(() => {
       <span>Quay lại Tin Tức</span>
     </RouterLink>
 
-    <div v-if="newsItem" class="news-detail-card">
+    <p v-if="isLoading" class="status-panel">Loading news...</p>
+    <p v-else-if="errorMessage" class="form-error" role="alert">{{ errorMessage }}</p>
+
+    <div v-else-if="newsItem" class="news-detail-card">
       <span class="category-label">
         <AppIcon name="tags" size="14" />
         {{ newsItem.category }}
       </span>
       <h1>{{ newsItem.title }}</h1>
       <div class="news-detail-meta">
-        <time :datetime="newsItem.date">
+        <time :datetime="newsItem.published_date">
           <AppIcon name="calendar" size="16" />
-          <span>{{ newsItem.shortDate }}</span>
+          <span>{{ displayDate }}</span>
         </time>
         <span>
           <AppIcon name="chef-hat" size="16" />

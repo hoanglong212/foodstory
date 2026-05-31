@@ -1,13 +1,37 @@
 <script setup>
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import AppIcon from './components/AppIcon.vue'
+import { useAuthStore } from './stores/authStore'
+import { useUiStore } from './stores/uiStore'
 
-const navItems = [
-  { to: '/', label: 'Trang Chủ', icon: 'home' },
-  { to: '/news', label: 'Tin Tức', icon: 'newspaper' },
-  { to: '/about', label: 'Về Chúng Tôi', icon: 'users' },
-]
+const authStore = useAuthStore()
+const uiStore = useUiStore()
+const route = useRoute()
+const router = useRouter()
+
+const navItems = computed(() => {
+  const baseItems = [
+    { to: '/', label: 'Trang Chủ', icon: 'home' },
+    { to: '/news', label: 'Tin Tức', icon: 'newspaper' },
+    { to: '/about', label: 'Về Chúng Tôi', icon: 'users' },
+    { to: '/recipes', label: 'Công Thức', icon: 'book-open' },
+  ]
+
+  if (!authStore.isLoggedIn) {
+    return [
+      ...baseItems,
+      { to: '/login', label: 'Đăng Nhập', icon: 'users' },
+      { to: '/register', label: 'Đăng Ký', icon: 'send' },
+    ]
+  }
+
+  return [
+    ...baseItems,
+    ...(authStore.isAdmin ? [{ to: '/recipes/new', label: 'Tạo Món', icon: 'pen' }] : []),
+    { to: '/profile', label: 'Hồ Sơ', icon: 'chef-hat' },
+  ]
+})
 
 const socialLinks = [
   { label: 'Instagram', icon: 'instagram', href: 'https://www.instagram.com/' },
@@ -22,21 +46,10 @@ const footerCategories = [
   { label: 'Xu Hướng', value: 'Xu Hướng' },
 ]
 
-const route = useRoute()
-const isDark = ref(true)
+const isDark = computed(() => uiStore.darkMode)
 const isNavSolid = ref(false)
 let revealObserver
 let rafId = 0
-
-function getInitialTheme() {
-  const savedTheme = window.localStorage.getItem('foodstory-theme')
-
-  if (savedTheme === 'light' || savedTheme === 'dark') {
-    return savedTheme
-  }
-
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
 
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme
@@ -44,7 +57,16 @@ function applyTheme(theme) {
 }
 
 function toggleTheme() {
-  isDark.value = !isDark.value
+  uiStore.toggleDarkMode()
+}
+
+async function logout() {
+  await authStore.logout()
+  router.push('/')
+}
+
+function handleAuthExpired(event) {
+  authStore.clearAuth(event.detail?.message || 'Phiên đăng nhập đã hết hạn')
 }
 
 function updateParallax() {
@@ -88,6 +110,11 @@ function observeMotion() {
       '.team-grid article',
       '.footer-grid > div',
       '.footer-bottom',
+      '.stage2-card',
+      '.auth-panel',
+      '.form-shell',
+      '.recipe-detail-grid > *',
+      '.profile-header',
     ].join(','),
   )
 
@@ -118,13 +145,13 @@ function observeMotion() {
 }
 
 onMounted(async () => {
-  const initialTheme = getInitialTheme()
-  isDark.value = initialTheme === 'dark'
-  applyTheme(initialTheme)
+  authStore.loadFromStorage()
+  applyTheme(uiStore.darkMode ? 'dark' : 'light')
 
   updateParallax()
   window.addEventListener('scroll', requestParallaxFrame, { passive: true })
   window.addEventListener('resize', requestParallaxFrame)
+  window.addEventListener('foodstory-auth-expired', handleAuthExpired)
 
   await nextTick()
   observeMotion()
@@ -134,6 +161,7 @@ onBeforeUnmount(() => {
   revealObserver?.disconnect()
   window.removeEventListener('scroll', requestParallaxFrame)
   window.removeEventListener('resize', requestParallaxFrame)
+  window.removeEventListener('foodstory-auth-expired', handleAuthExpired)
 
   if (rafId) {
     window.cancelAnimationFrame(rafId)
@@ -181,6 +209,18 @@ watch(
       </nav>
 
       <div class="header-actions">
+        <span v-if="authStore.isLoggedIn" class="user-chip">
+          Welcome, {{ authStore.user?.username }}
+        </span>
+        <button
+          v-if="authStore.isLoggedIn"
+          class="logout-button"
+          type="button"
+          @click="logout"
+        >
+          <AppIcon name="arrow-left" size="17" />
+          <span>Logout</span>
+        </button>
         <button
           class="theme-toggle"
           type="button"
@@ -268,8 +308,8 @@ watch(
       </section>
 
       <div class="footer-bottom">
-        <span>© 2026 FoodStory. Đồ án Sinh Viên - Giai Đoạn 1.</span>
-        <span>Built with Vue, Vite and Vue Router</span>
+        <span>© 2026 FoodStory. Đồ án Sinh Viên - Giai Đoạn 2.</span>
+        <span>Built with Vue, Vite, Pinia, Express and MySQL</span>
       </div>
     </footer>
   </div>

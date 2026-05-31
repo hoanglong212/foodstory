@@ -1,8 +1,8 @@
 # FoodStory
 
-FoodStory is a Vue 3 + Vite single-page application for Stage 1 of the assignment.
+FoodStory is a Vue 3 + Vite food discovery application extended for COS30043 Stage 2 with an Express/MySQL API.
 
-## Run the project
+## Frontend
 
 ```bash
 npm install
@@ -11,11 +11,30 @@ npm run dev
 
 Open `http://127.0.0.1:5173/`.
 
-## Stage 1 checklist
+## Backend
 
-- Vite Vue project with Vue Router.
-- Single-file pages: `Home.vue`, `News.vue`, and `About.vue`.
-- Home page includes a title, welcome paragraph, and multiple food images.
-- News page reads local data from `src/data/news.json`, supports searching by date, title, content, and category, and includes pagination.
-- About page includes an app paragraph, first name and last name inputs, a live welcome message, and radio-controlled image selection.
-- Responsive layouts are defined for desktop, tablet, and mobile viewports.
+```bash
+cd backend
+npm install
+copy .env.example .env
+npm run dev
+```
+
+Create the MySQL database with `backend/database/schema.sql`, seed recipes with `backend/database/seed.sql`, create hashed users with `npm run seed:users`, and migrate Stage 1 news with `npm run migrate:news`.
+
+## Test Credentials
+
+- Admin: `admin@foodstory.test` / `Admin123!`
+- User: `long@foodstory.test` / `User123!`
+
+## Stage 2 Features
+
+- Preserves Stage 1 Home, News, About, NewsDetail, router, search, pagination, theme toggle, and responsiveness.
+- JWT login/register/logout using Express, MySQL, and bcrypt.
+- API-backed news with server-side search, filters, and pagination.
+- Recipe list/detail with search, filters, pagination, ratings, comments, favorites, ingredient checklists, and Chart.js nutrition chart.
+- Admin-only recipe create, edit, and delete.
+- TheMealDB Daily Inspiration external API section.
+- Pinia stores, Axios interceptors, Bootstrap grid, and custom `v-permission` directive.
+
+See `STAGE2_REPORT.md` for the full requirement mapping.

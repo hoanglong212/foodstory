@@ -44,6 +44,9 @@ const icons = {
     { type: 'circle', cx: 12, cy: 12, r: 9 },
     { type: 'path', d: 'M12 7v5l3 2' },
   ],
+  check: [
+    { type: 'path', d: 'M20 6 9 17l-5-5' },
+  ],
   code: [
     { type: 'path', d: 'm16 18 6-6-6-6' },
     { type: 'path', d: 'm8 6-6 6 6 6' },
@@ -148,6 +151,13 @@ const icons = {
   'trending-up': [
     { type: 'path', d: 'm22 7-8.5 8.5-5-5L2 17' },
     { type: 'path', d: 'M16 7h6v6' },
+  ],
+  trash: [
+    { type: 'path', d: 'M3 6h18' },
+    { type: 'path', d: 'M8 6V4h8v2' },
+    { type: 'path', d: 'M19 6l-1 14H6L5 6' },
+    { type: 'path', d: 'M10 11v5' },
+    { type: 'path', d: 'M14 11v5' },
   ],
   users: [
     { type: 'path', d: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' },
