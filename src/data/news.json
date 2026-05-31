@@ -1,0 +1,134 @@
+[
+  {
+    "id": 1,
+    "date": "2026-05-25",
+    "shortDate": "25 TH.05 2026",
+    "day": "25",
+    "month": "TH.05",
+    "year": "2026",
+    "title": "Hướng Dẫn Làm Chả Giò Giòn Tan Không Bị Mềm",
+    "content": "Mẹo quan trọng nhất là chiên hai lần để lớp bánh tráng vàng đều, giòn lâu và không bị ngấm dầu.",
+    "category": "Công Thức"
+  },
+  {
+    "id": 2,
+    "date": "2026-05-07",
+    "shortDate": "07 TH.05 2026",
+    "day": "07",
+    "month": "TH.05",
+    "year": "2026",
+    "title": "Cơm Tấm Sài Gòn: Linh Hồn Của Bữa Sáng Phương Nam",
+    "content": "Cơm tấm với sườn nướng, bì, chả trứng và nước mắm chua ngọt là bản giao hưởng ẩm thực không thể thiếu.",
+    "category": "Ẩm Thực Việt"
+  },
+  {
+    "id": 3,
+    "date": "2026-04-28",
+    "shortDate": "28 TH.04 2026",
+    "day": "28",
+    "month": "TH.04",
+    "year": "2026",
+    "title": "Năm Quán Bún Bò Huế Đáng Thử Khi Ghé Miền Trung",
+    "content": "Từ nước dùng cay thơm đến chả cua dai nhẹ, mỗi địa điểm đều giữ một sắc thái riêng của xứ Huế.",
+    "category": "Địa Điểm"
+  },
+  {
+    "id": 4,
+    "date": "2026-04-16",
+    "shortDate": "16 TH.04 2026",
+    "day": "16",
+    "month": "TH.04",
+    "year": "2026",
+    "title": "Cà Phê Trứng Hà Nội Trở Lại Trong Menu Quán Trẻ",
+    "content": "Lớp kem trứng béo mịn đang được biến tấu với cacao, matcha và muối biển để hợp khẩu vị hiện đại.",
+    "category": "Xu Hướng"
+  },
+  {
+    "id": 5,
+    "date": "2026-03-29",
+    "shortDate": "29 TH.03 2026",
+    "day": "29",
+    "month": "TH.03",
+    "year": "2026",
+    "title": "Mâm Cơm Gia Đình Việt Và Cách Cân Bằng Dinh Dưỡng",
+    "content": "Một mâm cơm đủ rau, đạm, canh và món mặn giúp bữa tối vừa ngon miệng vừa phù hợp lịch học bận rộn.",
+    "category": "Ẩm Thực Việt"
+  },
+  {
+    "id": 6,
+    "date": "2026-03-14",
+    "shortDate": "14 TH.03 2026",
+    "day": "14",
+    "month": "TH.03",
+    "year": "2026",
+    "title": "Bí Quyết Nấu Nước Lẩu Thái Chua Cay Đậm Vị",
+    "content": "Sả, riềng, lá chanh và nước cốt me là bộ hương nền giúp nồi lẩu dậy mùi mà không cần gia vị quá phức tạp.",
+    "category": "Công Thức"
+  },
+  {
+    "id": 7,
+    "date": "2026-02-22",
+    "shortDate": "22 TH.02 2026",
+    "day": "22",
+    "month": "TH.02",
+    "year": "2026",
+    "title": "Bánh Mì Việt Nam Được Yêu Thích Trong Lễ Hội Ẩm Thực",
+    "content": "Những ổ bánh giòn, nhân phong phú và rau thơm tươi giúp bánh mì tiếp tục là đại diện nổi bật của món ăn đường phố.",
+    "category": "Đường Phố"
+  },
+  {
+    "id": 8,
+    "date": "2026-02-05",
+    "shortDate": "05 TH.02 2026",
+    "day": "05",
+    "month": "TH.02",
+    "year": "2026",
+    "title": "Cách Bảo Quản Rau Thơm Luôn Tươi Trong Tủ Lạnh",
+    "content": "Rửa sạch, để ráo, cuộn trong khăn giấy và đặt trong hộp kín giúp rau thơm giữ mùi tốt hơn nhiều ngày.",
+    "category": "Nguyên Liệu"
+  },
+  {
+    "id": 9,
+    "date": "2026-01-20",
+    "shortDate": "20 TH.01 2026",
+    "day": "20",
+    "month": "TH.01",
+    "year": "2026",
+    "title": "Ăn Vặt Sinh Viên: Những Món Ngon Dễ Tìm Gần Trường",
+    "content": "Bánh tráng trộn, cá viên chiên và trà tắc vẫn là bộ ba quen thuộc cho buổi chiều học nhóm.",
+    "category": "Đường Phố"
+  },
+  {
+    "id": 10,
+    "date": "2026-01-08",
+    "shortDate": "08 TH.01 2026",
+    "day": "08",
+    "month": "TH.01",
+    "year": "2026",
+    "title": "Nước Mắm Chấm: Tỉ Lệ Cơ Bản Cho Người Mới Nấu",
+    "content": "Công thức một mắm, một đường, một chanh và bốn nước là nền tảng dễ nhớ để điều chỉnh theo khẩu vị.",
+    "category": "Công Thức"
+  },
+  {
+    "id": 11,
+    "date": "2025-12-18",
+    "shortDate": "18 TH.12 2025",
+    "day": "18",
+    "month": "TH.12",
+    "year": "2025",
+    "title": "Gỏi Cuốn Và Lựa Chọn Bữa Trưa Nhẹ Cho Dân Văn Phòng",
+    "content": "Gỏi cuốn kết hợp rau sống, bún, tôm thịt và nước chấm đậu phộng, phù hợp cho bữa trưa nhanh nhưng đủ chất.",
+    "category": "Ẩm Thực Việt"
+  },
+  {
+    "id": 12,
+    "date": "2025-12-02",
+    "shortDate": "02 TH.12 2025",
+    "day": "02",
+    "month": "TH.12",
+    "year": "2025",
+    "title": "Xu Hướng Chụp Ảnh Món Ăn Tối Giản Trên Mạng Xã Hội",
+    "content": "Ánh sáng tự nhiên, nền gỗ sạch và góc chụp gần giúp món ăn đời thường trở nên hấp dẫn hơn.",
+    "category": "Xu Hướng"
+  }
+]
