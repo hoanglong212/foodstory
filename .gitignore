@@ -30,3 +30,18 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Codex / Chrome temporary profile files
+.codex-chrome-profile*/
+.codex-chrome-profile-chart/
+.codex-chrome-profile-cache/
+.codex-chrome-*/
+
+# Browser profile/cache artifacts
+BrowserMetrics-*.pma
+CrashpadMetrics-*.pma
+first_party_sets.db
+first_party_sets.db-journal
+Last Browser
+Last Version
+Local State
