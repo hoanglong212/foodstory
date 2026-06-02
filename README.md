@@ -22,6 +22,17 @@ npm run dev
 
 Create the MySQL database with `backend/database/schema.sql`, seed recipes with `backend/database/seed.sql`, create hashed users with `npm run seed:users`, and migrate Stage 1 news with `npm run migrate:news`.
 
+## API Testing
+
+Run the Stage 2 API smoke test after MySQL is running and seeded:
+
+```bash
+cd backend
+npm run test:api
+```
+
+The test logs in as admin/user, creates and deletes a temporary recipe, and verifies auth, news, recipes, ratings, comments, favorites, checklists, profile data endpoints, and error cases. See `API_TESTING_README.md` for the full endpoint table, curl examples, and test results.
+
 ## Test Credentials
 
 - Admin: `admin@foodstory.test` / `Admin123!`

@@ -3,21 +3,70 @@ import pool from '../db.js'
 import { requireAuth } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
+const MAX_COMMENT_LENGTH = 1000
+
+function toPositiveInt(value) {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? value : null
+  }
+
+  const text = String(value ?? '').trim()
+  if (!/^[1-9]\d*$/.test(text)) {
+    return null
+  }
+
+  const number = Number(text)
+  return Number.isSafeInteger(number) ? number : null
+}
 
 function cleanContent(value) {
   return String(value || '').trim()
 }
 
+function validateContent(content) {
+  if (content.length < 5) {
+    return 'Comment must be at least 5 characters.'
+  }
+  if (content.length > MAX_COMMENT_LENGTH) {
+    return `Comment must be ${MAX_COMMENT_LENGTH} characters or fewer.`
+  }
+  return ''
+}
+
+router.get('/comments/user', requireAuth, async (req, res, next) => {
+  try {
+    const [items] = await pool.execute(
+      `SELECT
+         comments.id,
+         comments.recipe_id,
+         recipes.title AS recipe_title,
+         comments.content,
+         comments.created_at,
+         comments.updated_at
+       FROM comments
+       JOIN recipes ON recipes.id = comments.recipe_id
+       WHERE comments.user_id = ?
+       ORDER BY comments.created_at DESC`,
+      [req.user.id],
+    )
+
+    return res.json({ items })
+  } catch (error) {
+    return next(error)
+  }
+})
+
 router.post('/recipes/:id/comments', requireAuth, async (req, res, next) => {
   try {
-    const recipeId = Number.parseInt(req.params.id, 10)
+    const recipeId = toPositiveInt(req.params.id)
     const content = cleanContent(req.body.content)
+    const contentError = validateContent(content)
 
-    if (!Number.isInteger(recipeId) || recipeId <= 0) {
+    if (!recipeId) {
       return res.status(400).json({ error: 'Invalid recipe id.' })
     }
-    if (content.length < 5) {
-      return res.status(400).json({ error: 'Comment must be at least 5 characters.' })
+    if (contentError) {
+      return res.status(400).json({ error: contentError })
     }
 
     const [recipes] = await pool.execute('SELECT id FROM recipes WHERE id = ?', [recipeId])
@@ -47,14 +96,15 @@ router.post('/recipes/:id/comments', requireAuth, async (req, res, next) => {
 
 router.put('/comments/:id', requireAuth, async (req, res, next) => {
   try {
-    const commentId = Number.parseInt(req.params.id, 10)
+    const commentId = toPositiveInt(req.params.id)
     const content = cleanContent(req.body.content)
+    const contentError = validateContent(content)
 
-    if (!Number.isInteger(commentId) || commentId <= 0) {
+    if (!commentId) {
       return res.status(400).json({ error: 'Invalid comment id.' })
     }
-    if (content.length < 5) {
-      return res.status(400).json({ error: 'Comment must be at least 5 characters.' })
+    if (contentError) {
+      return res.status(400).json({ error: contentError })
     }
 
     const [comments] = await pool.execute('SELECT user_id FROM comments WHERE id = ?', [commentId])
@@ -84,8 +134,8 @@ router.put('/comments/:id', requireAuth, async (req, res, next) => {
 
 router.delete('/comments/:id', requireAuth, async (req, res, next) => {
   try {
-    const commentId = Number.parseInt(req.params.id, 10)
-    if (!Number.isInteger(commentId) || commentId <= 0) {
+    const commentId = toPositiveInt(req.params.id)
+    if (!commentId) {
       return res.status(400).json({ error: 'Invalid comment id.' })
     }
 

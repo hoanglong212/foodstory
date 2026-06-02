@@ -12,7 +12,7 @@ const foodStyles = [
     label: "Người Săn Món Phố",
     icon: "store",
     image:
-      "https://images.unsplash.com/photo-1750315606996-9f42c4c81a20?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1750315606996-9f42c4c81a20?auto=format&fit=crop&w=640&q=70",
     description:
       "Bạn mê hàng quán địa phương, vị cay nồng, món ăn nhanh và năng lượng náo nhiệt của phố xá.",
     result: "Hôm nay bạn là Người Săn Món Phố",
@@ -22,7 +22,7 @@ const foodStyles = [
     label: "Tín Đồ Cơm Nhà",
     icon: "home",
     image:
-      "https://images.unsplash.com/photo-1775148582534-44e3700ed081?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1775148582534-44e3700ed081?auto=format&fit=crop&w=640&q=70",
     description:
       "Bạn thích những bữa cơm ấm áp, công thức quen thuộc và hương vị gợi nhớ gia đình.",
     result: "Hôm nay bạn là Tín Đồ Cơm Nhà",
@@ -56,8 +56,9 @@ const selectedFoodStyle = computed(() => {
   <section class="about-hero page-pad">
     <div class="about-visual">
       <img
-        src="https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=700&q=80"
+        src="https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=640&q=70"
         alt="A bowl of Vietnamese noodle soup"
+        decoding="async"
       />
       <blockquote>"Ẩm thực là ngôn ngữ của tình yêu"</blockquote>
       <div class="about-icons">
@@ -166,6 +167,8 @@ const selectedFoodStyle = computed(() => {
               :key="selectedFoodStyle.value"
               :src="selectedFoodStyle.image"
               :alt="selectedFoodStyle.label"
+              loading="lazy"
+              decoding="async"
             />
           </Transition>
         </figure>

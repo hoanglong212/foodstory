@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import AppIcon from './components/AppIcon.vue'
+import ToastNotification from './components/ToastNotification.vue'
 import { useAuthStore } from './stores/authStore'
 import { useUiStore } from './stores/uiStore'
 
@@ -66,7 +67,13 @@ async function logout() {
 }
 
 function handleAuthExpired(event) {
-  authStore.clearAuth(event.detail?.message || 'Phiên đăng nhập đã hết hạn')
+  const message = event.detail?.message || 'Phiên đăng nhập đã hết hạn'
+  authStore.clearAuth(message)
+  uiStore.setError(message)
+
+  if (route.meta.requiresAuth && route.name !== 'login') {
+    router.push({ name: 'login', query: { redirect: route.fullPath } }).catch(() => {})
+  }
 }
 
 function updateParallax() {
@@ -115,6 +122,8 @@ function observeMotion() {
       '.form-shell',
       '.recipe-detail-grid > *',
       '.profile-header',
+      '.checklist-summary-item',
+      '.not-found-content',
     ].join(','),
   )
 
@@ -187,6 +196,9 @@ watch(
 
 <template>
   <div class="app-shell">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <ToastNotification />
+
     <header :class="['site-header', { 'is-solid': isNavSolid }]">
       <RouterLink class="brand" to="/" aria-label="FoodStory home">
         <span class="brand-mark" aria-hidden="true">
@@ -234,7 +246,7 @@ watch(
       </div>
     </header>
 
-    <main>
+    <main id="main-content" tabindex="-1">
       <RouterView v-slot="{ Component, route: activeRoute }">
         <Transition name="page" mode="out-in">
           <div :key="activeRoute.fullPath" class="page-view">

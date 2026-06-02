@@ -51,7 +51,7 @@
   --header-solid-pill: rgba(230, 57, 70, 0.35);
   --header-solid-control: rgba(255, 255, 255, 0.1);
   --shell-bg: var(--bg);
-  --hero-image: url("https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1800&q=80");
+  --hero-image: url("https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=70");
   --hero-overlay:
     linear-gradient(90deg, rgba(26, 26, 29, 0.85), rgba(42, 33, 29, 0.6)),
     linear-gradient(180deg, rgba(26, 26, 29, 0.4), rgba(26, 26, 29, 0.95));
@@ -210,7 +210,7 @@ h5,
 h6 {
   font-family: var(--font-serif);
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 p {
@@ -246,9 +246,32 @@ p {
   clip-path: inset(50%);
 }
 
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--accent);
+  box-shadow: var(--shadow-hover);
+  font-weight: 850;
+  transform: translateY(-160%);
+}
+
+.skip-link:focus {
+  outline: none;
+  transform: translateY(0);
+}
+
 main {
   min-height: 100svh;
   padding-top: var(--nav-height);
+}
+
+main:focus {
+  outline: none;
 }
 
 .page-view {
@@ -437,6 +460,10 @@ main {
 .brand:focus-visible,
 .btn:focus-visible,
 .text-link:focus-visible,
+.icon-link:focus-visible,
+.profile-tabs button:focus-visible,
+.rating-buttons button:focus-visible,
+.comment-actions button:focus-visible,
 .site-footer a:focus-visible,
 .social-row a:focus-visible,
 .pagination button:focus-visible,
@@ -2075,6 +2102,13 @@ main {
   line-height: 1.2;
 }
 
+.recipe-description {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.65;
+}
+
 .tag-row {
   display: flex;
   flex-wrap: wrap;
@@ -2303,6 +2337,30 @@ main {
   text-transform: uppercase;
 }
 
+.profile-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.profile-tabs button {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--soft-surface);
+  font-weight: 850;
+}
+
+.profile-tabs button.active,
+.profile-tabs button:hover {
+  border-color: rgba(237, 59, 18, 0.38);
+  color: var(--accent);
+  background: var(--chip-bg);
+}
+
 .profile-details {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2326,6 +2384,125 @@ main {
   color: var(--text);
   font-weight: 900;
   overflow-wrap: anywhere;
+}
+
+.profile-comment-list {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-comment-dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 0;
+}
+
+.profile-comment-dates div {
+  border-radius: 8px;
+  background: var(--soft-surface);
+  padding: 10px;
+}
+
+.profile-comment-dates dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.profile-comment-dates dd {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-weight: 850;
+}
+
+.checklist-summary-list {
+  display: grid;
+  gap: 16px;
+}
+
+.checklist-summary-item {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: var(--soft-surface);
+}
+
+.checklist-summary-item img {
+  aspect-ratio: 4 / 3;
+  height: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.checklist-summary-item h3 {
+  margin: 10px 0 12px;
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.checklist-summary-item progress {
+  width: 100%;
+  height: 12px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: var(--soft-surface-strong);
+}
+
+.checklist-summary-item progress::-webkit-progress-bar {
+  border-radius: 999px;
+  background: var(--soft-surface-strong);
+}
+
+.checklist-summary-item progress::-webkit-progress-value {
+  border-radius: 999px;
+  background: var(--green);
+}
+
+.checklist-summary-item progress::-moz-progress-bar {
+  border-radius: 999px;
+  background: var(--green);
+}
+
+.not-found-page {
+  display: grid;
+  min-height: calc(100svh - var(--nav-height));
+  place-items: center;
+  padding-top: 72px;
+  padding-bottom: 72px;
+}
+
+.not-found-content {
+  width: min(720px, 100%);
+  text-align: center;
+}
+
+.not-found-content h1 {
+  margin-bottom: 16px;
+  color: var(--text);
+  font-size: clamp(42px, 9vw, 86px);
+  font-weight: 950;
+  line-height: 1;
+}
+
+.not-found-content p:not(.eyebrow) {
+  max-width: 560px;
+  margin: 0 auto 28px;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.news-skeleton-list {
+  display: grid;
+  gap: 20px;
 }
 
 @media (max-width: 1024px) {
@@ -2402,7 +2579,8 @@ main {
   }
 
   .form-grid.four,
-  .profile-details {
+  .profile-details,
+  .profile-comment-dates {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -2596,7 +2774,8 @@ main {
   .stage2-filter-panel,
   .form-grid.two,
   .form-grid.four,
-  .profile-details {
+  .profile-details,
+  .profile-comment-dates {
     grid-template-columns: 1fr;
   }
 
@@ -2631,6 +2810,20 @@ main {
 
   .checklist-list small {
     grid-column: 2;
+  }
+
+  .checklist-summary-item {
+    grid-template-columns: 1fr;
+  }
+
+  .checklist-summary-item img {
+    height: auto;
+  }
+
+  .not-found-page {
+    min-height: 100svh;
+    padding-top: 56px;
+    padding-bottom: 56px;
   }
 }
 

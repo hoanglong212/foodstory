@@ -4,6 +4,20 @@ import { requireAuth } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
 
+function toPositiveInt(value) {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? value : null
+  }
+
+  const text = String(value ?? '').trim()
+  if (!/^[1-9]\d*$/.test(text)) {
+    return null
+  }
+
+  const number = Number(text)
+  return Number.isSafeInteger(number) ? number : null
+}
+
 async function getChecklist(userId, recipeId) {
   const [checklists] = await pool.execute(
     `SELECT id, user_id, recipe_id, created_at
@@ -35,8 +49,8 @@ async function getChecklist(userId, recipeId) {
 }
 
 router.post('/checklists', requireAuth, async (req, res, next) => {
-  const recipeId = Number.parseInt(req.body.recipe_id, 10)
-  if (!Number.isInteger(recipeId) || recipeId <= 0) {
+  const recipeId = toPositiveInt(req.body.recipe_id)
+  if (!recipeId) {
     return res.status(400).json({ error: 'Valid recipe_id is required.' })
   }
 
@@ -91,10 +105,42 @@ router.post('/checklists', requireAuth, async (req, res, next) => {
   }
 })
 
+router.get('/checklists', requireAuth, async (req, res, next) => {
+  try {
+    const [items] = await pool.execute(
+      `SELECT
+         checklists.id,
+         checklists.recipe_id,
+         recipes.title AS recipe_title,
+         recipes.image_url,
+         checklists.created_at,
+         COUNT(checklist_items.id) AS total_items,
+         SUM(CASE WHEN checklist_items.is_checked THEN 1 ELSE 0 END) AS checked_items
+       FROM checklists
+       JOIN recipes ON recipes.id = checklists.recipe_id
+       LEFT JOIN checklist_items ON checklist_items.checklist_id = checklists.id
+       WHERE checklists.user_id = ?
+       GROUP BY checklists.id, checklists.recipe_id, recipes.title, recipes.image_url, checklists.created_at
+       ORDER BY checklists.created_at DESC`,
+      [req.user.id],
+    )
+
+    return res.json({
+      items: items.map((item) => ({
+        ...item,
+        total_items: Number(item.total_items || 0),
+        checked_items: Number(item.checked_items || 0),
+      })),
+    })
+  } catch (error) {
+    return next(error)
+  }
+})
+
 router.get('/checklists/:recipeId', requireAuth, async (req, res, next) => {
   try {
-    const recipeId = Number.parseInt(req.params.recipeId, 10)
-    if (!Number.isInteger(recipeId) || recipeId <= 0) {
+    const recipeId = toPositiveInt(req.params.recipeId)
+    if (!recipeId) {
       return res.status(400).json({ error: 'Invalid recipe id.' })
     }
 
@@ -111,8 +157,8 @@ router.get('/checklists/:recipeId', requireAuth, async (req, res, next) => {
 
 router.patch('/checklist-items/:id', requireAuth, async (req, res, next) => {
   try {
-    const itemId = Number.parseInt(req.params.id, 10)
-    if (!Number.isInteger(itemId) || itemId <= 0) {
+    const itemId = toPositiveInt(req.params.id)
+    if (!itemId) {
       return res.status(400).json({ error: 'Invalid checklist item id.' })
     }
 

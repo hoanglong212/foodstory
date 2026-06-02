@@ -6,6 +6,9 @@ import { requireAuth } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const MAX_USERNAME_LENGTH = 50
+const MAX_EMAIL_LENGTH = 100
+const MAX_PASSWORD_LENGTH = 128
 
 function safeUser(user) {
   return {
@@ -38,11 +41,20 @@ router.post('/register', async (req, res, next) => {
     if (!username) {
       return res.status(400).json({ error: 'Username is required.' })
     }
+    if (username.length > MAX_USERNAME_LENGTH) {
+      return res.status(400).json({ error: `Username must be ${MAX_USERNAME_LENGTH} characters or fewer.` })
+    }
     if (!emailPattern.test(email)) {
       return res.status(400).json({ error: 'A valid email is required.' })
     }
+    if (email.length > MAX_EMAIL_LENGTH) {
+      return res.status(400).json({ error: `Email must be ${MAX_EMAIL_LENGTH} characters or fewer.` })
+    }
     if (password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters.' })
+    }
+    if (password.length > MAX_PASSWORD_LENGTH) {
+      return res.status(400).json({ error: `Password must be ${MAX_PASSWORD_LENGTH} characters or fewer.` })
     }
 
     const [existing] = await pool.execute(
@@ -78,11 +90,17 @@ router.post('/login', async (req, res, next) => {
     if (!emailPattern.test(email)) {
       return res.status(400).json({ error: 'A valid email is required.' })
     }
+    if (email.length > MAX_EMAIL_LENGTH) {
+      return res.status(400).json({ error: `Email must be ${MAX_EMAIL_LENGTH} characters or fewer.` })
+    }
     if (!password) {
       return res.status(400).json({ error: 'Password is required.' })
     }
 
-    const [rows] = await pool.execute('SELECT * FROM users WHERE email = ?', [email])
+    const [rows] = await pool.execute(
+      'SELECT id, username, email, password_hash, role, created_at FROM users WHERE email = ?',
+      [email],
+    )
     if (rows.length === 0) {
       return res.status(401).json({ error: 'Invalid email or password.' })
     }

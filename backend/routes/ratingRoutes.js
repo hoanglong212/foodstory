@@ -4,15 +4,29 @@ import { requireAuth } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
 
+function toPositiveInt(value) {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? value : null
+  }
+
+  const text = String(value ?? '').trim()
+  if (!/^[1-9]\d*$/.test(text)) {
+    return null
+  }
+
+  const number = Number(text)
+  return Number.isSafeInteger(number) ? number : null
+}
+
 router.post('/recipes/:id/rating', requireAuth, async (req, res, next) => {
   try {
-    const recipeId = Number.parseInt(req.params.id, 10)
-    const ratingValue = Number.parseInt(req.body.rating_value, 10)
+    const recipeId = toPositiveInt(req.params.id)
+    const ratingValue = toPositiveInt(req.body.rating_value)
 
-    if (!Number.isInteger(recipeId) || recipeId <= 0) {
+    if (!recipeId) {
       return res.status(400).json({ error: 'Invalid recipe id.' })
     }
-    if (!Number.isInteger(ratingValue) || ratingValue < 1 || ratingValue > 5) {
+    if (!ratingValue || ratingValue > 5) {
       return res.status(400).json({ error: 'Rating must be between 1 and 5.' })
     }
 

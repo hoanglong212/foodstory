@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { onBeforeUnmount, reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
 import { useAuthStore } from '../stores/authStore'
@@ -17,6 +17,11 @@ const serverError = ref('')
 const successMessage = ref('')
 const isSubmitting = ref(false)
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const maxUsernameLength = 50
+const maxEmailLength = 100
+const maxPasswordLength = 128
+let redirectTimer = 0
+let isAlive = true
 
 function validate() {
   errors.username = ''
@@ -27,16 +32,22 @@ function validate() {
 
   if (!form.username.trim()) {
     errors.username = 'Username is required.'
+  } else if (form.username.trim().length > maxUsernameLength) {
+    errors.username = `Username must be ${maxUsernameLength} characters or fewer.`
   }
   if (!form.email.trim()) {
     errors.email = 'Email is required.'
   } else if (!emailPattern.test(form.email.trim())) {
     errors.email = 'Enter a valid email address.'
+  } else if (form.email.trim().length > maxEmailLength) {
+    errors.email = `Email must be ${maxEmailLength} characters or fewer.`
   }
   if (!form.password) {
     errors.password = 'Password is required.'
   } else if (form.password.length < 8) {
     errors.password = 'Password must be at least 8 characters.'
+  } else if (form.password.length > maxPasswordLength) {
+    errors.password = `Password must be ${maxPasswordLength} characters or fewer.`
   }
   if (form.confirmPassword !== form.password) {
     errors.confirmPassword = 'Confirm password must match password.'
@@ -46,6 +57,10 @@ function validate() {
 }
 
 async function handleSubmit() {
+  if (isSubmitting.value) {
+    return
+  }
+
   if (!validate()) {
     return
   }
@@ -57,14 +72,29 @@ async function handleSubmit() {
       email: form.email.trim(),
       password: form.password,
     })
+    if (!isAlive) {
+      return
+    }
     successMessage.value = 'Account created. Please login with your new credentials.'
-    setTimeout(() => router.push('/login'), 900)
+    redirectTimer = window.setTimeout(() => router.push('/login'), 900)
   } catch (error) {
+    if (!isAlive) {
+      return
+    }
     serverError.value = error.message
   } finally {
-    isSubmitting.value = false
+    if (isAlive) {
+      isSubmitting.value = false
+    }
   }
 }
+
+onBeforeUnmount(() => {
+  isAlive = false
+  if (redirectTimer) {
+    window.clearTimeout(redirectTimer)
+  }
+})
 </script>
 
 <template>

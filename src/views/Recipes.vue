@@ -1,22 +1,37 @@
 <script setup>
-import { onMounted, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
 import RecipeCard from '../components/RecipeCard.vue'
+import SkeletonCard from '../components/SkeletonCard.vue'
 import { useRecipeStore } from '../stores/recipeStore'
 
 const recipeStore = useRecipeStore()
+const deletingRecipeId = ref(null)
+let filterTimer = 0
+
+function scheduleRecipeFetch() {
+  window.clearTimeout(filterTimer)
+  filterTimer = window.setTimeout(() => {
+    recipeStore.fetchRecipes(1)
+  }, 350)
+}
 
 onMounted(() => {
-  recipeStore.fetchRecipes(1)
+  recipeStore.fetchRecipes(1, { includeMeta: true })
 })
 
 watch(
   () => [recipeStore.searchQuery, recipeStore.filters.category, recipeStore.filters.tag],
   () => {
-    recipeStore.fetchRecipes(1)
+    scheduleRecipeFetch()
   },
 )
+
+onBeforeUnmount(() => {
+  window.clearTimeout(filterTimer)
+  recipeStore.cancelRecipeListRequest()
+})
 
 function goToPage(page) {
   const nextPage = Math.min(Math.max(page, 1), recipeStore.pagination.totalPages)
@@ -24,13 +39,29 @@ function goToPage(page) {
 }
 
 async function deleteRecipe(recipe) {
+  if (deletingRecipeId.value) {
+    return
+  }
+
   const confirmed = window.confirm(`Delete "${recipe.title}"? This cannot be undone.`)
   if (!confirmed) {
     return
   }
 
-  await recipeStore.deleteRecipe(recipe.id)
-  recipeStore.fetchRecipes(recipeStore.pagination.currentPage)
+  const wasLastItemOnPage = recipeStore.recipeList.length === 1
+  deletingRecipeId.value = recipe.id
+  try {
+    await recipeStore.deleteRecipe(recipe.id)
+    const nextPage =
+      wasLastItemOnPage && recipeStore.pagination.currentPage > 1
+        ? recipeStore.pagination.currentPage - 1
+        : recipeStore.pagination.currentPage
+    await recipeStore.fetchRecipes(nextPage)
+  } catch (error) {
+    recipeStore.error = error.message
+  } finally {
+    deletingRecipeId.value = null
+  }
 }
 </script>
 
@@ -98,7 +129,11 @@ async function deleteRecipe(recipe) {
       </button>
     </form>
 
-    <p v-if="recipeStore.isLoading" class="status-panel">Loading recipes...</p>
+    <div v-if="recipeStore.isLoading" class="row g-4" aria-label="Loading recipes">
+      <div v-for="index in 6" :key="index" class="col-12 col-md-6 col-xl-4">
+        <SkeletonCard />
+      </div>
+    </div>
     <p v-else-if="recipeStore.error" class="form-error" role="alert">
       {{ recipeStore.error }}
     </p>
@@ -114,7 +149,11 @@ async function deleteRecipe(recipe) {
           :key="recipe.id"
           class="col-12 col-md-6 col-xl-4"
         >
-          <RecipeCard :recipe="recipe" @delete="deleteRecipe" />
+          <RecipeCard
+            :recipe="recipe"
+            :is-deleting="deletingRecipeId === recipe.id"
+            @delete="deleteRecipe"
+          />
         </div>
       </div>
 

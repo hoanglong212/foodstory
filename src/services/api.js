@@ -19,7 +19,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const requestUrl = String(error.config?.url || '')
+    const isAuthAttempt =
+      requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register')
+    const hadBearerToken = Boolean(error.config?.headers?.Authorization)
+
+    if (error.response?.status === 401 && hadBearerToken && !isAuthAttempt) {
       window.localStorage.removeItem(AUTH_TOKEN_KEY)
       window.localStorage.removeItem(CURRENT_USER_KEY)
       window.dispatchEvent(
@@ -34,7 +39,15 @@ api.interceptors.response.use(
 )
 
 export function getApiError(error, fallback = 'Something went wrong.') {
-  return error.response?.data?.error || error.response?.data?.message || error.message || fallback
+  if (error.response?.data?.error || error.response?.data?.message) {
+    return error.response.data.error || error.response.data.message
+  }
+
+  if (error.request && !error.response) {
+    return 'Unable to reach the FoodStory API. Please check that the backend is running.'
+  }
+
+  return error.message || fallback
 }
 
 export default api

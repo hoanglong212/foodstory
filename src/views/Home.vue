@@ -1,18 +1,30 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import AppIcon from "../components/AppIcon.vue";
 import { fetchDailyMeal } from "../services/mealApi";
 
-const dailyMeal = ref(null);
+const fallbackMeal = {
+  title: "Steak and Kidney Pie",
+  image: "https://www.themealdb.com/images/media/meals/qysyss1511558054.jpg",
+  category: "British",
+  area: "Beef",
+  description:
+    "Một món bánh mặn giàu hương vị, gợi ý cho ngày muốn đổi bữa nhưng vẫn giữ cảm giác ấm cúng của căn bếp gia đình.",
+};
+
+const dailyMeal = ref(fallbackMeal);
 const dailyMealLoading = ref(false);
 const dailyMealError = ref("");
+let isAlive = true;
+let idleCallbackId = 0;
+let fallbackTimer = 0;
 
 const featuredRecipes = [
   {
     title: "Phở Bò Hà Nội Truyền Thống",
     category: "Món Súp",
     image:
-      "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=640&q=70",
     description:
       "Nước dùng ninh chậm, thơm hồi quế, thịt bò mềm và bánh phở trắng mượt.",
     time: "12 giờ",
@@ -23,7 +35,7 @@ const featuredRecipes = [
     title: "Bánh Mì Pate Sài Gòn",
     category: "Bánh Mì",
     image:
-      "https://images.unsplash.com/photo-1600454309261-3dc9b7597637?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1600454309261-3dc9b7597637?auto=format&fit=crop&w=640&q=70",
     description:
       "Ổ bánh giòn rụm với pate, chả lụa, rau thơm, đồ chua và tương ớt.",
     time: "30 phút",
@@ -34,7 +46,7 @@ const featuredRecipes = [
     title: "Cơm Rang Dương Châu",
     category: "Món Xào",
     image:
-      "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=640&q=70",
     description:
       "Cơm rang thập cẩm với tôm, trứng, rau củ nhiều màu sắc và hành lá.",
     time: "20 phút",
@@ -51,24 +63,49 @@ const categories = [
   { label: "Nguyên Liệu", icon: "leaf", accent: "green" },
 ];
 
-const fallbackMeal = {
-  title: "Steak and Kidney Pie",
-  image: "https://www.themealdb.com/images/media/meals/qysyss1511558054.jpg",
-  category: "British",
-  area: "Beef",
-  description:
-    "Một món bánh mặn giàu hương vị, gợi ý cho ngày muốn đổi bữa nhưng vẫn giữ cảm giác ấm cúng của căn bếp gia đình.",
-};
+async function loadDailyMeal() {
+  if (!isAlive) {
+    return;
+  }
 
-onMounted(async () => {
   dailyMealLoading.value = true;
   try {
-    dailyMeal.value = await fetchDailyMeal();
+    const meal = await fetchDailyMeal();
+    if (!isAlive) {
+      return;
+    }
+    dailyMeal.value = meal;
   } catch (error) {
-    dailyMealError.value = "Không thể tải gợi ý từ TheMealDB, đang hiển thị món dự phòng.";
+    if (!isAlive) {
+      return;
+    }
+    dailyMealError.value = "Không thể tải nhanh gợi ý từ TheMealDB, đang hiển thị món dự phòng.";
     dailyMeal.value = fallbackMeal;
   } finally {
-    dailyMealLoading.value = false;
+    if (isAlive) {
+      dailyMealLoading.value = false;
+    }
+  }
+}
+
+onMounted(() => {
+  if ('requestIdleCallback' in window) {
+    idleCallbackId = window.requestIdleCallback(loadDailyMeal, { timeout: 1000 });
+    return;
+  }
+
+  fallbackTimer = window.setTimeout(loadDailyMeal, 0);
+});
+
+onBeforeUnmount(() => {
+  isAlive = false;
+
+  if (idleCallbackId && 'cancelIdleCallback' in window) {
+    window.cancelIdleCallback(idleCallbackId);
+  }
+
+  if (fallbackTimer) {
+    window.clearTimeout(fallbackTimer);
   }
 });
 </script>
@@ -114,7 +151,12 @@ onMounted(async () => {
         class="recipe-card"
       >
         <div class="image-wrap">
-          <img :src="recipe.image" :alt="recipe.title" />
+          <img
+            :src="recipe.image"
+            :alt="recipe.title"
+            loading="lazy"
+            decoding="async"
+          />
           <span>{{ recipe.category }}</span>
         </div>
         <div class="recipe-body">
@@ -158,6 +200,8 @@ onMounted(async () => {
       <img
         :src="dailyMeal.image"
         :alt="`Meal inspiration: ${dailyMeal.title}`"
+        loading="lazy"
+        decoding="async"
       />
       <div>
         <div class="pill-row">

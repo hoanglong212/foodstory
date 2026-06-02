@@ -5,6 +5,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 Chart.register(ArcElement, Tooltip, Legend)
 
 const props = defineProps({
+  calories: {
+    type: Number,
+    default: 0,
+  },
   protein: {
     type: Number,
     default: 0,
@@ -22,6 +26,7 @@ const props = defineProps({
 const canvasRef = ref(null)
 let chart
 
+// Calories shown at center per spec, chart shows macros only.
 const chartData = computed(() => [props.protein, props.carbs, props.fat])
 
 function renderChart() {
@@ -73,5 +78,39 @@ onBeforeUnmount(() => chart?.destroy())
 <template>
   <div class="nutrition-chart" aria-label="Nutrition doughnut chart">
     <canvas ref="canvasRef"></canvas>
+    <div class="nutrition-chart-center" aria-hidden="true">
+      <strong>{{ calories }}</strong>
+      <span>calories</span>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.nutrition-chart {
+  position: relative;
+}
+
+.nutrition-chart-center {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  text-align: center;
+}
+
+.nutrition-chart-center strong {
+  color: var(--text);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.nutrition-chart-center span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+</style>

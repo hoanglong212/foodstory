@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS news (
   content TEXT NOT NULL,
   category VARCHAR(100) NOT NULL,
   published_date DATE NOT NULL,
+  KEY idx_news_published_date (published_date),
+  KEY idx_news_category (category),
   UNIQUE KEY unique_news_title_date (title, published_date)
 );
 
@@ -35,11 +37,14 @@ CREATE TABLE IF NOT EXISTS recipes (
   title VARCHAR(255) NOT NULL,
   image_url VARCHAR(500) NOT NULL,
   instructions TEXT NOT NULL,
+  description TEXT DEFAULT NULL,
   calories INT NOT NULL DEFAULT 0,
   protein INT NOT NULL DEFAULT 0,
   carbs INT NOT NULL DEFAULT 0,
   fat INT NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_recipes_category_created (category_id, created_at),
+  KEY idx_recipes_created (created_at),
   FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 
@@ -66,6 +71,8 @@ CREATE TABLE IF NOT EXISTS comments (
   content TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_comments_recipe_created (recipe_id, created_at),
+  KEY idx_comments_user_created (user_id, created_at),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 );
@@ -74,6 +81,7 @@ CREATE TABLE IF NOT EXISTS favorites (
   user_id INT NOT NULL,
   recipe_id INT NOT NULL,
   PRIMARY KEY (user_id, recipe_id),
+  KEY idx_favorites_recipe (recipe_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 );
@@ -84,6 +92,7 @@ CREATE TABLE IF NOT EXISTS ratings (
   recipe_id INT NOT NULL,
   rating_value TINYINT NOT NULL CHECK (rating_value BETWEEN 1 AND 5),
   UNIQUE KEY unique_user_recipe (user_id, recipe_id),
+  KEY idx_ratings_recipe (recipe_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 );
@@ -94,6 +103,7 @@ CREATE TABLE IF NOT EXISTS checklists (
   recipe_id INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY unique_user_recipe_checklist (user_id, recipe_id),
+  KEY idx_checklists_recipe (recipe_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 );

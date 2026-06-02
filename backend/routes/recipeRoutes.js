@@ -4,31 +4,53 @@ import { optionalAuth, requireAuth } from '../middleware/authMiddleware.js'
 import { requireAdmin } from '../middleware/roleMiddleware.js'
 
 const router = express.Router()
+const MAX_DESCRIPTION_LENGTH = 1000
+const MAX_INSTRUCTIONS_LENGTH = 10000
 
 function toPositiveInt(value) {
-  const number = Number.parseInt(value, 10)
-  return Number.isInteger(number) && number > 0 ? number : null
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? value : null
+  }
+
+  const text = String(value ?? '').trim()
+  if (!/^[1-9]\d*$/.test(text)) {
+    return null
+  }
+
+  const number = Number(text)
+  return Number.isSafeInteger(number) ? number : null
 }
 
 function toNonNegativeInt(value) {
-  const number = Number.parseInt(value, 10)
-  return Number.isInteger(number) && number >= 0 ? number : null
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value >= 0 ? value : null
+  }
+
+  const text = String(value ?? '').trim()
+  if (!/^(0|[1-9]\d*)$/.test(text)) {
+    return null
+  }
+
+  const number = Number(text)
+  return Number.isSafeInteger(number) ? number : null
 }
 
 function getPagination(query) {
-  const page = Math.max(Number.parseInt(query.page || '1', 10), 1)
-  const pageSize = Math.min(Math.max(Number.parseInt(query.pageSize || '6', 10), 1), 24)
+  const page = Math.max(Number.parseInt(query.page, 10) || 1, 1)
+  const pageSize = Math.min(Math.max(Number.parseInt(query.pageSize, 10) || 10, 1), 50)
   const offset = (page - 1) * pageSize
   return { page, pageSize, offset }
+}
+
+function isTooLong(value, maxLength) {
+  return String(value || '').length > maxLength
 }
 
 function parseTags(value) {
   if (!Array.isArray(value)) {
     return []
   }
-  return value
-    .map((tag) => Number.parseInt(tag, 10))
-    .filter((tag) => Number.isInteger(tag) && tag > 0)
+  return [...new Set(value.map((tag) => toPositiveInt(tag)).filter(Boolean))]
 }
 
 function parseIngredients(value) {
@@ -44,11 +66,21 @@ function parseIngredients(value) {
     .filter((ingredient) => ingredient.ingredient_name)
 }
 
+function isValidHttpUrl(value) {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 function validateRecipe(body) {
   const categoryId = toPositiveInt(body.category_id)
   const title = String(body.title || '').trim()
   const imageUrl = String(body.image_url || '').trim()
   const instructions = String(body.instructions || '').trim()
+  const description = String(body.description || '').trim() || null
   const calories = toNonNegativeInt(body.calories ?? 0)
   const protein = toNonNegativeInt(body.protein ?? 0)
   const carbs = toNonNegativeInt(body.carbs ?? 0)
@@ -65,14 +97,37 @@ function validateRecipe(body) {
   if (!imageUrl) {
     return { error: 'Image URL is required.' }
   }
+  if (!isValidHttpUrl(imageUrl)) {
+    return { error: 'Image URL must be a valid http or https URL.' }
+  }
   if (!instructions) {
     return { error: 'Instructions are required.' }
   }
+  if (isTooLong(title, 255)) {
+    return { error: 'Title must be 255 characters or fewer.' }
+  }
+  if (isTooLong(imageUrl, 500)) {
+    return { error: 'Image URL must be 500 characters or fewer.' }
+  }
+  if (isTooLong(description, MAX_DESCRIPTION_LENGTH)) {
+    return { error: `Description must be ${MAX_DESCRIPTION_LENGTH} characters or fewer.` }
+  }
+  if (isTooLong(instructions, MAX_INSTRUCTIONS_LENGTH)) {
+    return { error: `Instructions must be ${MAX_INSTRUCTIONS_LENGTH} characters or fewer.` }
+  }
   if ([calories, protein, carbs, fat].some((value) => value === null)) {
-    return { error: 'Nutrition values must be numbers greater than or equal to 0.' }
+    return { error: 'Nutrition values must be whole numbers greater than or equal to 0.' }
   }
   if (ingredients.length === 0) {
     return { error: 'At least one ingredient is required.' }
+  }
+  if (
+    ingredients.some(
+      (ingredient) =>
+        isTooLong(ingredient.ingredient_name, 150) || isTooLong(ingredient.quantity, 50),
+    )
+  ) {
+    return { error: 'Ingredient names must be 150 characters or fewer and quantities 50 or fewer.' }
   }
 
   return {
@@ -81,6 +136,7 @@ function validateRecipe(body) {
       title,
       imageUrl,
       instructions,
+      description,
       calories,
       protein,
       carbs,
@@ -89,6 +145,16 @@ function validateRecipe(body) {
       tags,
     },
   }
+}
+
+async function validateTagIds(connection, tags) {
+  if (tags.length === 0) {
+    return true
+  }
+
+  const placeholders = tags.map(() => '?').join(', ')
+  const [rows] = await connection.execute(`SELECT id FROM tags WHERE id IN (${placeholders})`, tags)
+  return rows.length === tags.length
 }
 
 async function fetchRecipeDetail(recipeId, userId = 0) {
@@ -100,6 +166,7 @@ async function fetchRecipeDetail(recipeId, userId = 0) {
        r.title,
        r.image_url,
        r.instructions,
+       r.description,
        r.calories,
        r.protein,
        r.carbs,
@@ -185,8 +252,13 @@ router.get('/', optionalAuth, async (req, res, next) => {
     const category = String(req.query.category || '').trim()
     const tag = String(req.query.tag || '').trim()
     const userId = req.user?.id || 0
+    const includeMeta = req.query.includeMeta !== '0'
     const where = []
     const params = []
+
+    if (isTooLong(search, 120) || isTooLong(category, 100) || isTooLong(tag, 100)) {
+      return res.status(400).json({ error: 'Search and filter values are too long.' })
+    }
 
     if (search) {
       where.push('r.title LIKE ?')
@@ -249,8 +321,12 @@ router.get('/', optionalAuth, async (req, res, next) => {
       [userId, ...params, pageSize, offset],
     )
 
-    const [categories] = await pool.execute('SELECT id, name FROM categories ORDER BY name ASC')
-    const [tags] = await pool.execute('SELECT id, name FROM tags ORDER BY name ASC')
+    const [categories] = includeMeta
+      ? await pool.execute('SELECT id, name FROM categories ORDER BY name ASC')
+      : [[]]
+    const [tags] = includeMeta
+      ? await pool.execute('SELECT id, name FROM tags ORDER BY name ASC')
+      : [[]]
 
     res.json({
       items: items.map((item) => ({
@@ -308,16 +384,21 @@ router.post('/', requireAuth, requireAdmin, async (req, res, next) => {
       await connection.rollback()
       return res.status(400).json({ error: 'Selected category does not exist.' })
     }
+    if (!(await validateTagIds(connection, data.tags))) {
+      await connection.rollback()
+      return res.status(400).json({ error: 'One or more selected tags do not exist.' })
+    }
 
     const [result] = await connection.execute(
       `INSERT INTO recipes
-         (category_id, title, image_url, instructions, calories, protein, carbs, fat)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         (category_id, title, image_url, instructions, description, calories, protein, carbs, fat)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.categoryId,
         data.title,
         data.imageUrl,
         data.instructions,
+        data.description,
         data.calories,
         data.protein,
         data.carbs,
@@ -373,9 +454,21 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res, next) => {
       return res.status(404).json({ error: 'Recipe not found.' })
     }
 
+    const [categoryRows] = await connection.execute('SELECT id FROM categories WHERE id = ?', [
+      data.categoryId,
+    ])
+    if (categoryRows.length === 0) {
+      await connection.rollback()
+      return res.status(400).json({ error: 'Selected category does not exist.' })
+    }
+    if (!(await validateTagIds(connection, data.tags))) {
+      await connection.rollback()
+      return res.status(400).json({ error: 'One or more selected tags do not exist.' })
+    }
+
     await connection.execute(
       `UPDATE recipes
-       SET category_id = ?, title = ?, image_url = ?, instructions = ?,
+       SET category_id = ?, title = ?, image_url = ?, instructions = ?, description = ?,
            calories = ?, protein = ?, carbs = ?, fat = ?
        WHERE id = ?`,
       [
@@ -383,6 +476,7 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res, next) => {
         data.title,
         data.imageUrl,
         data.instructions,
+        data.description,
         data.calories,
         data.protein,
         data.carbs,

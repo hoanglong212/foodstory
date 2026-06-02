@@ -54,22 +54,17 @@ The Stage 3 FoodMap/Leaflet feature is not implemented. Recipe detail includes o
 
 - Challenge: Extending Stage 1 without breaking existing pages.
   Solution: Existing routes were preserved and new Stage 2 routes were added to the same router.
-
 - Challenge: Migrating local JSON news into persistent storage.
   Solution: `backend/database/migrateNews.js` reads `src/data/news.json` and inserts news records into MySQL safely.
-
 - Challenge: Authentication and token expiry.
   Solution: JWTs are stored on the frontend, attached by Axios, and cleared on 401 responses with a session-expired message.
-
 - Challenge: Preventing unauthorized management actions.
   Solution: Admin-only recipe routes use JWT middleware plus `requireAdmin`, and the frontend uses route guards plus `v-permission`.
-
 - Challenge: Preventing SQL injection.
   Solution: All backend routes use parameterized `pool.execute()` queries.
-
 - Challenge: External API reliability.
-  Solution: TheMealDB fetch includes loading, error, and fallback meal states.
-
+  Solution: TheMealDB fetch include
+- s loading, error, and fallback meal states.
 - Challenge: Accessibility.
   Solution: Forms use real labels, `aria-invalid`, `aria-describedby`, inline validation errors, semantic buttons, descriptive image alt text, and keyboard-friendly controls.
 

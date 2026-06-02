@@ -1,13 +1,15 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
 import NutritionChart from '../components/NutritionChart.vue'
+import SkeletonCard from '../components/SkeletonCard.vue'
 import api, { getApiError } from '../services/api'
 import { useAuthStore } from '../stores/authStore'
 import { useChecklistStore } from '../stores/checklistStore'
 import { useFavoriteStore } from '../stores/favoriteStore'
 import { useRecipeStore } from '../stores/recipeStore'
+import { useUiStore } from '../stores/uiStore'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,6 +17,7 @@ const recipeStore = useRecipeStore()
 const authStore = useAuthStore()
 const favoriteStore = useFavoriteStore()
 const checklistStore = useChecklistStore()
+const uiStore = useUiStore()
 const commentContent = ref('')
 const commentError = ref('')
 const editingCommentId = ref(null)
@@ -22,6 +25,14 @@ const editingContent = ref('')
 const actionError = ref('')
 const actionSuccess = ref('')
 const isSubmittingComment = ref(false)
+const isFavoriteBusy = ref(false)
+const isRatingBusy = ref(false)
+const isChecklistBusy = ref(false)
+const togglingChecklistItemId = ref(null)
+const isDeletingRecipe = ref(false)
+const savingCommentId = ref(null)
+const deletingCommentId = ref(null)
+let isAlive = true
 
 const recipe = computed(() => recipeStore.selectedRecipe)
 const canManageRecipe = computed(() => authStore.isAdmin)
@@ -38,57 +49,125 @@ function formatDate(value) {
   }).format(new Date(value))
 }
 
-async function loadRecipe() {
-  await recipeStore.fetchRecipeById(route.params.id)
-  if (authStore.isLoggedIn) {
-    checklistStore.fetchChecklist(route.params.id)
+async function loadRecipe(recipeId = route.params.id) {
+  actionError.value = ''
+  actionSuccess.value = ''
+  checklistStore.setChecklist(null)
+  try {
+    const loadedRecipe = await recipeStore.fetchRecipeById(recipeId)
+    if (!isAlive || !loadedRecipe) {
+      return
+    }
+    if (authStore.isLoggedIn) {
+      checklistStore.fetchChecklist(recipeId)
+    }
+  } catch {
+    // The store exposes a user-facing error state in the template.
   }
 }
 
 async function setRating(value) {
+  if (!authStore.isLoggedIn) {
+    router.push({ name: 'login', query: { redirect: route.fullPath } })
+    return
+  }
+  if (isRatingBusy.value || value < 1 || value > 5) {
+    return
+  }
+
+  isRatingBusy.value = true
   actionError.value = ''
+  actionSuccess.value = ''
   try {
-    const response = await api.post(`/recipes/${recipe.value.id}/rating`, {
+    const recipeId = recipe.value.id
+    const response = await api.post(`/recipes/${recipeId}/rating`, {
       rating_value: value,
     })
-    recipeStore.selectedRecipe = {
-      ...recipe.value,
+    if (!isAlive) {
+      return
+    }
+    const ratingPatch = {
       average_rating: response.data.average_rating,
       total_ratings: response.data.total_ratings,
       current_user_rating: response.data.current_user_rating,
     }
+    recipeStore.updateRecipeCache(recipeId, ratingPatch)
+    favoriteStore.updateFavoriteCache(recipeId, ratingPatch)
     actionSuccess.value = 'Your rating has been saved.'
+    uiStore.setSuccess(actionSuccess.value)
   } catch (error) {
+    if (!isAlive) {
+      return
+    }
     actionError.value = getApiError(error, 'Unable to save rating.')
+    uiStore.setError(actionError.value)
+  } finally {
+    if (isAlive) {
+      isRatingBusy.value = false
+    }
   }
 }
 
 async function toggleFavorite() {
+  if (!authStore.isLoggedIn) {
+    router.push({ name: 'login', query: { redirect: route.fullPath } })
+    return
+  }
+  if (isFavoriteBusy.value) {
+    return
+  }
+
+  isFavoriteBusy.value = true
   actionError.value = ''
+  actionSuccess.value = ''
   try {
-    if (recipe.value.is_favorite) {
-      await favoriteStore.removeFavorite(recipe.value.id)
-      recipeStore.selectedRecipe = {
-        ...recipe.value,
-        is_favorite: false,
-        favorite_count: Math.max(Number(recipe.value.favorite_count || 0) - 1, 0),
+    const currentRecipe = recipe.value
+    const recipeId = currentRecipe.id
+
+    if (currentRecipe.is_favorite) {
+      const changed = await favoriteStore.removeFavorite(recipeId)
+      if (!isAlive || !changed) {
+        return
       }
+      recipeStore.updateRecipeCache(recipeId, {
+        is_favorite: false,
+        favorite_count: Math.max(Number(currentRecipe.favorite_count || 0) - 1, 0),
+      })
       actionSuccess.value = 'Removed from favorites.'
     } else {
-      await favoriteStore.addFavorite(recipe.value.id)
-      recipeStore.selectedRecipe = {
-        ...recipe.value,
+      const nextCount = Number(currentRecipe.favorite_count || 0) + 1
+      const changed = await favoriteStore.addFavorite(recipeId, {
+        ...currentRecipe,
         is_favorite: true,
-        favorite_count: Number(recipe.value.favorite_count || 0) + 1,
+        favorite_count: nextCount,
+      })
+      if (!isAlive || !changed) {
+        return
       }
+      recipeStore.updateRecipeCache(recipeId, {
+        is_favorite: true,
+        favorite_count: nextCount,
+      })
       actionSuccess.value = 'Saved to favorites.'
     }
   } catch (error) {
+    if (!isAlive) {
+      return
+    }
     actionError.value = error.message
+    uiStore.setError(actionError.value)
+  } finally {
+    if (isAlive) {
+      isFavoriteBusy.value = false
+    }
   }
 }
 
 async function submitComment() {
+  if (isSubmittingComment.value) {
+    return
+  }
+
   commentError.value = ''
   if (commentContent.value.trim().length < 5) {
     commentError.value = 'Comment must be at least 5 characters.'
@@ -100,15 +179,24 @@ async function submitComment() {
     const response = await api.post(`/recipes/${recipe.value.id}/comments`, {
       content: commentContent.value.trim(),
     })
-    recipeStore.selectedRecipe = {
-      ...recipe.value,
-      comments: [response.data.comment, ...recipe.value.comments],
+    if (!isAlive) {
+      return
     }
+    recipeStore.updateRecipeCache(recipe.value.id, {
+      comments: [response.data.comment, ...(recipe.value.comments || [])],
+    })
     commentContent.value = ''
+    uiStore.setSuccess('Comment added.')
   } catch (error) {
+    if (!isAlive) {
+      return
+    }
     commentError.value = getApiError(error, 'Unable to add comment.')
+    uiStore.setError(commentError.value)
   } finally {
-    isSubmittingComment.value = false
+    if (isAlive) {
+      isSubmittingComment.value = false
+    }
   }
 }
 
@@ -118,74 +206,175 @@ function startEditComment(comment) {
 }
 
 async function saveComment(comment) {
+  if (savingCommentId.value) {
+    return
+  }
+
   if (editingContent.value.trim().length < 5) {
     commentError.value = 'Edited comment must be at least 5 characters.'
     return
   }
 
+  savingCommentId.value = comment.id
   try {
     const response = await api.put(`/comments/${comment.id}`, {
       content: editingContent.value.trim(),
     })
-    recipeStore.selectedRecipe = {
-      ...recipe.value,
+    if (!isAlive) {
+      return
+    }
+    recipeStore.updateRecipeCache(recipe.value.id, {
       comments: recipe.value.comments.map((item) =>
         item.id === comment.id ? response.data.comment : item,
       ),
-    }
+    })
     editingCommentId.value = null
     editingContent.value = ''
+    uiStore.setSuccess('Comment updated.')
   } catch (error) {
+    if (!isAlive) {
+      return
+    }
     commentError.value = getApiError(error, 'Unable to edit comment.')
+    uiStore.setError(commentError.value)
+  } finally {
+    if (isAlive) {
+      savingCommentId.value = null
+    }
   }
 }
 
 async function deleteComment(comment) {
+  if (deletingCommentId.value) {
+    return
+  }
+
   const confirmed = window.confirm('Delete this comment?')
   if (!confirmed) {
     return
   }
 
+  deletingCommentId.value = comment.id
   try {
     await api.delete(`/comments/${comment.id}`)
-    recipeStore.selectedRecipe = {
-      ...recipe.value,
-      comments: recipe.value.comments.filter((item) => item.id !== comment.id),
+    if (!isAlive) {
+      return
     }
+    recipeStore.updateRecipeCache(recipe.value.id, {
+      comments: (recipe.value.comments || []).filter((item) => item.id !== comment.id),
+    })
+    uiStore.setSuccess('Comment deleted.')
   } catch (error) {
+    if (!isAlive) {
+      return
+    }
     commentError.value = getApiError(error, 'Unable to delete comment.')
+    uiStore.setError(commentError.value)
+  } finally {
+    if (isAlive) {
+      deletingCommentId.value = null
+    }
   }
 }
 
 async function generateChecklist() {
+  if (!authStore.isLoggedIn) {
+    router.push({ name: 'login', query: { redirect: route.fullPath } })
+    return
+  }
+  if (isChecklistBusy.value) {
+    return
+  }
+
+  isChecklistBusy.value = true
   actionError.value = ''
+  actionSuccess.value = ''
   try {
-    await checklistStore.generateChecklist(recipe.value.id)
+    const checklist = await checklistStore.generateChecklist(recipe.value.id)
+    if (!isAlive || !checklist) {
+      return
+    }
     actionSuccess.value = 'Ingredient checklist is ready.'
   } catch (error) {
+    if (!isAlive) {
+      return
+    }
     actionError.value = error.message
+    uiStore.setError(actionError.value)
+  } finally {
+    if (isAlive) {
+      isChecklistBusy.value = false
+    }
   }
 }
 
 async function toggleChecklistItem(item) {
+  if (togglingChecklistItemId.value) {
+    return
+  }
+
+  togglingChecklistItemId.value = item.id
+  actionError.value = ''
   try {
     await checklistStore.toggleItem(item.id)
   } catch (error) {
+    if (!isAlive) {
+      return
+    }
     actionError.value = error.message
+    uiStore.setError(actionError.value)
+  } finally {
+    if (isAlive) {
+      togglingChecklistItemId.value = null
+    }
   }
 }
 
 async function deleteRecipe() {
+  if (isDeletingRecipe.value) {
+    return
+  }
+
   const confirmed = window.confirm(`Delete "${recipe.value.title}"?`)
   if (!confirmed) {
     return
   }
 
-  await recipeStore.deleteRecipe(recipe.value.id)
-  router.push('/recipes')
+  isDeletingRecipe.value = true
+  try {
+    await recipeStore.deleteRecipe(recipe.value.id)
+    if (!isAlive) {
+      return
+    }
+    router.push('/recipes')
+  } catch (error) {
+    if (!isAlive) {
+      return
+    }
+    actionError.value = error.message
+    uiStore.setError(actionError.value)
+  } finally {
+    if (isAlive) {
+      isDeletingRecipe.value = false
+    }
+  }
 }
 
-onMounted(loadRecipe)
+onMounted(() => loadRecipe())
+
+watch(
+  () => route.params.id,
+  (id, previousId) => {
+    if (id && id !== previousId) {
+      loadRecipe(id)
+    }
+  },
+)
+
+onBeforeUnmount(() => {
+  isAlive = false
+  recipeStore.cancelSelectedRecipeRequest()
+})
 </script>
 
 <template>
@@ -195,14 +384,19 @@ onMounted(loadRecipe)
       <span>Back to recipes</span>
     </RouterLink>
 
-    <p v-if="recipeStore.isLoading" class="status-panel">Loading recipe...</p>
+    <SkeletonCard v-if="recipeStore.isLoading" variant="detail" />
     <p v-else-if="recipeStore.error" class="form-error" role="alert">
       {{ recipeStore.error }}
     </p>
 
     <article v-else-if="recipe" class="recipe-detail-grid">
       <div class="recipe-detail-media">
-        <img :src="recipe.image_url" :alt="`Photo of ${recipe.title}`" />
+        <img
+          :src="recipe.image_url"
+          :alt="`Photo of ${recipe.title}`"
+          decoding="async"
+          fetchpriority="high"
+        />
       </div>
 
       <div class="recipe-detail-main">
@@ -219,6 +413,9 @@ onMounted(loadRecipe)
         </div>
 
         <h1>{{ recipe.title }}</h1>
+        <p v-if="recipe.description" class="recipe-description">
+          {{ recipe.description }}
+        </p>
         <div class="tag-row">
           <span v-for="tag in recipe.tags" :key="tag.id">#{{ tag.name }}</span>
         </div>
@@ -231,13 +428,20 @@ onMounted(loadRecipe)
             v-if="authStore.isLoggedIn"
             class="btn btn-outline"
             type="button"
+            :disabled="isFavoriteBusy"
             @click="toggleFavorite"
           >
             <AppIcon name="heart" size="18" />
-            <span>{{ recipe.is_favorite ? 'Unfavorite' : 'Favorite' }}</span>
+            <span>
+              {{ isFavoriteBusy ? 'Saving...' : recipe.is_favorite ? 'Unfavorite' : 'Favorite' }}
+            </span>
             <small>{{ recipe.favorite_count }}</small>
           </button>
-          <RouterLink v-else class="btn btn-outline" to="/login">
+          <RouterLink
+            v-else
+            class="btn btn-outline"
+            :to="{ name: 'login', query: { redirect: route.fullPath } }"
+          >
             Login to save
           </RouterLink>
 
@@ -245,12 +449,17 @@ onMounted(loadRecipe)
             v-if="authStore.isLoggedIn"
             class="btn btn-outline"
             type="button"
+            :disabled="isChecklistBusy"
             @click="generateChecklist"
           >
             <AppIcon name="check" size="18" />
-            <span>Generate Ingredient Checklist</span>
+            <span>{{ isChecklistBusy ? 'Preparing...' : 'Generate Ingredient Checklist' }}</span>
           </button>
-          <RouterLink v-else class="btn btn-outline" to="/login">
+          <RouterLink
+            v-else
+            class="btn btn-outline"
+            :to="{ name: 'login', query: { redirect: route.fullPath } }"
+          >
             Login for checklist
           </RouterLink>
 
@@ -267,9 +476,14 @@ onMounted(loadRecipe)
             <AppIcon name="pen" size="18" />
             <span>Edit Recipe</span>
           </RouterLink>
-          <button class="btn btn-outline danger" type="button" @click="deleteRecipe">
+          <button
+            class="btn btn-outline danger"
+            type="button"
+            :disabled="isDeletingRecipe"
+            @click="deleteRecipe"
+          >
             <AppIcon name="trash" size="18" />
-            <span>Delete Recipe</span>
+            <span>{{ isDeletingRecipe ? 'Deleting...' : 'Delete Recipe' }}</span>
           </button>
         </div>
       </div>
@@ -308,7 +522,12 @@ onMounted(loadRecipe)
             </div>
           </dl>
         </div>
-        <NutritionChart :protein="recipe.protein" :carbs="recipe.carbs" :fat="recipe.fat" />
+        <NutritionChart
+          :calories="recipe.calories"
+          :protein="recipe.protein"
+          :carbs="recipe.carbs"
+          :fat="recipe.fat"
+        />
       </section>
 
       <section class="detail-section rating-section">
@@ -320,20 +539,26 @@ onMounted(loadRecipe)
             type="button"
             :class="{ active: value <= Number(recipe.current_user_rating || 0) }"
             :aria-label="`Rate ${value} out of 5`"
+            :aria-pressed="value === Number(recipe.current_user_rating || 0)"
+            :disabled="isRatingBusy"
             @click="setRating(value)"
           >
             <AppIcon name="star" size="21" />
           </button>
         </div>
         <p v-else>
-          <RouterLink to="/login">Login to rate this recipe.</RouterLink>
+          <RouterLink :to="{ name: 'login', query: { redirect: route.fullPath } }">
+            Login to rate this recipe.
+          </RouterLink>
         </p>
       </section>
 
       <section class="detail-section checklist-panel">
         <h2>Ingredient Checklist</h2>
         <p v-if="!authStore.isLoggedIn">
-          <RouterLink to="/login">Login to generate a checklist.</RouterLink>
+          <RouterLink :to="{ name: 'login', query: { redirect: route.fullPath } }">
+            Login to generate a checklist.
+          </RouterLink>
         </p>
         <p v-else-if="!checklistStore.activeChecklist" class="muted-copy">
           Generate a checklist to tick off ingredients while shopping or cooking.
@@ -344,6 +569,7 @@ onMounted(loadRecipe)
               <input
                 type="checkbox"
                 :checked="item.is_checked"
+                :disabled="togglingChecklistItemId === item.id"
                 @change="toggleChecklistItem(item)"
               />
               <span>{{ item.ingredient_name }}</span>
@@ -370,11 +596,16 @@ onMounted(loadRecipe)
           </button>
         </form>
         <p v-else>
-          <RouterLink to="/login">Login to comment.</RouterLink>
+          <RouterLink :to="{ name: 'login', query: { redirect: route.fullPath } }">
+            Login to comment.
+          </RouterLink>
         </p>
 
         <div class="comment-list">
-          <article v-for="comment in recipe.comments" :key="comment.id" class="comment-item">
+          <p v-if="(recipe.comments || []).length === 0" class="empty-state">
+            No comments yet. Be the first to share a cooking note.
+          </p>
+          <article v-for="comment in recipe.comments || []" :key="comment.id" class="comment-item">
             <header>
               <strong>{{ comment.username }}</strong>
               <time :datetime="comment.updated_at">{{ formatDate(comment.updated_at) }}</time>
@@ -384,8 +615,13 @@ onMounted(loadRecipe)
               <label :for="`edit-comment-${comment.id}`">Edit comment</label>
               <textarea :id="`edit-comment-${comment.id}`" v-model="editingContent" rows="3"></textarea>
               <div class="detail-actions">
-                <button class="btn btn-primary" type="button" @click="saveComment(comment)">
-                  Save
+                <button
+                  class="btn btn-primary"
+                  type="button"
+                  :disabled="savingCommentId === comment.id"
+                  @click="saveComment(comment)"
+                >
+                  {{ savingCommentId === comment.id ? 'Saving...' : 'Save' }}
                 </button>
                 <button class="btn btn-outline" type="button" @click="editingCommentId = null">
                   Cancel
@@ -399,7 +635,13 @@ onMounted(loadRecipe)
               class="comment-actions"
             >
               <button type="button" @click="startEditComment(comment)">Edit</button>
-              <button type="button" @click="deleteComment(comment)">Delete</button>
+              <button
+                type="button"
+                :disabled="deletingCommentId === comment.id"
+                @click="deleteComment(comment)"
+              >
+                {{ deletingCommentId === comment.id ? 'Deleting...' : 'Delete' }}
+              </button>
             </div>
           </article>
         </div>

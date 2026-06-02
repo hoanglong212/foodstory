@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { onBeforeUnmount, reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
 import { useAuthStore } from '../stores/authStore'
@@ -15,16 +15,21 @@ const errors = reactive({})
 const serverError = ref('')
 const isSubmitting = ref(false)
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const maxEmailLength = 100
+let isAlive = true
 
 function validate() {
   errors.email = ''
   errors.password = ''
   serverError.value = ''
+  authStore.authMessage = ''
 
   if (!form.email.trim()) {
     errors.email = 'Email is required.'
   } else if (!emailPattern.test(form.email.trim())) {
     errors.email = 'Enter a valid email address.'
+  } else if (form.email.trim().length > maxEmailLength) {
+    errors.email = `Email must be ${maxEmailLength} characters or fewer.`
   }
 
   if (!form.password) {
@@ -34,7 +39,16 @@ function validate() {
   return !errors.email && !errors.password
 }
 
+function getSafeRedirect() {
+  const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
+  return redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/profile'
+}
+
 async function handleSubmit() {
+  if (isSubmitting.value) {
+    return
+  }
+
   if (!validate()) {
     return
   }
@@ -45,14 +59,25 @@ async function handleSubmit() {
       email: form.email.trim(),
       password: form.password,
     })
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/profile'
-    router.push(redirect)
+    if (!isAlive) {
+      return
+    }
+    router.push(getSafeRedirect())
   } catch (error) {
+    if (!isAlive) {
+      return
+    }
     serverError.value = error.message
   } finally {
-    isSubmitting.value = false
+    if (isAlive) {
+      isSubmitting.value = false
+    }
   }
 }
+
+onBeforeUnmount(() => {
+  isAlive = false
+})
 </script>
 
 <template>

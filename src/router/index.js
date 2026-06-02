@@ -9,7 +9,9 @@ import RecipeForm from '../views/RecipeForm.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Profile from '../views/Profile.vue'
+import NotFound from '../views/NotFound.vue'
 import { useAuthStore } from '../stores/authStore'
+import { useUiStore } from '../stores/uiStore'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -41,6 +43,12 @@ const router = createRouter({
       path: '/recipes',
       name: 'recipes',
       component: Recipes,
+    },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: Recipes,
+      meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
       path: '/recipes/new',
@@ -77,18 +85,49 @@ const router = createRouter({
       component: Profile,
       meta: { requiresAuth: true },
     },
+    {
+      path: '/favorites',
+      name: 'favorites',
+      component: Profile,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/checklist',
+      name: 'checklist',
+      component: Profile,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: NotFound,
+    },
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const authStore = useAuthStore()
+  const uiStore = useUiStore()
   authStore.loadFromStorage()
 
+  if (authStore.token && !authStore.sessionChecked) {
+    if (to.meta.requiresAuth || to.meta.guestOnly) {
+      await authStore.fetchMe({ timeoutMs: 3000 })
+    } else {
+      authStore.fetchMe({ timeoutMs: 3000, silent: true })
+    }
+  }
+
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
+    if (to.name === 'login') {
+      return true
+    }
+    uiStore.setError('Please login to continue.')
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 
   if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    uiStore.setError('Admin permission is required for that page.')
     return { name: authStore.isLoggedIn ? 'recipes' : 'login' }
   }
 

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
 import { useRecipeStore } from '../stores/recipeStore'
@@ -9,23 +9,45 @@ const router = useRouter()
 const recipeStore = useRecipeStore()
 const isEditMode = computed(() => Boolean(route.params.id))
 const isSubmitting = ref(false)
+const isLoadingForm = ref(false)
 const serverError = ref('')
+const loadError = ref('')
 const errors = reactive({})
-const form = reactive({
-  title: '',
-  category_id: '',
-  image_url: '',
-  instructions: '',
-  calories: 0,
-  protein: 0,
-  carbs: 0,
-  fat: 0,
-  ingredientsText: '',
-  tags: [],
-})
+const maxTitleLength = 255
+const maxImageUrlLength = 500
+const maxDescriptionLength = 1000
+const maxInstructionsLength = 10000
+const maxIngredientNameLength = 150
+const maxIngredientQuantityLength = 50
+let isAlive = true
+
+function getEmptyForm() {
+  return {
+    title: '',
+    category_id: '',
+    image_url: '',
+    description: '',
+    instructions: '',
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    ingredientsText: '',
+    tags: [],
+  }
+}
+
+const form = reactive(getEmptyForm())
 
 function setError(field, message = '') {
   errors[field] = message
+}
+
+function resetForm() {
+  Object.assign(form, getEmptyForm())
+  Object.keys(errors).forEach((field) => setError(field))
+  serverError.value = ''
+  loadError.value = ''
 }
 
 function parseIngredients() {
@@ -43,12 +65,22 @@ function parseIngredients() {
     .filter((ingredient) => ingredient.ingredient_name)
 }
 
+function isValidHttpUrl(value) {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 function validate() {
   serverError.value = ''
   ;[
     'title',
     'category_id',
     'image_url',
+    'description',
     'instructions',
     'calories',
     'protein',
@@ -59,26 +91,49 @@ function validate() {
 
   if (!form.title.trim()) {
     setError('title', 'Title is required.')
+  } else if (form.title.trim().length > maxTitleLength) {
+    setError('title', `Title must be ${maxTitleLength} characters or fewer.`)
   }
   if (!form.category_id) {
     setError('category_id', 'Category is required.')
   }
   if (!form.image_url.trim()) {
     setError('image_url', 'Image URL is required.')
+  } else if (!isValidHttpUrl(form.image_url.trim())) {
+    setError('image_url', 'Enter a valid http or https image URL.')
+  } else if (form.image_url.trim().length > maxImageUrlLength) {
+    setError('image_url', `Image URL must be ${maxImageUrlLength} characters or fewer.`)
   }
   if (!form.instructions.trim()) {
     setError('instructions', 'Instructions are required.')
+  } else if (form.instructions.trim().length > maxInstructionsLength) {
+    setError('instructions', `Instructions must be ${maxInstructionsLength} characters or fewer.`)
+  }
+  if (form.description.trim().length > maxDescriptionLength) {
+    setError('description', `Description must be ${maxDescriptionLength} characters or fewer.`)
   }
 
   ;['calories', 'protein', 'carbs', 'fat'].forEach((field) => {
     const value = Number(form[field])
-    if (!Number.isFinite(value) || value < 0) {
-      setError(field, 'Enter a number greater than or equal to 0.')
+    if (!Number.isInteger(value) || value < 0) {
+      setError(field, 'Enter a whole number greater than or equal to 0.')
     }
   })
 
-  if (parseIngredients().length === 0) {
+  const ingredients = parseIngredients()
+  if (ingredients.length === 0) {
     setError('ingredientsText', 'Add at least one ingredient.')
+  } else if (
+    ingredients.some(
+      (ingredient) =>
+        ingredient.ingredient_name.length > maxIngredientNameLength ||
+        ingredient.quantity.length > maxIngredientQuantityLength,
+    )
+  ) {
+    setError(
+      'ingredientsText',
+      `Ingredient names must be ${maxIngredientNameLength} characters or fewer and quantities ${maxIngredientQuantityLength} or fewer.`,
+    )
   }
 
   return Object.values(errors).every((message) => !message)
@@ -89,6 +144,7 @@ function buildPayload() {
     title: form.title.trim(),
     category_id: Number(form.category_id),
     image_url: form.image_url.trim(),
+    description: form.description.trim() || null,
     instructions: form.instructions.trim(),
     calories: Number(form.calories),
     protein: Number(form.protein),
@@ -100,6 +156,10 @@ function buildPayload() {
 }
 
 async function handleSubmit() {
+  if (isSubmitting.value) {
+    return
+  }
+
   if (!validate()) {
     return
   }
@@ -110,41 +170,89 @@ async function handleSubmit() {
     const recipe = isEditMode.value
       ? await recipeStore.updateRecipe(route.params.id, payload)
       : await recipeStore.createRecipe(payload)
+    if (!isAlive) {
+      return
+    }
     router.push({ name: 'recipe-detail', params: { id: recipe.id } })
   } catch (error) {
+    if (!isAlive) {
+      return
+    }
     serverError.value = error.message
   } finally {
-    isSubmitting.value = false
+    if (isAlive) {
+      isSubmitting.value = false
+    }
   }
 }
 
 async function loadForm() {
-  await recipeStore.fetchMeta()
-
-  if (!isEditMode.value) {
+  if (!isAlive) {
     return
   }
 
-  const recipe = await recipeStore.fetchRecipeById(route.params.id)
-  form.title = recipe.title
-  form.category_id = recipe.category_id
-  form.image_url = recipe.image_url
-  form.instructions = recipe.instructions
-  form.calories = recipe.calories
-  form.protein = recipe.protein
-  form.carbs = recipe.carbs
-  form.fat = recipe.fat
-  form.ingredientsText = recipe.ingredients
-    .map((ingredient) =>
-      ingredient.quantity
-        ? `${ingredient.ingredient_name} | ${ingredient.quantity}`
-        : ingredient.ingredient_name,
-    )
-    .join('\n')
-  form.tags = recipe.tags.map((tag) => tag.id)
+  resetForm()
+  isLoadingForm.value = true
+  loadError.value = ''
+
+  try {
+    await recipeStore.fetchMeta()
+    if (!isAlive) {
+      return
+    }
+
+    if (!isEditMode.value) {
+      return
+    }
+
+    const recipe = await recipeStore.fetchRecipeById(route.params.id)
+    if (!isAlive || !recipe) {
+      return
+    }
+    form.title = recipe.title
+    form.category_id = recipe.category_id
+    form.image_url = recipe.image_url
+    form.description = recipe.description || ''
+    form.instructions = recipe.instructions
+    form.calories = recipe.calories
+    form.protein = recipe.protein
+    form.carbs = recipe.carbs
+    form.fat = recipe.fat
+    form.ingredientsText = recipe.ingredients
+      .map((ingredient) =>
+        ingredient.quantity
+          ? `${ingredient.ingredient_name} | ${ingredient.quantity}`
+          : ingredient.ingredient_name,
+      )
+      .join('\n')
+    form.tags = recipe.tags.map((tag) => tag.id)
+  } catch (error) {
+    if (!isAlive) {
+      return
+    }
+    loadError.value = error.message
+  } finally {
+    if (isAlive) {
+      isLoadingForm.value = false
+    }
+  }
 }
 
 onMounted(loadForm)
+
+watch(
+  () => route.params.id,
+  (id, previousId) => {
+    if (id !== previousId) {
+      loadForm()
+    }
+  },
+)
+
+onBeforeUnmount(() => {
+  isAlive = false
+  recipeStore.cancelSelectedRecipeRequest()
+})
 </script>
 
 <template>
@@ -158,9 +266,18 @@ onMounted(loadForm)
         </p>
       </div>
 
-      <p v-if="serverError" class="form-error" role="alert">{{ serverError }}</p>
+      <p v-if="loadError || serverError" class="form-error" role="alert">
+        {{ loadError || serverError }}
+      </p>
 
-      <form class="recipe-editor-form" novalidate @submit.prevent="handleSubmit">
+      <p v-if="isLoadingForm" class="status-panel">Loading form...</p>
+
+      <form
+        v-else-if="!loadError"
+        class="recipe-editor-form"
+        novalidate
+        @submit.prevent="handleSubmit"
+      >
         <div class="form-field">
           <label for="recipe-title">Title</label>
           <input
@@ -220,6 +337,21 @@ onMounted(loadForm)
           />
           <p v-if="errors.image_url" id="recipe-image-error" class="field-error">
             {{ errors.image_url }}
+          </p>
+        </div>
+
+        <div class="form-field">
+          <label for="recipe-description">Description</label>
+          <textarea
+            id="recipe-description"
+            v-model="form.description"
+            rows="4"
+            placeholder="Optional short overview for the recipe detail page"
+            :aria-invalid="Boolean(errors.description)"
+            aria-describedby="recipe-description-error"
+          ></textarea>
+          <p v-if="errors.description" id="recipe-description-error" class="field-error">
+            {{ errors.description }}
           </p>
         </div>
 

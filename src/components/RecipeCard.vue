@@ -8,6 +8,10 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  isDeleting: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['delete'])
@@ -21,7 +25,12 @@ const ratingLabel = computed(() => {
 <template>
   <article class="recipe-card stage2-card h-100">
     <RouterLink :to="{ name: 'recipe-detail', params: { id: recipe.id } }" class="recipe-card-media">
-      <img :src="recipe.image_url" :alt="`Photo of ${recipe.title}`" />
+      <img
+        :src="recipe.image_url"
+        :alt="`Photo of ${recipe.title}`"
+        loading="lazy"
+        decoding="async"
+      />
     </RouterLink>
 
     <div class="recipe-body">
@@ -79,7 +88,8 @@ const ratingLabel = computed(() => {
           <button
             class="icon-link danger"
             type="button"
-            :aria-label="`Delete ${recipe.title}`"
+            :aria-label="isDeleting ? `Deleting ${recipe.title}` : `Delete ${recipe.title}`"
+            :disabled="isDeleting"
             @click="emit('delete', recipe)"
           >
             <AppIcon name="trash" size="16" />

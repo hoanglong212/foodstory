@@ -1,7 +1,8 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
+import SkeletonCard from '../components/SkeletonCard.vue'
 import api, { getApiError } from '../services/api'
 
 const keyword = ref('')
@@ -17,6 +18,12 @@ const totalPages = ref(1)
 const totalItems = ref(0)
 const isLoading = ref(false)
 const errorMessage = ref('')
+let hasLoadedInitialNews = false
+let shouldRefetchAfterCategoryNormalization = false
+let searchTimer = 0
+let newsRequestController = null
+let newsRequestId = 0
+let isAlive = true
 
 function normalizeCategory(value) {
   if (!value) {
@@ -60,10 +67,18 @@ const pageNumbers = computed(() => {
 const popularTags = ['miền bắc', 'miền nam', 'công thức', 'bún bò', 'cà phê', 'lẩu']
 
 async function fetchNews(page = currentPage.value) {
+  if (!isAlive) {
+    return
+  }
+
+  newsRequestController?.abort()
+  newsRequestController = new AbortController()
+  const requestId = ++newsRequestId
   isLoading.value = true
   errorMessage.value = ''
   try {
     const response = await api.get('/news', {
+      signal: newsRequestController.signal,
       params: {
         page,
         pageSize,
@@ -72,19 +87,45 @@ async function fetchNews(page = currentPage.value) {
         category: selectedCategory.value,
       },
     })
+    if (!isAlive || requestId !== newsRequestId) {
+      return
+    }
     newsItems.value = response.data.items
     categories.value = response.data.categories || categories.value
+    const normalizedCategory = normalizeCategory(selectedCategory.value)
+    if (normalizedCategory !== selectedCategory.value) {
+      selectedCategory.value = normalizedCategory
+      shouldRefetchAfterCategoryNormalization = !hasLoadedInitialNews
+      return
+    }
     currentPage.value = response.data.currentPage
     totalPages.value = response.data.totalPages
     totalItems.value = response.data.totalItems
   } catch (error) {
+    if (error.code === 'ERR_CANCELED') {
+      return
+    }
+    if (!isAlive) {
+      return
+    }
     errorMessage.value = getApiError(error, 'Unable to load news.')
   } finally {
-    isLoading.value = false
+    if (isAlive && requestId === newsRequestId) {
+      isLoading.value = false
+    }
   }
 }
 
+function scheduleNewsFetch() {
+  window.clearTimeout(searchTimer)
+  searchTimer = window.setTimeout(() => {
+    currentPage.value = 1
+    fetchNews(1)
+  }, 350)
+}
+
 function goToPage(page) {
+  window.clearTimeout(searchTimer)
   const nextPage = Math.min(Math.max(page, 1), totalPages.value)
   fetchNews(nextPage)
 }
@@ -101,8 +142,11 @@ watch(
 )
 
 watch([keyword, selectedDate, selectedCategory], () => {
-  currentPage.value = 1
-  fetchNews(1)
+  if (!hasLoadedInitialNews) {
+    return
+  }
+
+  scheduleNewsFetch()
 })
 
 watch(selectedCategory, (value) => {
@@ -125,8 +169,22 @@ watch(selectedCategory, (value) => {
   router.replace({ query: nextQuery })
 })
 
-onMounted(() => {
-  fetchNews(1)
+onMounted(async () => {
+  await fetchNews(1)
+  if (!isAlive) {
+    return
+  }
+  hasLoadedInitialNews = true
+  if (shouldRefetchAfterCategoryNormalization) {
+    shouldRefetchAfterCategoryNormalization = false
+    fetchNews(1)
+  }
+})
+
+onBeforeUnmount(() => {
+  isAlive = false
+  window.clearTimeout(searchTimer)
+  newsRequestController?.abort()
 })
 </script>
 
@@ -136,7 +194,7 @@ onMounted(() => {
       <p class="eyebrow">Tin Tức FoodStory</p>
       <h1>Tin Tức Ẩm Thực</h1>
       <p>
-        Tìm bài viết theo ngày, tiêu đề, nội dung hoặc danh mục từ dữ liệu JSON cục bộ.
+        Tìm bài viết theo ngày, tiêu đề, nội dung hoặc danh mục từ dữ liệu API/MySQL.
       </p>
     </div>
 
@@ -175,7 +233,9 @@ onMounted(() => {
 
     <div class="news-layout">
       <section class="news-list" aria-live="polite">
-        <p v-if="isLoading" class="status-panel">Loading news from FoodStory API...</p>
+        <div v-if="isLoading" class="news-skeleton-list" aria-label="Loading news">
+          <SkeletonCard v-for="index in 5" :key="index" variant="row" />
+        </div>
         <p v-else-if="errorMessage" class="form-error" role="alert">{{ errorMessage }}</p>
 
         <template v-else>
@@ -213,6 +273,7 @@ onMounted(() => {
             v-for="page in pageNumbers"
             :key="page"
             :class="{ active: page === currentPage }"
+            :aria-current="page === currentPage ? 'page' : undefined"
             type="button"
             @click="goToPage(page)"
           >

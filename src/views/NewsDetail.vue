@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
 import api, { getApiError } from '../services/api'
@@ -8,6 +8,8 @@ const route = useRoute()
 const newsItem = ref(null)
 const isLoading = ref(false)
 const errorMessage = ref('')
+let isAlive = true
+let requestController = null
 
 const displayDate = computed(() => {
   if (!newsItem.value?.published_date) {
@@ -21,16 +23,46 @@ const displayDate = computed(() => {
   }).format(new Date(`${newsItem.value.published_date}T00:00:00`))
 })
 
-onMounted(async () => {
+async function loadNewsItem(newsId = route.params.id) {
+  requestController?.abort()
+  requestController = new AbortController()
   isLoading.value = true
+  errorMessage.value = ''
+  newsItem.value = null
   try {
-    const response = await api.get(`/news/${route.params.id}`)
+    const response = await api.get(`/news/${newsId}`, {
+      signal: requestController.signal,
+    })
+    if (!isAlive) {
+      return
+    }
     newsItem.value = response.data.item
   } catch (error) {
+    if (error.code === 'ERR_CANCELED' || !isAlive) {
+      return
+    }
     errorMessage.value = getApiError(error, 'Unable to load this news item.')
   } finally {
-    isLoading.value = false
+    if (isAlive) {
+      isLoading.value = false
+    }
   }
+}
+
+onMounted(() => loadNewsItem())
+
+watch(
+  () => route.params.id,
+  (id, previousId) => {
+    if (id && id !== previousId) {
+      loadNewsItem(id)
+    }
+  },
+)
+
+onBeforeUnmount(() => {
+  isAlive = false
+  requestController?.abort()
 })
 </script>
 

@@ -4,6 +4,20 @@ import { requireAuth } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
 
+function toPositiveInt(value) {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? value : null
+  }
+
+  const text = String(value ?? '').trim()
+  if (!/^[1-9]\d*$/.test(text)) {
+    return null
+  }
+
+  const number = Number(text)
+  return Number.isSafeInteger(number) ? number : null
+}
+
 router.get('/', requireAuth, async (req, res, next) => {
   try {
     const [items] = await pool.execute(
@@ -46,8 +60,8 @@ router.get('/', requireAuth, async (req, res, next) => {
 
 router.post('/:recipeId', requireAuth, async (req, res, next) => {
   try {
-    const recipeId = Number.parseInt(req.params.recipeId, 10)
-    if (!Number.isInteger(recipeId) || recipeId <= 0) {
+    const recipeId = toPositiveInt(req.params.recipeId)
+    if (!recipeId) {
       return res.status(400).json({ error: 'Invalid recipe id.' })
     }
 
@@ -68,8 +82,8 @@ router.post('/:recipeId', requireAuth, async (req, res, next) => {
 
 router.delete('/:recipeId', requireAuth, async (req, res, next) => {
   try {
-    const recipeId = Number.parseInt(req.params.recipeId, 10)
-    if (!Number.isInteger(recipeId) || recipeId <= 0) {
+    const recipeId = toPositiveInt(req.params.recipeId)
+    if (!recipeId) {
       return res.status(400).json({ error: 'Invalid recipe id.' })
     }
 

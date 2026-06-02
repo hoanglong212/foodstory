@@ -3,11 +3,33 @@ import pool from '../db.js'
 
 const router = express.Router()
 
+function toPositiveInt(value) {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? value : null
+  }
+
+  const text = String(value ?? '').trim()
+  if (!/^[1-9]\d*$/.test(text)) {
+    return null
+  }
+
+  const number = Number(text)
+  return Number.isSafeInteger(number) ? number : null
+}
+
 function getPagination(query) {
-  const page = Math.max(Number.parseInt(query.page || '1', 10), 1)
-  const pageSize = Math.min(Math.max(Number.parseInt(query.pageSize || '4', 10), 1), 20)
+  const page = toPositiveInt(query.page) || 1
+  const pageSize = Math.min(toPositiveInt(query.pageSize) || 10, 50)
   const offset = (page - 1) * pageSize
   return { page, pageSize, offset }
+}
+
+function isValidDateFilter(value) {
+  if (!value) {
+    return true
+  }
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(value)
 }
 
 router.get('/categories', async (req, res, next) => {
@@ -27,6 +49,14 @@ router.get('/', async (req, res, next) => {
     const date = String(req.query.date || '').trim()
     const where = []
     const params = []
+
+    if (search.length > 120 || category.length > 100) {
+      return res.status(400).json({ error: 'Search and category values are too long.' })
+    }
+
+    if (!isValidDateFilter(date)) {
+      return res.status(400).json({ error: 'Date must use YYYY-MM-DD format.' })
+    }
 
     if (search) {
       where.push(
@@ -84,8 +114,8 @@ router.get('/', async (req, res, next) => {
 
 router.get('/:id', async (req, res, next) => {
   try {
-    const id = Number.parseInt(req.params.id, 10)
-    if (!Number.isInteger(id)) {
+    const id = toPositiveInt(req.params.id)
+    if (!id) {
       return res.status(400).json({ error: 'Invalid news id.' })
     }
 
