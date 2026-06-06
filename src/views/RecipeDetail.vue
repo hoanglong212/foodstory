@@ -100,6 +100,19 @@ const ingredientItems = computed(() => {
 })
 const hasIngredients = computed(() => ingredientItems.value.length > 0)
 const relatedRecipes = computed(() => recipe.value?.related_recipes || recipe.value?.relatedRecipes || [])
+const checklistTotal = computed(() =>
+  checklistStore.activeChecklist ? checklistStore.items.length : ingredientItems.value.length,
+)
+const checklistChecked = computed(() =>
+  checklistStore.activeChecklist
+    ? checklistStore.items.filter((item) => Boolean(item.is_checked)).length
+    : 0,
+)
+const checklistProgress = computed(() =>
+  checklistTotal.value
+    ? Math.round((checklistChecked.value / checklistTotal.value) * 100)
+    : 0,
+)
 
 const description = computed(() => {
   const text = firstPresent(recipe.value?.description)
@@ -895,14 +908,28 @@ watch(
       <div class="recipe-detail-content">
         <main class="recipe-detail-main-column">
           <section class="recipe-blog-section">
-            <p class="section-kicker">Cook this now</p>
-            <h2>Before You Start</h2>
+            <div class="recipe-card-heading">
+              <span class="recipe-card-heading-icon">
+                <AppIcon name="utensils" size="21" />
+              </span>
+              <div>
+                <p class="section-kicker">Cook this now</p>
+                <h2>Before You Start</h2>
+              </div>
+            </div>
             <p class="recipe-editorial-copy">{{ blogIntro }}</p>
           </section>
 
           <section class="recipe-blog-section">
-            <p class="section-kicker">Why it works</p>
-            <h2>Why You'll Love It</h2>
+            <div class="recipe-card-heading">
+              <span class="recipe-card-heading-icon green">
+                <AppIcon name="heart" size="21" />
+              </span>
+              <div>
+                <p class="section-kicker">Why it works</p>
+                <h2>Why You'll Love It</h2>
+              </div>
+            </div>
             <ul class="recipe-story-list">
               <li v-for="reason in whyLoveItItems" :key="reason">
                 <AppIcon name="check" size="17" />
@@ -913,16 +940,26 @@ watch(
 
           <section class="recipe-blog-section">
             <div class="recipe-section-heading split">
-              <div>
-                <p class="section-kicker">Key ingredients</p>
-                <h2>Key Ingredients</h2>
+              <div class="recipe-card-heading">
+                <span class="recipe-card-heading-icon gold">
+                  <AppIcon name="leaf" size="21" />
+                </span>
+                <div>
+                  <p class="section-kicker">Key ingredients</p>
+                  <h2>Key Ingredients</h2>
+                </div>
               </div>
               <span class="section-count">{{ ingredientItems.length }} items</span>
             </div>
             <ul v-if="hasIngredients" class="ingredient-list recipe-key-ingredients">
               <li v-for="ingredient in ingredientItems.slice(0, 8)" :key="ingredient.key">
-                <strong>{{ ingredient.name }}</strong>
-                <span>{{ ingredient.quantity || 'as needed' }}</span>
+                <span class="recipe-ingredient-icon">
+                  <AppIcon name="leaf" size="16" />
+                </span>
+                <span class="recipe-ingredient-copy">
+                  <strong>{{ ingredient.name }}</strong>
+                  <small>{{ ingredient.quantity || 'as needed' }}</small>
+                </span>
               </li>
             </ul>
             <p v-else class="empty-state">No ingredients have been added yet.</p>
@@ -1178,19 +1215,50 @@ watch(
 
         <aside class="recipe-detail-sidebar">
           <section class="recipe-side-card">
-            <p class="section-kicker">On this page</p>
+            <div class="recipe-side-heading">
+              <span class="recipe-side-heading-icon">
+                <AppIcon name="book-open" size="18" />
+              </span>
+              <p class="section-kicker">On this page</p>
+            </div>
             <nav>
-              <a href="#recipe-card">Recipe card</a>
-              <a href="#instructions">Instructions</a>
-              <a href="#nutrition">Nutrition</a>
-              <a href="#reviews">Comments</a>
-              <a v-if="relatedRecipes.length" href="#more-recipes">More recipes</a>
+              <a href="#recipe-card"><AppIcon name="book-open" size="16" /><span>Recipe card</span></a>
+              <a href="#instructions"><AppIcon name="utensils" size="16" /><span>Instructions</span></a>
+              <a href="#nutrition"><AppIcon name="bowl" size="16" /><span>Nutrition</span></a>
+              <a href="#reviews"><AppIcon name="message" size="16" /><span>Comments</span></a>
+              <a v-if="relatedRecipes.length" href="#more-recipes">
+                <AppIcon name="sparkles" size="16" />
+                <span>More recipes</span>
+              </a>
             </nav>
           </section>
 
           <section class="recipe-side-card recipe-checklist-side">
-            <p class="section-kicker">Checklist</p>
-            <h2>Cooking checklist</h2>
+            <div class="recipe-side-heading">
+              <span class="recipe-side-heading-icon checklist">
+                <AppIcon name="check" size="18" />
+              </span>
+              <div>
+                <p class="section-kicker">Checklist</p>
+                <h2>Cooking checklist</h2>
+              </div>
+            </div>
+            <div class="recipe-checklist-progress">
+              <div>
+                <span>{{ checklistChecked }} of {{ checklistTotal }} completed</span>
+                <strong>{{ checklistProgress }}%</strong>
+              </div>
+              <div
+                class="recipe-checklist-progress-track"
+                role="progressbar"
+                aria-label="Checklist completion"
+                :aria-valuenow="checklistProgress"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <span :style="{ width: `${checklistProgress}%` }"></span>
+              </div>
+            </div>
             <p v-if="!authStore.isLoggedIn">
               <RouterLink :to="{ name: 'login', query: { redirect: route.fullPath } }">
                 Login to generate a checklist.

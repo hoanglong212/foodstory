@@ -25,6 +25,7 @@ const chartError = ref('')
 let chart
 let chartModulePromise = null
 let intersectionObserver = null
+let themeObserver = null
 let hasEnteredViewport = false
 let renderRequestId = 0
 
@@ -162,13 +163,23 @@ function renderWhenVisible() {
   intersectionObserver.observe(canvasRef.value)
 }
 
-onMounted(renderWhenVisible)
+onMounted(() => {
+  renderWhenVisible()
+  themeObserver = new MutationObserver(() => {
+    renderChart()
+  })
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme'],
+  })
+})
 watch(chartData, () => {
   renderChart()
 })
 onBeforeUnmount(() => {
   renderRequestId += 1
   intersectionObserver?.disconnect()
+  themeObserver?.disconnect()
   destroyChart()
 })
 </script>
