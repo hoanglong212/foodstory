@@ -45,3 +45,16 @@ first_party_sets.db-journal
 Last Browser
 Last Version
 Local State
+
+# Database
+db.js   
+backend/config/env.js
+backend/server.js
+backend/db.js
+backend/config/db.js
+backend/database/schema.sql
+backend/database/seed.sql
+package-lock.json
+backend/package-lock.json
+backend/db.js
+backend/.env.example

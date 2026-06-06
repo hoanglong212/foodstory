@@ -7084,50 +7084,24 @@ main:focus {
 }
 
 /* Recipe listing reference redesign */
-body.recipe-page-mode {
-  background: #fbf4ea;
-}
-
-body.recipe-page-mode .site-header {
-  display: none;
-}
-
-body.recipe-page-mode main {
-  padding-top: 0;
-}
-
-body.recipe-page-mode .app-shell {
-  background: #fbf4ea;
-}
-
-body.recipe-page-mode .site-footer {
-  display: none;
-}
-
-body.recipe-page-mode .page-view {
-  min-height: 100svh;
-}
-
 .recipe-reference-page {
-  --recipe-page-bg: #fbf4ea;
-  --recipe-paper: #fffdf8;
-  --recipe-paper-warm: #fff8ef;
-  --recipe-cream: #f4eadc;
-  --recipe-ink: #1f1713;
-  --recipe-body: #4d4038;
-  --recipe-muted: #75685f;
-  --recipe-accent: #c8642d;
-  --recipe-accent-strong: #a84d1f;
-  --recipe-line: rgba(80, 55, 35, 0.12);
-  --recipe-line-strong: rgba(80, 55, 35, 0.18);
-  --recipe-shadow: 0 16px 40px rgba(66, 42, 24, 0.08);
-  --recipe-shadow-hover: 0 22px 54px rgba(66, 42, 24, 0.14);
-  min-height: 100svh;
+  --recipe-page-bg: var(--bg);
+  --recipe-paper: var(--panel);
+  --recipe-paper-warm: var(--panel-strong);
+  --recipe-cream: var(--panel-warm);
+  --recipe-ink: var(--text);
+  --recipe-body: var(--text);
+  --recipe-muted: var(--muted);
+  --recipe-accent: var(--accent-hot);
+  --recipe-accent-strong: var(--accent);
+  --recipe-line: var(--card-border);
+  --recipe-line-strong: var(--field-border);
+  --recipe-shadow: var(--shadow);
+  --recipe-shadow-hover: var(--shadow-hover);
+  min-height: calc(100svh - var(--nav-height));
   overflow-x: hidden;
   color: var(--recipe-body);
-  background:
-    linear-gradient(90deg, rgba(255, 253, 248, 0.55), transparent 26%, transparent 74%, rgba(255, 253, 248, 0.45)),
-    var(--recipe-page-bg);
+  background: var(--recipe-page-bg);
 }
 
 .recipe-reference-layout {
@@ -7141,16 +7115,16 @@ body.recipe-page-mode .page-view {
 
 .recipe-left-sidebar {
   position: sticky;
-  top: 0;
+  top: var(--nav-height);
   display: flex;
-  height: 100svh;
+  height: calc(100svh - var(--nav-height));
   flex-direction: column;
   gap: 24px;
   overflow-y: auto;
   padding: 34px 24px 28px;
   border-right: 1px solid var(--recipe-line);
-  background: rgba(255, 250, 242, 0.82);
-  box-shadow: inset -18px 0 44px rgba(103, 72, 45, 0.04);
+  background: var(--recipe-paper);
+  box-shadow: none;
 }
 
 .recipe-sidebar-brand {
@@ -8601,9 +8575,9 @@ body.recipe-page-mode .page-view {
 .recipe-left-sidebar,
 .recipe-right-rail {
   position: sticky;
-  top: 24px;
+  top: calc(var(--nav-height) + 24px);
   align-self: start;
-  max-height: calc(100vh - 48px);
+  max-height: calc(100vh - var(--nav-height) - 48px);
   overflow-y: auto;
 }
 

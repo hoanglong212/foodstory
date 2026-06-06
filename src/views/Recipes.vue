@@ -65,8 +65,6 @@ const quickFilterChips = [
 ]
 
 const sidebarNav = [
-  { label: 'Home', icon: 'home', to: '/' },
-  { label: 'Browse Recipes', icon: 'book-open', to: '/recipes', active: true },
   { label: 'Collections', icon: 'tags', section: 'student-picks' },
   { label: 'Meal Planner', icon: 'calendar', to: '/checklist' },
   { label: 'My Cookbook', icon: 'chef-hat', to: '/profile' },
@@ -202,8 +200,6 @@ function scheduleRecipeFetch() {
 }
 
 onMounted(() => {
-  document.body.classList.add('recipe-page-mode')
-
   if (typeof route.query.category === 'string' && route.query.category.trim()) {
     suppressNextFilterFetch = true
     recipeStore.filters.category = route.query.category.trim()
@@ -237,7 +233,6 @@ watch(
 )
 
 onBeforeUnmount(() => {
-  document.body.classList.remove('recipe-page-mode')
   window.clearTimeout(filterTimer)
   recipeStore.cancelRecipeListRequest()
   recipeStore.cancelRecipeArchiveRequest()
@@ -737,13 +732,6 @@ async function deleteRecipe(recipe) {
   <section class="recipe-reference-page" aria-label="FoodStory recipe discovery">
     <div class="recipe-reference-layout">
       <aside class="recipe-left-sidebar" aria-label="Recipe navigation">
-        <div class="recipe-sidebar-brand">
-          <RouterLink to="/" class="recipe-logo-wordmark" aria-label="FoodStory home">
-            FoodStory
-          </RouterLink>
-          <p>Every recipe has a story</p>
-        </div>
-
         <nav class="recipe-sidebar-nav" aria-label="Primary recipe navigation">
           <template v-for="item in sidebarNav" :key="item.label">
             <RouterLink

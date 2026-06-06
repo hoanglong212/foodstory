@@ -1,6 +1,6 @@
+import './config/env.js'
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
 import authRoutes from './routes/authRoutes.js'
 import newsRoutes from './routes/newsRoutes.js'
 import recipeRoutes from './routes/recipeRoutes.js'
@@ -8,8 +8,6 @@ import commentRoutes from './routes/commentRoutes.js'
 import favoriteRoutes from './routes/favoriteRoutes.js'
 import ratingRoutes from './routes/ratingRoutes.js'
 import checklistRoutes from './routes/checklistRoutes.js'
-
-dotenv.config()
 
 const app = express()
 const port = Number(process.env.PORT || 3000)
@@ -27,7 +25,10 @@ const frontendOrigins = [
   ...localFrontendOrigins,
 ].filter((origin, index, origins) => origin && origins.indexOf(origin) === index)
 
-if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'replace_with_a_long_random_secret') {
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is required. Set it in backend/.env or the process environment.')
+}
+if (process.env.JWT_SECRET === 'replace_with_a_long_random_secret') {
   console.warn('JWT_SECRET should be set to a unique long random value before deployment.')
 }
 
