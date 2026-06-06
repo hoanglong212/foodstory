@@ -121,7 +121,10 @@ router.put('/comments/:id', requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: contentError })
     }
 
-    const [comments] = await pool.execute('SELECT user_id FROM comments WHERE id = ?', [commentId])
+    const [comments] = await pool.execute(
+      'SELECT user_id, recipe_id FROM comments WHERE id = ?',
+      [commentId],
+    )
     if (comments.length === 0) {
       return res.status(404).json({ error: 'Comment not found.' })
     }
@@ -140,7 +143,21 @@ router.put('/comments/:id', requireAuth, async (req, res, next) => {
       [commentId],
     )
 
-    return res.json({ comment: rows[0] })
+    const comment = rows[0]
+    broadcastToRecipe(comments[0].recipe_id, {
+      type: 'comment_updated',
+      comment: {
+        id: comment.id,
+        userId: comment.user_id,
+        recipeId: comments[0].recipe_id,
+        content: comment.content,
+        createdAt: comment.created_at,
+        updatedAt: comment.updated_at,
+        username: comment.username,
+      },
+    })
+
+    return res.json({ comment })
   } catch (error) {
     return next(error)
   }
@@ -153,7 +170,10 @@ router.delete('/comments/:id', requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid comment id.' })
     }
 
-    const [comments] = await pool.execute('SELECT user_id FROM comments WHERE id = ?', [commentId])
+    const [comments] = await pool.execute(
+      'SELECT user_id, recipe_id FROM comments WHERE id = ?',
+      [commentId],
+    )
     if (comments.length === 0) {
       return res.status(404).json({ error: 'Comment not found.' })
     }
@@ -162,6 +182,12 @@ router.delete('/comments/:id', requireAuth, async (req, res, next) => {
     }
 
     await pool.execute('DELETE FROM comments WHERE id = ?', [commentId])
+    broadcastToRecipe(comments[0].recipe_id, {
+      type: 'comment_deleted',
+      recipeId: comments[0].recipe_id,
+      commentId,
+    })
+
     return res.json({ message: 'Comment deleted successfully.' })
   } catch (error) {
     return next(error)

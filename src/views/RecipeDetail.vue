@@ -440,9 +440,28 @@ function formatDate(value) {
   }).format(date)
 }
 
+function formatCommentDate(value) {
+  if (!value) {
+    return ''
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  return new Intl.DateTimeFormat('en-AU', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
 function commentDateLabel(comment) {
-  const updatedDate = formatDate(comment.updated_at)
-  const createdDate = formatDate(comment.created_at)
+  const updatedDate = formatCommentDate(comment.updated_at)
+  const createdDate = formatCommentDate(comment.created_at)
   if (isCommentUpdated(comment) && updatedDate) {
     return `Updated ${updatedDate}`
   }
@@ -470,7 +489,20 @@ async function loadRecipe(recipeId = route.params.id) {
 
     commentStore.comments
       .filter((comment) => Number(comment.recipe_id) === Number(loadedRecipe.id))
-      .forEach((comment) => recipeStore.addCommentFromSocket(comment))
+      .forEach((comment) => {
+        const commentExists = (recipeStore.selectedRecipe?.comments || []).some(
+          (item) => item.id === comment.id,
+        )
+        if (commentExists) {
+          recipeStore.updateCommentFromSocket(comment)
+        } else {
+          recipeStore.addCommentFromSocket(comment)
+        }
+      })
+
+    commentStore.deletedComments
+      .filter((item) => item.recipeId === Number(loadedRecipe.id))
+      .forEach((item) => recipeStore.deleteCommentFromSocket(item))
 
     const realtimeRating = ratingStore.ratingsByRecipe[Number(loadedRecipe.id)]
     if (realtimeRating) {
@@ -681,10 +713,9 @@ async function saveComment(comment) {
     if (!isAlive) {
       return
     }
-    recipeStore.updateRecipeCache(recipe.value.id, {
-      comments: recipe.value.comments.map((item) =>
-        item.id === comment.id ? response.data.comment : item,
-      ),
+    commentStore.updateCommentFromSocket({
+      ...response.data.comment,
+      recipe_id: recipe.value.id,
     })
     editingCommentId.value = null
     editingContent.value = ''
@@ -719,10 +750,10 @@ async function deleteComment(comment) {
     if (!isAlive) {
       return
     }
-    recipeStore.updateRecipeCache(recipe.value.id, (currentRecipe) => ({
-      comments: (currentRecipe.comments || []).filter((item) => item.id !== comment.id),
-      comment_count: Math.max(Number(currentRecipe.comment_count || 0) - 1, 0),
-    }))
+    commentStore.deleteCommentFromSocket({
+      recipeId: recipe.value.id,
+      commentId: comment.id,
+    })
     showSuccessMessage('Comment deleted.')
     uiStore.setSuccess('Comment deleted.')
   } catch (error) {

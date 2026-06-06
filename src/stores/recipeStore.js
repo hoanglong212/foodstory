@@ -89,6 +89,37 @@ export const useRecipeStore = defineStore('recipes', {
         }
       })
     },
+    updateCommentFromSocket(comment) {
+      const recipeId = Number(comment.recipe_id ?? comment.recipeId)
+      if (!Number.isSafeInteger(recipeId) || recipeId <= 0) {
+        return
+      }
+
+      this.updateRecipeCache(recipeId, (currentRecipe) => ({
+        comments: (currentRecipe.comments || []).map((item) =>
+          item.id === comment.id ? { ...item, ...comment } : item,
+        ),
+      }))
+    },
+    deleteCommentFromSocket({ recipeId, commentId }) {
+      const id = Number(recipeId)
+      if (!Number.isSafeInteger(id) || id <= 0) {
+        return
+      }
+
+      this.updateRecipeCache(id, (currentRecipe) => {
+        const comments = currentRecipe.comments || []
+        const commentExists = comments.some((comment) => comment.id === commentId)
+        if (!commentExists) {
+          return {}
+        }
+
+        return {
+          comments: comments.filter((comment) => comment.id !== commentId),
+          comment_count: Math.max(Number(currentRecipe.comment_count || 0) - 1, 0),
+        }
+      })
+    },
     updateRatingFromSocket({ recipeId, avgRating, ratingCount }) {
       this.updateRecipeCache(recipeId, {
         average_rating: Number(avgRating || 0),

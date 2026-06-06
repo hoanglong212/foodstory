@@ -62,6 +62,10 @@ export function useRealtimeComments(recipeId) {
 
       if (payload.type === 'new_comment' && payload.comment) {
         commentStore.addCommentFromSocket(payload.comment)
+      } else if (payload.type === 'comment_updated' && payload.comment) {
+        commentStore.updateCommentFromSocket(payload.comment)
+      } else if (payload.type === 'comment_deleted') {
+        commentStore.deleteCommentFromSocket(payload)
       } else if (payload.type === 'rating_updated') {
         ratingStore.updateRatingFromSocket(payload)
       } else if (payload.type === 'error') {
