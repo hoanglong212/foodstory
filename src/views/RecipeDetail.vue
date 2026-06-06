@@ -4,10 +4,13 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
 import NutritionChart from '../components/NutritionChart.vue'
 import SkeletonCard from '../components/SkeletonCard.vue'
+import { useRealtimeComments } from '../composables/useRealtimeComments'
 import api, { getApiError } from '../services/api'
 import { useAuthStore } from '../stores/authStore'
 import { useChecklistStore } from '../stores/checklistStore'
+import { useCommentStore } from '../stores/commentStore'
 import { useFavoriteStore } from '../stores/favoriteStore'
+import { useRatingStore } from '../stores/ratingStore'
 import { useRecipeStore } from '../stores/recipeStore'
 import { useUiStore } from '../stores/uiStore'
 
@@ -19,7 +22,11 @@ const recipeStore = useRecipeStore()
 const authStore = useAuthStore()
 const favoriteStore = useFavoriteStore()
 const checklistStore = useChecklistStore()
+const commentStore = useCommentStore()
+const ratingStore = useRatingStore()
 const uiStore = useUiStore()
+const realtimeRecipeId = computed(() => route.params.id)
+const { isConnected, connectionFailed } = useRealtimeComments(realtimeRecipeId)
 
 const commentContent = ref('')
 const commentError = ref('')
@@ -460,6 +467,16 @@ async function loadRecipe(recipeId = route.params.id) {
     if (!isAlive || !loadedRecipe) {
       return
     }
+
+    commentStore.comments
+      .filter((comment) => Number(comment.recipe_id) === Number(loadedRecipe.id))
+      .forEach((comment) => recipeStore.addCommentFromSocket(comment))
+
+    const realtimeRating = ratingStore.ratingsByRecipe[Number(loadedRecipe.id)]
+    if (realtimeRating) {
+      recipeStore.updateRatingFromSocket(realtimeRating)
+    }
+
     if (authStore.isLoggedIn) {
       checklistStore.fetchChecklist(recipeId)
     }
@@ -621,10 +638,10 @@ async function submitComment() {
     if (!isAlive) {
       return
     }
-    recipeStore.updateRecipeCache(recipe.value.id, (currentRecipe) => ({
-      comments: [response.data.comment, ...(currentRecipe.comments || [])],
-      comment_count: Number(currentRecipe.comment_count || 0) + 1,
-    }))
+    commentStore.addCommentFromSocket({
+      ...response.data.comment,
+      recipe_id: recipe.value.id,
+    })
     commentContent.value = ''
     showSuccessMessage('Comment added.')
     uiStore.setSuccess('Comment added.')
@@ -820,6 +837,20 @@ watch(
               {{ averageRating ? averageRating.toFixed(1) : 'New' }}
             </span>
             <span>{{ ratingCount }} ratings</span>
+          </div>
+          <div
+            class="recipe-live-status"
+            :class="{
+              connected: isConnected,
+              reconnecting: !isConnected && !connectionFailed,
+              failed: connectionFailed,
+            }"
+            role="status"
+          >
+            <span class="recipe-live-status-dot" aria-hidden="true"></span>
+            <span v-if="isConnected">Live</span>
+            <span v-else-if="connectionFailed">Live updates unavailable</span>
+            <span v-else>Reconnecting...</span>
           </div>
           <p>{{ description }}</p>
 

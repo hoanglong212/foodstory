@@ -1,6 +1,7 @@
 import express from 'express'
 import pool from '../db.js'
 import { requireAuth } from '../middleware/authMiddleware.js'
+import { broadcastToRecipe } from '../websocket/wsServer.js'
 
 const router = express.Router()
 const MAX_COMMENT_LENGTH = 1000
@@ -88,7 +89,20 @@ router.post('/recipes/:id/comments', requireAuth, async (req, res, next) => {
       [result.insertId],
     )
 
-    return res.status(201).json({ comment: rows[0] })
+    const comment = rows[0]
+    broadcastToRecipe(recipeId, {
+      type: 'new_comment',
+      comment: {
+        id: comment.id,
+        userId: comment.user_id,
+        recipeId,
+        content: comment.content,
+        createdAt: comment.created_at,
+        username: comment.username,
+      },
+    })
+
+    return res.status(201).json({ comment })
   } catch (error) {
     return next(error)
   }

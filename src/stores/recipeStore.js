@@ -71,6 +71,32 @@ export const useRecipeStore = defineStore('recipes', {
     hasRecipes: (state) => state.recipeList.length > 0,
   },
   actions: {
+    addCommentFromSocket(comment) {
+      const recipeId = Number(comment.recipe_id ?? comment.recipeId)
+      if (!Number.isSafeInteger(recipeId) || recipeId <= 0) {
+        return
+      }
+
+      this.updateRecipeCache(recipeId, (currentRecipe) => {
+        const comments = currentRecipe.comments || []
+        if (comments.find((item) => item.id === comment.id)) {
+          return {}
+        }
+
+        return {
+          comments: [comment, ...comments],
+          comment_count: Number(currentRecipe.comment_count || 0) + 1,
+        }
+      })
+    },
+    updateRatingFromSocket({ recipeId, avgRating, ratingCount }) {
+      this.updateRecipeCache(recipeId, {
+        average_rating: Number(avgRating || 0),
+        avg_rating: Number(avgRating || 0),
+        total_ratings: Number(ratingCount || 0),
+        rating_count: Number(ratingCount || 0),
+      })
+    },
     updateRecipeCache(id, patch) {
       const recipeId = Number(id)
       const applyPatch = (recipe) => {

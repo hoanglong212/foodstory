@@ -1,6 +1,7 @@
 import express from 'express'
 import pool from '../db.js'
 import { requireAuth } from '../middleware/authMiddleware.js'
+import { broadcastToRecipe } from '../websocket/wsServer.js'
 
 const router = express.Router()
 
@@ -19,6 +20,8 @@ function toPositiveInt(value) {
 }
 
 router.post('/recipes/:id/rating', requireAuth, async (req, res, next) => {
+  let connection
+
   try {
     const recipeId = toPositiveInt(req.params.id)
     const ratingValue = toPositiveInt(req.body.rating_value)
@@ -30,32 +33,60 @@ router.post('/recipes/:id/rating', requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: 'Rating must be between 1 and 5.' })
     }
 
-    const [recipes] = await pool.execute('SELECT id FROM recipes WHERE id = ?', [recipeId])
+    connection = await pool.getConnection()
+    await connection.beginTransaction()
+
+    const [recipes] = await connection.execute(
+      'SELECT id FROM recipes WHERE id = ? FOR UPDATE',
+      [recipeId],
+    )
     if (recipes.length === 0) {
+      await connection.rollback()
       return res.status(404).json({ error: 'Recipe not found.' })
     }
 
-    await pool.execute(
+    await connection.execute(
       `INSERT INTO ratings (user_id, recipe_id, rating_value)
        VALUES (?, ?, ?)
        ON DUPLICATE KEY UPDATE rating_value = VALUES(rating_value)`,
       [req.user.id, recipeId, ratingValue],
     )
 
-    const [summary] = await pool.execute(
+    const [summary] = await connection.execute(
       `SELECT COALESCE(AVG(rating_value), 0) AS average_rating, COUNT(*) AS total_ratings
        FROM ratings
        WHERE recipe_id = ?`,
       [recipeId],
     )
 
+    const averageRating = Number(summary[0].average_rating || 0)
+    const ratingCount = Number(summary[0].total_ratings || 0)
+
+    await connection.commit()
+
+    broadcastToRecipe(recipeId, {
+      type: 'rating_updated',
+      recipeId,
+      avgRating: averageRating,
+      ratingCount,
+    })
+
     return res.json({
       current_user_rating: ratingValue,
-      average_rating: Number(summary[0].average_rating || 0),
-      total_ratings: Number(summary[0].total_ratings || 0),
+      average_rating: averageRating,
+      total_ratings: ratingCount,
     })
   } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback()
+      } catch {
+        // Preserve the original database error.
+      }
+    }
     return next(error)
+  } finally {
+    connection?.release()
   }
 })
 

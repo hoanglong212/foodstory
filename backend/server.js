@@ -1,4 +1,5 @@
 import './config/env.js'
+import http from 'node:http'
 import express from 'express'
 import cors from 'cors'
 import authRoutes from './routes/authRoutes.js'
@@ -8,8 +9,10 @@ import commentRoutes from './routes/commentRoutes.js'
 import favoriteRoutes from './routes/favoriteRoutes.js'
 import ratingRoutes from './routes/ratingRoutes.js'
 import checklistRoutes from './routes/checklistRoutes.js'
+import { initWebSocketServer } from './websocket/wsServer.js'
 
 const app = express()
+const server = http.createServer(app)
 const port = Number(process.env.PORT || 3000)
 const localFrontendOrigins = [
   'http://localhost:5173',
@@ -67,6 +70,8 @@ app.use((error, req, res, next) => {
   res.status(500).json({ error: 'Unexpected server error.' })
 })
 
-app.listen(port, () => {
+initWebSocketServer(server)
+
+server.listen(port, () => {
   console.log(`FoodStory API running on http://localhost:${port}`)
 })
