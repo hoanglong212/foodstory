@@ -22,12 +22,13 @@ router.get('/', requireAuth, async (req, res, next) => {
   try {
     const [items] = await pool.execute(
       `SELECT
-         r.id,
-         r.title,
-         r.image_url,
+         r.*,
          c.name AS category_name,
          COALESCE(AVG(ra.rating_value), 0) AS average_rating,
+         COALESCE(AVG(ra.rating_value), 0) AS avg_rating,
          COUNT(DISTINCT ra.id) AS total_ratings,
+         COUNT(DISTINCT ra.id) AS rating_count,
+         COUNT(DISTINCT comments.id) AS comment_count,
          COUNT(DISTINCT fav_all.user_id) AS favorite_count,
          GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ',') AS tag_names
        FROM favorites fav
@@ -36,6 +37,7 @@ router.get('/', requireAuth, async (req, res, next) => {
        LEFT JOIN recipe_tags rt ON rt.recipe_id = r.id
        LEFT JOIN tags t ON t.id = rt.tag_id
        LEFT JOIN ratings ra ON ra.recipe_id = r.id
+       LEFT JOIN comments ON comments.recipe_id = r.id
        LEFT JOIN favorites fav_all ON fav_all.recipe_id = r.id
        WHERE fav.user_id = ?
        GROUP BY r.id, c.name
@@ -48,7 +50,10 @@ router.get('/', requireAuth, async (req, res, next) => {
         ...item,
         is_favorite: true,
         average_rating: Number(item.average_rating || 0),
+        avg_rating: Number(item.avg_rating || item.average_rating || 0),
         total_ratings: Number(item.total_ratings || 0),
+        rating_count: Number(item.rating_count || item.total_ratings || 0),
+        comment_count: Number(item.comment_count || 0),
         favorite_count: Number(item.favorite_count || 0),
         tags: item.tag_names ? item.tag_names.split(',') : [],
       })),

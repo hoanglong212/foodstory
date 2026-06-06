@@ -4,22 +4,34 @@ import { useUiStore } from './uiStore'
 
 let listAbortController = null
 let listRequestId = 0
+let archiveAbortController = null
+let archiveRequestId = 0
 let detailAbortController = null
 let detailRequestId = 0
 
 function toRecipeListItem(recipe) {
   return {
+    ...recipe,
     id: recipe.id,
     title: recipe.title,
     image_url: recipe.image_url,
+    description: recipe.description,
+    prep_time: recipe.prep_time,
+    cook_time: recipe.cook_time,
+    servings: recipe.servings,
+    difficulty: recipe.difficulty,
+    blog_intro: recipe.blog_intro,
     calories: recipe.calories,
     protein: recipe.protein,
     carbs: recipe.carbs,
     fat: recipe.fat,
     created_at: recipe.created_at,
     category_name: recipe.category_name,
-    average_rating: Number(recipe.average_rating || 0),
-    total_ratings: Number(recipe.total_ratings || 0),
+    average_rating: Number(recipe.average_rating || recipe.avg_rating || 0),
+    avg_rating: Number(recipe.avg_rating || recipe.average_rating || 0),
+    total_ratings: Number(recipe.total_ratings || recipe.rating_count || 0),
+    rating_count: Number(recipe.rating_count || recipe.total_ratings || 0),
+    comment_count: Number(recipe.comment_count || 0),
     favorite_count: Number(recipe.favorite_count || 0),
     is_favorite: Boolean(recipe.is_favorite),
     tags: (recipe.tags || []).map((tag) => (typeof tag === 'string' ? tag : tag.name)),
@@ -29,6 +41,7 @@ function toRecipeListItem(recipe) {
 export const useRecipeStore = defineStore('recipes', {
   state: () => ({
     recipeList: [],
+    recipeArchive: [],
     selectedRecipe: null,
     categories: [],
     tags: [],
@@ -41,10 +54,18 @@ export const useRecipeStore = defineStore('recipes', {
       currentPage: 1,
       totalPages: 1,
       totalItems: 0,
-      pageSize: 6,
+      pageSize: 24,
+    },
+    archivePagination: {
+      totalPages: 1,
+      totalItems: 0,
+      pageSize: 120,
+      loadedPages: 0,
     },
     isLoading: false,
+    isArchiveLoading: false,
     error: '',
+    archiveError: '',
   }),
   getters: {
     hasRecipes: (state) => state.recipeList.length > 0,
@@ -64,6 +85,9 @@ export const useRecipeStore = defineStore('recipes', {
       this.recipeList = this.recipeList.map((recipe) =>
         recipe.id === recipeId ? applyPatch(recipe) : recipe,
       )
+      this.recipeArchive = this.recipeArchive.map((recipe) =>
+        recipe.id === recipeId ? applyPatch(recipe) : recipe,
+      )
     },
     upsertRecipeInList(recipe, options = {}) {
       if (!recipe?.id) {
@@ -72,11 +96,19 @@ export const useRecipeStore = defineStore('recipes', {
 
       const summary = toRecipeListItem(recipe)
       const existingIndex = this.recipeList.findIndex((item) => item.id === summary.id)
+      const existingArchiveIndex = this.recipeArchive.findIndex((item) => item.id === summary.id)
 
       if (existingIndex >= 0) {
         this.recipeList = this.recipeList.map((item) =>
           item.id === summary.id ? { ...item, ...summary } : item,
         )
+      }
+      if (existingArchiveIndex >= 0) {
+        this.recipeArchive = this.recipeArchive.map((item) =>
+          item.id === summary.id ? { ...item, ...summary } : item,
+        )
+      }
+      if (existingIndex >= 0 || existingArchiveIndex >= 0) {
         return
       }
 
@@ -85,22 +117,37 @@ export const useRecipeStore = defineStore('recipes', {
       }
 
       this.recipeList = [summary, ...this.recipeList].slice(0, this.pagination.pageSize)
+      this.recipeArchive = [summary, ...this.recipeArchive]
       this.pagination.totalItems += 1
       this.pagination.totalPages = Math.max(
         1,
         Math.ceil(this.pagination.totalItems / this.pagination.pageSize),
       )
+      this.archivePagination.totalItems += 1
+      this.archivePagination.totalPages = Math.max(
+        1,
+        Math.ceil(this.archivePagination.totalItems / this.archivePagination.pageSize),
+      )
     },
     removeRecipeFromCache(id) {
       const recipeId = Number(id)
       const hadRecipe = this.recipeList.some((recipe) => recipe.id === recipeId)
+      const hadArchiveRecipe = this.recipeArchive.some((recipe) => recipe.id === recipeId)
       this.recipeList = this.recipeList.filter((recipe) => recipe.id !== recipeId)
+      this.recipeArchive = this.recipeArchive.filter((recipe) => recipe.id !== recipeId)
 
       if (hadRecipe) {
         this.pagination.totalItems = Math.max(this.pagination.totalItems - 1, 0)
         this.pagination.totalPages = Math.max(
           1,
           Math.ceil(this.pagination.totalItems / this.pagination.pageSize),
+        )
+      }
+      if (hadArchiveRecipe) {
+        this.archivePagination.totalItems = Math.max(this.archivePagination.totalItems - 1, 0)
+        this.archivePagination.totalPages = Math.max(
+          1,
+          Math.ceil(this.archivePagination.totalItems / this.archivePagination.pageSize),
         )
       }
 
@@ -131,7 +178,7 @@ export const useRecipeStore = defineStore('recipes', {
         if (requestId !== listRequestId) {
           return
         }
-        this.recipeList = response.data.items
+        this.recipeList = (response.data.items || []).map(toRecipeListItem)
         if (response.data.categories?.length) {
           this.categories = response.data.categories
         }
@@ -149,6 +196,77 @@ export const useRecipeStore = defineStore('recipes', {
       } finally {
         if (requestId === listRequestId) {
           this.isLoading = false
+        }
+      }
+    },
+    async fetchRecipeArchive(options = {}) {
+      archiveAbortController?.abort()
+      archiveAbortController = new AbortController()
+      const requestId = ++archiveRequestId
+      const pageSize = options.pageSize || this.archivePagination.pageSize
+      const maxPages = Math.max(Number(options.maxPages || 1), 1)
+      this.isArchiveLoading = true
+      this.archiveError = ''
+      if (options.reset !== false) {
+        this.recipeArchive = []
+        this.archivePagination.loadedPages = 0
+      }
+
+      try {
+        const baseParams = {
+          pageSize,
+          search: this.searchQuery,
+          category: this.filters.category,
+          tag: this.filters.tag,
+          includeMeta: '0',
+        }
+        const firstResponse = await api.get('/recipes', {
+          signal: archiveAbortController.signal,
+          params: {
+            ...baseParams,
+            page: 1,
+          },
+        })
+        if (requestId !== archiveRequestId) {
+          return
+        }
+
+        const totalPages = Number(firstResponse.data.totalPages || 1)
+        const totalItems = Number(firstResponse.data.totalItems || 0)
+        const archiveItems = (firstResponse.data.items || []).map(toRecipeListItem)
+        this.archivePagination.totalPages = totalPages
+        this.archivePagination.totalItems = totalItems
+        this.archivePagination.pageSize = pageSize
+        this.archivePagination.loadedPages = totalPages > 0 ? 1 : 0
+        this.recipeArchive = archiveItems
+
+        const pagesToLoad = Math.min(totalPages, maxPages)
+        for (let page = 2; page <= pagesToLoad; page += 1) {
+          const response = await api.get('/recipes', {
+            signal: archiveAbortController.signal,
+            params: {
+              ...baseParams,
+              page,
+            },
+          })
+          if (requestId !== archiveRequestId) {
+            return
+          }
+
+          this.recipeArchive = [
+            ...this.recipeArchive,
+            ...(response.data.items || []).map(toRecipeListItem),
+          ]
+          this.archivePagination.loadedPages = page
+        }
+      } catch (error) {
+        if (error.code === 'ERR_CANCELED') {
+          return
+        }
+        this.archiveError = getApiError(error, 'Unable to load recipe discovery picks.')
+      } finally {
+        if (requestId === archiveRequestId) {
+          this.isArchiveLoading = false
         }
       }
     },
@@ -248,6 +366,12 @@ export const useRecipeStore = defineStore('recipes', {
       listAbortController = null
       listRequestId += 1
       this.isLoading = false
+    },
+    cancelRecipeArchiveRequest() {
+      archiveAbortController?.abort()
+      archiveAbortController = null
+      archiveRequestId += 1
+      this.isArchiveLoading = false
     },
     cancelSelectedRecipeRequest() {
       detailAbortController?.abort()

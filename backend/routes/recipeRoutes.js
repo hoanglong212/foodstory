@@ -37,7 +37,7 @@ function toNonNegativeInt(value) {
 
 function getPagination(query) {
   const page = Math.max(Number.parseInt(query.page, 10) || 1, 1)
-  const pageSize = Math.min(Math.max(Number.parseInt(query.pageSize, 10) || 10, 1), 50)
+  const pageSize = Math.min(Math.max(Number.parseInt(query.pageSize, 10) || 10, 1), 200)
   const offset = (page - 1) * pageSize
   return { page, pageSize, offset }
 }
@@ -160,31 +160,36 @@ async function validateTagIds(connection, tags) {
 async function fetchRecipeDetail(recipeId, userId = 0) {
   const [rows] = await pool.execute(
     `SELECT
-       r.id,
-       r.category_id,
+       r.*,
        c.name AS category_name,
-       r.title,
-       r.image_url,
-       r.instructions,
-       r.description,
-       r.calories,
-       r.protein,
-       r.carbs,
-       r.fat,
-       r.created_at,
-       COALESCE(AVG(ra.rating_value), 0) AS average_rating,
-       COUNT(DISTINCT ra.id) AS total_ratings,
-       COUNT(DISTINCT fav.user_id) AS favorite_count,
-       MAX(CASE WHEN user_fav.user_id IS NULL THEN 0 ELSE 1 END) AS is_favorite,
-       MAX(user_rating.rating_value) AS current_user_rating
+       COALESCE(rating_stats.average_rating, 0) AS average_rating,
+       COALESCE(rating_stats.average_rating, 0) AS avg_rating,
+       COALESCE(rating_stats.rating_count, 0) AS total_ratings,
+       COALESCE(rating_stats.rating_count, 0) AS rating_count,
+       COALESCE(comment_stats.comment_count, 0) AS comment_count,
+       COALESCE(favorite_stats.favorite_count, 0) AS favorite_count,
+       CASE WHEN user_fav.user_id IS NULL THEN 0 ELSE 1 END AS is_favorite,
+       user_rating.rating_value AS current_user_rating
      FROM recipes r
      JOIN categories c ON c.id = r.category_id
-     LEFT JOIN ratings ra ON ra.recipe_id = r.id
-     LEFT JOIN favorites fav ON fav.recipe_id = r.id
+     LEFT JOIN (
+       SELECT recipe_id, AVG(rating_value) AS average_rating, COUNT(*) AS rating_count
+       FROM ratings
+       GROUP BY recipe_id
+     ) rating_stats ON rating_stats.recipe_id = r.id
+     LEFT JOIN (
+       SELECT recipe_id, COUNT(*) AS comment_count
+       FROM comments
+       GROUP BY recipe_id
+     ) comment_stats ON comment_stats.recipe_id = r.id
+     LEFT JOIN (
+       SELECT recipe_id, COUNT(*) AS favorite_count
+       FROM favorites
+       GROUP BY recipe_id
+     ) favorite_stats ON favorite_stats.recipe_id = r.id
      LEFT JOIN favorites user_fav ON user_fav.recipe_id = r.id AND user_fav.user_id = ?
      LEFT JOIN ratings user_rating ON user_rating.recipe_id = r.id AND user_rating.user_id = ?
-     WHERE r.id = ?
-     GROUP BY r.id, c.name`,
+     WHERE r.id = ?`,
     [userId, userId, recipeId],
   )
 
@@ -219,19 +224,81 @@ async function fetchRecipeDetail(recipeId, userId = 0) {
      FROM comments
      JOIN users ON users.id = comments.user_id
      WHERE comments.recipe_id = ?
-     ORDER BY comments.created_at DESC`,
+     ORDER BY comments.created_at DESC
+     LIMIT 50`,
     [recipeId],
+  )
+  const [relatedRecipes] = await pool.execute(
+    `SELECT
+       r.*,
+       c.name AS category_name,
+       COALESCE(rating_stats.average_rating, 0) AS average_rating,
+       COALESCE(rating_stats.average_rating, 0) AS avg_rating,
+       COALESCE(rating_stats.rating_count, 0) AS total_ratings,
+       COALESCE(rating_stats.rating_count, 0) AS rating_count,
+       COALESCE(comment_stats.comment_count, 0) AS comment_count,
+       COALESCE(favorite_stats.favorite_count, 0) AS favorite_count,
+       tag_stats.tag_names
+     FROM recipes r
+     JOIN categories c ON c.id = r.category_id
+     LEFT JOIN (
+       SELECT recipe_id, AVG(rating_value) AS average_rating, COUNT(*) AS rating_count
+       FROM ratings
+       GROUP BY recipe_id
+     ) rating_stats ON rating_stats.recipe_id = r.id
+     LEFT JOIN (
+       SELECT recipe_id, COUNT(*) AS comment_count
+       FROM comments
+       GROUP BY recipe_id
+     ) comment_stats ON comment_stats.recipe_id = r.id
+     LEFT JOIN (
+       SELECT recipe_id, COUNT(*) AS favorite_count
+       FROM favorites
+       GROUP BY recipe_id
+     ) favorite_stats ON favorite_stats.recipe_id = r.id
+     LEFT JOIN (
+       SELECT rt.recipe_id, GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ',') AS tag_names
+       FROM recipe_tags rt
+       JOIN tags t ON t.id = rt.tag_id
+       GROUP BY rt.recipe_id
+     ) tag_stats ON tag_stats.recipe_id = r.id
+     WHERE r.id <> ?
+       AND (
+         r.category_id = ?
+         OR EXISTS (
+           SELECT 1
+           FROM recipe_tags current_rt
+           JOIN recipe_tags related_rt ON related_rt.tag_id = current_rt.tag_id
+           WHERE current_rt.recipe_id = ? AND related_rt.recipe_id = r.id
+         )
+       )
+     ORDER BY rating_count DESC, avg_rating DESC, favorite_count DESC, r.created_at DESC
+     LIMIT 4`,
+    [recipeId, recipe.category_id, recipeId],
   )
 
   return {
     ...recipe,
     average_rating: Number(recipe.average_rating || 0),
+    avg_rating: Number(recipe.avg_rating || recipe.average_rating || 0),
     total_ratings: Number(recipe.total_ratings || 0),
+    rating_count: Number(recipe.rating_count || recipe.total_ratings || 0),
+    comment_count: Number(recipe.comment_count || comments.length || 0),
     favorite_count: Number(recipe.favorite_count || 0),
     is_favorite: Boolean(recipe.is_favorite),
     ingredients,
     tags,
     comments,
+    related_recipes: relatedRecipes.map((item) => ({
+      ...item,
+      average_rating: Number(item.average_rating || 0),
+      avg_rating: Number(item.avg_rating || item.average_rating || 0),
+      total_ratings: Number(item.total_ratings || 0),
+      rating_count: Number(item.rating_count || item.total_ratings || 0),
+      comment_count: Number(item.comment_count || 0),
+      favorite_count: Number(item.favorite_count || 0),
+      tags: item.tag_names ? item.tag_names.split(',') : [],
+    })),
   }
 }
 
@@ -261,8 +328,19 @@ router.get('/', optionalAuth, async (req, res, next) => {
     }
 
     if (search) {
-      where.push('r.title LIKE ?')
-      params.push(`%${search}%`)
+      where.push(
+        `(r.title LIKE ?
+          OR r.description LIKE ?
+          OR c.name LIKE ?
+          OR EXISTS (
+            SELECT 1
+            FROM recipe_ingredients search_ingredients
+            WHERE search_ingredients.recipe_id = r.id
+              AND search_ingredients.ingredient_name LIKE ?
+          ))`,
+      )
+      const searchTerm = `%${search}%`
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm)
     }
     if (category && category !== 'all') {
       where.push('c.name = ?')
@@ -293,29 +371,41 @@ router.get('/', optionalAuth, async (req, res, next) => {
 
     const [items] = await pool.execute(
       `SELECT
-         r.id,
-         r.title,
-         r.image_url,
-         r.calories,
-         r.protein,
-         r.carbs,
-         r.fat,
-         r.created_at,
+         r.*,
          c.name AS category_name,
-         COALESCE(AVG(ra.rating_value), 0) AS average_rating,
-         COUNT(DISTINCT ra.id) AS total_ratings,
-         COUNT(DISTINCT fav.user_id) AS favorite_count,
-         MAX(CASE WHEN user_fav.user_id IS NULL THEN 0 ELSE 1 END) AS is_favorite,
-         GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ',') AS tag_names
+         COALESCE(rating_stats.average_rating, 0) AS average_rating,
+         COALESCE(rating_stats.average_rating, 0) AS avg_rating,
+         COALESCE(rating_stats.rating_count, 0) AS total_ratings,
+         COALESCE(rating_stats.rating_count, 0) AS rating_count,
+         COALESCE(comment_stats.comment_count, 0) AS comment_count,
+         COALESCE(favorite_stats.favorite_count, 0) AS favorite_count,
+         CASE WHEN user_fav.user_id IS NULL THEN 0 ELSE 1 END AS is_favorite,
+         tag_stats.tag_names
        FROM recipes r
        JOIN categories c ON c.id = r.category_id
-       LEFT JOIN recipe_tags rt ON rt.recipe_id = r.id
-       LEFT JOIN tags t ON t.id = rt.tag_id
-       LEFT JOIN ratings ra ON ra.recipe_id = r.id
-       LEFT JOIN favorites fav ON fav.recipe_id = r.id
+       LEFT JOIN (
+         SELECT recipe_id, AVG(rating_value) AS average_rating, COUNT(*) AS rating_count
+         FROM ratings
+         GROUP BY recipe_id
+       ) rating_stats ON rating_stats.recipe_id = r.id
+       LEFT JOIN (
+         SELECT recipe_id, COUNT(*) AS comment_count
+         FROM comments
+         GROUP BY recipe_id
+       ) comment_stats ON comment_stats.recipe_id = r.id
+       LEFT JOIN (
+         SELECT recipe_id, COUNT(*) AS favorite_count
+         FROM favorites
+         GROUP BY recipe_id
+       ) favorite_stats ON favorite_stats.recipe_id = r.id
+       LEFT JOIN (
+         SELECT rt.recipe_id, GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ',') AS tag_names
+         FROM recipe_tags rt
+         JOIN tags t ON t.id = rt.tag_id
+         GROUP BY rt.recipe_id
+       ) tag_stats ON tag_stats.recipe_id = r.id
        LEFT JOIN favorites user_fav ON user_fav.recipe_id = r.id AND user_fav.user_id = ?
        ${whereSql}
-       GROUP BY r.id, c.name
        ORDER BY r.created_at DESC, r.id DESC
        LIMIT ? OFFSET ?`,
       [userId, ...params, pageSize, offset],
@@ -332,7 +422,10 @@ router.get('/', optionalAuth, async (req, res, next) => {
       items: items.map((item) => ({
         ...item,
         average_rating: Number(item.average_rating || 0),
+        avg_rating: Number(item.avg_rating || item.average_rating || 0),
         total_ratings: Number(item.total_ratings || 0),
+        rating_count: Number(item.rating_count || item.total_ratings || 0),
+        comment_count: Number(item.comment_count || 0),
         favorite_count: Number(item.favorite_count || 0),
         is_favorite: Boolean(item.is_favorite),
         tags: item.tag_names ? item.tag_names.split(',') : [],

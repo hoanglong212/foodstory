@@ -1,5 +1,4 @@
 <script setup>
-import Chart from 'chart.js/auto'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const props = defineProps({
@@ -24,6 +23,10 @@ const props = defineProps({
 const canvasRef = ref(null)
 const chartError = ref('')
 let chart
+let chartModulePromise = null
+let intersectionObserver = null
+let hasEnteredViewport = false
+let renderRequestId = 0
 
 function toSafeNumber(value) {
   const number = Number(value)
@@ -44,6 +47,20 @@ function destroyChart() {
   }
 }
 
+function loadChart() {
+  if (!chartModulePromise) {
+    chartModulePromise = import('chart.js/auto').then((module) => module.default)
+  }
+
+  return chartModulePromise
+}
+
+function getThemeColor(name, fallback) {
+  const scope = canvasRef.value?.closest('.recipe-detail-magazine') || document.documentElement
+  const value = getComputedStyle(scope).getPropertyValue(name).trim()
+  return value || fallback
+}
+
 const safeCalories = computed(() => Math.round(toSafeNumber(props.calories)))
 const chartData = computed(() => [
   toSafeNumber(props.protein),
@@ -56,15 +73,21 @@ const displayChartData = computed(() => {
   return total > 0 ? chartData.value : [1, 0, 0]
 })
 
-function renderChart() {
-  if (!canvasRef.value) {
+async function renderChart() {
+  if (!canvasRef.value || !hasEnteredViewport) {
     return
   }
 
+  const requestId = ++renderRequestId
   destroyChart()
   chartError.value = ''
 
   try {
+    const Chart = await loadChart()
+    if (requestId !== renderRequestId || !canvasRef.value || !hasEnteredViewport) {
+      return
+    }
+
     chart = new Chart(canvasRef.value, {
       type: 'doughnut',
       data: {
@@ -72,9 +95,10 @@ function renderChart() {
         datasets: [
           {
             data: displayChartData.value,
-            backgroundColor: ['#67985c', '#e39142', '#c95f78'],
-            borderColor: ['#fff8f2', '#fff8f2', '#fff8f2'],
-            borderWidth: 2,
+            backgroundColor: ['#52745d', '#d68c35', '#b9482f'],
+            borderColor: getThemeColor('--recipe-paper', '#fffdf8'),
+            borderWidth: 3,
+            hoverOffset: 6,
           },
         ],
       },
@@ -85,7 +109,13 @@ function renderChart() {
           legend: {
             position: 'bottom',
             labels: {
-              color: getComputedStyle(document.documentElement).getPropertyValue('--text') || '#111',
+              boxWidth: 10,
+              boxHeight: 10,
+              color: getThemeColor('--recipe-body', '#3d3028'),
+              font: {
+                size: 12,
+                weight: '700',
+              },
             },
           },
           tooltip: {
@@ -105,9 +135,42 @@ function renderChart() {
   }
 }
 
-onMounted(renderChart)
-watch(chartData, renderChart)
-onBeforeUnmount(destroyChart)
+function renderWhenVisible() {
+  if (!canvasRef.value) {
+    return
+  }
+
+  if (!('IntersectionObserver' in window)) {
+    hasEnteredViewport = true
+    renderChart()
+    return
+  }
+
+  intersectionObserver = new IntersectionObserver(
+    (entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) {
+        return
+      }
+
+      hasEnteredViewport = true
+      intersectionObserver?.disconnect()
+      intersectionObserver = null
+      renderChart()
+    },
+    { rootMargin: '160px' },
+  )
+  intersectionObserver.observe(canvasRef.value)
+}
+
+onMounted(renderWhenVisible)
+watch(chartData, () => {
+  renderChart()
+})
+onBeforeUnmount(() => {
+  renderRequestId += 1
+  intersectionObserver?.disconnect()
+  destroyChart()
+})
 </script>
 
 <template>
@@ -124,6 +187,14 @@ onBeforeUnmount(destroyChart)
 <style scoped>
 .nutrition-chart {
   position: relative;
+  width: min(320px, 100%);
+  min-height: 300px;
+  margin: 0 auto;
+}
+
+.nutrition-chart canvas {
+  width: 100% !important;
+  height: 300px !important;
 }
 
 .nutrition-chart-center {
@@ -138,13 +209,13 @@ onBeforeUnmount(destroyChart)
 }
 
 .nutrition-chart-center strong {
-  color: var(--text);
+  color: var(--recipe-ink, var(--text));
   font-size: 26px;
   line-height: 1;
 }
 
 .nutrition-chart-center span {
-  color: var(--muted);
+  color: var(--recipe-muted, var(--muted));
   font-size: 12px;
   font-weight: 850;
   text-transform: uppercase;
@@ -154,7 +225,7 @@ onBeforeUnmount(destroyChart)
   display: grid;
   min-height: 220px;
   place-items: center;
-  color: var(--muted);
+  color: var(--recipe-muted, var(--muted));
   text-align: center;
 }
 </style>

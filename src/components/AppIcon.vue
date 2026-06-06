@@ -23,6 +23,9 @@ const icons = {
     { type: 'path', d: 'M12 7v14' },
     { type: 'path', d: 'M3 18a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z' },
   ],
+  bookmark: [
+    { type: 'path', d: 'M6 3h12a1 1 0 0 1 1 1v18l-7-4-7 4V4a1 1 0 0 1 1-1z' },
+  ],
   bowl: [
     { type: 'path', d: 'M4 11h16a8 8 0 0 1-16 0Z' },
     { type: 'path', d: 'M7 11V9a5 5 0 0 1 10 0v2' },

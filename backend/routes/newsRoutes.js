@@ -47,6 +47,7 @@ router.get('/', async (req, res, next) => {
     const search = String(req.query.search || '').trim()
     const category = String(req.query.category || '').trim()
     const date = String(req.query.date || '').trim()
+    const includeCategories = req.query.includeCategories !== '0'
     const where = []
     const params = []
 
@@ -88,7 +89,10 @@ router.get('/', async (req, res, next) => {
       `SELECT
          id,
          title,
-         content,
+         CASE
+           WHEN CHAR_LENGTH(content) > 420 THEN CONCAT(LEFT(content, 420), '...')
+           ELSE content
+         END AS content,
          category,
          DATE_FORMAT(published_date, '%Y-%m-%d') AS published_date
        FROM news
@@ -98,7 +102,9 @@ router.get('/', async (req, res, next) => {
       [...params, pageSize, offset],
     )
 
-    const [categoryRows] = await pool.execute('SELECT DISTINCT category FROM news ORDER BY category ASC')
+    const [categoryRows] = includeCategories
+      ? await pool.execute('SELECT DISTINCT category FROM news ORDER BY category ASC')
+      : [[]]
 
     res.json({
       items,

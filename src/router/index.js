@@ -1,17 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../views/Home.vue'
-import News from '../views/News.vue'
-import NewsDetail from '../views/NewsDetail.vue'
-import About from '../views/About.vue'
-import Recipes from '../views/Recipes.vue'
-import RecipeDetail from '../views/RecipeDetail.vue'
-import RecipeForm from '../views/RecipeForm.vue'
-import Login from '../views/Login.vue'
-import Register from '../views/Register.vue'
-import Profile from '../views/Profile.vue'
-import NotFound from '../views/NotFound.vue'
 import { useAuthStore } from '../stores/authStore'
 import { useUiStore } from '../stores/uiStore'
+
+const Home = () => import('../views/Home.vue')
+const News = () => import('../views/News.vue')
+const NewsDetail = () => import('../views/NewsDetail.vue')
+const About = () => import('../views/About.vue')
+const Recipes = () => import('../views/Recipes.vue')
+const RecipeDetail = () => import('../views/RecipeDetail.vue')
+const RecipeForm = () => import('../views/RecipeForm.vue')
+const Login = () => import('../views/Login.vue')
+const Register = () => import('../views/Register.vue')
+const Profile = () => import('../views/Profile.vue')
+const NotFound = () => import('../views/NotFound.vue')
 
 const router = createRouter({
   history: createWebHistory(),

@@ -13,10 +13,19 @@ dotenv.config()
 
 const app = express()
 const port = Number(process.env.PORT || 3000)
-const frontendOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:5173')
+const localFrontendOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
+]
+const frontendOrigins = [
+  ...(process.env.FRONTEND_ORIGIN || '')
   .split(',')
   .map((origin) => origin.trim())
-  .filter(Boolean)
+    .filter(Boolean),
+  ...localFrontendOrigins,
+].filter((origin, index, origins) => origin && origins.indexOf(origin) === index)
 
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'replace_with_a_long_random_secret') {
   console.warn('JWT_SECRET should be set to a unique long random value before deployment.')

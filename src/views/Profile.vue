@@ -18,6 +18,7 @@ const commentsLoading = ref(false)
 const commentsError = ref('')
 let isAlive = true
 let commentsRequestController = null
+const loadedTabs = new Set()
 
 const tabs = [
   { id: 'account', label: 'Account' },
@@ -81,21 +82,30 @@ async function fetchProfileComments() {
   } finally {
     if (isAlive) {
       commentsLoading.value = false
+      commentsRequestController = null
     }
   }
 }
 
-function refreshProfileTab(tabId) {
+async function refreshProfileTab(tabId, options = {}) {
   if (!authStore.isLoggedIn) {
+    return
+  }
+  if (!options.force && loadedTabs.has(tabId)) {
     return
   }
 
   if (tabId === 'favorites') {
-    favoriteStore.fetchFavorites()
+    await favoriteStore.fetchFavorites()
+    loadedTabs.add(tabId)
   } else if (tabId === 'checklists') {
-    checklistStore.fetchUserChecklists()
+    await checklistStore.fetchUserChecklists()
+    loadedTabs.add(tabId)
   } else if (tabId === 'comments') {
-    fetchProfileComments()
+    await fetchProfileComments()
+    loadedTabs.add(tabId)
+  } else {
+    loadedTabs.add(tabId)
   }
 }
 
@@ -118,14 +128,12 @@ function selectTab(tabId) {
   ) {
     router.push({ name: 'profile', query: { tab: 'comments' } })
   } else {
-    refreshProfileTab(tabId)
+    refreshProfileTab(tabId, { force: true })
   }
 }
 
 onMounted(() => {
-  favoriteStore.fetchFavorites()
-  checklistStore.fetchUserChecklists()
-  fetchProfileComments()
+  refreshProfileTab(activeTab.value)
 })
 
 onBeforeUnmount(() => {

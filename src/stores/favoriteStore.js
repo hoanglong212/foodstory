@@ -7,12 +7,26 @@ let favoritesSessionVersion = 0
 
 function toFavoriteListItem(recipe) {
   return {
+    ...recipe,
     id: recipe.id,
     title: recipe.title,
     image_url: recipe.image_url,
+    description: recipe.description,
+    prep_time: recipe.prep_time,
+    cook_time: recipe.cook_time,
+    servings: recipe.servings,
+    difficulty: recipe.difficulty,
+    blog_intro: recipe.blog_intro,
+    calories: recipe.calories,
+    protein: recipe.protein,
+    carbs: recipe.carbs,
+    fat: recipe.fat,
     category_name: recipe.category_name,
-    average_rating: Number(recipe.average_rating || 0),
-    total_ratings: Number(recipe.total_ratings || 0),
+    average_rating: Number(recipe.average_rating || recipe.avg_rating || 0),
+    avg_rating: Number(recipe.avg_rating || recipe.average_rating || 0),
+    total_ratings: Number(recipe.total_ratings || recipe.rating_count || 0),
+    rating_count: Number(recipe.rating_count || recipe.total_ratings || 0),
+    comment_count: Number(recipe.comment_count || 0),
     favorite_count: Number(recipe.favorite_count || 0),
     is_favorite: true,
     tags: (recipe.tags || []).map((tag) => (typeof tag === 'string' ? tag : tag.name)),
@@ -76,7 +90,7 @@ export const useFavoriteStore = defineStore('favorites', {
         if (requestId !== favoritesFetchRequestId || sessionVersion !== favoritesSessionVersion) {
           return
         }
-        this.favoriteList = response.data.items
+        this.favoriteList = (response.data.items || []).map(toFavoriteListItem)
         this.favoriteIds = response.data.items.map((item) => item.id)
       } catch (error) {
         if (requestId !== favoritesFetchRequestId || sessionVersion !== favoritesSessionVersion) {

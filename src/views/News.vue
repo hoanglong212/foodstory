@@ -71,6 +71,7 @@ async function fetchNews(page = currentPage.value) {
     return
   }
 
+  const includeCategories = categories.value.length === 0
   newsRequestController?.abort()
   newsRequestController = new AbortController()
   const requestId = ++newsRequestId
@@ -85,6 +86,7 @@ async function fetchNews(page = currentPage.value) {
         search: keyword.value.trim(),
         date: selectedDate.value,
         category: selectedCategory.value,
+        includeCategories: includeCategories ? '1' : '0',
       },
     })
     if (!isAlive || requestId !== newsRequestId) {

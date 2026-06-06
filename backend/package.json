@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "audit:recipe-images": "node database/auditRecipeImages.js",
+    "seed:engagement": "node database/seedEngagement.js",
     "migrate:news": "node database/migrateNews.js",
+    "seed:recipes": "node database/seedRecipes.js",
+    "seed:recipes:sql": "node database/seedRecipes.js --write-sql",
     "seed:users": "node database/seedUsers.js",
     "test:api": "node scripts/apiSmokeTest.js"
   },
