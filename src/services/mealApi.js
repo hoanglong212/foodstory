@@ -65,7 +65,7 @@ export async function fetchDailyMeal() {
     category: meal.strCategory,
     area: meal.strArea,
     description: meal.strInstructions,
-    tags: (meal.strTags || '').split(',').filter(Boolean).slice(0, 3),
+    tags: (meal.strTags || '').split(',').filter(tag => tag.trim()).map(tag => tag.trim()).slice(0, 3),
     ingredients: extractIngredients(meal),
   }
 

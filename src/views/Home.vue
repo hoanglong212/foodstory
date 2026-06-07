@@ -11,6 +11,8 @@ const fallbackMeal = {
   area: "Beef",
   description:
     "Một món bánh mặn giàu hương vị, gợi ý cho ngày muốn đổi bữa nhưng vẫn giữ cảm giác ấm cúng của căn bếp gia đình.",
+  tags: [],
+  ingredients: [],
 };
 
 const dailyMeal = ref(fallbackMeal);
@@ -62,6 +64,7 @@ const categories = [
   { label: "Công Thức", icon: "book-open", accent: "blue" },
   { label: "Xu Hướng", icon: "trending-up", accent: "orange" },
   { label: "Nguyên Liệu", icon: "leaf", accent: "green" },
+  { label: "Tin Tức", icon: "newspaper", accent: "purple" },
 ];
 
 async function loadDailyMeal() {
