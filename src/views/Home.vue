@@ -1,6 +1,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import AppIcon from "../components/AppIcon.vue";
+import SkeletonCard from "../components/SkeletonCard.vue";
 import { fetchDailyMeal } from "../services/mealApi";
 
 const fallbackMeal = {
@@ -193,10 +194,11 @@ onBeforeUnmount(() => {
       <h2>Daily Inspiration</h2>
     </div>
 
-    <p v-if="dailyMealLoading" class="status-panel">Đang tải món ăn hôm nay...</p>
     <p v-if="dailyMealError" class="form-error" role="status">{{ dailyMealError }}</p>
+    
+    <SkeletonCard v-if="dailyMealLoading" variant="random-card" />
 
-    <article v-if="dailyMeal" class="random-card">
+    <article v-if="dailyMeal && !dailyMealLoading" class="random-card">
       <img
         :src="dailyMeal.image"
         :alt="`Meal inspiration: ${dailyMeal.title}`"
@@ -212,6 +214,23 @@ onBeforeUnmount(() => {
         <p>
           {{ dailyMeal.description.slice(0, 220) }}...
         </p>
+        
+        <div v-if="dailyMeal.tags && dailyMeal.tags.length" class="meal-tags">
+          <span v-for="tag in dailyMeal.tags" :key="tag" class="tag-badge">
+            {{ tag }}
+          </span>
+        </div>
+
+        <div v-if="dailyMeal.ingredients && dailyMeal.ingredients.length" class="meal-ingredients">
+          <p class="ingredients-label">Key Ingredients:</p>
+          <ul class="ingredients-list">
+            <li v-for="(ingredient, idx) in dailyMeal.ingredients.slice(0, 3)" :key="idx">
+              <span>{{ ingredient.name }}</span>
+              <span v-if="ingredient.measure" class="measure">{{ ingredient.measure }}</span>
+            </li>
+          </ul>
+        </div>
+
         <RouterLink class="btn btn-primary" to="/recipes">
           <AppIcon name="utensils" size="19" />
           <span>Explore Recipes</span>

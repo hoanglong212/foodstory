@@ -147,6 +147,10 @@
   color-scheme: light;
 }
 
+:root[data-theme="light"] .site-footer {
+  border-top-color: rgba(45, 41, 38, 0.2);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -591,7 +595,7 @@ main:focus {
   max-width: 720px;
   margin: 20px auto 0;
   color: var(--hero-copy);
-  font-size: 19px;
+  font-size: clamp(19px, 2.2vw, 21px);
   line-height: 1.55;
 }
 
@@ -884,6 +888,7 @@ main:focus {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: flex-start;
   padding: 34px;
 }
 
@@ -912,6 +917,65 @@ main:focus {
   margin-top: 28px;
 }
 
+.meal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.tag-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--chip-bg);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.meal-ingredients {
+  margin-top: 20px;
+  margin-bottom: 16px;
+}
+
+.ingredients-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  margin-top: 0;
+}
+
+.ingredients-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ingredients-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+
+.ingredients-list li span:last-child {
+  color: var(--accent-hot);
+  font-weight: 600;
+  text-align: right;
+  margin-left: 12px;
+}
+
 .quote-band {
   display: grid;
   min-height: 300px;
@@ -921,6 +985,8 @@ main:focus {
   background: var(--quote-bg);
   text-align: center;
   margin-top: 34px;
+  border-top: 2px solid var(--line);
+  border-bottom: 2px solid var(--line);
 }
 
 .quote-band blockquote {

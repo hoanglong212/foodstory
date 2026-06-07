@@ -3,7 +3,7 @@ defineProps({
   variant: {
     type: String,
     default: 'card',
-    validator: (value) => ['card', 'row', 'detail'].includes(value),
+    validator: (value) => ['card', 'row', 'detail', 'random-card'].includes(value),
   },
 })
 </script>
@@ -34,6 +34,25 @@ defineProps({
     <span class="skeleton-section skeleton-pulse"></span>
   </div>
 
+  <div v-else-if="variant === 'random-card'" class="skeleton-random-card" aria-hidden="true">
+    <span class="skeleton-random-image skeleton-pulse"></span>
+    <div class="skeleton-random-content">
+      <div class="skeleton-pill-row">
+        <span class="skeleton-pill skeleton-pulse"></span>
+        <span class="skeleton-pill skeleton-pulse"></span>
+      </div>
+      <span class="skeleton-line title skeleton-pulse"></span>
+      <span class="skeleton-line skeleton-pulse"></span>
+      <span class="skeleton-line medium skeleton-pulse"></span>
+      <div class="skeleton-tags">
+        <span class="skeleton-tag skeleton-pulse"></span>
+        <span class="skeleton-tag skeleton-pulse"></span>
+        <span class="skeleton-tag skeleton-pulse"></span>
+      </div>
+      <span class="skeleton-button skeleton-pulse"></span>
+    </div>
+  </div>
+
   <article v-else class="skeleton-card" aria-hidden="true">
     <span class="skeleton-media skeleton-pulse"></span>
     <div class="skeleton-card-body">
@@ -53,7 +72,8 @@ defineProps({
 .skeleton-card,
 .skeleton-row,
 .skeleton-detail-main,
-.skeleton-section {
+.skeleton-section,
+.skeleton-random-card {
   border: 1px solid var(--card-border);
   border-radius: 8px;
   background: var(--panel);
@@ -64,9 +84,22 @@ defineProps({
   overflow: hidden;
 }
 
+.skeleton-random-card {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.95fr) minmax(320px, 1.8fr);
+  overflow: hidden;
+  min-height: 330px;
+}
+
 .skeleton-media {
   display: block;
   aspect-ratio: 16 / 10;
+}
+
+.skeleton-random-image {
+  display: block;
+  height: 100%;
+  min-height: 330px;
 }
 
 .skeleton-card-body,
@@ -76,12 +109,22 @@ defineProps({
   padding: 20px;
 }
 
+.skeleton-random-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 34px;
+  gap: 16px;
+}
+
 .skeleton-line,
 .skeleton-button,
 .skeleton-stat,
 .skeleton-date,
 .skeleton-detail-media,
-.skeleton-section {
+.skeleton-section,
+.skeleton-pill,
+.skeleton-tag {
   display: block;
   background: var(--soft-surface-strong);
 }
@@ -103,6 +146,29 @@ defineProps({
 .skeleton-line.title {
   width: 82%;
   height: 24px;
+}
+
+.skeleton-pill-row {
+  display: flex;
+  gap: 10px;
+}
+
+.skeleton-pill {
+  width: 80px;
+  height: 24px;
+  border-radius: 999px;
+}
+
+.skeleton-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.skeleton-tag {
+  width: 60px;
+  height: 20px;
+  border-radius: 20px;
 }
 
 .skeleton-stat-row,
@@ -178,6 +244,10 @@ defineProps({
 
 @media (max-width: 1024px) {
   .skeleton-detail {
+    grid-template-columns: 1fr;
+  }
+  
+  .skeleton-random-card {
     grid-template-columns: 1fr;
   }
 }
