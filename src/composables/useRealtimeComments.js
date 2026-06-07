@@ -2,6 +2,7 @@ import { onMounted, onUnmounted, ref, toValue, watch } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { useCommentStore } from '../stores/commentStore'
 import { useRatingStore } from '../stores/ratingStore'
+import { useUiStore } from '../stores/uiStore'
 
 const RECONNECT_DELAYS = [3000, 6000, 12000]
 
@@ -9,6 +10,7 @@ export function useRealtimeComments(recipeId) {
   const authStore = useAuthStore()
   const commentStore = useCommentStore()
   const ratingStore = useRatingStore()
+  const uiStore = useUiStore()
   const isConnected = ref(false)
   const connectionFailed = ref(false)
 
@@ -68,6 +70,22 @@ export function useRealtimeComments(recipeId) {
         commentStore.deleteCommentFromSocket(payload)
       } else if (payload.type === 'rating_updated') {
         ratingStore.updateRatingFromSocket(payload)
+      } else if (
+        payload.type === 'checklist_generated' &&
+        Number(payload.userId) !== Number(authStore.user?.id)
+      ) {
+        const itemCount = Number(payload.itemCount || 0)
+        uiStore.setSuccess(
+          `${payload.username || 'Another cook'} generated an ingredient checklist for "${payload.recipeTitle || 'this recipe'}".`,
+          {
+            title: 'Someone is cooking this recipe',
+            eyebrow: 'Live kitchen activity',
+            icon: 'utensils',
+            detail: `${itemCount} ingredient${itemCount === 1 ? '' : 's'} prepared for shopping or cooking.`,
+            duration: 6000,
+            variant: 'activity',
+          },
+        )
       } else if (payload.type === 'error') {
         console.warn(payload.message || 'WebSocket error')
       }

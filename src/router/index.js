@@ -12,6 +12,7 @@ const RecipeForm = () => import('../views/RecipeForm.vue')
 const Login = () => import('../views/Login.vue')
 const Register = () => import('../views/Register.vue')
 const Profile = () => import('../views/Profile.vue')
+const FoodMapView = () => import('../views/FoodMapView.vue')
 const NotFound = () => import('../views/NotFound.vue')
 
 const router = createRouter({
@@ -84,6 +85,12 @@ const router = createRouter({
       path: '/profile',
       name: 'profile',
       component: Profile,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/food-map',
+      name: 'FoodMap',
+      component: FoodMapView,
       meta: { requiresAuth: true },
     },
     {

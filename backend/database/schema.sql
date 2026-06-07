@@ -116,3 +116,43 @@ CREATE TABLE IF NOT EXISTS checklist_items (
   is_checked BOOLEAN DEFAULT FALSE,
   FOREIGN KEY (checklist_id) REFERENCES checklists(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS food_spots (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  recipe_id INT DEFAULT NULL,
+  name VARCHAR(150) NOT NULL,
+  dish_name VARCHAR(150) DEFAULT NULL,
+  category VARCHAR(80) DEFAULT NULL,
+  district VARCHAR(80) DEFAULT NULL,
+  latitude DECIMAL(10,7) NOT NULL,
+  longitude DECIMAL(10,7) NOT NULL,
+  rating TINYINT DEFAULT NULL CHECK (rating BETWEEN 1 AND 5),
+  notes TEXT DEFAULT NULL,
+  tags VARCHAR(255) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_food_spots_user (user_id),
+  KEY idx_food_spots_recipe (recipe_id),
+  KEY idx_food_spots_coordinates (latitude, longitude),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS restaurants (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  address VARCHAR(255) DEFAULT NULL,
+  district VARCHAR(80) DEFAULT NULL,
+  category VARCHAR(80) DEFAULT NULL,
+  latitude DECIMAL(10,7) NOT NULL,
+  longitude DECIMAL(10,7) NOT NULL,
+  avg_rating DECIMAL(2,1) NOT NULL DEFAULT 0 CHECK (avg_rating BETWEEN 0 AND 5),
+  price_range VARCHAR(20) DEFAULT NULL,
+  description TEXT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_restaurants_district (district),
+  KEY idx_restaurants_category (category),
+  KEY idx_restaurants_rating (avg_rating),
+  KEY idx_restaurants_coordinates (latitude, longitude)
+);

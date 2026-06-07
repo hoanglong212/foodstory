@@ -68,7 +68,20 @@ export const useChecklistStore = defineStore('checklists', {
         if (requestId !== activeChecklistRequestId || sessionVersion !== checklistSessionVersion) {
           return null
         }
-        uiStore.setSuccess('Ingredient checklist is ready.')
+        const itemCount = response.data.checklist?.items?.length || 0
+        uiStore.setSuccess(
+          `${itemCount} ingredient${itemCount === 1 ? '' : 's'} added and ready to check off.`,
+          {
+            title: 'Your ingredient checklist is ready',
+            eyebrow: 'Personal checklist created',
+            icon: 'check',
+            detail: 'Use it while shopping or keep it open as you cook.',
+            actionLabel: 'View checklist',
+            actionHref: '#ingredient-checklist',
+            duration: 6500,
+            variant: 'checklist',
+          },
+        )
         return response.data.checklist
       } catch (error) {
         if (requestId !== activeChecklistRequestId || sessionVersion !== checklistSessionVersion) {

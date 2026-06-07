@@ -423,6 +423,19 @@ async function shareRecipe() {
   }
 }
 
+function openRecipeOnMap() {
+  if (!recipe.value?.id) return
+
+  router.push({
+    path: '/food-map',
+    query: {
+      recipe_id: recipe.value.id,
+      dish: recipe.value.title,
+      mode: 'community',
+    },
+  })
+}
+
 function formatDate(value) {
   if (!value) {
     return ''
@@ -534,8 +547,6 @@ async function generateChecklist() {
     if (!isAlive || !checklist) {
       return
     }
-    showSuccessMessage('Checklist generated.')
-    uiStore.setSuccess('Checklist generated.')
   } catch (error) {
     if (!isAlive) {
       return
@@ -907,6 +918,15 @@ watch(
             <button class="recipe-action-link" type="button" @click="shareRecipe">
               <AppIcon name="send" size="18" />
               <span>Share</span>
+            </button>
+            <button
+              v-if="authStore.isLoggedIn"
+              class="recipe-action-link"
+              type="button"
+              @click="openRecipeOnMap"
+            >
+              <AppIcon name="map-pin" size="18" />
+              <span>Xem Trên Bản Đồ</span>
             </button>
             <button
               v-if="authStore.isLoggedIn"
@@ -1295,7 +1315,7 @@ watch(
             </nav>
           </section>
 
-          <section class="recipe-side-card recipe-checklist-side">
+          <section id="ingredient-checklist" class="recipe-side-card recipe-checklist-side">
             <div class="recipe-side-heading">
               <span class="recipe-side-heading-icon checklist">
                 <AppIcon name="check" size="18" />

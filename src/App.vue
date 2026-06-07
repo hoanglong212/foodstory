@@ -29,6 +29,7 @@ const navItems = computed(() => {
 
   return [
     ...baseItems,
+    { to: '/food-map', label: 'Bản Đồ Ẩm Thực', icon: 'map-pin' },
     ...(authStore.isAdmin ? [{ to: '/recipes/new', label: 'Tạo Món', icon: 'pen' }] : []),
     { to: '/profile', label: 'Hồ Sơ', icon: 'chef-hat' },
   ]

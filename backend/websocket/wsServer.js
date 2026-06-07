@@ -47,6 +47,12 @@ function parseSubscription(message) {
 export function initWebSocketServer(server) {
   const webSocketServer = new WebSocketServer({ server })
 
+  webSocketServer.on('error', (error) => {
+    if (error.code !== 'EADDRINUSE') {
+      console.error('WebSocket server error:', error)
+    }
+  })
+
   webSocketServer.on('connection', (socket) => {
     socket.isAlive = true
 
@@ -132,6 +138,28 @@ export function broadcastToRecipe(recipeId, eventPayload) {
       if (error) {
         socket.terminate()
       }
+    })
+  })
+}
+
+export function broadcastToAll(eventPayload, options = {}) {
+  const message = JSON.stringify(eventPayload)
+  const excludedUserId = Number(options.excludeUserId)
+
+  rooms.forEach((room) => {
+    room.forEach((socket) => {
+      if (
+        socket.readyState !== WebSocket.OPEN ||
+        (excludedUserId && Number(socket.userId) === excludedUserId)
+      ) {
+        return
+      }
+
+      socket.send(message, (error) => {
+        if (error) {
+          socket.terminate()
+        }
+      })
     })
   })
 }

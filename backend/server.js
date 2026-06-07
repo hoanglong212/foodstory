@@ -9,6 +9,9 @@ import commentRoutes from './routes/commentRoutes.js'
 import favoriteRoutes from './routes/favoriteRoutes.js'
 import ratingRoutes from './routes/ratingRoutes.js'
 import checklistRoutes from './routes/checklistRoutes.js'
+import foodSpotsRoutes from './routes/foodSpots.js'
+import restaurantsRoutes from './routes/restaurants.js'
+import pool from './db.js'
 import { initWebSocketServer } from './websocket/wsServer.js'
 
 const app = express()
@@ -49,8 +52,22 @@ app.use(
 )
 app.use(express.json({ limit: '1mb' }))
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'FoodStory API' })
+app.get('/api/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1')
+    return res.json({
+      status: 'ok',
+      service: 'FoodStory API',
+      database: 'connected',
+    })
+  } catch (error) {
+    console.error(`Database health check failed: ${error.message}`)
+    return res.status(503).json({
+      status: 'degraded',
+      service: 'FoodStory API',
+      database: 'unavailable',
+    })
+  }
 })
 
 app.use('/api/auth', authRoutes)
@@ -60,6 +77,8 @@ app.use('/api', ratingRoutes)
 app.use('/api', commentRoutes)
 app.use('/api/favorites', favoriteRoutes)
 app.use('/api', checklistRoutes)
+app.use('/api/food-spots', foodSpotsRoutes)
+app.use('/api/restaurants', restaurantsRoutes)
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found.' })
@@ -67,10 +86,36 @@ app.use((req, res) => {
 
 app.use((error, req, res, next) => {
   console.error(error)
+
+  if (
+    error.code === 'ECONNREFUSED' ||
+    error.code === 'PROTOCOL_CONNECTION_LOST' ||
+    error.code === 'ER_CON_COUNT_ERROR'
+  ) {
+    return res.status(503).json({
+      error: 'Database is unavailable. Check that MySQL is running and backend/.env is correct.',
+    })
+  }
+
+  if (error.code === 'ER_BAD_DB_ERROR' || error.code === 'ER_NO_SUCH_TABLE') {
+    return res.status(503).json({
+      error: 'Database schema is incomplete. Run backend/database/schema.sql or the required migration.',
+    })
+  }
+
   res.status(500).json({ error: 'Unexpected server error.' })
 })
 
 initWebSocketServer(server)
+
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${port} is already in use. Stop the other server or set a different PORT.`)
+    return
+  }
+
+  console.error('HTTP server error:', error)
+})
 
 server.listen(port, () => {
   console.log(`FoodStory API running on http://localhost:${port}`)
