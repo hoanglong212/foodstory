@@ -60,7 +60,7 @@ router.post('/checklists', requireAuth, async (req, res, next) => {
     await connection.beginTransaction()
 
     const [recipes] = await connection.execute(
-      'SELECT id, title FROM recipes WHERE id = ?',
+      "SELECT id, title FROM recipes WHERE id = ? AND status = 'approved'",
       [recipeId],
     )
     if (recipes.length === 0) {

@@ -16,6 +16,7 @@ function safeUser(user) {
     username: user.username,
     email: user.email,
     role: user.role,
+    is_banned: Boolean(user.is_banned),
     created_at: user.created_at,
   }
 }
@@ -73,7 +74,7 @@ router.post('/register', async (req, res, next) => {
     )
 
     const [rows] = await pool.execute(
-      'SELECT id, username, email, role, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, role, is_banned, created_at FROM users WHERE id = ?',
       [result.insertId],
     )
     return res.status(201).json({ user: safeUser(rows[0]) })
@@ -98,7 +99,9 @@ router.post('/login', async (req, res, next) => {
     }
 
     const [rows] = await pool.execute(
-      'SELECT id, username, email, password_hash, role, created_at FROM users WHERE email = ?',
+      `SELECT id, username, email, password_hash, role, is_banned, created_at
+       FROM users
+       WHERE email = ?`,
       [email],
     )
     if (rows.length === 0) {
@@ -106,6 +109,9 @@ router.post('/login', async (req, res, next) => {
     }
 
     const user = rows[0]
+    if (user.is_banned) {
+      return res.status(403).json({ error: 'This account has been banned.' })
+    }
     const isValid = await bcrypt.compare(password, user.password_hash)
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid email or password.' })

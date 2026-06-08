@@ -2,11 +2,14 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import AppIcon from './components/AppIcon.vue'
+import ChatBot from './components/ChatBot.vue'
 import ToastNotification from './components/ToastNotification.vue'
 import { useAuthStore } from './stores/authStore'
+import { useAdminStore } from './stores/adminStore'
 import { useUiStore } from './stores/uiStore'
 
 const authStore = useAuthStore()
+const adminStore = useAdminStore()
 const uiStore = useUiStore()
 const route = useRoute()
 const router = useRouter()
@@ -30,7 +33,16 @@ const navItems = computed(() => {
   return [
     ...baseItems,
     { to: '/food-map', label: 'Bản Đồ Ẩm Thực', icon: 'map-pin' },
-    ...(authStore.isAdmin ? [{ to: '/recipes/new', label: 'Tạo Món', icon: 'pen' }] : []),
+    ...(authStore.isAdmin
+      ? [
+          {
+            to: '/admin',
+            label: 'Admin',
+            icon: 'crown',
+            pendingCount: adminStore.pendingCount,
+          },
+        ]
+      : []),
     { to: '/profile', label: 'Hồ Sơ', icon: 'chef-hat' },
   ]
 })
@@ -156,6 +168,9 @@ function observeMotion() {
 
 onMounted(async () => {
   authStore.loadFromStorage()
+  if (authStore.isAdmin) {
+    adminStore.fetchStats({ silent: true })
+  }
   applyTheme(uiStore.darkMode ? 'dark' : 'light')
 
   updateParallax()
@@ -183,6 +198,17 @@ watch(isDark, (value) => {
   applyTheme(theme)
   window.localStorage.setItem('foodstory-theme', theme)
 })
+
+watch(
+  () => authStore.isAdmin,
+  (isAdmin) => {
+    if (isAdmin) {
+      adminStore.fetchStats({ silent: true })
+    } else {
+      adminStore.clear()
+    }
+  },
+)
 
 watch(
   () => route.fullPath,
@@ -218,6 +244,9 @@ watch(
         >
           <AppIcon :name="item.icon" size="18" />
           <span>{{ item.label }}</span>
+          <span v-if="item.pendingCount > 0" class="pending-badge">
+            {{ item.pendingCount > 99 ? '99+' : item.pendingCount }}
+          </span>
         </RouterLink>
       </nav>
 
@@ -256,6 +285,8 @@ watch(
         </Transition>
       </RouterView>
     </main>
+
+    <ChatBot />
 
     <footer class="site-footer">
       <section class="footer-grid">
@@ -327,3 +358,20 @@ watch(
     </footer>
   </div>
 </template>
+
+<style scoped>
+.pending-badge {
+  display: inline-grid;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: #e53e3e;
+  box-shadow: 0 0 0 2px rgba(229, 62, 62, 0.18);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+</style>

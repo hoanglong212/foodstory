@@ -4,12 +4,20 @@ import { useRoute } from 'vue-router'
 import L from 'leaflet'
 import 'leaflet.markercluster'
 import AppIcon from '../components/AppIcon.vue'
+import streetImage from '../assets/street.jpg'
 import { useFoodSpotStore } from '../stores/foodSpotStore'
 import { useRestaurantStore } from '../stores/restaurantStore'
 import { useUiStore } from '../stores/uiStore'
 
-const HCMC_CENTER = [10.8231, 106.6297]
+const HCMC_CENTER = [10.7769, 106.7009]
 const categories = ['Phở', 'Bánh Mì', 'Cơm', 'Bún', 'Hải Sản', 'Café', 'Tráng Miệng', 'Khác']
+const categoryLegend = [
+  { label: 'Món Việt', color: '#f97316', icon: 'utensils' },
+  { label: 'Bún · Phở', color: '#a66cc4', icon: 'bowl' },
+  { label: 'Cafe · Trà', color: '#b87949', icon: 'store' },
+  { label: 'Bánh · Tráng miệng', color: '#ef6f7b', icon: 'chef-hat' },
+  { label: 'Hải sản', color: '#3b9dbc', icon: 'sparkles' },
+]
 const restaurantCategories = [
   'Ăn Vặt',
   'Bánh Canh',
@@ -92,10 +100,11 @@ const deletingSpotId = ref(null)
 const filters = reactive({ district: '', category: '', rating: '' })
 const communityFilters = reactive({ district: '', category: '' })
 const communitySearch = ref(initialDish)
+const personalSearch = ref('')
 const restaurantFilters = reactive({
   district: '',
   category: '',
-  search: '',
+  search: initialDish,
   min_rating: '',
 })
 const formErrors = reactive({})
@@ -126,7 +135,24 @@ const hasActiveFilters = computed(() =>
 const hasCommunityFilters = computed(() =>
   Boolean(communitySearch.value || communityFilters.district || communityFilters.category),
 )
-const sidebarCount = computed(() => visibleSpots.value.length)
+const displayedPersonalSpots = computed(() => {
+  const query = personalSearch.value.trim().toLocaleLowerCase('vi')
+  if (!query) return foodSpotStore.spots
+
+  return foodSpotStore.spots.filter((spot) =>
+    [spot.name, spot.dish_name, spot.category, spot.district]
+      .filter(Boolean)
+      .some((value) => String(value).toLocaleLowerCase('vi').includes(query)),
+  )
+})
+const featuredSpot = computed(() => {
+  if (mapMode.value !== 'personal') return null
+  return selectedSpot.value || displayedPersonalSpots.value[0] || null
+})
+const sidebarCount = computed(() => {
+  if (mapMode.value === 'personal') return displayedPersonalSpots.value.length
+  return visibleSpots.value.length
+})
 const sidebarKicker = computed(() => {
   if (mapMode.value === 'community') return 'FoodStory cộng đồng'
   if (mapMode.value === 'stats') return 'Hành trình của bạn'
@@ -223,6 +249,16 @@ function markerColor(rating) {
   return '#e6504f'
 }
 
+function categoryColor(category) {
+  const text = String(category || '').toLocaleLowerCase('vi')
+  if (text.includes('phở') || text.includes('bún')) return '#a66cc4'
+  if (text.includes('café') || text.includes('cafe') || text.includes('trà')) return '#b87949'
+  if (text.includes('bánh') || text.includes('tráng') || text.includes('chè')) return '#ef6f7b'
+  if (text.includes('hải')) return '#3b9dbc'
+  if (text.includes('cơm') || text.includes('mì')) return '#74a05c'
+  return '#f97316'
+}
+
 function communityMarkerColor(rating) {
   const value = Number(rating || 0)
   if (value >= 5) return '#3d9cff'
@@ -241,13 +277,20 @@ function markerIcon(spot, preview = false, community = false) {
     ? '#f4a261'
     : community
       ? communityMarkerColor(spot.rating)
-      : markerColor(spot.rating)
+      : categoryColor(spot.category)
+  const glyph = preview
+    ? '<b>+</b>'
+    : community
+      ? '<b>C</b>'
+      : `<svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 4v7M11 4v7M7 8h4M9 11v9M17 4v16M17 4c2.4 1.5 3.5 3.6 3.5 6H17" />
+        </svg>`
   return L.divIcon({
     className: 'food-map-marker-shell',
-    html: `<span class="food-map-marker-dot${preview ? ' preview' : ''}${community ? ' community' : ''}" style="--marker-color:${color}"></span>`,
-    iconSize: community ? [28, 28] : [34, 34],
-    iconAnchor: community ? [14, 14] : [17, 17],
-    popupAnchor: [0, -18],
+    html: `<span class="food-map-marker-dot${preview ? ' preview' : ''}${community ? ' community' : ''}" style="--marker-color:${color}">${glyph}</span>`,
+    iconSize: community ? [34, 42] : [40, 50],
+    iconAnchor: community ? [17, 40] : [20, 48],
+    popupAnchor: [0, -43],
   })
 }
 
@@ -613,7 +656,7 @@ async function addFromStats() {
 
 function cancelForm() {
   resetForm()
-  sidebarMode.value = selectedSpot.value ? 'detail' : 'list'
+  sidebarMode.value = 'list'
 }
 
 function editSpot(spot) {
@@ -680,7 +723,7 @@ async function submitForm() {
     clearPreviewMarker()
     editingSpotId.value = null
     foodSpotStore.setSelectedSpot(spot)
-    sidebarMode.value = wasEditing ? 'detail' : 'list'
+    sidebarMode.value = 'list'
     renderMarkers()
     focusSpot(spot)
     uiStore.setSuccess(
@@ -713,7 +756,7 @@ function focusSpot(spot, openPopup = true) {
 
 function showDetail(spot, moveMap = true) {
   foodSpotStore.setSelectedSpot(spot)
-  sidebarMode.value = 'detail'
+  sidebarMode.value = 'list'
   stopPicking()
   clearPreviewMarker()
   if (moveMap) focusSpot(spot)
@@ -872,6 +915,7 @@ onBeforeUnmount(() => {
         <div>
           <p class="food-map-kicker">{{ sidebarKicker }}</p>
           <h1>{{ sidebarTitle }}</h1>
+          <p class="food-map-storyline">Mỗi quán ăn là một câu chuyện</p>
           <p class="food-map-layer-counts">
             {{ restaurantStore.restaurants.length }} nhà hàng
             <span>•</span>
@@ -929,9 +973,28 @@ onBeforeUnmount(() => {
       </section>
 
       <div v-if="sidebarMode === 'list' && mapMode === 'personal'" class="food-map-sidebar-body">
+        <label class="food-map-personal-search">
+          <span class="sr-only">Tìm trong địa điểm của tôi</span>
+          <AppIcon name="search" size="17" />
+          <input
+            v-model="personalSearch"
+            type="search"
+            maxlength="150"
+            placeholder="Tìm quán ăn, món ngon, địa điểm..."
+          />
+          <button
+            v-if="personalSearch"
+            type="button"
+            aria-label="Xoá nội dung tìm kiếm"
+            @click="personalSearch = ''"
+          >
+            ×
+          </button>
+        </label>
+
         <section class="food-map-filters" aria-label="Bộ lọc địa điểm">
           <div class="food-map-filter-heading">
-            <span><AppIcon name="filter" size="17" /> Bộ lọc</span>
+            <span><AppIcon name="filter" size="17" /> Bộ lọc trải nghiệm</span>
             <button v-if="hasActiveFilters" type="button" @click="clearFilters">Đặt lại</button>
           </div>
           <div class="food-map-filter-grid">
@@ -980,24 +1043,33 @@ onBeforeUnmount(() => {
           <p>Bạn chưa có địa điểm nào. Hãy thêm địa điểm đầu tiên!</p>
           <button type="button" @click="openAddForm">Thêm Ngay</button>
         </div>
+        <div v-else-if="displayedPersonalSpots.length === 0" class="food-map-state compact">
+          <span class="food-map-empty-icon"><AppIcon name="search" size="26" /></span>
+          <p>Không tìm thấy địa điểm phù hợp với "{{ personalSearch }}".</p>
+          <button type="button" @click="personalSearch = ''">Xoá tìm kiếm</button>
+        </div>
 
         <div v-else class="food-map-spot-list">
           <button
-            v-for="spot in foodSpotStore.spots"
+            v-for="(spot, index) in displayedPersonalSpots"
             :key="spot.id"
             type="button"
             class="food-map-spot-card"
+            :class="{ active: featuredSpot?.id === spot.id }"
             @click="showDetail(spot)"
           >
-            <span class="food-map-card-pin" :style="{ '--spot-color': markerColor(spot.rating) }"></span>
+            <span class="food-map-card-rank">{{ index + 1 }}</span>
+            <span class="food-map-card-thumb" :style="{ backgroundImage: `url(${streetImage})` }"></span>
             <span class="food-map-card-copy">
               <span class="food-map-card-topline">
                 <strong>{{ spot.name }}</strong>
-                <small>{{ ratingText(spot.rating) }}</small>
+                <small aria-label="Đánh giá">{{ Number(spot.rating || 0).toFixed(1) }} ★</small>
               </span>
               <span>{{ spot.dish_name || 'Chưa thêm món ăn' }}</span>
               <span class="food-map-card-meta">
-                <em v-if="spot.category">{{ spot.category }}</em>
+                <em v-if="spot.category" :style="{ '--spot-color': categoryColor(spot.category) }">
+                  {{ spot.category }}
+                </em>
                 <small><AppIcon name="map-pin" size="13" /> {{ spot.district || 'TP. Hồ Chí Minh' }}</small>
               </span>
             </span>
@@ -1377,6 +1449,9 @@ onBeforeUnmount(() => {
     </aside>
 
     <div class="food-map-canvas">
+      <div class="food-map-city-label" aria-hidden="true">
+        <span>Thành phố Hồ Chí Minh</span>
+      </div>
       <div v-if="pickingMode" class="food-map-picking-banner" role="status">
         <AppIcon name="map-pin" size="19" />
         <span>Nhấp vào bản đồ để chọn vị trí</span>
@@ -1384,23 +1459,106 @@ onBeforeUnmount(() => {
       </div>
       <div ref="mapElement" class="food-map-leaflet" aria-label="Bản đồ địa điểm ẩm thực"></div>
       <div class="food-map-legend">
-        <strong>{{ isCommunityMode ? 'Điểm cộng đồng' : 'Màu đánh giá' }}</strong>
+        <strong>{{ isCommunityMode ? 'Điểm cộng đồng' : 'Danh mục' }}</strong>
         <template v-if="isCommunityMode">
           <span><i style="--legend-color: #3d9cff"></i>Địa điểm công khai</span>
         </template>
         <template v-else>
-        <span v-for="item in [
-          ['#f7b731', '5★'],
-          ['#43aa8b', '4★'],
-          ['#4d96ff', '3★'],
-          ['#8b9098', '1–2★'],
-          ['#e6504f', 'Chưa đánh giá'],
-        ]" :key="item[1]">
-          <i :style="{ '--legend-color': item[0] }"></i>{{ item[1] }}
-        </span>
+          <span v-for="item in categoryLegend" :key="item.label">
+            <i :style="{ '--legend-color': item.color }"></i>{{ item.label }}
+          </span>
         </template>
       </div>
     </div>
+
+    <aside class="food-map-detail-panel" aria-label="Chi tiết địa điểm">
+      <template v-if="featuredSpot">
+        <div class="food-map-detail-photo">
+          <img :src="streetImage" :alt="featuredSpot.dish_name || featuredSpot.name" />
+          <span class="food-map-detail-status">
+            <AppIcon name="check" size="14" />
+            Đã ăn
+          </span>
+          <button type="button" aria-label="Đánh dấu yêu thích">
+            <AppIcon name="heart" size="18" />
+          </button>
+        </div>
+
+        <section class="food-map-detail-copy">
+          <p class="food-map-kicker">{{ featuredSpot.category || 'Điểm đến ẩm thực' }}</p>
+          <h2>{{ featuredSpot.name }}</h2>
+          <p class="food-map-detail-dish">{{ featuredSpot.dish_name || 'Một địa điểm đang chờ bạn khám phá' }}</p>
+
+          <div class="food-map-detail-rating">
+            <strong>{{ Number(featuredSpot.rating || 0).toFixed(1) }} ★</strong>
+            <span>{{ featuredSpot.rating ? 'Đánh giá của bạn' : 'Chưa đánh giá' }}</span>
+          </div>
+
+          <div class="food-map-detail-line">
+            <AppIcon name="map-pin" size="18" />
+            <span>{{ featuredSpot.district || 'TP. Hồ Chí Minh' }}</span>
+          </div>
+          <div class="food-map-detail-line">
+            <AppIcon name="utensils" size="18" />
+            <span>Danh mục: {{ featuredSpot.category || 'Chưa phân loại' }}</span>
+          </div>
+        </section>
+
+        <section class="food-map-note-card">
+          <header>
+            <span><AppIcon name="message" size="16" /> Ghi chú của bạn</span>
+            <button type="button" aria-label="Chỉnh sửa ghi chú" @click="editSpot(featuredSpot)">
+              <AppIcon name="pen" size="16" />
+            </button>
+          </header>
+          <p>{{ featuredSpot.notes || 'Hãy lưu lại hương vị, không gian và món bạn muốn thử lần sau.' }}</p>
+          <div v-if="splitTags(featuredSpot.tags).length" class="food-map-tags">
+            <span v-for="tag in splitTags(featuredSpot.tags)" :key="tag">#{{ tag }}</span>
+          </div>
+        </section>
+
+        <section v-if="featuredSpot.recipe_id" class="food-map-related-recipe">
+          <p class="food-map-kicker">Công thức liên quan</p>
+          <RouterLink :to="{ name: 'recipe-detail', params: { id: featuredSpot.recipe_id } }">
+            <img :src="streetImage" alt="" />
+            <span>
+              <strong>{{ featuredSpot.dish_name || 'Khám phá công thức' }}</strong>
+              <small>bởi FoodStory Kitchen</small>
+            </span>
+            <AppIcon name="arrow-right" size="18" />
+          </RouterLink>
+        </section>
+
+        <div class="food-map-detail-footer">
+          <button type="button" @click="editSpot(featuredSpot)">
+            <AppIcon name="pen" size="17" /> Chỉnh sửa
+          </button>
+          <button
+            class="danger"
+            type="button"
+            :disabled="deletingSpotId === featuredSpot.id"
+            @click="removeSpot(featuredSpot)"
+          >
+            <AppIcon name="trash" size="17" />
+            {{ deletingSpotId === featuredSpot.id ? 'Đang xoá...' : 'Xoá' }}
+          </button>
+          <button class="primary" type="button" @click="focusSpot(featuredSpot)">
+            <AppIcon name="map-pin" size="17" /> Mở bản đồ
+          </button>
+        </div>
+      </template>
+
+      <div v-else class="food-map-detail-empty">
+        <span><AppIcon name="map-pin" size="30" /></span>
+        <p class="food-map-kicker">Nhật ký ẩm thực</p>
+        <h2>Chọn một địa điểm</h2>
+        <p>Thông tin, ghi chú và thao tác chỉnh sửa sẽ xuất hiện tại đây.</p>
+        <button v-if="mapMode === 'personal'" type="button" @click="openAddForm">
+          <AppIcon name="map-pin" size="17" />
+          Thêm địa điểm đầu tiên
+        </button>
+      </div>
+    </aside>
   </section>
 </template>
 
@@ -2794,5 +2952,1166 @@ onBeforeUnmount(() => {
 @media (prefers-reduced-motion: reduce) {
   .food-map-spinner,
   :deep(.food-map-marker-dot.preview) { animation: none; }
+}
+
+/* Editorial food-map redesign */
+.food-map-page {
+  --map-bg: #f8f0e3;
+  --map-panel: #fffaf1;
+  --map-panel-strong: #fffdf8;
+  --map-border: rgba(117, 78, 41, 0.16);
+  --map-border-strong: rgba(177, 117, 56, 0.28);
+  --map-text: #3e2d20;
+  --map-muted: #806e5f;
+  --map-orange: #e95b2b;
+  grid-template-columns:
+    clamp(330px, 23.5vw, 390px)
+    minmax(500px, 1fr)
+    clamp(320px, 23vw, 390px);
+  height: calc(100svh - var(--nav-height));
+  min-height: 720px;
+  background:
+    radial-gradient(circle at 7% 14%, rgba(188, 149, 85, 0.1), transparent 17rem),
+    radial-gradient(circle at 93% 90%, rgba(214, 115, 55, 0.08), transparent 20rem),
+    #f8f0e3;
+  color: var(--map-text);
+}
+
+.food-map-sidebar {
+  border-right: 1px solid var(--map-border);
+  background:
+    linear-gradient(rgba(255, 250, 241, 0.94), rgba(255, 250, 241, 0.94)),
+    radial-gradient(circle at 16% 9%, rgba(167, 126, 67, 0.18) 0 1px, transparent 1.5px);
+  background-size: auto, 15px 15px;
+  box-shadow: 12px 0 36px rgba(99, 66, 31, 0.08);
+}
+
+.food-map-sidebar::after {
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  width: 92px;
+  height: 92px;
+  border: 1px solid rgba(169, 117, 55, 0.13);
+  border-radius: 50%;
+  content: "";
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.food-map-sidebar-header {
+  position: relative;
+  padding: 28px 26px 18px;
+  border-bottom: 0;
+}
+
+.food-map-sidebar-header::before {
+  position: absolute;
+  top: 23px;
+  left: 10px;
+  width: 3px;
+  height: 78px;
+  border-radius: 999px;
+  background: linear-gradient(#7ba26d, #d6b475, transparent);
+  content: "";
+}
+
+.food-map-sidebar-header h1 {
+  max-width: 285px;
+  color: var(--map-text);
+  font-size: clamp(27px, 2vw, 35px);
+  line-height: 1.02;
+}
+
+.food-map-kicker {
+  color: #9b6d3c;
+  letter-spacing: 0.14em;
+}
+
+.food-map-storyline {
+  position: relative;
+  width: fit-content;
+  margin-top: 9px;
+  padding-bottom: 8px;
+  color: #db5b2b;
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.food-map-storyline::after {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 86px;
+  height: 2px;
+  border-radius: 999px;
+  background: #e65e2f;
+  content: "";
+}
+
+.food-map-layer-counts {
+  margin-top: 10px;
+  color: #9b8977;
+}
+
+.food-map-count {
+  border-color: rgba(226, 91, 44, 0.2);
+  color: #d94f24;
+  background: rgba(232, 91, 43, 0.08);
+}
+
+.food-map-mode-toggle {
+  gap: 0;
+  margin: 0 20px 10px;
+  padding: 4px;
+  border-color: var(--map-border);
+  border-radius: 15px;
+  background: rgba(241, 224, 199, 0.58);
+  box-shadow: inset 0 1px 2px rgba(100, 67, 32, 0.05);
+}
+
+.food-map-mode-toggle button {
+  min-height: 39px;
+  border-radius: 11px;
+  color: #745f4e;
+  font-family: var(--font-serif);
+  font-size: 13px;
+}
+
+.food-map-mode-toggle button:hover {
+  border-color: transparent;
+  color: #cf4c25;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.food-map-mode-toggle button.active {
+  border-color: rgba(223, 91, 44, 0.23);
+  color: #d94f24;
+  background: #fffaf2;
+  box-shadow: 0 5px 13px rgba(119, 72, 26, 0.09);
+}
+
+.food-map-layer-toggle {
+  gap: 7px;
+  margin: 0 20px;
+  padding: 10px 2px 11px;
+  border-top: 0;
+  border-bottom-color: var(--map-border);
+}
+
+.food-map-layer-toggle > span {
+  color: #9b836e;
+}
+
+.food-map-layer-toggle > small {
+  color: var(--map-muted);
+}
+
+.food-map-layer-toggle label {
+  min-height: 30px;
+  padding: 0 10px;
+  border-color: rgba(126, 92, 58, 0.15);
+  color: #826c58;
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.food-map-layer-toggle label > span {
+  border-color: rgba(107, 81, 54, 0.28);
+}
+
+.food-map-layer-toggle label.restaurant.active {
+  border-color: rgba(234, 112, 45, 0.25);
+  color: #c95722;
+  background: #fff1dd;
+}
+
+.food-map-layer-toggle label.personal.active {
+  border-color: rgba(127, 157, 84, 0.28);
+  color: #668641;
+  background: #eef3dd;
+}
+
+.food-map-layer-toggle label.personal.active > span {
+  border-color: #80a257;
+  background: #80a257;
+}
+
+.food-map-sidebar-body {
+  gap: 13px;
+  padding: 13px 20px 22px;
+  scrollbar-color: rgba(177, 117, 56, 0.35) transparent;
+}
+
+.food-map-personal-search,
+.food-map-community-search {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+  border: 1px solid var(--map-border-strong);
+  border-radius: 12px;
+  color: #9d774f;
+  background: rgba(255, 253, 248, 0.82);
+  box-shadow: inset 0 1px 2px rgba(99, 64, 29, 0.035);
+}
+
+.food-map-personal-search:focus-within,
+.food-map-community-search:focus-within {
+  border-color: rgba(225, 92, 43, 0.55);
+  box-shadow: 0 0 0 3px rgba(225, 92, 43, 0.08);
+}
+
+.food-map-personal-search input,
+.food-map-community-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--map-text);
+  background: transparent;
+  font-size: 12px;
+}
+
+.food-map-personal-search input::placeholder,
+.food-map-community-search input::placeholder {
+  color: #a99682;
+}
+
+.food-map-personal-search button {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #9a8068;
+  background: rgba(118, 85, 52, 0.08);
+  font-size: 18px;
+}
+
+.food-map-filters,
+.food-map-fieldset,
+.food-map-detail-hero,
+.food-map-details > div {
+  border-color: var(--map-border);
+  background: rgba(255, 253, 248, 0.64);
+}
+
+.food-map-filters {
+  padding: 13px;
+}
+
+.food-map-filter-heading {
+  margin-bottom: 10px;
+  color: #8e7156;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.food-map-filter-heading button,
+.food-map-back {
+  color: #d95328;
+}
+
+.food-map-filter-grid {
+  gap: 8px;
+}
+
+.food-map-filter-grid label,
+.food-map-form label {
+  color: #88715d;
+  font-size: 10px;
+}
+
+.food-map-filter-grid select,
+.food-map-form input,
+.food-map-form select,
+.food-map-form textarea,
+.restaurant-filter-grid input,
+.restaurant-filter-grid select {
+  border-color: rgba(123, 90, 57, 0.17);
+  color: var(--map-text);
+  background: #fffcf6;
+}
+
+.food-map-filter-grid select {
+  height: 38px;
+}
+
+.food-map-filter-grid select:focus,
+.food-map-form input:focus,
+.food-map-form select:focus,
+.food-map-form textarea:focus,
+.restaurant-filter-grid input:focus,
+.restaurant-filter-grid select:focus {
+  border-color: rgba(226, 91, 43, 0.5);
+  box-shadow: 0 0 0 3px rgba(226, 91, 43, 0.08);
+}
+
+.food-map-primary-action,
+.food-map-save {
+  min-height: 47px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f47a31, #e65224);
+  box-shadow: 0 12px 24px rgba(222, 79, 32, 0.2);
+}
+
+.food-map-state {
+  min-height: 190px;
+  border-color: rgba(132, 98, 64, 0.2);
+  color: var(--map-muted);
+  background: rgba(255, 253, 248, 0.42);
+}
+
+.food-map-state.compact {
+  min-height: 125px;
+}
+
+.food-map-state h2,
+.food-map-mode-heading h2 {
+  color: var(--map-text);
+}
+
+.food-map-state button {
+  border-color: rgba(226, 91, 43, 0.28);
+  color: #d85229;
+  background: rgba(226, 91, 43, 0.06);
+}
+
+.food-map-empty-icon {
+  color: #df5a2d;
+  background: rgba(226, 91, 43, 0.08);
+}
+
+.food-map-spot-list {
+  gap: 8px;
+}
+
+.food-map-spot-card {
+  position: relative;
+  grid-template-columns: 56px minmax(0, 1fr);
+  min-height: 84px;
+  gap: 10px;
+  padding: 8px;
+  border-color: rgba(132, 95, 59, 0.13);
+  border-radius: 12px;
+  color: var(--map-text);
+  background: rgba(255, 253, 248, 0.56);
+}
+
+.food-map-spot-card:hover,
+.food-map-spot-card.active {
+  border-color: rgba(224, 91, 42, 0.32);
+  background: #fffaf2;
+  box-shadow: 0 9px 22px rgba(106, 69, 34, 0.09);
+}
+
+.food-map-card-rank {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 2;
+  display: grid;
+  width: 23px;
+  height: 23px;
+  place-items: center;
+  border: 2px solid #fffaf2;
+  border-radius: 50%;
+  color: #fff;
+  background: #ef7b22;
+  box-shadow: 0 3px 8px rgba(127, 73, 22, 0.18);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.food-map-card-thumb {
+  width: 56px;
+  min-height: 66px;
+  border-radius: 9px;
+  background-position: 51% center;
+  background-size: cover;
+  box-shadow: inset 0 0 0 1px rgba(104, 72, 41, 0.08);
+}
+
+.food-map-card-copy {
+  justify-content: center;
+  gap: 4px;
+  color: #806d5b;
+  font-size: 11px;
+}
+
+.food-map-card-topline strong {
+  color: #4a3323;
+  font-size: 14px;
+}
+
+.food-map-card-topline small {
+  flex: 0 0 auto;
+  color: #e79317;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.food-map-card-meta {
+  gap: 5px;
+}
+
+.food-map-card-meta em {
+  padding: 3px 6px;
+  color: color-mix(in srgb, var(--spot-color) 78%, #422d1e);
+  background: color-mix(in srgb, var(--spot-color) 11%, #fff);
+}
+
+.food-map-card-meta small {
+  min-width: 0;
+  overflow: hidden;
+  color: #967f6a;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.restaurant-filter-panel {
+  border-color: rgba(217, 113, 48, 0.18);
+  background: rgba(255, 243, 224, 0.55);
+}
+
+.restaurant-filter-toggle {
+  color: #b9632e;
+}
+
+.restaurant-filter-content {
+  border-top-color: rgba(176, 111, 54, 0.14);
+}
+
+.restaurant-filter-grid label,
+.restaurant-filter-message {
+  color: var(--map-muted);
+}
+
+.restaurant-filter-actions button.secondary {
+  border-color: var(--map-border);
+  color: #806b58;
+  background: #fffaf2;
+}
+
+.food-map-community-summary {
+  color: #755f4c;
+}
+
+.food-map-community-summary small {
+  color: #447fbf;
+}
+
+.food-map-stats-summary article,
+.food-map-stats-panel {
+  border-color: var(--map-border);
+  background: rgba(255, 253, 248, 0.62);
+}
+
+.food-map-stats-summary strong,
+.food-map-stats-panel h2,
+.food-map-stat-row > div,
+.food-map-recent-spot {
+  color: var(--map-text);
+}
+
+.food-map-stats-summary span,
+.food-map-stat-row small,
+.food-map-rating-row small,
+.food-map-stats-empty,
+.food-map-recent-spot small {
+  color: var(--map-muted);
+}
+
+.food-map-stat-track {
+  background: rgba(121, 86, 52, 0.1);
+}
+
+.food-map-recent-spot {
+  border-bottom-color: var(--map-border);
+}
+
+.food-map-mode-heading {
+  border-bottom-color: var(--map-border);
+}
+
+.food-map-mode-heading > p:last-child,
+.food-map-hint,
+.food-map-fieldset legend {
+  color: var(--map-muted);
+}
+
+.food-map-fieldset > button {
+  border-color: rgba(226, 91, 43, 0.25);
+  color: #d95328;
+  background: rgba(226, 91, 43, 0.05);
+}
+
+.food-map-fieldset > button.active {
+  color: #fff;
+  background: #e55b2d;
+}
+
+.food-map-secondary,
+.food-map-detail-actions button {
+  border-color: var(--map-border);
+  color: var(--map-text);
+  background: #fffaf2;
+}
+
+.food-map-details dd {
+  color: #6f5b49;
+}
+
+.food-map-tags span {
+  color: #b35831;
+  background: #fff0df;
+}
+
+.food-map-canvas {
+  padding: 18px 12px;
+  background:
+    linear-gradient(90deg, rgba(255, 250, 241, 0.4), transparent 20%, transparent 80%, rgba(255, 250, 241, 0.4)),
+    #f3e8d6;
+}
+
+.food-map-leaflet {
+  min-height: 680px;
+  border-color: rgba(141, 103, 62, 0.2);
+  border-radius: 22px;
+  background: #e9dfcd;
+  box-shadow:
+    0 18px 38px rgba(91, 61, 31, 0.1),
+    inset 0 0 0 7px rgba(255, 251, 243, 0.34);
+}
+
+.food-map-city-label {
+  position: absolute;
+  top: 29px;
+  left: 50%;
+  z-index: 700;
+  min-width: 245px;
+  padding: 10px 28px 13px;
+  border: 1px solid rgba(157, 110, 57, 0.22);
+  border-radius: 6px 6px 18px 18px;
+  color: #6f5135;
+  background:
+    linear-gradient(rgba(255, 249, 237, 0.95), rgba(249, 234, 208, 0.95)),
+    #f9ead2;
+  box-shadow: 0 8px 20px rgba(101, 68, 31, 0.12);
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-style: italic;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.food-map-city-label::before,
+.food-map-city-label::after {
+  position: absolute;
+  top: 12px;
+  width: 22px;
+  height: 1px;
+  background: rgba(145, 99, 50, 0.36);
+  content: "";
+}
+
+.food-map-city-label::before { left: 8px; }
+.food-map-city-label::after { right: 8px; }
+
+.food-map-picking-banner {
+  top: 84px;
+  border-color: rgba(226, 91, 43, 0.35);
+  color: #5c3f2b;
+  background: rgba(255, 250, 241, 0.96);
+  box-shadow: 0 12px 28px rgba(100, 65, 29, 0.15);
+}
+
+.food-map-legend {
+  right: auto;
+  bottom: 31px;
+  left: 50%;
+  max-width: calc(100% - 50px);
+  gap: 12px;
+  padding: 10px 14px;
+  border-color: rgba(137, 96, 54, 0.18);
+  border-radius: 999px;
+  color: #6f5a47;
+  background: rgba(255, 250, 241, 0.94);
+  box-shadow: 0 10px 24px rgba(92, 60, 28, 0.12);
+  transform: translateX(-50%);
+}
+
+.food-map-legend strong {
+  flex: 0 0 auto;
+  color: #4b3524;
+  font-family: var(--font-serif);
+  white-space: nowrap;
+}
+
+.food-map-legend span {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.food-map-legend i {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.86);
+  box-shadow: 0 2px 6px rgba(92, 62, 31, 0.15);
+}
+
+.food-map-detail-panel {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  flex-direction: column;
+  margin: 18px 18px 18px 0;
+  border: 1px solid var(--map-border);
+  border-radius: 22px;
+  color: var(--map-text);
+  background:
+    linear-gradient(rgba(255, 250, 241, 0.96), rgba(255, 250, 241, 0.96)),
+    radial-gradient(circle at 80% 10%, rgba(177, 129, 69, 0.13) 0 1px, transparent 1.5px);
+  background-size: auto, 14px 14px;
+  box-shadow: 0 15px 35px rgba(99, 66, 31, 0.08);
+  scrollbar-color: rgba(177, 117, 56, 0.3) transparent;
+  scrollbar-width: thin;
+}
+
+.food-map-detail-photo {
+  position: relative;
+  flex: 0 0 auto;
+  margin: 18px 18px 0;
+}
+
+.food-map-detail-photo img {
+  height: clamp(160px, 19vh, 220px);
+  object-fit: cover;
+  object-position: center;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px rgba(84, 53, 26, 0.08);
+}
+
+.food-map-detail-photo > button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #e85a58;
+  background: rgba(255, 251, 242, 0.92);
+  box-shadow: 0 6px 16px rgba(76, 44, 20, 0.16);
+}
+
+.food-map-detail-status {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #65813e;
+  background: rgba(241, 246, 220, 0.94);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.food-map-detail-copy {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px 15px;
+  border-bottom: 1px solid var(--map-border);
+}
+
+.food-map-detail-copy h2 {
+  overflow-wrap: anywhere;
+  color: #3f2c1f;
+  font-size: clamp(24px, 2vw, 31px);
+  line-height: 1.05;
+}
+
+.food-map-detail-dish {
+  color: #806b58;
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.food-map-detail-rating {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #9a846f;
+  font-size: 10px;
+}
+
+.food-map-detail-rating strong {
+  color: #e89517;
+  font-size: 13px;
+}
+
+.food-map-detail-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: #6e5947;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.food-map-detail-line .app-icon {
+  color: #b77a3d;
+}
+
+.food-map-note-card,
+.food-map-related-recipe {
+  display: grid;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--map-border);
+}
+
+.food-map-note-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #96734e;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.food-map-note-card header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.food-map-note-card header button {
+  padding: 3px;
+  border: 0;
+  color: #a46936;
+  background: transparent;
+}
+
+.food-map-note-card > p {
+  color: #6d5846;
+  font-family: var(--font-serif);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.65;
+}
+
+.food-map-related-recipe > .food-map-kicker {
+  margin-bottom: 0;
+}
+
+.food-map-related-recipe > a {
+  display: grid;
+  grid-template-columns: 66px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--map-border);
+  border-radius: 12px;
+  background: rgba(255, 253, 248, 0.7);
+}
+
+.food-map-related-recipe img {
+  width: 66px;
+  height: 55px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.food-map-related-recipe span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.food-map-related-recipe strong {
+  color: #4b3424;
+  font-family: var(--font-serif);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.food-map-related-recipe small {
+  color: #96816e;
+  font-size: 9px;
+}
+
+.food-map-detail-footer {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  margin-top: auto;
+  padding: 16px 18px 18px;
+}
+
+.food-map-detail-footer button {
+  display: inline-flex;
+  min-height: 43px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 1px solid var(--map-border);
+  border-radius: 10px;
+  color: #745c48;
+  background: #fffaf2;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.food-map-detail-footer button.danger {
+  color: #d8473c;
+  border-color: rgba(216, 71, 60, 0.22);
+}
+
+.food-map-detail-footer button.primary {
+  border-color: #ee6a2f;
+  color: #fff;
+  background: linear-gradient(135deg, #f47a31, #e65224);
+  box-shadow: 0 9px 18px rgba(222, 79, 32, 0.17);
+}
+
+.food-map-detail-empty {
+  display: flex;
+  min-height: 100%;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 9px;
+  padding: 36px 24px;
+  color: var(--map-muted);
+  text-align: center;
+}
+
+.food-map-detail-empty > span {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 4px;
+  place-items: center;
+  border: 1px solid rgba(225, 91, 43, 0.16);
+  border-radius: 20px;
+  color: #df5a2d;
+  background: rgba(225, 91, 43, 0.06);
+}
+
+.food-map-detail-empty h2 {
+  color: var(--map-text);
+  font-size: 24px;
+}
+
+.food-map-detail-empty > p:last-of-type {
+  max-width: 240px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.food-map-detail-empty button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 7px;
+  margin-top: 6px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  background: #e65b2c;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+:deep(.leaflet-tile-pane) {
+  filter: sepia(0.3) saturate(0.7) brightness(1.08) contrast(0.88);
+}
+
+:deep(.leaflet-control-attribution) {
+  color: #806c58;
+  background: rgba(255, 250, 241, 0.78);
+}
+
+:deep(.leaflet-control-zoom) {
+  overflow: hidden;
+  border: 1px solid rgba(128, 91, 52, 0.18) !important;
+  border-radius: 11px;
+  box-shadow: 0 7px 18px rgba(94, 61, 29, 0.14);
+}
+
+:deep(.leaflet-control-zoom a) {
+  border-color: var(--map-border);
+  color: #72563c;
+  background: rgba(255, 250, 241, 0.96);
+}
+
+:deep(.food-map-marker-dot) {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 3px solid rgba(255, 255, 255, 0.96);
+  border-radius: 50% 50% 50% 11px;
+  color: #fff;
+  background: var(--marker-color);
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--marker-color) 20%, transparent),
+    0 8px 17px rgba(82, 50, 23, 0.25);
+  transform: rotate(-45deg);
+}
+
+:deep(.food-map-marker-dot b) {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 1;
+  transform: rotate(45deg);
+}
+
+:deep(.food-map-marker-dot svg) {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: rotate(45deg);
+}
+
+:deep(.food-map-marker-dot.preview) {
+  width: 40px;
+  height: 40px;
+}
+
+:deep(.food-map-marker-dot.community) {
+  width: 31px;
+  height: 31px;
+  border-width: 3px;
+  opacity: 1;
+}
+
+:deep(.restaurant-marker) {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #fffaf2;
+  color: #fff;
+  background: #f07a25;
+  box-shadow: 0 6px 16px rgba(104, 61, 22, 0.24);
+}
+
+:deep(.marker-cluster) {
+  background: rgba(240, 122, 37, 0.2);
+}
+
+:deep(.marker-cluster div),
+:deep(.restaurant-cluster) {
+  color: #fff;
+  background: linear-gradient(135deg, #f78a30, #dc5723);
+}
+
+:deep(.food-map-leaflet-popup .leaflet-popup-content-wrapper),
+:deep(.restaurant-leaflet-popup .leaflet-popup-content-wrapper) {
+  border-color: rgba(128, 91, 52, 0.18);
+  border-radius: 14px;
+  color: #4b3524;
+  background: #fffaf2;
+  box-shadow: 0 15px 30px rgba(91, 56, 25, 0.18);
+}
+
+:deep(.food-map-leaflet-popup .leaflet-popup-tip),
+:deep(.restaurant-leaflet-popup .leaflet-popup-tip) {
+  background: #fffaf2;
+}
+
+:deep(.food-map-popup strong),
+:deep(.restaurant-popup strong) {
+  color: #433022;
+}
+
+:deep(.food-map-popup p),
+:deep(.restaurant-popup-address),
+:deep(.restaurant-popup-description) {
+  color: #806c59;
+}
+
+:deep(.food-map-popup-location),
+:deep(.restaurant-popup-meta) {
+  color: #8a704f;
+}
+
+:deep(.food-map-popup-actions button) {
+  border-color: rgba(226, 91, 43, 0.25);
+  color: #d95328;
+  background: rgba(226, 91, 43, 0.06);
+}
+
+@media (max-width: 1380px) {
+  .food-map-page {
+    grid-template-columns: 330px minmax(440px, 1fr) 320px;
+  }
+
+  .food-map-legend {
+    gap: 8px;
+    font-size: 9px;
+  }
+
+  .food-map-legend span:nth-last-child(2) {
+    display: none;
+  }
+}
+
+@media (max-width: 1120px) {
+  .food-map-page {
+    grid-template-columns: 330px minmax(0, 1fr);
+    height: auto;
+    min-height: calc(100svh - var(--nav-height));
+    overflow: visible;
+  }
+
+  .food-map-sidebar {
+    min-height: 720px;
+  }
+
+  .food-map-canvas {
+    height: 720px;
+    min-height: 720px;
+  }
+
+  .food-map-detail-panel {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(260px, 0.8fr) minmax(340px, 1.2fr);
+    margin: 0 18px 18px;
+    overflow: visible;
+  }
+
+  .food-map-detail-photo {
+    grid-row: 1 / span 3;
+  }
+
+  .food-map-detail-photo img {
+    height: 100%;
+    min-height: 310px;
+  }
+
+  .food-map-detail-footer {
+    margin-top: 0;
+  }
+
+  .food-map-detail-empty {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .food-map-page {
+    display: grid;
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100svh;
+  }
+
+  .food-map-sidebar {
+    min-height: 0;
+    border-right: 0;
+    box-shadow: none;
+  }
+
+  .food-map-sidebar-body {
+    max-height: none;
+  }
+
+  .food-map-canvas {
+    order: 0;
+    height: 58vh;
+    min-height: 430px;
+    padding: 10px;
+  }
+
+  .food-map-leaflet {
+    min-height: 410px;
+    border-radius: 16px;
+  }
+
+  .food-map-city-label {
+    top: 20px;
+    min-width: 210px;
+    padding-right: 20px;
+    padding-left: 20px;
+    font-size: 13px;
+  }
+
+  .food-map-legend {
+    bottom: 22px;
+    width: max-content;
+    max-width: calc(100% - 28px);
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+
+  .food-map-legend span:nth-last-child(2) {
+    display: inline-flex;
+  }
+
+  .food-map-detail-panel {
+    grid-column: auto;
+    display: flex;
+    margin: 8px 10px 18px;
+    border-radius: 16px;
+  }
+
+  .food-map-detail-photo {
+    margin: 12px 12px 0;
+  }
+
+  .food-map-detail-photo img {
+    height: 210px;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 430px) {
+  .food-map-sidebar-header {
+    padding-right: 18px;
+    padding-left: 22px;
+  }
+
+  .food-map-mode-toggle,
+  .food-map-layer-toggle {
+    margin-right: 14px;
+    margin-left: 14px;
+  }
+
+  .food-map-sidebar-body {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .food-map-detail-footer {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .food-map-detail-footer button.primary {
+    grid-column: 1 / -1;
+  }
 }
 </style>

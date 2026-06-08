@@ -157,7 +157,9 @@ async function validateTagIds(connection, tags) {
   return rows.length === tags.length
 }
 
-async function fetchRecipeDetail(recipeId, userId = 0) {
+async function fetchRecipeDetail(recipeId, user = null) {
+  const userId = user?.id || 0
+  const userRole = user?.role || 'guest'
   const [rows] = await pool.execute(
     `SELECT
        r.*,
@@ -189,8 +191,9 @@ async function fetchRecipeDetail(recipeId, userId = 0) {
      ) favorite_stats ON favorite_stats.recipe_id = r.id
      LEFT JOIN favorites user_fav ON user_fav.recipe_id = r.id AND user_fav.user_id = ?
      LEFT JOIN ratings user_rating ON user_rating.recipe_id = r.id AND user_rating.user_id = ?
-     WHERE r.id = ?`,
-    [userId, userId, recipeId],
+     WHERE r.id = ?
+       AND (r.status = 'approved' OR ? = 'admin' OR r.submitted_by = ?)`,
+    [userId, userId, recipeId, userRole, userId],
   )
 
   if (rows.length === 0) {
@@ -263,6 +266,7 @@ async function fetchRecipeDetail(recipeId, userId = 0) {
        GROUP BY rt.recipe_id
      ) tag_stats ON tag_stats.recipe_id = r.id
      WHERE r.id <> ?
+       AND r.status = 'approved'
        AND (
          r.category_id = ?
          OR EXISTS (
@@ -320,8 +324,8 @@ router.get('/', optionalAuth, async (req, res, next) => {
     const tag = String(req.query.tag || '').trim()
     const userId = req.user?.id || 0
     const includeMeta = req.query.includeMeta !== '0'
-    const where = []
-    const params = []
+    const where = ['r.status = ?']
+    const params = ['approved']
 
     if (isTooLong(search, 120) || isTooLong(category, 100) || isTooLong(tag, 100)) {
       return res.status(400).json({ error: 'Search and filter values are too long.' })
@@ -441,6 +445,77 @@ router.get('/', optionalAuth, async (req, res, next) => {
   }
 })
 
+router.post('/submissions', requireAuth, async (req, res, next) => {
+  const validation = validateRecipe(req.body)
+  if (validation.error) {
+    return res.status(400).json({ error: validation.error })
+  }
+
+  const data = validation.value
+  const connection = await pool.getConnection()
+  try {
+    await connection.beginTransaction()
+
+    const [categoryRows] = await connection.execute('SELECT id FROM categories WHERE id = ?', [
+      data.categoryId,
+    ])
+    if (categoryRows.length === 0) {
+      await connection.rollback()
+      return res.status(400).json({ error: 'Selected category does not exist.' })
+    }
+    if (!(await validateTagIds(connection, data.tags))) {
+      await connection.rollback()
+      return res.status(400).json({ error: 'One or more selected tags do not exist.' })
+    }
+
+    const [result] = await connection.execute(
+      `INSERT INTO recipes
+         (category_id, submitted_by, title, status, image_url, instructions,
+          description, calories, protein, carbs, fat)
+       VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        data.categoryId,
+        req.user.id,
+        data.title,
+        data.imageUrl,
+        data.instructions,
+        data.description,
+        data.calories,
+        data.protein,
+        data.carbs,
+        data.fat,
+      ],
+    )
+
+    const recipeId = result.insertId
+    for (const ingredient of data.ingredients) {
+      await connection.execute(
+        `INSERT INTO recipe_ingredients (recipe_id, ingredient_name, quantity)
+         VALUES (?, ?, ?)`,
+        [recipeId, ingredient.ingredient_name, ingredient.quantity],
+      )
+    }
+    for (const tagId of data.tags) {
+      await connection.execute('INSERT IGNORE INTO recipe_tags (recipe_id, tag_id) VALUES (?, ?)', [
+        recipeId,
+        tagId,
+      ])
+    }
+
+    await connection.commit()
+    const recipe = await fetchRecipeDetail(recipeId, req.user)
+    return res.status(201).json({
+      message: 'Công thức đã được gửi và đang chờ quản trị viên duyệt.',
+      recipe,
+    })
+  } catch (error) {
+    await connection.rollback()
+    return next(error)
+  } finally {
+    connection.release()
+  }
+})
+
 router.get('/:id', optionalAuth, async (req, res, next) => {
   try {
     const recipeId = toPositiveInt(req.params.id)
@@ -448,7 +523,7 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid recipe id.' })
     }
 
-    const recipe = await fetchRecipeDetail(recipeId, req.user?.id || 0)
+    const recipe = await fetchRecipeDetail(recipeId, req.user)
     if (!recipe) {
       return res.status(404).json({ error: 'Recipe not found.' })
     }
@@ -484,10 +559,12 @@ router.post('/', requireAuth, requireAdmin, async (req, res, next) => {
 
     const [result] = await connection.execute(
       `INSERT INTO recipes
-         (category_id, title, image_url, instructions, description, calories, protein, carbs, fat)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (category_id, submitted_by, title, status, image_url, instructions,
+          description, calories, protein, carbs, fat)
+       VALUES (?, ?, ?, 'approved', ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.categoryId,
+        req.user.id,
         data.title,
         data.imageUrl,
         data.instructions,
@@ -515,7 +592,7 @@ router.post('/', requireAuth, requireAdmin, async (req, res, next) => {
     }
 
     await connection.commit()
-    const recipe = await fetchRecipeDetail(recipeId, req.user.id)
+    const recipe = await fetchRecipeDetail(recipeId, req.user)
     return res.status(201).json({ recipe })
   } catch (error) {
     await connection.rollback()
@@ -596,7 +673,7 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res, next) => {
     }
 
     await connection.commit()
-    const recipe = await fetchRecipeDetail(recipeId, req.user.id)
+    const recipe = await fetchRecipeDetail(recipeId, req.user)
     return res.json({ recipe })
   } catch (error) {
     await connection.rollback()

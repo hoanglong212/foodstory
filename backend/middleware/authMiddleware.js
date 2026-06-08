@@ -18,15 +18,18 @@ export async function requireAuth(req, res, next) {
 
     const payload = jwt.verify(token, process.env.JWT_SECRET)
     const [rows] = await pool.execute(
-      'SELECT id, username, email, role, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, role, is_banned, created_at FROM users WHERE id = ?',
       [payload.id],
     )
 
     if (rows.length === 0) {
       return res.status(401).json({ error: 'User account no longer exists.' })
     }
+    if (rows[0].is_banned) {
+      return res.status(401).json({ error: 'This account has been banned.' })
+    }
 
-    req.user = rows[0]
+    req.user = { ...rows[0], is_banned: Boolean(rows[0].is_banned) }
     return next()
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
@@ -46,10 +49,13 @@ export async function optionalAuth(req, res, next) {
 
     const payload = jwt.verify(token, process.env.JWT_SECRET)
     const [rows] = await pool.execute(
-      'SELECT id, username, email, role, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, role, is_banned, created_at FROM users WHERE id = ?',
       [payload.id],
     )
-    req.user = rows[0] || null
+    req.user =
+      rows[0] && !rows[0].is_banned
+        ? { ...rows[0], is_banned: Boolean(rows[0].is_banned) }
+        : null
     return next()
   } catch {
     req.user = null

@@ -39,7 +39,7 @@ router.get('/', requireAuth, async (req, res, next) => {
        LEFT JOIN ratings ra ON ra.recipe_id = r.id
        LEFT JOIN comments ON comments.recipe_id = r.id
        LEFT JOIN favorites fav_all ON fav_all.recipe_id = r.id
-       WHERE fav.user_id = ?
+       WHERE fav.user_id = ? AND r.status = 'approved'
        GROUP BY r.id, c.name
        ORDER BY fav.recipe_id DESC`,
       [req.user.id],
@@ -70,7 +70,10 @@ router.post('/:recipeId', requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid recipe id.' })
     }
 
-    const [recipes] = await pool.execute('SELECT id FROM recipes WHERE id = ?', [recipeId])
+    const [recipes] = await pool.execute(
+      "SELECT id FROM recipes WHERE id = ? AND status = 'approved'",
+      [recipeId],
+    )
     if (recipes.length === 0) {
       return res.status(404).json({ error: 'Recipe not found.' })
     }

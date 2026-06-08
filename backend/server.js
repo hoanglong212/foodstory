@@ -11,6 +11,8 @@ import ratingRoutes from './routes/ratingRoutes.js'
 import checklistRoutes from './routes/checklistRoutes.js'
 import foodSpotsRoutes from './routes/foodSpots.js'
 import restaurantsRoutes from './routes/restaurants.js'
+import chatbotRoutes from './routes/chatbot.js'
+import adminRoutes from './routes/admin.js'
 import pool from './db.js'
 import { initWebSocketServer } from './websocket/wsServer.js'
 
@@ -79,6 +81,8 @@ app.use('/api/favorites', favoriteRoutes)
 app.use('/api', checklistRoutes)
 app.use('/api/food-spots', foodSpotsRoutes)
 app.use('/api/restaurants', restaurantsRoutes)
+app.use('/api/chatbot', chatbotRoutes)
+app.use('/api/admin', adminRoutes)
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found.' })

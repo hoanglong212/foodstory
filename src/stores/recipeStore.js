@@ -376,6 +376,18 @@ export const useRecipeStore = defineStore('recipes', {
         throw new Error(message)
       }
     },
+    async submitRecipe(payload) {
+      const uiStore = useUiStore()
+      try {
+        const response = await api.post('/recipes/submissions', payload)
+        uiStore.setSuccess(response.data.message || 'Công thức đã được gửi để xét duyệt.')
+        return response.data.recipe
+      } catch (error) {
+        const message = getApiError(error, 'Không thể gửi công thức.')
+        uiStore.setError(message)
+        throw new Error(message)
+      }
+    },
     async updateRecipe(id, payload) {
       const uiStore = useUiStore()
       try {

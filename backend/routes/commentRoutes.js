@@ -70,7 +70,10 @@ router.post('/recipes/:id/comments', requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: contentError })
     }
 
-    const [recipes] = await pool.execute('SELECT id FROM recipes WHERE id = ?', [recipeId])
+    const [recipes] = await pool.execute(
+      "SELECT id FROM recipes WHERE id = ? AND status = 'approved'",
+      [recipeId],
+    )
     if (recipes.length === 0) {
       return res.status(404).json({ error: 'Recipe not found.' })
     }

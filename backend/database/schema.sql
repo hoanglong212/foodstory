@@ -7,7 +7,9 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(100) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('guest','user','admin') DEFAULT 'user',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  is_banned TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_users_role_banned (role, is_banned)
 );
 
 CREATE TABLE IF NOT EXISTS news (
@@ -34,7 +36,12 @@ CREATE TABLE IF NOT EXISTS tags (
 CREATE TABLE IF NOT EXISTS recipes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   category_id INT NOT NULL,
+  submitted_by INT DEFAULT NULL,
   title VARCHAR(255) NOT NULL,
+  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'approved',
+  rejection_reason VARCHAR(500) DEFAULT NULL,
+  moderated_by INT DEFAULT NULL,
+  moderated_at DATETIME DEFAULT NULL,
   image_url VARCHAR(500) NOT NULL,
   instructions TEXT NOT NULL,
   description TEXT DEFAULT NULL,
@@ -45,7 +52,11 @@ CREATE TABLE IF NOT EXISTS recipes (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   KEY idx_recipes_category_created (category_id, created_at),
   KEY idx_recipes_created (created_at),
-  FOREIGN KEY (category_id) REFERENCES categories(id)
+  KEY idx_recipes_status_created (status, created_at),
+  KEY idx_recipes_submitted_by (submitted_by),
+  FOREIGN KEY (category_id) REFERENCES categories(id),
+  CONSTRAINT fk_recipes_submitted_by FOREIGN KEY (submitted_by) REFERENCES users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_recipes_moderated_by FOREIGN KEY (moderated_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS recipe_ingredients (

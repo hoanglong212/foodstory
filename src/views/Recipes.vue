@@ -775,13 +775,6 @@ async function deleteRecipe(recipe) {
           <RouterLink :to="authStore.isLoggedIn ? '/profile' : '/login'">
             {{ authStore.isLoggedIn ? 'Open profile' : 'Sign in / Sign up' }}
           </RouterLink>
-          <RouterLink
-            v-permission="'admin'"
-            class="recipe-admin-create"
-            to="/recipes/new"
-          >
-            Create Recipe
-          </RouterLink>
         </section>
       </aside>
 
@@ -810,6 +803,21 @@ async function deleteRecipe(recipe) {
             <h1>Our Very Best Recipes</h1>
             <p>Tried, tested and loved by our community of home cooks.</p>
           </div>
+
+          <RouterLink
+            v-if="!authStore.isAdmin"
+            class="recipe-submit-cta"
+            :to="
+              authStore.isLoggedIn
+                ? { name: 'recipe-submit' }
+                : { name: 'login', query: { redirect: '/recipes/submit' } }
+            "
+          >
+            <AppIcon name="send" size="17" />
+            <span>
+              {{ authStore.isLoggedIn ? 'Gửi công thức của bạn' : 'Đăng nhập để gửi công thức' }}
+            </span>
+          </RouterLink>
 
           <form class="recipe-reference-search" @submit.prevent>
             <label>
