@@ -101,9 +101,13 @@ app.use((error, req, res, next) => {
     })
   }
 
-  if (error.code === 'ER_BAD_DB_ERROR' || error.code === 'ER_NO_SUCH_TABLE') {
+  if (
+    error.code === 'ER_BAD_DB_ERROR' ||
+    error.code === 'ER_NO_SUCH_TABLE' ||
+    error.code === 'ER_BAD_FIELD_ERROR'
+  ) {
     return res.status(503).json({
-      error: 'Database schema is incomplete. Run backend/database/schema.sql or the required migration.',
+      error: 'Database schema is incomplete. Run backend/database/schema.sql for a new database or npm run migrate for an existing database.',
     })
   }
 
@@ -115,6 +119,7 @@ initWebSocketServer(server)
 server.on('error', (error) => {
   if (error.code === 'EADDRINUSE') {
     console.error(`Port ${port} is already in use. Stop the other server or set a different PORT.`)
+    process.exitCode = 1
     return
   }
 
