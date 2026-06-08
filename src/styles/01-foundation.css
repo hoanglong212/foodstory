@@ -44,6 +44,8 @@
   --header-pill: rgba(230, 57, 70, 0.25);
   --header-control: rgba(255, 255, 255, 0.08);
   --header-border: rgba(255, 255, 255, 0.05);
+  --header-home-bg: rgba(18, 18, 21, 0.1);
+  --header-home-border: rgba(255, 255, 255, 0.1);
   --header-solid-bg: rgba(26, 26, 29, 0.95);
   --header-solid-border: rgba(255, 255, 255, 0.08);
   --header-solid-text: #f7f3ed;
@@ -125,6 +127,8 @@
   --header-pill: rgba(216, 67, 77, 0.15);
   --header-control: rgba(45, 41, 38, 0.06);
   --header-border: rgba(45, 41, 38, 0.12);
+  --header-home-bg: rgba(246, 240, 231, 0.5);
+  --header-home-border: rgba(45, 41, 38, 0.14);
   --header-solid-bg: rgba(246, 240, 231, 0.98);
   --header-solid-border: rgba(45, 41, 38, 0.15);
   --header-solid-text: #2d2926;
@@ -350,6 +354,14 @@ main:focus {
   -webkit-backdrop-filter: blur(18px) saturate(1.15);
 }
 
+.site-header.is-home:not(.is-solid) {
+  border-bottom-color: var(--header-home-border);
+  background: var(--header-home-bg);
+  box-shadow: 0 8px 24px rgba(8, 10, 20, 0.08);
+  backdrop-filter: blur(12px) saturate(1.08);
+  -webkit-backdrop-filter: blur(12px) saturate(1.08);
+}
+
 .brand,
 .brand-kicker {
   display: inline-flex;
@@ -403,7 +415,8 @@ main:focus {
   background: var(--header-solid-pill);
 }
 
-.site-header.is-solid .theme-toggle {
+.site-header.is-solid .theme-toggle,
+.site-header.is-solid .mobile-menu-toggle {
   border-color: var(--header-solid-border);
   color: var(--header-solid-text);
   background: var(--header-solid-control);
@@ -438,7 +451,8 @@ main:focus {
   gap: 10px;
 }
 
-.theme-toggle {
+.theme-toggle,
+.mobile-menu-toggle {
   display: inline-grid;
   width: 40px;
   height: 40px;
@@ -452,7 +466,12 @@ main:focus {
   font-weight: 850;
 }
 
-.theme-toggle:hover {
+.mobile-menu-toggle {
+  display: none;
+}
+
+.theme-toggle:hover,
+.mobile-menu-toggle:hover {
   border-color: rgba(237, 59, 18, 0.42);
   color: var(--accent);
   background: var(--header-pill);
@@ -460,6 +479,7 @@ main:focus {
 }
 
 .theme-toggle:focus-visible,
+.mobile-menu-toggle:focus-visible,
 .main-nav a:focus-visible,
 .brand:focus-visible,
 .btn:focus-visible,
@@ -2508,8 +2528,11 @@ main:focus {
 
 .detail-section {
   border-radius: 8px;
-  background:
-    linear-gradient(180deg, var(--panel), color-mix(in srgb, var(--panel) 88%, var(--bg)));
+  background: linear-gradient(
+    180deg,
+    var(--panel),
+    color-mix(in srgb, var(--panel) 88%, var(--bg))
+  );
 }
 
 .detail-section-heading {
@@ -2618,7 +2641,10 @@ main:focus {
 
 .rating-layout {
   display: grid;
-  grid-template-columns: minmax(220px, 0.72fr) minmax(260px, 1fr) minmax(240px, 0.9fr);
+  grid-template-columns: minmax(220px, 0.72fr) minmax(260px, 1fr) minmax(
+      240px,
+      0.9fr
+    );
   gap: 16px;
 }
 
@@ -3008,4 +3034,3 @@ main:focus {
   display: grid;
   gap: 20px;
 }
-

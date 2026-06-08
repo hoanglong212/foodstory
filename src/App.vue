@@ -61,7 +61,9 @@ const footerCategories = [
 ]
 
 const isDark = computed(() => uiStore.darkMode)
+const isHomePage = computed(() => route.name === 'home')
 const isNavSolid = ref(false)
+const isMobileNavOpen = ref(false)
 let revealObserver
 let rafId = 0
 
@@ -74,7 +76,16 @@ function toggleTheme() {
   uiStore.toggleDarkMode()
 }
 
+function toggleMobileNav() {
+  isMobileNavOpen.value = !isMobileNavOpen.value
+}
+
+function closeMobileNav() {
+  isMobileNavOpen.value = false
+}
+
 async function logout() {
+  closeMobileNav()
   await authStore.logout()
   router.push('/')
 }
@@ -213,6 +224,7 @@ watch(
 watch(
   () => route.fullPath,
   async () => {
+    closeMobileNav()
     isNavSolid.value = false
     await nextTick()
     observeMotion()
@@ -226,7 +238,16 @@ watch(
     <a class="skip-link" href="#main-content">Skip to main content</a>
     <ToastNotification />
 
-    <header :class="['site-header', { 'is-solid': isNavSolid }]">
+    <header
+      :class="[
+        'site-header',
+        {
+          'is-home': isHomePage,
+          'is-solid': isNavSolid,
+          'is-nav-open': isMobileNavOpen,
+        },
+      ]"
+    >
       <RouterLink class="brand" to="/" aria-label="FoodStory home">
         <span class="brand-mark" aria-hidden="true">
           <AppIcon name="chef-hat" size="23" stroke-width="2.2" />
@@ -234,13 +255,18 @@ watch(
         <span>FoodStory</span>
       </RouterLink>
 
-      <nav class="main-nav" aria-label="Main navigation">
+      <nav
+        id="primary-navigation"
+        :class="['main-nav', { 'is-open': isMobileNavOpen }]"
+        aria-label="Main navigation"
+      >
         <RouterLink
           v-for="item in navItems"
           :key="item.to"
           :to="item.to"
           active-class="active"
           exact-active-class="active"
+          @click="closeMobileNav"
         >
           <AppIcon :name="item.icon" size="18" />
           <span>{{ item.label }}</span>
@@ -272,6 +298,16 @@ watch(
         >
           <AppIcon :name="isDark ? 'moon' : 'sun'" size="18" />
           <span class="sr-only">{{ isDark ? 'Chế độ tối' : 'Chế độ sáng' }}</span>
+        </button>
+        <button
+          class="mobile-menu-toggle"
+          type="button"
+          :aria-expanded="isMobileNavOpen"
+          aria-controls="primary-navigation"
+          :aria-label="isMobileNavOpen ? 'Đóng menu điều hướng' : 'Mở menu điều hướng'"
+          @click="toggleMobileNav"
+        >
+          <AppIcon :name="isMobileNavOpen ? 'x' : 'menu'" size="20" />
         </button>
       </div>
     </header>

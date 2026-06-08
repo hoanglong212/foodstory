@@ -62,7 +62,8 @@ body:has(.recipe-detail-magazine) .main-nav a.active::after {
 
 body:has(.recipe-detail-magazine) .user-chip,
 body:has(.recipe-detail-magazine) .logout-button,
-body:has(.recipe-detail-magazine) .theme-toggle {
+body:has(.recipe-detail-magazine) .theme-toggle,
+body:has(.recipe-detail-magazine) .mobile-menu-toggle {
   color: #342820;
 }
 
@@ -1064,7 +1065,7 @@ body:has(.recipe-detail-magazine) .theme-toggle {
     gap: 8px 12px;
     min-height: 0;
     padding: 10px 14px 9px;
-    overflow: hidden;
+    overflow: visible;
   }
 
   body:has(.recipe-detail-magazine) .brand {
@@ -1080,31 +1081,44 @@ body:has(.recipe-detail-magazine) .theme-toggle {
 
   body:has(.recipe-detail-magazine) .main-nav {
     grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 4px;
+    display: none;
+    grid-template-columns: 1fr;
+    gap: 8px;
     width: 100%;
-    overflow: hidden;
+    padding: 8px;
+    overflow: visible;
+    border: 1px solid rgba(45, 35, 27, 0.12);
+    border-radius: 14px;
+    background: rgba(255, 253, 249, 0.98);
+    box-shadow: 0 16px 34px rgba(48, 35, 27, 0.12);
+  }
+
+  body:has(.recipe-detail-magazine) .main-nav.is-open {
+    display: grid;
   }
 
   body:has(.recipe-detail-magazine) .main-nav a {
     position: relative;
-    display: grid;
+    display: inline-flex;
     min-width: 0;
-    min-height: 34px;
-    place-items: center;
-    padding: 0;
+    min-height: 46px;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
     border-radius: 8px;
+    text-align: left;
   }
 
-  body:has(.recipe-detail-magazine) .main-nav a span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
+  body:has(.recipe-detail-magazine) .main-nav a span:not(.pending-badge) {
+    position: static;
+    width: auto;
+    height: auto;
     overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    clip-path: inset(50%);
+    overflow-wrap: anywhere;
+    clip: auto;
+    white-space: normal;
+    clip-path: none;
   }
 
   body:has(.recipe-detail-magazine) .main-nav a.active::after {
@@ -1126,6 +1140,7 @@ body:has(.recipe-detail-magazine) .theme-toggle {
   }
 
   body:has(.recipe-detail-magazine) .logout-button,
+  body:has(.recipe-detail-magazine) .mobile-menu-toggle,
   body:has(.recipe-detail-magazine) .theme-toggle {
     flex: 0 0 36px;
     width: 36px;
@@ -1437,8 +1452,14 @@ body:has(.recipe-detail-magazine) .theme-toggle {
 :root[data-theme="dark"] body:has(.recipe-detail-magazine) .main-nav a,
 :root[data-theme="dark"] body:has(.recipe-detail-magazine) .user-chip,
 :root[data-theme="dark"] body:has(.recipe-detail-magazine) .logout-button,
-:root[data-theme="dark"] body:has(.recipe-detail-magazine) .theme-toggle {
+:root[data-theme="dark"] body:has(.recipe-detail-magazine) .theme-toggle,
+:root[data-theme="dark"] body:has(.recipe-detail-magazine) .mobile-menu-toggle {
   color: #d7cec5;
+}
+
+:root[data-theme="dark"] body:has(.recipe-detail-magazine) .main-nav {
+  border-color: rgba(255, 242, 227, 0.12);
+  background: rgba(23, 20, 17, 0.98);
 }
 
 :root[data-theme="dark"] body:has(.recipe-detail-magazine) .main-nav a:hover,

@@ -308,9 +308,16 @@ async function toggleBan(user) {
   actionId.value = `ban-${user.id}`
   try {
     const response = await toggleAdminUserBan(user.id)
-    user.is_banned = Boolean(response.data.is_banned)
+    const updatedUser = response.data.user || {}
+    user.is_banned = Boolean(updatedUser.is_banned ?? response.data.is_banned)
+    user.role = updatedUser.role || response.data.role || user.role
+    roleDrafts[user.id] = user.role
     uiStore.setSuccess(response.data.message)
-    await loadStats({ silent: true })
+    await Promise.all([
+      loadUsers(userPagination.currentPage),
+      loadComments(commentPagination.currentPage),
+      loadStats({ silent: true }),
+    ])
   } catch (error) {
     showError(error, 'Không thể cập nhật trạng thái tài khoản.')
   } finally {

@@ -1,3 +1,86 @@
+@media (max-width: 1320px) {
+  .site-header {
+    z-index: 1000;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 16px clamp(16px, 2.4vw, 28px);
+  }
+
+  .site-header .brand {
+    min-width: 0;
+    gap: 9px;
+  }
+
+  .site-header .brand > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .main-nav {
+    grid-column: 1 / -1;
+    display: none;
+    grid-template-columns: 1fr;
+    justify-self: end;
+    align-items: stretch;
+    justify-content: stretch;
+    gap: 8px;
+    width: min(460px, calc(100vw - 32px));
+    padding: 8px;
+    border: 1px solid var(--header-solid-border);
+    border-radius: 14px;
+    background: var(--header-solid-bg);
+    box-shadow: 0 16px 34px rgba(8, 10, 20, 0.18);
+  }
+
+  .main-nav.is-open {
+    display: grid;
+  }
+
+  .main-nav a {
+    display: inline-flex;
+    min-width: 0;
+    min-height: 46px;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    text-align: left;
+  }
+
+  .main-nav a > span:not(.pending-badge) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .pending-badge {
+    margin-left: auto;
+  }
+
+  .header-actions {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .mobile-menu-toggle {
+    display: inline-grid;
+  }
+
+  .user-chip {
+    max-width: min(190px, 24vw);
+  }
+
+  .main-nav a.active::after {
+    right: 12px;
+    bottom: 4px;
+    left: 12px;
+  }
+}
+
 @media (max-width: 1024px) {
   .hero-content h1 {
     font-size: 60px;
@@ -94,51 +177,113 @@
   }
 
   .site-header {
-    position: static;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 16px;
+    gap: 12px;
     min-height: auto;
-    padding: 16px 18px;
+    padding: 12px 14px;
   }
 
-  .header-actions {
-    justify-content: flex-end;
+  .site-header.is-home {
+    position: fixed;
+  }
+
+  .site-header .brand {
+    min-width: 0;
+    gap: 9px;
+  }
+
+  .site-header .brand > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .main-nav {
     grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: none;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    justify-content: stretch;
     gap: 8px;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--header-solid-border);
+    border-radius: 14px;
+    background: var(--header-solid-bg);
+    box-shadow: 0 16px 34px rgba(8, 10, 20, 0.18);
+  }
+
+  .main-nav.is-open {
+    display: grid;
   }
 
   .main-nav a {
     display: inline-flex;
-    flex-direction: column;
-    min-height: 42px;
+    min-width: 0;
+    min-height: 46px;
     align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 8px 10px;
-    font-size: 13px;
-    text-align: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    text-align: left;
+  }
+
+  .main-nav a > span:not(.pending-badge) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .pending-badge {
+    margin-left: auto;
   }
 
   .header-actions {
-    grid-column: 1 / -1;
-    justify-content: stretch;
-    flex-wrap: wrap;
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: 8px;
   }
 
-  .user-chip,
+  .mobile-menu-toggle {
+    display: inline-grid;
+  }
+
+  .user-chip {
+    display: none;
+  }
+
   .logout-button,
+  .mobile-menu-toggle,
   .theme-toggle {
-    flex: 1 1 auto;
+    flex: 0 0 40px;
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+  }
+
+  .logout-button {
+    justify-content: center;
+  }
+
+  .logout-button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
   }
 
   .main-nav a.active::after {
     right: 12px;
+    bottom: 4px;
     left: 12px;
   }
 

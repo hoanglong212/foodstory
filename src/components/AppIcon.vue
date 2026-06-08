@@ -86,6 +86,11 @@ const icons = {
     { type: 'rect', x: 3, y: 5, width: 18, height: 14, rx: 2 },
     { type: 'path', d: 'm3 7 9 6 9-6' },
   ],
+  menu: [
+    { type: 'path', d: 'M4 6h16' },
+    { type: 'path', d: 'M4 12h16' },
+    { type: 'path', d: 'M4 18h16' },
+  ],
   'map-pin': [
     { type: 'path', d: 'M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z' },
     { type: 'circle', cx: 12, cy: 10, r: 3 },
@@ -167,6 +172,10 @@ const icons = {
     { type: 'circle', cx: 9, cy: 7, r: 4 },
     { type: 'path', d: 'M22 21v-2a4 4 0 0 0-3-3.87' },
     { type: 'path', d: 'M16 3.13a4 4 0 0 1 0 7.75' },
+  ],
+  x: [
+    { type: 'path', d: 'M18 6 6 18' },
+    { type: 'path', d: 'm6 6 12 12' },
   ],
   utensils: [
     { type: 'path', d: 'M4 3v7' },

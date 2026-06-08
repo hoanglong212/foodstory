@@ -249,14 +249,81 @@ function markerColor(rating) {
   return '#e6504f'
 }
 
+function normalizedCategory(category) {
+  return String(category || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLocaleLowerCase('vi')
+}
+
 function categoryColor(category) {
-  const text = String(category || '').toLocaleLowerCase('vi')
-  if (text.includes('phở') || text.includes('bún')) return '#a66cc4'
-  if (text.includes('café') || text.includes('cafe') || text.includes('trà')) return '#b87949'
-  if (text.includes('bánh') || text.includes('tráng') || text.includes('chè')) return '#ef6f7b'
-  if (text.includes('hải')) return '#3b9dbc'
-  if (text.includes('cơm') || text.includes('mì')) return '#74a05c'
+  const text = normalizedCategory(category)
+  if (text.includes('pho') || text.includes('bun')) return '#a66cc4'
+  if (text.includes('cafe') || text.includes('ca phe') || text.includes('tra')) return '#b87949'
+  if (text.includes('banh') || text.includes('trang') || text.includes('che')) return '#ef6f7b'
+  if (text.includes('hai')) return '#3b9dbc'
+  if (text.includes('com') || text.includes('mi')) return '#74a05c'
   return '#f97316'
+}
+
+function restaurantCategoryTheme(category) {
+  const text = normalizedCategory(category)
+  if (text.includes('pho')) {
+    return {
+      emoji: '🍜',
+      color: '#a66cc4',
+      gradient: 'linear-gradient(135deg, #c084fc 0%, #7e3aad 100%)',
+    }
+  }
+  if (text.includes('com tam')) {
+    return {
+      emoji: '🍚',
+      color: '#74a05c',
+      gradient: 'linear-gradient(135deg, #9fca72 0%, #4d7f3f 100%)',
+    }
+  }
+  if (text.includes('banh mi')) {
+    return {
+      emoji: '🥖',
+      color: '#d9862f',
+      gradient: 'linear-gradient(135deg, #f6b04f 0%, #c5661f 100%)',
+    }
+  }
+  if (text.includes('hai san')) {
+    return {
+      emoji: '🦐',
+      color: '#3b9dbc',
+      gradient: 'linear-gradient(135deg, #58c4dd 0%, #247b9c 100%)',
+    }
+  }
+  if (text.includes('lau')) {
+    return {
+      emoji: '🫕',
+      color: '#e6504f',
+      gradient: 'linear-gradient(135deg, #ff8a65 0%, #c7362f 100%)',
+    }
+  }
+  if (text.includes('cafe') || text.includes('ca phe')) {
+    return {
+      emoji: '☕',
+      color: '#b87949',
+      gradient: 'linear-gradient(135deg, #d59b66 0%, #7a4a2c 100%)',
+    }
+  }
+  if (text.includes('dimsum')) {
+    return {
+      emoji: '🥟',
+      color: '#ef6f7b',
+      gradient: 'linear-gradient(135deg, #ff9aa5 0%, #d94b60 100%)',
+    }
+  }
+  return {
+    emoji: '🍽️',
+    color: '#f97316',
+    gradient: 'linear-gradient(135deg, #fb923c 0%, #ea580c 100%)',
+  }
 }
 
 function communityMarkerColor(rating) {
@@ -294,13 +361,14 @@ function markerIcon(spot, preview = false, community = false) {
   })
 }
 
-function restaurantMarkerIcon() {
+function restaurantMarkerIcon(restaurant) {
+  const theme = restaurantCategoryTheme(restaurant?.category)
   return L.divIcon({
     className: 'restaurant-marker-shell',
-    html: '<div class="restaurant-marker"><span>R</span></div>',
-    iconSize: [32, 32],
-    iconAnchor: [16, 30],
-    popupAnchor: [0, -30],
+    html: `<div class="restaurant-marker" style="--restaurant-color:${theme.color};--restaurant-gradient:${theme.gradient}"><span class="restaurant-marker-emoji" aria-hidden="true">${theme.emoji}</span></div>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 38],
+    popupAnchor: [0, -38],
   })
 }
 
@@ -311,12 +379,23 @@ function restaurantRatingText(rating) {
 }
 
 function restaurantPopupContent(restaurant) {
+  const theme = restaurantCategoryTheme(restaurant.category)
   const container = document.createElement('div')
   container.className = 'restaurant-popup'
+  container.style.setProperty('--restaurant-color', theme.color)
+  container.style.setProperty('--restaurant-gradient', theme.gradient)
 
-  const category = document.createElement('span')
-  category.className = 'restaurant-popup-category'
-  category.textContent = restaurant.category || 'Nhà hàng'
+  const banner = document.createElement('div')
+  banner.className = 'restaurant-popup-banner'
+  banner.setAttribute('aria-label', restaurant.category || 'Nhà hàng')
+
+  const emoji = document.createElement('span')
+  emoji.className = 'restaurant-popup-emoji'
+  emoji.textContent = theme.emoji
+  banner.append(emoji)
+
+  const body = document.createElement('div')
+  body.className = 'restaurant-popup-body'
 
   const name = document.createElement('strong')
   name.textContent = restaurant.name
@@ -345,7 +424,21 @@ function restaurantPopupContent(restaurant) {
   description.className = 'restaurant-popup-description'
   description.textContent = restaurant.description || 'Chưa có mô tả cho nhà hàng này.'
 
-  container.append(category, name, address, meta, rating, description)
+  const directions = document.createElement('button')
+  directions.type = 'button'
+  directions.className = 'restaurant-popup-directions'
+  directions.textContent = 'Chỉ Đường'
+  directions.addEventListener('click', (event) => {
+    event.stopPropagation()
+    window.open(
+      `https://www.google.com/maps/dir/?api=1&destination=${restaurant.latitude},${restaurant.longitude}`,
+      '_blank',
+      'noopener,noreferrer',
+    )
+  })
+
+  body.append(name, address, meta, rating, description, directions)
+  container.append(banner, body)
   return container
 }
 
@@ -448,7 +541,7 @@ function renderRestaurantMarkers() {
     if (!Number.isFinite(restaurant.latitude) || !Number.isFinite(restaurant.longitude)) return
 
     const marker = L.marker([restaurant.latitude, restaurant.longitude], {
-      icon: restaurantMarkerIcon(),
+      icon: restaurantMarkerIcon(restaurant),
       title: restaurant.name,
       zIndexOffset: 200,
     })
@@ -2700,22 +2793,24 @@ onBeforeUnmount(() => {
 
 :deep(.restaurant-marker) {
   display: flex;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   align-items: center;
   justify-content: center;
   border: 2px solid #fff;
-  border-radius: 50% 50% 50% 0;
+  border-radius: 12px;
   color: #fff;
-  background: #f97316;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32);
-  transform: rotate(-45deg);
+  background: var(--restaurant-gradient, linear-gradient(135deg, #fb923c, #ea580c));
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--restaurant-color, #f97316) 22%, transparent),
+    0 8px 18px rgba(0, 0, 0, 0.3);
 }
 
-:deep(.restaurant-marker span) {
-  font-size: 12px;
-  font-weight: 950;
-  transform: rotate(45deg);
+:deep(.restaurant-marker-emoji) {
+  display: block;
+  font-size: 22px;
+  line-height: 1;
+  filter: grayscale(1) brightness(0) invert(1);
 }
 
 :deep(.restaurant-cluster) {
@@ -2771,6 +2866,24 @@ onBeforeUnmount(() => {
   border-radius: 14px;
 }
 
+:deep(.restaurant-leaflet-popup .leaflet-popup-content-wrapper) {
+  overflow: hidden;
+}
+
+:deep(.restaurant-leaflet-popup .leaflet-popup-content) {
+  width: 260px !important;
+  margin: 0;
+}
+
+:deep(.restaurant-leaflet-popup .leaflet-popup-close-button) {
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+:deep(.restaurant-leaflet-popup .leaflet-popup-close-button:hover) {
+  color: #fff7ed;
+}
+
 :deep(.food-map-popup) {
   display: grid;
   min-width: 210px;
@@ -2812,21 +2925,30 @@ onBeforeUnmount(() => {
 }
 
 :deep(.restaurant-popup) {
-  display: grid;
-  min-width: 225px;
-  gap: 7px;
+  display: block;
+  width: 260px;
+  min-width: 260px;
+  overflow: hidden;
   font-family: var(--font-sans);
 }
 
-:deep(.restaurant-popup-category) {
-  width: max-content;
-  padding: 4px 8px;
-  border-radius: 999px;
-  color: #fff2e8;
-  background: rgba(249, 115, 22, 0.8);
-  font-size: 9px;
-  font-weight: 900;
-  text-transform: uppercase;
+:deep(.restaurant-popup-banner) {
+  display: grid;
+  height: 80px;
+  place-items: center;
+  background: var(--restaurant-gradient, linear-gradient(135deg, #fb923c, #ea580c));
+}
+
+:deep(.restaurant-popup-emoji) {
+  font-size: 48px;
+  line-height: 1;
+  text-shadow: 0 7px 18px rgba(0, 0, 0, 0.28);
+}
+
+:deep(.restaurant-popup-body) {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
 }
 
 :deep(.restaurant-popup strong) {
@@ -2889,6 +3011,23 @@ onBeforeUnmount(() => {
   line-height: 1.45;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+:deep(.restaurant-popup-directions) {
+  min-height: 36px;
+  margin-top: 3px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--restaurant-gradient, linear-gradient(135deg, #fb923c, #ea580c));
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--restaurant-color, #f97316) 26%, transparent);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+:deep(.restaurant-popup-directions:hover) {
+  filter: brightness(1.05);
 }
 
 :deep(.food-map-popup-actions) {
@@ -3910,12 +4049,15 @@ onBeforeUnmount(() => {
 }
 
 :deep(.restaurant-marker) {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border: 3px solid #fffaf2;
+  border-radius: 12px;
   color: #fff;
-  background: #f07a25;
-  box-shadow: 0 6px 16px rgba(104, 61, 22, 0.24);
+  background: var(--restaurant-gradient, linear-gradient(135deg, #fb923c, #ea580c));
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--restaurant-color, #f97316) 18%, transparent),
+    0 6px 16px rgba(104, 61, 22, 0.24);
 }
 
 :deep(.marker-cluster) {
@@ -3935,6 +4077,10 @@ onBeforeUnmount(() => {
   color: #4b3524;
   background: #fffaf2;
   box-shadow: 0 15px 30px rgba(91, 56, 25, 0.18);
+}
+
+:deep(.restaurant-leaflet-popup .leaflet-popup-content-wrapper) {
+  overflow: hidden;
 }
 
 :deep(.food-map-leaflet-popup .leaflet-popup-tip),

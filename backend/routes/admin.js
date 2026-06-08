@@ -140,6 +140,70 @@ function validateRecipe(body) {
   }
 }
 
+function uniqueIds(values) {
+  return [...new Set(values.map((value) => Number(value)).filter((value) => Number.isSafeInteger(value) && value > 0))]
+}
+
+async function removeUserEngagement(connection, userId) {
+  const [commentRows] = await connection.execute(
+    'SELECT id, recipe_id FROM comments WHERE user_id = ?',
+    [userId],
+  )
+  const [ratingRows] = await connection.execute(
+    'SELECT recipe_id FROM ratings WHERE user_id = ?',
+    [userId],
+  )
+
+  if (commentRows.length > 0) {
+    await connection.execute('DELETE FROM comments WHERE user_id = ?', [userId])
+  }
+  if (ratingRows.length > 0) {
+    await connection.execute('DELETE FROM ratings WHERE user_id = ?', [userId])
+  }
+
+  const affectedRatingRecipeIds = uniqueIds(ratingRows.map((rating) => rating.recipe_id))
+  const ratingSummaries = affectedRatingRecipeIds.map((recipeId) => ({
+    recipeId,
+    averageRating: 0,
+    ratingCount: 0,
+  }))
+
+  if (affectedRatingRecipeIds.length > 0) {
+    const placeholders = affectedRatingRecipeIds.map(() => '?').join(', ')
+    const [summaryRows] = await connection.execute(
+      `SELECT recipe_id, COALESCE(AVG(rating_value), 0) AS average_rating, COUNT(*) AS rating_count
+       FROM ratings
+       WHERE recipe_id IN (${placeholders})
+       GROUP BY recipe_id`,
+      affectedRatingRecipeIds,
+    )
+    const summaryByRecipe = new Map(
+      summaryRows.map((row) => [
+        Number(row.recipe_id),
+        {
+          recipeId: Number(row.recipe_id),
+          averageRating: Number(row.average_rating || 0),
+          ratingCount: Number(row.rating_count || 0),
+        },
+      ]),
+    )
+
+    ratingSummaries.forEach((summary, index) => {
+      ratingSummaries[index] = summaryByRecipe.get(summary.recipeId) || summary
+    })
+  }
+
+  return {
+    comments: commentRows.map((comment) => ({
+      id: Number(comment.id),
+      recipeId: Number(comment.recipe_id),
+    })),
+    deletedComments: commentRows.length,
+    deletedRatings: ratingRows.length,
+    ratingSummaries,
+  }
+}
+
 async function validateRecipeRelations(connection, recipe) {
   const [categories] = await connection.execute(
     'SELECT id FROM categories WHERE id = ?',
@@ -519,6 +583,14 @@ router.get('/users', async (req, res, next) => {
 })
 
 router.put('/users/:id/ban', async (req, res, next) => {
+  let connection
+  let removedEngagement = {
+    comments: [],
+    deletedComments: 0,
+    deletedRatings: 0,
+    ratingSummaries: [],
+  }
+
   try {
     const userId = toPositiveInt(req.params.id)
     if (!userId) {
@@ -528,26 +600,69 @@ router.put('/users/:id/ban', async (req, res, next) => {
       return res.status(400).json({ error: 'You cannot ban your own account.' })
     }
 
-    const [users] = await pool.execute(
-      'SELECT id, is_banned FROM users WHERE id = ?',
+    connection = await pool.getConnection()
+    await connection.beginTransaction()
+
+    const [users] = await connection.execute(
+      'SELECT id, role, is_banned FROM users WHERE id = ? FOR UPDATE',
       [userId],
     )
     if (users.length === 0) {
+      await connection.rollback()
       return res.status(404).json({ error: 'User not found.' })
     }
 
     const isBanned = !Boolean(users[0].is_banned)
-    await pool.execute('UPDATE users SET is_banned = ? WHERE id = ?', [
+    await connection.execute('UPDATE users SET is_banned = ? WHERE id = ?', [
       isBanned,
       userId,
     ])
 
+    if (isBanned) {
+      removedEngagement = await removeUserEngagement(connection, userId)
+    }
+
+    await connection.commit()
+
+    removedEngagement.comments.forEach((comment) => {
+      broadcastToRecipe(comment.recipeId, {
+        type: 'comment_deleted',
+        recipeId: comment.recipeId,
+        commentId: comment.id,
+      })
+    })
+    removedEngagement.ratingSummaries.forEach((summary) => {
+      broadcastToRecipe(summary.recipeId, {
+        type: 'rating_updated',
+        recipeId: summary.recipeId,
+        avgRating: summary.averageRating,
+        ratingCount: summary.ratingCount,
+      })
+    })
+
     return res.json({
       message: isBanned ? 'User banned.' : 'User unbanned.',
       is_banned: isBanned,
+      role: users[0].role,
+      user: {
+        id: userId,
+        role: users[0].role,
+        is_banned: isBanned,
+      },
+      removed_comments: removedEngagement.deletedComments,
+      removed_ratings: removedEngagement.deletedRatings,
     })
   } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback()
+      } catch {
+        // Preserve the original database error.
+      }
+    }
     return next(error)
+  } finally {
+    connection?.release()
   }
 })
 
