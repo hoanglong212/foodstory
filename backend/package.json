@@ -16,7 +16,10 @@
     "seed:recipes": "node database/seedRecipes.js",
     "seed:recipes:sql": "node database/seedRecipes.js --write-sql",
     "seed:users": "node database/seedUsers.js",
-    "test:api": "node scripts/apiSmokeTest.js"
+    "sync:ai-knowledge": "node scripts/syncFoodStoryKnowledge.js",
+    "test:api": "node scripts/apiSmokeTest.js",
+    "test:ai-retrieval": "node scripts/testAiRetrievalCases.js",
+    "test:foodstory-chatbot": "node scripts/testFoodStoryChatbotCases.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -1,19 +1,30 @@
 import express from 'express'
 import { askFoodStoryChatbot } from '../services/foodStoryChatbotService.js'
+import { optionalAuth } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
 
-router.post('/ask', async (req, res) => {
+router.post('/ask', optionalAuth, async (req, res) => {
   try {
-    const { message } = req.body
+    const {
+      message,
+      lastRecipeId = null,
+      lastRecipeTitle = null,
+      lastRestaurantId = null,
+    } = req.body
 
-    if (!message || !message.trim()) {
+    if (typeof message !== 'string' || !message.trim()) {
       return res.status(400).json({
         message: 'Message is required',
       })
     }
 
-    const result = await askFoodStoryChatbot(message)
+    const result = await askFoodStoryChatbot(message, {
+      lastRecipeId,
+      lastRecipeTitle,
+      lastRestaurantId,
+      userId: req.user?.id || null,
+    })
 
     return res.json(result)
   } catch (error) {

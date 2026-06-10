@@ -15,6 +15,9 @@ const inputText = ref('')
 const isLoading = ref(false)
 const hasUnread = ref(false)
 const messagesElement = ref(null)
+const lastRecipeId = ref(null)
+const lastRecipeTitle = ref(null)
+const lastRestaurantId = ref(null)
 
 function scrollToBottom() {
   const element = messagesElement.value
@@ -77,6 +80,79 @@ function openLogin() {
   router.push({ name: 'login', query: { redirect: route.fullPath } })
 }
 
+function sourceTypeLabel(type) {
+  if (type === 'restaurant') return 'Restaurant'
+  if (type === 'recipe') return 'Recipe'
+  if (type === 'food_spot') return 'Food spot'
+  return 'FoodStory source'
+}
+
+function sourceActionLabel(source) {
+  if (source.sourceType === 'recipe') return 'View recipe'
+  if (source.sourceType === 'restaurant' || source.sourceType === 'food_spot') {
+    return 'View on map'
+  }
+  return 'Open'
+}
+
+function confidenceLabel(value) {
+  const score = Number(value || 0)
+  return score > 0 ? `${Math.round(score * 100)}% match` : 'No confidence score'
+}
+
+function warningText(status) {
+  if (status === 'no_exact_constraint_match') {
+    return 'No exact match found. Showing the closest FoodStory alternatives.'
+  }
+
+  if (status === 'weak_match') {
+    return 'FoodStory does not have enough reliable data for this question.'
+  }
+
+  if (status === 'no_results') {
+    return 'No FoodStory data was found for this question.'
+  }
+
+  return ''
+}
+
+function openSource(source = {}) {
+  closeChat()
+
+  if (source.sourceType === 'recipe') {
+    router.push(`/recipes/${source.sourceId}`)
+    return
+  }
+
+  if (source.sourceType === 'restaurant' || source.sourceType === 'food_spot') {
+    router.push({
+      path: '/food-map',
+      query: {
+        dish: source.title || undefined,
+        mode: source.sourceType === 'food_spot' ? 'personal' : undefined,
+      },
+    })
+  }
+}
+
+function updateRecentContext(data = {}) {
+  if (!['structured', 'grounded_rag'].includes(data.mode)) return
+
+  const recipeSource = data.sources?.find((source) => source.sourceType === 'recipe')
+  const restaurantSource = data.sources?.find(
+    (source) => source.sourceType === 'restaurant',
+  )
+
+  if (recipeSource?.sourceId) {
+    lastRecipeId.value = recipeSource.sourceId
+    lastRecipeTitle.value = recipeSource.title || null
+  }
+  if (restaurantSource?.sourceId) {
+    lastRestaurantId.value = restaurantSource.sourceId
+  }
+}
+
+
 async function handleSuggestion(suggestion, message) {
   const normalized = suggestion.toLocaleLowerCase('en')
   const firstResult = message.results?.[0]
@@ -121,28 +197,40 @@ async function sendMessage(text = inputText.value) {
   scrollToBottom()
 
   try {
-    const response = await api.post('/chatbot', {
+    const response = await api.post('/chatbot/ask', {
       message: content,
-      userId: authStore.isLoggedIn ? authStore.user?.id : null,
+      lastRecipeId: lastRecipeId.value,
+      lastRecipeTitle: lastRecipeTitle.value,
+      lastRestaurantId: lastRestaurantId.value,
     })
+
+    const data = response.data
+    updateRecentContext(data)
 
     messages.value.push({
       role: 'bot',
-      content: response.data.message,
-      type: response.data.type,
-      results: response.data.results || [],
-      suggestions: response.data.suggestions || [],
+      content: data.answer || 'FoodStory could not generate an answer.',
+      type: data.mode || 'grounded_rag',
+      retrievalStatus: data.retrievalStatus || null,
+      systemMessage: data.message || '',
+      confidence: data.confidence || 0,
+      sources: data.sources || [],
+      results: data.results || [],
+      suggestions: data.suggestions || [],
     })
 
     if (!isOpen.value) {
       hasUnread.value = true
     }
-  } catch {
+  } catch (error) {
     messages.value.push({
       role: 'bot',
-      content: 'Sorry, something went wrong. Please try again.',
+      content: 'Sorry, FoodStory Assistant is currently unavailable.',
       type: 'error',
+      retrievalStatus: 'error',
+      systemMessage: error?.response?.data?.message || error.message,
       results: [],
+      sources: [],
       suggestions: ['Try again'],
     })
   } finally {
@@ -156,13 +244,21 @@ onMounted(() => {
   messages.value.push({
     role: 'bot',
     content:
-      'Hello! I am FoodBot. Ask me about restaurants, recipes, or saved places.',
+      'Hello! I am FoodBot, a FoodStory assistant grounded in our recipe and restaurant data.',
     type: 'greeting',
+    retrievalStatus: null,
+    confidence: 0,
     results: [],
-    suggestions: ['Best pho in District 1', 'Cafe in Binh Thanh', 'Banh mi recipe'],
+    sources: [],
+    suggestions: [
+      'Where can I eat banh mi in District 1?',
+      'How to cook a healthy low calorie chicken recipe?',
+      'Where can I eat Japanese food in District 1?',
+    ],
   })
   hasUnread.value = true
 })
+
 </script>
 
 <template>
@@ -206,6 +302,13 @@ onMounted(() => {
         >
           <div :class="message.role === 'bot' ? 'msg-bot' : 'msg-user'">
             {{ message.content }}
+          </div>
+
+          <div
+            v-if="message.role === 'bot' && warningText(message.retrievalStatus)"
+            class="rag-warning"
+          >
+            {{ warningText(message.retrievalStatus) }}
           </div>
 
           <div
@@ -278,6 +381,44 @@ onMounted(() => {
                   <AppIcon name="arrow-right" size="14" />
                 </button>
               </template>
+            </article>
+          </div>
+
+          <div
+            v-if="message.role === 'bot' && message.sources?.length"
+            class="source-list"
+            :aria-label="`${message.sources.length} FoodStory sources`"
+          >
+            <div class="source-list-title">
+              FoodStory sources
+              <span v-if="message.confidence">
+                · {{ confidenceLabel(message.confidence) }}
+              </span>
+            </div>
+
+            <article
+              v-for="source in message.sources"
+              :key="`${source.sourceType}-${source.sourceId}`"
+              class="source-card"
+            >
+              <div class="source-card-main">
+                <span class="source-badge">{{ sourceTypeLabel(source.sourceType) }}</span>
+                <h3>{{ source.title }}</h3>
+                <p>
+                  Score {{ Number(source.score || 0).toFixed(3) }}
+                  <span v-if="source.matchLevel"> · {{ source.matchLevel }}</span>
+                </p>
+              </div>
+
+              <button
+                v-if="source.sourceType === 'recipe' || source.sourceType === 'restaurant' || source.sourceType === 'food_spot'"
+                type="button"
+                class="source-action"
+                @click="openSource(source)"
+              >
+                {{ sourceActionLabel(source) }}
+                <AppIcon name="arrow-right" size="13" />
+              </button>
             </article>
           </div>
 
@@ -790,4 +931,87 @@ onMounted(() => {
     animation: none;
   }
 }
+
+.rag-warning {
+  max-width: 88%;
+  padding: 8px 10px;
+  border: 1px solid rgba(251, 146, 60, 0.35);
+  border-radius: 10px;
+  color: #fed7aa;
+  background: rgba(154, 52, 18, 0.22);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.source-list {
+  display: grid;
+  width: 100%;
+  gap: 8px;
+}
+
+.source-list-title {
+  color: #aaa;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.source-card {
+  display: grid;
+  padding: 10px 11px;
+  gap: 8px;
+  border: 1px solid #38383c;
+  border-radius: 11px;
+  color: #ddd;
+  background: #242427;
+}
+
+.source-card-main {
+  display: grid;
+  gap: 4px;
+}
+
+.source-card h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.source-card p {
+  margin: 0;
+  color: #aaa;
+  font-size: 11px;
+}
+
+.source-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #ff8f8f;
+  background: rgba(229, 62, 62, 0.13);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.source-action {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  color: #ff7676;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.source-action:hover {
+  color: #fff;
+}
+
 </style>
