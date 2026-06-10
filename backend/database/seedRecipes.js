@@ -1,4 +1,6 @@
 import fs from 'node:fs/promises'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import pool from '../db.js'
 
 function item(value) {
@@ -122,7 +124,7 @@ const pantryByStyle = {
   ],
 }
 
-const recipes = [
+export const recipes = [
   r(
     'Hanoi Beef Pho',
     'Vietnamese',
@@ -1690,7 +1692,7 @@ function hashText(text) {
   return [...text].reduce((total, character) => total + character.charCodeAt(0), 0)
 }
 
-function nutritionFor(recipe) {
+export function nutritionFor(recipe) {
   const base = nutritionByStyle[recipe.style] || nutritionByStyle.bowl
   const hash = hashText(recipe.title)
 
@@ -1714,7 +1716,7 @@ function dedupeIngredients(ingredients) {
   })
 }
 
-function ingredientsFor(recipe) {
+export function ingredientsFor(recipe) {
   const pantry = (pantryByStyle[recipe.style] || []).map(item)
   return dedupeIngredients([
     recipe.primary,
@@ -1732,7 +1734,7 @@ function numbered(steps) {
   return steps.map((step, index) => `${index + 1}. ${step}`).join('\n')
 }
 
-function buildInstructions(recipe) {
+export function buildInstructions(recipe) {
   const builder = instructionBuilders[recipe.style] || instructionBuilders.bowl
   const sections = builder(recipe)
 
@@ -1954,7 +1956,7 @@ const instructionBuilders = {
   }),
 }
 
-function descriptionFor(recipe) {
+export function descriptionFor(recipe) {
   const style = styleLabels[recipe.style] || 'complete recipe'
   return `${recipe.title} is a ${style} built around ${recipe.primary.name}, ${recipe.base.name}, and ${recipe.produce.name}. The seed data includes measured ingredients, preparation notes, cooking cues, finishing guidance, and storage advice so the recipe detail page has realistic content.`
 }
@@ -2144,8 +2146,14 @@ async function main() {
   await seedRecipes()
 }
 
-main().catch(async (error) => {
-  console.error('Failed to seed recipes:', error.message)
-  await pool.end().catch(() => {})
-  process.exit(1)
-})
+const isDirectRun =
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+
+if (isDirectRun) {
+  main().catch(async (error) => {
+    console.error('Failed to seed recipes:', error.message)
+    await pool.end().catch(() => {})
+    process.exit(1)
+  })
+}

@@ -1,632 +1,944 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import L from 'leaflet'
-import 'leaflet.markercluster'
-import AppIcon from '../components/AppIcon.vue'
-import streetImage from '../assets/street.jpg'
-import { useFoodSpotStore } from '../stores/foodSpotStore'
-import { useRestaurantStore } from '../stores/restaurantStore'
-import { useUiStore } from '../stores/uiStore'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from "vue";
+import { useRoute } from "vue-router";
+import L from "leaflet";
+import "leaflet.markercluster";
+import AppIcon from "../components/AppIcon.vue";
+import streetImage from "../assets/street.jpg";
+import { useFoodSpotStore } from "../stores/foodSpotStore";
+import { useRestaurantStore } from "../stores/restaurantStore";
+import { useUiStore } from "../stores/uiStore";
 
-const HCMC_CENTER = [10.7769, 106.7009]
-const categories = ['Phở', 'Bánh Mì', 'Cơm', 'Bún', 'Hải Sản', 'Café', 'Tráng Miệng', 'Khác']
+const HCMC_CENTER = [10.7769, 106.7009];
+const MAX_VISIBLE_MARKERS = 100;
+const MAX_RESTAURANT_MARKERS = 140;
+const MARKER_CLUSTER_RADIUS = 92;
+const RESTAURANT_CLUSTER_RADIUS = 104;
+const categories = [
+  "Pho",
+  "Banh Mi",
+  "Rice",
+  "Rice Vermicelli",
+  "Seafood",
+  "Cafe",
+  "Dessert",
+  "Other",
+];
 const categoryLegend = [
-  { label: 'Món Việt', color: '#f97316', icon: 'utensils' },
-  { label: 'Bún · Phở', color: '#a66cc4', icon: 'bowl' },
-  { label: 'Cafe · Trà', color: '#b87949', icon: 'store' },
-  { label: 'Bánh · Tráng miệng', color: '#ef6f7b', icon: 'chef-hat' },
-  { label: 'Hải sản', color: '#3b9dbc', icon: 'sparkles' },
-]
+  { label: "Vietnamese", color: "#f97316", icon: "utensils" },
+  { label: "Noodles · Pho", color: "#a66cc4", icon: "bowl" },
+  { label: "Cafe · Tea", color: "#b87949", icon: "store" },
+  { label: "Bakery · Dessert", color: "#ef6f7b", icon: "chef-hat" },
+  { label: "Seafood", color: "#3b9dbc", icon: "sparkles" },
+];
 const restaurantCategories = [
-  'Ăn Vặt',
-  'Bánh Canh',
-  'Bánh Cuốn',
-  'Bánh Mì',
-  'Bánh Xèo',
-  'Bò',
-  'Bún',
-  'Bún Bò',
-  'Bún Đậu',
-  'Café',
-  'Cháo',
-  'Chè',
-  'Cơm',
-  'Cơm Gà',
-  'Cơm Tấm',
-  'Dimsum',
-  'Đặc Sản',
-  'Gà Nướng',
-  'Hải Sản',
-  'Hủ Tiếu',
-  'Lẩu',
-  'Mì',
-  'Nem Nướng',
-  'Nhà Hàng',
-  'Phở',
-  'Tráng Miệng',
-  'Xôi',
-]
+  "Snacks",
+  "Thick Noodle Soup",
+  "Steamed Rice Rolls",
+  "Banh Mi",
+  "Savory Pancakes",
+  "Beef",
+  "Rice Vermicelli",
+  "Beef Noodle Soup",
+  "Tofu Vermicelli",
+  "Cafe",
+  "Congee",
+  "Sweet Soup",
+  "Rice",
+  "Chicken Rice",
+  "Broken Rice",
+  "Dim Sum",
+  "Specialties",
+  "Grilled Chicken",
+  "Seafood",
+  "Hu Tieu",
+  "Hot Pot",
+  "Noodles",
+  "Grilled Pork Rolls",
+  "Restaurant",
+  "Pho",
+  "Dessert",
+  "Sticky Rice",
+];
 const districts = [
-  'Quận 1',
-  'Quận 2',
-  'Quận 3',
-  'Quận 4',
-  'Quận 5',
-  'Quận 6',
-  'Quận 7',
-  'Quận 8',
-  'Quận 9',
-  'Quận 10',
-  'Quận 11',
-  'Quận 12',
-  'Bình Thạnh',
-  'Bình Tân',
-  'Gò Vấp',
-  'Phú Nhuận',
-  'Tân Bình',
-  'Tân Phú',
-  'Thủ Đức',
-  'Thành phố Thủ Đức',
-  'Bình Chánh',
-  'Cần Giờ',
-  'Củ Chi',
-  'Hóc Môn',
-  'Nhà Bè',
-]
+  "District 1",
+  "District 2",
+  "District 3",
+  "District 4",
+  "District 5",
+  "District 6",
+  "District 7",
+  "District 8",
+  "District 9",
+  "District 10",
+  "District 11",
+  "District 12",
+  "Binh Thanh",
+  "Binh Tan",
+  "Go Vap",
+  "Phu Nhuan",
+  "Tan Binh",
+  "Tan Phu",
+  "Thu Duc",
+  "Thu Duc City",
+  "Binh Chanh",
+  "Can Gio",
+  "Cu Chi",
+  "Hoc Mon",
+  "Nha Be",
+];
 
-const foodSpotStore = useFoodSpotStore()
-const restaurantStore = useRestaurantStore()
-const uiStore = useUiStore()
-const route = useRoute()
-const initialDish = typeof route.query.dish === 'string' ? route.query.dish.trim() : ''
-const initialMode = ['personal', 'community', 'stats'].includes(route.query.mode)
-  ? route.query.mode
-  : 'personal'
-const initialRecipeId = /^[1-9]\d*$/.test(String(route.query.recipe_id || ''))
-  ? Number(route.query.recipe_id)
-  : null
-const mapElement = ref(null)
-const mapInitialised = ref(false)
-const mapMode = ref(initialMode)
-const sidebarMode = ref('list')
-const showRestaurants = ref(true)
-const showPersonalSpots = ref(true)
-const restaurantFiltersOpen = ref(false)
-const pickingMode = ref(false)
-const editingSpotId = ref(null)
-const submitting = ref(false)
-const deletingSpotId = ref(null)
-const filters = reactive({ district: '', category: '', rating: '' })
-const communityFilters = reactive({ district: '', category: '' })
-const communitySearch = ref(initialDish)
-const personalSearch = ref('')
-const restaurantFilters = reactive({
-  district: '',
-  category: '',
-  search: initialDish,
-  min_rating: '',
-})
-const formErrors = reactive({})
-const form = reactive(emptyForm())
-
-let map = null
-let markerCluster = null
-let restaurantCluster = null
-let previewMarker = null
-let filterTimer = 0
-let communitySearchTimer = 0
-let restaurantSearchTimer = 0
-let popupTimer = 0
-const markersById = new Map()
-
-const selectedSpot = computed(() => foodSpotStore.selectedSpot)
-const isEditing = computed(() => editingSpotId.value !== null)
-const isCommunityMode = computed(() => mapMode.value === 'community')
-const spotLayerLabel = computed(() =>
-  isCommunityMode.value ? 'Điểm Cộng Đồng' : 'Địa Điểm Của Tôi',
+const foodSpotStore = useFoodSpotStore();
+const restaurantStore = useRestaurantStore();
+const uiStore = useUiStore();
+const route = useRoute();
+const initialDish =
+  typeof route.query.dish === "string" ? route.query.dish.trim() : "";
+const initialMode = ["personal", "community", "stats"].includes(
+  route.query.mode,
 )
+  ? route.query.mode
+  : "personal";
+const initialRecipeId = /^[1-9]\d*$/.test(String(route.query.recipe_id || ""))
+  ? Number(route.query.recipe_id)
+  : null;
+const mapElement = ref(null);
+const mapInitialised = ref(false);
+const mapMode = ref(initialMode);
+const sidebarMode = ref("list");
+const showRestaurants = ref(true);
+const showPersonalSpots = ref(true);
+const restaurantFiltersOpen = ref(false);
+const isFilterDrawerOpen = ref(false);
+const isDetailDrawerOpen = ref(false);
+const isResultSheetOpen = ref(true);
+const scanUrl = ref(initialDish);
+const scanInput = ref(null);
+const selectedRestaurant = ref(null);
+const selectedCommunitySpot = ref(null);
+const savedPlaceKeys = ref(new Set());
+const pickingMode = ref(false);
+const editingSpotId = ref(null);
+const submitting = ref(false);
+const deletingSpotId = ref(null);
+const filters = reactive({ district: "", category: "", rating: "" });
+const communityFilters = reactive({ district: "", category: "" });
+const communitySearch = ref(initialDish);
+const personalSearch = ref("");
+const restaurantFilters = reactive({
+  district: "",
+  category: "",
+  search: initialDish,
+  min_rating: "",
+});
+const formErrors = reactive({});
+const form = reactive(emptyForm());
+
+let map = null;
+let markerCluster = null;
+let restaurantCluster = null;
+let previewMarker = null;
+let filterTimer = 0;
+let communitySearchTimer = 0;
+let restaurantSearchTimer = 0;
+let popupTimer = 0;
+let layoutTimer = 0;
+let markerRenderFrame = 0;
+let restaurantRenderFrame = 0;
+const markersById = new Map();
+
+const selectedSpot = computed(() => foodSpotStore.selectedSpot);
+const isEditing = computed(() => editingSpotId.value !== null);
+const isCommunityMode = computed(() => mapMode.value === "community");
+const spotLayerLabel = computed(() =>
+  isCommunityMode.value ? "Community Places" : "My Places",
+);
 const visibleSpots = computed(() =>
   isCommunityMode.value ? foodSpotStore.communitySpots : foodSpotStore.spots,
-)
+);
 const hasActiveFilters = computed(() =>
   Boolean(filters.district || filters.category || filters.rating),
-)
+);
 const hasCommunityFilters = computed(() =>
-  Boolean(communitySearch.value || communityFilters.district || communityFilters.category),
-)
+  Boolean(
+    communitySearch.value ||
+    communityFilters.district ||
+    communityFilters.category,
+  ),
+);
 const displayedPersonalSpots = computed(() => {
-  const query = personalSearch.value.trim().toLocaleLowerCase('vi')
-  if (!query) return foodSpotStore.spots
+  const query = personalSearch.value.trim().toLocaleLowerCase("en");
+  if (!query) return foodSpotStore.spots;
 
   return foodSpotStore.spots.filter((spot) =>
     [spot.name, spot.dish_name, spot.category, spot.district]
       .filter(Boolean)
-      .some((value) => String(value).toLocaleLowerCase('vi').includes(query)),
-  )
-})
+      .some((value) => String(value).toLocaleLowerCase("en").includes(query)),
+  );
+});
 const featuredSpot = computed(() => {
-  if (mapMode.value !== 'personal') return null
-  return selectedSpot.value || displayedPersonalSpots.value[0] || null
-})
+  if (mapMode.value !== "personal") return null;
+  return selectedSpot.value || displayedPersonalSpots.value[0] || null;
+});
+const selectedDiscovery = computed(() => {
+  if (selectedRestaurant.value) {
+    return normalizeDiscovery(selectedRestaurant.value, "restaurant");
+  }
+  if (selectedCommunitySpot.value) {
+    return normalizeDiscovery(selectedCommunitySpot.value, "community");
+  }
+  if (selectedSpot.value) {
+    return normalizeDiscovery(selectedSpot.value, "personal");
+  }
+  return null;
+});
+const resultPlaces = computed(() => {
+  const spotType = isCommunityMode.value ? "community" : "personal";
+  const spots = (
+    isCommunityMode.value
+      ? foodSpotStore.communitySpots
+      : displayedPersonalSpots.value
+  ).map((spot) => normalizeDiscovery(spot, spotType));
+  const restaurants = restaurantStore.restaurants.map((restaurant) =>
+    normalizeDiscovery(restaurant, "restaurant"),
+  );
+  const visibleRestaurants = showRestaurants.value ? restaurants : [];
+  const visibleFoodSpots = showPersonalSpots.value ? spots : [];
+  const combined = [];
+  const longestList = Math.max(
+    visibleRestaurants.length,
+    visibleFoodSpots.length,
+  );
+
+  for (let index = 0; index < longestList && combined.length < 18; index += 1) {
+    if (visibleRestaurants[index]) combined.push(visibleRestaurants[index]);
+    if (visibleFoodSpots[index] && combined.length < 18) {
+      combined.push(visibleFoodSpots[index]);
+    }
+  }
+
+  return combined;
+});
+const resultSheetSubtitle = computed(() => {
+  if (scanUrl.value.trim()) {
+    return "Based on your latest scan or current filters";
+  }
+  if (
+    hasActiveFilters.value ||
+    hasCommunityFilters.value ||
+    restaurantFilters.search.trim() ||
+    restaurantFilters.district ||
+    restaurantFilters.category ||
+    restaurantFilters.min_rating
+  ) {
+    return "Updated using your current filters";
+  }
+  return "Featured food places around Ho Chi Minh City";
+});
 const sidebarCount = computed(() => {
-  if (mapMode.value === 'personal') return displayedPersonalSpots.value.length
-  return visibleSpots.value.length
-})
+  if (mapMode.value === "personal") return displayedPersonalSpots.value.length;
+  return visibleSpots.value.length;
+});
 const sidebarKicker = computed(() => {
-  if (mapMode.value === 'community') return 'FoodStory cộng đồng'
-  if (mapMode.value === 'stats') return 'Hành trình của bạn'
-  return 'FoodStory cá nhân'
-})
+  if (mapMode.value === "community") return "FoodStory community";
+  if (mapMode.value === "stats") return "Your journey";
+  return "Personal FoodStory";
+});
 const sidebarTitle = computed(() => {
-  if (mapMode.value === 'community') return 'Bản Đồ Ẩm Thực Cộng Đồng'
-  if (mapMode.value === 'stats') return 'Thống Kê Ẩm Thực'
-  return 'Bản Đồ Ẩm Thực Của Tôi'
-})
+  if (mapMode.value === "community") return "Community Food Map";
+  if (mapMode.value === "stats") return "Food Statistics";
+  return "My Food Map";
+});
 const communityResultText = computed(() => {
-  const count = foodSpotStore.communitySpots.length
-  const query = communitySearch.value.trim()
-  if (!query) return `${count} địa điểm từ cộng đồng`
-  if (count === 0) return `Không tìm thấy địa điểm nào cho "${query}"`
-  return `${count} kết quả cho "${query}"`
-})
+  const count = foodSpotStore.communitySpots.length;
+  const query = communitySearch.value.trim();
+  if (!query) return `${count} community places`;
+  if (count === 0) return `No places found for "${query}"`;
+  return `${count} results for "${query}"`;
+});
 const personalStats = computed(() => {
-  const spots = foodSpotStore.spots
-  const ratedSpots = spots.filter((spot) => Number(spot.rating) > 0)
+  const spots = foodSpotStore.spots;
+  const ratedSpots = spots.filter((spot) => Number(spot.rating) > 0);
   const averageRating = ratedSpots.length
-    ? ratedSpots.reduce((sum, spot) => sum + Number(spot.rating), 0) / ratedSpots.length
-    : 0
+    ? ratedSpots.reduce((sum, spot) => sum + Number(spot.rating), 0) /
+      ratedSpots.length
+    : 0;
 
   const createRanking = (field) => {
-    const counts = new Map()
+    const counts = new Map();
     spots.forEach((spot) => {
-      const label = String(spot[field] || '').trim()
-      if (label) counts.set(label, (counts.get(label) || 0) + 1)
-    })
+      const label = String(spot[field] || "").trim();
+      if (label) counts.set(label, (counts.get(label) || 0) + 1);
+    });
     return [...counts.entries()]
       .map(([label, count]) => ({
         label,
         count,
         percentage: spots.length ? Math.round((count / spots.length) * 100) : 0,
       }))
-      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'vi'))
-      .slice(0, 3)
-  }
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "en"))
+      .slice(0, 3);
+  };
 
-  const districtsRanking = createRanking('district')
-  const dishesRanking = createRanking('dish_name')
+  const districtsRanking = createRanking("district");
+  const dishesRanking = createRanking("dish_name");
   const ratingDistribution = [5, 4, 3, 2, 1].map((rating) => {
-    const count = spots.filter((spot) => Number(spot.rating) === rating).length
+    const count = spots.filter((spot) => Number(spot.rating) === rating).length;
     return {
       rating,
       count,
       percentage: spots.length ? Math.round((count / spots.length) * 100) : 0,
-    }
-  })
+    };
+  });
 
   return {
     total: spots.length,
     averageRating,
-    favoriteDistrict: districtsRanking[0]?.label || 'Chưa có',
+    favoriteDistrict: districtsRanking[0]?.label || "Not available",
     districtsRanking,
     dishesRanking,
     ratingDistribution,
     recent: [...spots]
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       .slice(0, 3),
-  }
-})
+  };
+});
+
+function normalizeDiscovery(place, type) {
+  const isRestaurant = type === "restaurant";
+  const rating = Number(isRestaurant ? place.avg_rating : place.rating) || 0;
+  const district = place.district || "Ho Chi Minh City";
+
+  return {
+    key: `${type}-${place.id}`,
+    id: place.id,
+    type,
+    raw: place,
+    name: place.name || "Food place",
+    dish: isRestaurant
+      ? place.description || place.category || "Recommended food destination"
+      : place.dish_name || "A delicious dish waiting to be discovered",
+    category: place.category || (isRestaurant ? "Restaurant" : "Food"),
+    rating,
+    district,
+    address: place.address || district,
+    price: place.price_range || "",
+    description:
+      place.description ||
+      place.notes ||
+      "No detailed description is available for this place.",
+    openingHours: place.opening_hours || place.hours || "",
+    source:
+      place.source ||
+      place.social_source ||
+      (type === "community"
+        ? "FoodStory community"
+        : isRestaurant
+          ? "FoodStory selection"
+          : "Your journal"),
+    distance: place.distance || place.distance_km || "",
+    image: place.image_url || place.image || streetImage,
+    latitude: Number(place.latitude),
+    longitude: Number(place.longitude),
+    isOwned: type === "personal",
+  };
+}
+
+function invalidateMapAfterTransition() {
+  window.clearTimeout(layoutTimer);
+  layoutTimer = window.setTimeout(() => {
+    if (map) map.invalidateSize({ pan: false });
+  }, 340);
+}
+
+function setFilterDrawer(open) {
+  isFilterDrawerOpen.value = open;
+  invalidateMapAfterTransition();
+}
+
+function setDetailDrawer(open) {
+  isDetailDrawerOpen.value = open;
+  invalidateMapAfterTransition();
+}
+
+function toggleResultSheet() {
+  isResultSheetOpen.value = !isResultSheetOpen.value;
+  invalidateMapAfterTransition();
+}
 
 function emptyForm() {
   return {
-    name: '',
-    dish_name: '',
-    category: '',
-    district: '',
-    latitude: '',
-    longitude: '',
+    name: "",
+    dish_name: "",
+    category: "",
+    district: "",
+    latitude: "",
+    longitude: "",
     rating: null,
-    notes: '',
-    tags: '',
+    notes: "",
+    tags: "",
     recipe_id: null,
-  }
+  };
 }
 
 function resetForm() {
-  Object.assign(form, emptyForm())
-  Object.keys(formErrors).forEach((key) => delete formErrors[key])
-  editingSpotId.value = null
-  clearPreviewMarker()
-  stopPicking()
+  Object.assign(form, emptyForm());
+  Object.keys(formErrors).forEach((key) => delete formErrors[key]);
+  editingSpotId.value = null;
+  clearPreviewMarker();
+  stopPicking();
 }
 
 function markerColor(rating) {
-  const value = Number(rating || 0)
-  if (value === 5) return '#f7b731'
-  if (value === 4) return '#43aa8b'
-  if (value === 3) return '#4d96ff'
-  if (value > 0) return '#8b9098'
-  return '#e6504f'
+  const value = Number(rating || 0);
+  if (value === 5) return "#f7b731";
+  if (value === 4) return "#43aa8b";
+  if (value === 3) return "#4d96ff";
+  if (value > 0) return "#8b9098";
+  return "#e6504f";
 }
 
 function normalizedCategory(category) {
-  return String(category || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .toLocaleLowerCase('vi')
+  return String(category || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("en");
 }
 
 function categoryColor(category) {
-  const text = normalizedCategory(category)
-  if (text.includes('pho') || text.includes('bun')) return '#a66cc4'
-  if (text.includes('cafe') || text.includes('ca phe') || text.includes('tra')) return '#b87949'
-  if (text.includes('banh') || text.includes('trang') || text.includes('che')) return '#ef6f7b'
-  if (text.includes('hai')) return '#3b9dbc'
-  if (text.includes('com') || text.includes('mi')) return '#74a05c'
-  return '#f97316'
+  const text = normalizedCategory(category);
+  if (
+    text.includes("pho") ||
+    text.includes("noodle") ||
+    text.includes("vermicelli")
+  )
+    return "#a66cc4";
+  if (text.includes("cafe") || text.includes("coffee") || text.includes("tea"))
+    return "#b87949";
+  if (
+    text.includes("banh") ||
+    text.includes("dessert") ||
+    text.includes("sweet") ||
+    text.includes("bakery")
+  )
+    return "#ef6f7b";
+  if (text.includes("seafood")) return "#3b9dbc";
+  if (text.includes("rice")) return "#74a05c";
+  return "#f97316";
 }
 
 function restaurantCategoryTheme(category) {
-  const text = normalizedCategory(category)
-  if (text.includes('pho')) {
+  const text = normalizedCategory(category);
+  if (text.includes("pho")) {
     return {
-      emoji: '🍜',
-      color: '#a66cc4',
-      gradient: 'linear-gradient(135deg, #c084fc 0%, #7e3aad 100%)',
-    }
+      emoji: "🍜",
+      color: "#a66cc4",
+      gradient: "linear-gradient(135deg, #c084fc 0%, #7e3aad 100%)",
+    };
   }
-  if (text.includes('com tam')) {
+  if (text.includes("broken rice") || text.includes("chicken rice")) {
     return {
-      emoji: '🍚',
-      color: '#74a05c',
-      gradient: 'linear-gradient(135deg, #9fca72 0%, #4d7f3f 100%)',
-    }
+      emoji: "🍚",
+      color: "#74a05c",
+      gradient: "linear-gradient(135deg, #9fca72 0%, #4d7f3f 100%)",
+    };
   }
-  if (text.includes('banh mi')) {
+  if (text.includes("banh mi")) {
     return {
-      emoji: '🥖',
-      color: '#d9862f',
-      gradient: 'linear-gradient(135deg, #f6b04f 0%, #c5661f 100%)',
-    }
+      emoji: "🥖",
+      color: "#d9862f",
+      gradient: "linear-gradient(135deg, #f6b04f 0%, #c5661f 100%)",
+    };
   }
-  if (text.includes('hai san')) {
+  if (text.includes("seafood")) {
     return {
-      emoji: '🦐',
-      color: '#3b9dbc',
-      gradient: 'linear-gradient(135deg, #58c4dd 0%, #247b9c 100%)',
-    }
+      emoji: "🦐",
+      color: "#3b9dbc",
+      gradient: "linear-gradient(135deg, #58c4dd 0%, #247b9c 100%)",
+    };
   }
-  if (text.includes('lau')) {
+  if (text.includes("hot pot")) {
     return {
-      emoji: '🫕',
-      color: '#e6504f',
-      gradient: 'linear-gradient(135deg, #ff8a65 0%, #c7362f 100%)',
-    }
+      emoji: "🫕",
+      color: "#e6504f",
+      gradient: "linear-gradient(135deg, #ff8a65 0%, #c7362f 100%)",
+    };
   }
-  if (text.includes('cafe') || text.includes('ca phe')) {
+  if (text.includes("cafe") || text.includes("coffee")) {
     return {
-      emoji: '☕',
-      color: '#b87949',
-      gradient: 'linear-gradient(135deg, #d59b66 0%, #7a4a2c 100%)',
-    }
+      emoji: "☕",
+      color: "#b87949",
+      gradient: "linear-gradient(135deg, #d59b66 0%, #7a4a2c 100%)",
+    };
   }
-  if (text.includes('dimsum')) {
+  if (text.includes("dessert") || text.includes("sweet")) {
     return {
-      emoji: '🥟',
-      color: '#ef6f7b',
-      gradient: 'linear-gradient(135deg, #ff9aa5 0%, #d94b60 100%)',
-    }
+      emoji: "🍰",
+      color: "#ef6f7b",
+      gradient: "linear-gradient(135deg, #ff9aa5 0%, #d94b60 100%)",
+    };
+  }
+  if (text.includes("snack") || text.includes("fast food")) {
+    return {
+      emoji: "🍔",
+      color: "#f97316",
+      gradient: "linear-gradient(135deg, #fb923c 0%, #ea580c 100%)",
+    };
+  }
+  if (text.includes("vegetarian")) {
+    return {
+      emoji: "🥗",
+      color: "#74a05c",
+      gradient: "linear-gradient(135deg, #9fca72 0%, #4d7f3f 100%)",
+    };
+  }
+  if (text.includes("dim sum") || text.includes("dimsum")) {
+    return {
+      emoji: "🥟",
+      color: "#ef6f7b",
+      gradient: "linear-gradient(135deg, #ff9aa5 0%, #d94b60 100%)",
+    };
   }
   return {
-    emoji: '🍽️',
-    color: '#f97316',
-    gradient: 'linear-gradient(135deg, #fb923c 0%, #ea580c 100%)',
-  }
+    emoji: "🍽️",
+    color: "#f97316",
+    gradient: "linear-gradient(135deg, #fb923c 0%, #ea580c 100%)",
+  };
 }
 
 function communityMarkerColor(rating) {
-  const value = Number(rating || 0)
-  if (value >= 5) return '#3d9cff'
-  if (value >= 4) return '#4f8fe8'
-  if (value >= 3) return '#5f83cf'
-  return '#6f7fa8'
+  const value = Number(rating || 0);
+  if (value >= 5) return "#3d9cff";
+  if (value >= 4) return "#4f8fe8";
+  if (value >= 3) return "#5f83cf";
+  return "#6f7fa8";
 }
 
 function ratingText(rating) {
-  const value = Number(rating || 0)
-  return value ? `${'★'.repeat(value)}${'☆'.repeat(5 - value)}` : 'Chưa đánh giá'
+  const value = Number(rating || 0);
+  return value ? `${"★".repeat(value)}${"☆".repeat(5 - value)}` : "Not rated";
+}
+
+function safeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function markerImage(place) {
+  // Use only data-provided images to avoid loading the same large fallback for every marker.
+  return place?.image_url || place?.image || place?.thumbnail || "";
 }
 
 function markerIcon(spot, preview = false, community = false) {
   const color = preview
-    ? '#f4a261'
+    ? "#f4a261"
     : community
       ? communityMarkerColor(spot.rating)
-      : categoryColor(spot.category)
-  const glyph = preview
-    ? '<b>+</b>'
-    : community
-      ? '<b>C</b>'
-      : `<svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M7 4v7M11 4v7M7 8h4M9 11v9M17 4v16M17 4c2.4 1.5 3.5 3.6 3.5 6H17" />
-        </svg>`
+      : categoryColor(spot.category);
+  const rating = Number(spot.rating || 0);
+  const ratingLabel = preview
+    ? "Select"
+    : rating
+      ? `★ ${rating.toFixed(1)}`
+      : community
+        ? "New"
+        : "New";
+  const image = markerImage(spot);
+  const theme = restaurantCategoryTheme(
+    spot?.category || spot?.dish_name || "",
+  );
+  const content = preview
+    ? "+"
+    : image
+      ? `<img src="${safeHtml(image)}" alt="" loading="lazy" decoding="async" />`
+      : `<span class="taste-food-marker-emoji">${safeHtml(theme.emoji || "🍽️")}</span>`;
+
   return L.divIcon({
-    className: 'food-map-marker-shell',
-    html: `<span class="food-map-marker-dot${preview ? ' preview' : ''}${community ? ' community' : ''}" style="--marker-color:${color}">${glyph}</span>`,
-    iconSize: community ? [34, 42] : [40, 50],
-    iconAnchor: community ? [17, 40] : [20, 48],
-    popupAnchor: [0, -43],
-  })
+    className: "food-map-marker-shell",
+    html: `<div class="taste-food-marker${preview ? " preview" : ""}${community ? " community" : ""}" style="--marker-color:${safeHtml(color)};--restaurant-gradient:${safeHtml(theme.gradient)}"><span class="taste-food-marker-core" aria-hidden="true">${content}</span><span class="taste-food-marker-rating">${safeHtml(ratingLabel)}</span></div>`,
+    iconSize: [58, 72],
+    iconAnchor: [29, 58],
+    popupAnchor: [0, -58],
+  });
 }
 
 function restaurantMarkerIcon(restaurant) {
-  const theme = restaurantCategoryTheme(restaurant?.category)
+  const theme = restaurantCategoryTheme(restaurant?.category);
+  const rating = Number(restaurant?.avg_rating || 0);
+  const image = markerImage(restaurant);
+  const ratingLabel = rating ? `★ ${rating.toFixed(1)}` : "Explore";
+  const content = image
+    ? `<img src="${safeHtml(image)}" alt="" loading="lazy" decoding="async" />`
+    : `<span class="taste-food-marker-emoji">${safeHtml(theme.emoji || "🍽️")}</span>`;
+
   return L.divIcon({
-    className: 'restaurant-marker-shell',
-    html: `<div class="restaurant-marker" style="--restaurant-color:${theme.color};--restaurant-gradient:${theme.gradient}"><span class="restaurant-marker-emoji" aria-hidden="true">${theme.emoji}</span></div>`,
-    iconSize: [40, 40],
-    iconAnchor: [20, 38],
-    popupAnchor: [0, -38],
-  })
+    className: "restaurant-marker-shell",
+    html: `<div class="taste-food-marker restaurant" style="--marker-color:${safeHtml(theme.color)};--restaurant-gradient:${safeHtml(theme.gradient)}"><span class="taste-food-marker-core" aria-hidden="true">${content}</span><span class="taste-food-marker-rating">${safeHtml(ratingLabel)}</span></div>`,
+    iconSize: [58, 72],
+    iconAnchor: [29, 58],
+    popupAnchor: [0, -58],
+  });
 }
 
 function restaurantRatingText(rating) {
-  const value = Math.min(Math.max(Number(rating || 0), 0), 5)
-  const filled = Math.floor(value)
-  return `${'★'.repeat(filled)}${'☆'.repeat(5 - filled)}  ${value.toFixed(1)}`
+  const value = Math.min(Math.max(Number(rating || 0), 0), 5);
+  const filled = Math.floor(value);
+  return `${"★".repeat(filled)}${"☆".repeat(5 - filled)}  ${value.toFixed(1)}`;
 }
 
 function restaurantPopupContent(restaurant) {
-  const theme = restaurantCategoryTheme(restaurant.category)
-  const container = document.createElement('div')
-  container.className = 'restaurant-popup'
-  container.style.setProperty('--restaurant-color', theme.color)
-  container.style.setProperty('--restaurant-gradient', theme.gradient)
+  const theme = restaurantCategoryTheme(restaurant.category);
+  const container = document.createElement("div");
+  container.className = "restaurant-popup";
+  container.style.setProperty("--restaurant-color", theme.color);
+  container.style.setProperty("--restaurant-gradient", theme.gradient);
 
-  const banner = document.createElement('div')
-  banner.className = 'restaurant-popup-banner'
-  banner.setAttribute('aria-label', restaurant.category || 'Nhà hàng')
+  const banner = document.createElement("div");
+  banner.className = "restaurant-popup-banner";
+  banner.setAttribute("aria-label", restaurant.category || "Restaurant");
 
-  const emoji = document.createElement('span')
-  emoji.className = 'restaurant-popup-emoji'
-  emoji.textContent = theme.emoji
-  banner.append(emoji)
+  const emoji = document.createElement("span");
+  emoji.className = "restaurant-popup-emoji";
+  emoji.textContent = theme.emoji;
+  banner.append(emoji);
 
-  const body = document.createElement('div')
-  body.className = 'restaurant-popup-body'
+  const body = document.createElement("div");
+  body.className = "restaurant-popup-body";
 
-  const name = document.createElement('strong')
-  name.textContent = restaurant.name
+  const name = document.createElement("strong");
+  name.textContent = restaurant.name;
 
-  const address = document.createElement('p')
-  address.className = 'restaurant-popup-address'
-  address.textContent = restaurant.address || 'Chưa có địa chỉ'
+  const address = document.createElement("p");
+  address.className = "restaurant-popup-address";
+  address.textContent = restaurant.address || "Address not available";
 
-  const meta = document.createElement('div')
-  meta.className = 'restaurant-popup-meta'
+  const meta = document.createElement("div");
+  meta.className = "restaurant-popup-meta";
 
-  const district = document.createElement('span')
-  district.textContent = restaurant.district || 'TP. Hồ Chí Minh'
+  const district = document.createElement("span");
+  district.textContent = restaurant.district || "Ho Chi Minh City";
 
-  const price = document.createElement('span')
-  const priceLevel = Math.min(String(restaurant.price_range || '').length, 3)
-  price.className = `restaurant-popup-price price-${priceLevel || 1}`
-  price.textContent = restaurant.price_range || 'Chưa rõ giá'
-  meta.append(district, price)
+  const price = document.createElement("span");
+  const priceLevel = Math.min(String(restaurant.price_range || "").length, 3);
+  price.className = `restaurant-popup-price price-${priceLevel || 1}`;
+  price.textContent = restaurant.price_range || "Price not available";
+  meta.append(district, price);
 
-  const rating = document.createElement('span')
-  rating.className = 'restaurant-popup-rating'
-  rating.textContent = restaurantRatingText(restaurant.avg_rating)
+  const rating = document.createElement("span");
+  rating.className = "restaurant-popup-rating";
+  rating.textContent = restaurantRatingText(restaurant.avg_rating);
 
-  const description = document.createElement('p')
-  description.className = 'restaurant-popup-description'
-  description.textContent = restaurant.description || 'Chưa có mô tả cho nhà hàng này.'
+  const description = document.createElement("p");
+  description.className = "restaurant-popup-description";
+  description.textContent =
+    restaurant.description ||
+    "No description is available for this restaurant.";
 
-  const directions = document.createElement('button')
-  directions.type = 'button'
-  directions.className = 'restaurant-popup-directions'
-  directions.textContent = 'Chỉ Đường'
-  directions.addEventListener('click', (event) => {
-    event.stopPropagation()
+  const directions = document.createElement("button");
+  directions.type = "button";
+  directions.className = "restaurant-popup-directions";
+  directions.textContent = "Directions";
+  directions.addEventListener("click", (event) => {
+    event.stopPropagation();
     window.open(
       `https://www.google.com/maps/dir/?api=1&destination=${restaurant.latitude},${restaurant.longitude}`,
-      '_blank',
-      'noopener,noreferrer',
-    )
-  })
+      "_blank",
+      "noopener,noreferrer",
+    );
+  });
 
-  body.append(name, address, meta, rating, description, directions)
-  container.append(banner, body)
-  return container
+  body.append(name, address, meta, rating, description, directions);
+  container.append(banner, body);
+  return container;
 }
 
 function popupContent(spot, community = false) {
-  const container = document.createElement('div')
-  container.className = 'food-map-popup'
+  const container = document.createElement("div");
+  container.className = "food-map-popup";
 
-  const category = document.createElement('span')
-  category.className = 'food-map-popup-kicker'
-  category.textContent = spot.category || 'Địa điểm ẩm thực'
+  const category = document.createElement("span");
+  category.className = "food-map-popup-kicker";
+  category.textContent = spot.category || "Food place";
 
-  const name = document.createElement('strong')
-  name.textContent = spot.name
+  const name = document.createElement("strong");
+  name.textContent = spot.name;
 
-  const dish = document.createElement('p')
-  dish.textContent = spot.dish_name || 'Chưa thêm tên món ăn'
+  const dish = document.createElement("p");
+  dish.textContent = spot.dish_name || "No dish name added";
 
-  const rating = document.createElement('span')
-  rating.className = 'food-map-popup-rating'
-  rating.textContent = ratingText(spot.rating)
+  const rating = document.createElement("span");
+  rating.className = "food-map-popup-rating";
+  rating.textContent = ratingText(spot.rating);
 
-  const location = document.createElement('span')
-  location.className = 'food-map-popup-location'
-  location.textContent = spot.district || 'TP. Hồ Chí Minh'
+  const location = document.createElement("span");
+  location.className = "food-map-popup-location";
+  location.textContent = spot.district || "Ho Chi Minh City";
 
   if (community) {
-    container.classList.add('community')
-    container.append(category, name, dish, location, rating)
-    return container
+    container.classList.add("community");
+    container.append(category, name, dish, location, rating);
+    return container;
   }
 
-  const actions = document.createElement('div')
-  actions.className = 'food-map-popup-actions'
+  const actions = document.createElement("div");
+  actions.className = "food-map-popup-actions";
 
-  const detailButton = document.createElement('button')
-  detailButton.type = 'button'
-  detailButton.textContent = 'Xem Chi Tiết'
-  detailButton.addEventListener('click', () => showDetail(spot, false))
+  const detailButton = document.createElement("button");
+  detailButton.type = "button";
+  detailButton.textContent = "View Details";
+  detailButton.addEventListener("click", () => showDetail(spot, false));
 
-  const deleteButton = document.createElement('button')
-  deleteButton.type = 'button'
-  deleteButton.className = 'danger'
-  deleteButton.textContent = 'Xoá'
-  deleteButton.addEventListener('click', () => removeSpot(spot))
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.className = "danger";
+  deleteButton.textContent = "Delete";
+  deleteButton.addEventListener("click", () => removeSpot(spot));
 
-  actions.append(detailButton, deleteButton)
-  container.append(category, name, dish, location, rating, actions)
-  return container
+  actions.append(detailButton, deleteButton);
+  container.append(category, name, dish, location, rating, actions);
+  return container;
 }
 
 function syncLayerVisibility() {
-  if (!map) return
+  if (!map) return;
 
   if (markerCluster) {
     if (showPersonalSpots.value && !map.hasLayer(markerCluster)) {
-      map.addLayer(markerCluster)
+      map.addLayer(markerCluster);
     } else if (!showPersonalSpots.value && map.hasLayer(markerCluster)) {
-      map.removeLayer(markerCluster)
+      map.removeLayer(markerCluster);
     }
   }
 
   if (restaurantCluster) {
     if (showRestaurants.value && !map.hasLayer(restaurantCluster)) {
-      map.addLayer(restaurantCluster)
+      map.addLayer(restaurantCluster);
     } else if (!showRestaurants.value && map.hasLayer(restaurantCluster)) {
-      map.removeLayer(restaurantCluster)
+      map.removeLayer(restaurantCluster);
     }
   }
 }
 
+function scheduleMarkerRender() {
+  if (markerRenderFrame) window.cancelAnimationFrame(markerRenderFrame);
+  markerRenderFrame = window.requestAnimationFrame(() => {
+    markerRenderFrame = 0;
+    renderMarkers();
+  });
+}
+
+function scheduleRestaurantRender() {
+  if (restaurantRenderFrame) window.cancelAnimationFrame(restaurantRenderFrame);
+  restaurantRenderFrame = window.requestAnimationFrame(() => {
+    restaurantRenderFrame = 0;
+    renderRestaurantMarkers();
+  });
+}
+
 function renderMarkers() {
-  if (!map || !markerCluster) return
+  if (!map || !markerCluster) return;
 
-  const community = isCommunityMode.value
-  markerCluster.clearLayers()
-  markersById.clear()
-  visibleSpots.value.forEach((spot) => {
-    if (!Number.isFinite(spot.latitude) || !Number.isFinite(spot.longitude)) return
+  const community = isCommunityMode.value;
+  markerCluster.clearLayers();
+  markersById.clear();
 
-    const marker = L.marker([spot.latitude, spot.longitude], {
-      icon: markerIcon(spot, false, community),
-      title: spot.name,
-      opacity: community ? 0.75 : 1,
-    })
-    marker.bindPopup(popupContent(spot, community), {
-      className: 'food-map-leaflet-popup',
-      maxWidth: 280,
-    })
-    markerCluster.addLayer(marker)
-    markersById.set(spot.id, marker)
-  })
-  syncLayerVisibility()
+  const layers = visibleSpots.value
+    .filter(
+      (spot) =>
+        Number.isFinite(Number(spot.latitude)) &&
+        Number.isFinite(Number(spot.longitude)),
+    )
+    .slice(0, MAX_VISIBLE_MARKERS)
+    .map((spot) => {
+      const marker = L.marker([Number(spot.latitude), Number(spot.longitude)], {
+        icon: markerIcon(spot, false, community),
+        title: spot.name,
+        opacity: community ? 0.86 : 1,
+        riseOnHover: true,
+      });
+
+      marker.bindPopup(popupContent(spot, community), {
+        className: "food-map-leaflet-popup",
+        maxWidth: 280,
+      });
+      marker.on("click", (event) => {
+        if (pickingMode.value) return;
+        if (event.originalEvent)
+          L.DomEvent.stopPropagation(event.originalEvent);
+        if (community) {
+          showCommunityDetail(spot);
+        } else {
+          showDetail(spot, false);
+        }
+      });
+      markersById.set(spot.id, marker);
+      return marker;
+    });
+
+  if (layers.length) markerCluster.addLayers(layers);
+  syncLayerVisibility();
 }
 
 function renderRestaurantMarkers() {
-  if (!map || !restaurantCluster) return
+  if (!map || !restaurantCluster) return;
 
-  restaurantCluster.clearLayers()
-  restaurantStore.restaurants.forEach((restaurant) => {
-    if (!Number.isFinite(restaurant.latitude) || !Number.isFinite(restaurant.longitude)) return
+  restaurantCluster.clearLayers();
+  const layers = restaurantStore.restaurants
+    .filter(
+      (restaurant) =>
+        Number.isFinite(Number(restaurant.latitude)) &&
+        Number.isFinite(Number(restaurant.longitude)),
+    )
+    .slice(0, MAX_RESTAURANT_MARKERS)
+    .map((restaurant) => {
+      const marker = L.marker(
+        [Number(restaurant.latitude), Number(restaurant.longitude)],
+        {
+          icon: restaurantMarkerIcon(restaurant),
+          title: restaurant.name,
+          zIndexOffset: 200,
+          riseOnHover: true,
+        },
+      );
+      marker.bindPopup(restaurantPopupContent(restaurant), {
+        className: "restaurant-leaflet-popup",
+        maxWidth: 300,
+      });
+      marker.on("click", (event) => {
+        if (pickingMode.value) return;
+        if (event.originalEvent)
+          L.DomEvent.stopPropagation(event.originalEvent);
+        showRestaurantDetail(restaurant);
+      });
+      return marker;
+    });
 
-    const marker = L.marker([restaurant.latitude, restaurant.longitude], {
-      icon: restaurantMarkerIcon(restaurant),
-      title: restaurant.name,
-      zIndexOffset: 200,
-    })
-    marker.bindPopup(restaurantPopupContent(restaurant), {
-      className: 'restaurant-leaflet-popup',
-      maxWidth: 300,
-    })
-    restaurantCluster.addLayer(marker)
-  })
-  syncLayerVisibility()
+  if (layers.length) restaurantCluster.addLayers(layers);
+  syncLayerVisibility();
 }
 
 function initialiseMap() {
-  if (mapInitialised.value || !mapElement.value) return
+  if (mapInitialised.value || !mapElement.value) return;
 
   map = L.map(mapElement.value, {
     center: HCMC_CENTER,
-    zoom: 13,
+    zoom: 13.5,
     zoomControl: false,
-  })
-  L.control.zoom({ position: 'bottomright' }).addTo(map)
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
-    maxZoom: 19,
-  }).addTo(map)
+    preferCanvas: true,
+    zoomSnap: 0.25,
+    wheelDebounceTime: 90,
+    wheelPxPerZoomLevel: 120,
+    fadeAnimation: false,
+    markerZoomAnimation: false,
+  });
+  L.control.zoom({ position: "bottomright" }).addTo(map);
+  L.tileLayer(
+    "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+    {
+      attribution: "© OpenStreetMap © CARTO",
+      maxZoom: 20,
+      maxNativeZoom: 18,
+      detectRetina: false,
+      updateWhenIdle: true,
+      updateWhenZooming: false,
+      keepBuffer: 1,
+    },
+  ).addTo(map);
 
   markerCluster = L.markerClusterGroup({
     showCoverageOnHover: false,
-    maxClusterRadius: 48,
-    spiderfyOnMaxZoom: true,
-  })
+    maxClusterRadius: MARKER_CLUSTER_RADIUS,
+    spiderfyOnMaxZoom: false,
+    spiderfyOnEveryZoom: false,
+    removeOutsideVisibleBounds: true,
+    animateAddingMarkers: false,
+    chunkedLoading: true,
+    chunkInterval: 50,
+    chunkDelay: 32,
+    iconCreateFunction(cluster) {
+      const count = cluster.getChildCount();
+      return L.divIcon({
+        html: `<div class="taste-map-cluster">${count > 99 ? "99+" : count}</div>`,
+        className: "taste-map-cluster-shell",
+        iconSize: [42, 42],
+        iconAnchor: [21, 21],
+      });
+    },
+  });
   restaurantCluster = L.markerClusterGroup({
     showCoverageOnHover: false,
-    maxClusterRadius: 60,
-    spiderfyOnMaxZoom: true,
+    maxClusterRadius: RESTAURANT_CLUSTER_RADIUS,
+    spiderfyOnMaxZoom: false,
+    spiderfyOnEveryZoom: false,
+    removeOutsideVisibleBounds: true,
+    animateAddingMarkers: false,
+    chunkedLoading: true,
+    chunkInterval: 50,
+    chunkDelay: 32,
     iconCreateFunction(cluster) {
+      const count = cluster.getChildCount();
       return L.divIcon({
-        html: `<div class="restaurant-cluster">${cluster.getChildCount()}</div>`,
-        className: 'restaurant-cluster-shell',
-        iconSize: [36, 36],
-      })
+        html: `<div class="taste-map-cluster restaurant">${count > 99 ? "99+" : count}</div>`,
+        className: "taste-map-cluster-shell",
+        iconSize: [42, 42],
+        iconAnchor: [21, 21],
+      });
     },
-  })
-  syncLayerVisibility()
-  map.on('click', handleMapClick)
-  mapInitialised.value = true
-  window.setTimeout(() => map?.invalidateSize(), 0)
+  });
+  syncLayerVisibility();
+  map.on("click", handleMapClick);
+  mapInitialised.value = true;
+  window.setTimeout(() => map?.invalidateSize(), 0);
 }
 
 function handleMapClick(event) {
-  if (!pickingMode.value) return
+  if (!pickingMode.value) return;
 
-  form.latitude = event.latlng.lat.toFixed(7)
-  form.longitude = event.latlng.lng.toFixed(7)
-  delete formErrors.coordinates
-  showPreviewMarker(event.latlng.lat, event.latlng.lng)
-  stopPicking()
+  form.latitude = event.latlng.lat.toFixed(7);
+  form.longitude = event.latlng.lng.toFixed(7);
+  delete formErrors.coordinates;
+  showPreviewMarker(event.latlng.lat, event.latlng.lng);
+  stopPicking();
 }
 
 function showPreviewMarker(latitude, longitude) {
-  clearPreviewMarker()
-  if (!map) return
+  clearPreviewMarker();
+  if (!map) return;
 
   previewMarker = L.marker([latitude, longitude], {
     icon: markerIcon({}, true),
     zIndexOffset: 1000,
   })
     .addTo(map)
-    .bindTooltip('Vị trí đã chọn', { direction: 'top', offset: [0, -16] })
+    .bindTooltip("Selected location", { direction: "top", offset: [0, -16] });
 }
 
 function clearPreviewMarker() {
-  if (map && previewMarker) map.removeLayer(previewMarker)
-  previewMarker = null
+  if (map && previewMarker) map.removeLayer(previewMarker);
+  previewMarker = null;
 }
 
 function startPicking() {
-  pickingMode.value = true
-  mapElement.value?.classList.add('is-picking')
-  map?.closePopup()
+  pickingMode.value = true;
+  mapElement.value?.classList.add("is-picking");
+  map?.closePopup();
 }
 
 function stopPicking() {
-  pickingMode.value = false
-  mapElement.value?.classList.remove('is-picking')
+  pickingMode.value = false;
+  mapElement.value?.classList.remove("is-picking");
 }
 
 async function fetchSpots() {
@@ -635,25 +947,25 @@ async function fetchSpots() {
       district: filters.district || undefined,
       category: filters.category || undefined,
       rating: filters.rating || undefined,
-    })
-    renderMarkers()
+    });
+    scheduleMarkerRender();
   } catch (error) {
     uiStore.setError(error.message, {
-      title: 'Không thể tải bản đồ',
-      eyebrow: 'Bản đồ ẩm thực',
-    })
+      title: "Map could not be loaded",
+      eyebrow: "Food map",
+    });
   }
 }
 
 async function fetchAllPersonalSpots() {
   try {
-    await foodSpotStore.fetchSpots()
-    renderMarkers()
+    await foodSpotStore.fetchSpots();
+    scheduleMarkerRender();
   } catch (error) {
     uiStore.setError(error.message, {
-      title: 'Không thể tải thống kê',
-      eyebrow: 'Bản đồ ẩm thực',
-    })
+      title: "Statistics could not be loaded",
+      eyebrow: "Food map",
+    });
   }
 }
 
@@ -663,13 +975,13 @@ async function fetchCommunitySpots() {
       dish: communitySearch.value.trim() || undefined,
       district: communityFilters.district || undefined,
       category: communityFilters.category || undefined,
-    })
-    renderMarkers()
+    });
+    scheduleMarkerRender();
   } catch (error) {
     uiStore.setError(error.message, {
-      title: 'Không thể tải cộng đồng',
-      eyebrow: 'Bản đồ ẩm thực',
-    })
+      title: "Community places could not be loaded",
+      eyebrow: "Food map",
+    });
   }
 }
 
@@ -680,112 +992,123 @@ async function fetchRestaurants() {
       category: restaurantFilters.category || undefined,
       search: restaurantFilters.search.trim() || undefined,
       min_rating: restaurantFilters.min_rating || undefined,
-    })
-    renderRestaurantMarkers()
+    });
+    scheduleRestaurantRender();
   } catch (error) {
     uiStore.setError(error.message, {
-      title: 'Không thể tải nhà hàng',
-      eyebrow: 'Lớp nhà hàng',
-    })
+      title: "Restaurants could not be loaded",
+      eyebrow: "Restaurant layer",
+    });
   }
 }
 
 async function applyRestaurantFilters() {
-  window.clearTimeout(restaurantSearchTimer)
-  await fetchRestaurants()
+  window.clearTimeout(restaurantSearchTimer);
+  await fetchRestaurants();
 }
 
 async function clearRestaurantFilters() {
   Object.assign(restaurantFilters, {
-    district: '',
-    category: '',
-    search: '',
-    min_rating: '',
-  })
-  await nextTick()
-  window.clearTimeout(restaurantSearchTimer)
-  await fetchRestaurants()
+    district: "",
+    category: "",
+    search: "",
+    min_rating: "",
+  });
+  await nextTick();
+  window.clearTimeout(restaurantSearchTimer);
+  await fetchRestaurants();
 }
 
 async function setMapMode(mode) {
-  if (!['personal', 'community', 'stats'].includes(mode)) return
+  if (!["personal", "community", "stats"].includes(mode)) return;
 
-  mapMode.value = mode
-  sidebarMode.value = 'list'
-  foodSpotStore.setSelectedSpot(null)
-  stopPicking()
-  clearPreviewMarker()
-  map?.closePopup()
-  markerCluster?.clearLayers()
+  mapMode.value = mode;
+  sidebarMode.value = "list";
+  foodSpotStore.setSelectedSpot(null);
+  selectedRestaurant.value = null;
+  selectedCommunitySpot.value = null;
+  setDetailDrawer(false);
+  stopPicking();
+  clearPreviewMarker();
+  map?.closePopup();
+  markerCluster?.clearLayers();
 
-  if (mode === 'community') {
-    await fetchCommunitySpots()
-  } else if (mode === 'stats') {
-    await fetchAllPersonalSpots()
+  if (mode === "community") {
+    await fetchCommunitySpots();
+  } else if (mode === "stats") {
+    await fetchAllPersonalSpots();
   } else {
-    await fetchSpots()
+    await fetchSpots();
   }
 }
 
 function openAddForm(prefill = {}) {
-  foodSpotStore.setSelectedSpot(null)
-  resetForm()
-  Object.assign(form, prefill)
-  sidebarMode.value = 'add'
+  foodSpotStore.setSelectedSpot(null);
+  selectedRestaurant.value = null;
+  selectedCommunitySpot.value = null;
+  setDetailDrawer(false);
+  resetForm();
+  Object.assign(form, prefill);
+  sidebarMode.value = "add";
+  setFilterDrawer(true);
 }
 
 async function addFromRecipe() {
-  await setMapMode('personal')
+  await setMapMode("personal");
   openAddForm({
     dish_name: initialDish,
     recipe_id: initialRecipeId,
-  })
+  });
 }
 
 async function addFromStats() {
-  await setMapMode('personal')
-  openAddForm()
+  await setMapMode("personal");
+  openAddForm();
 }
 
 function cancelForm() {
-  resetForm()
-  sidebarMode.value = 'list'
+  resetForm();
+  sidebarMode.value = "list";
 }
 
 function editSpot(spot) {
-  editingSpotId.value = spot.id
+  selectedRestaurant.value = null;
+  selectedCommunitySpot.value = null;
+  editingSpotId.value = spot.id;
   Object.assign(form, {
-    name: spot.name || '',
-    dish_name: spot.dish_name || '',
-    category: spot.category || '',
-    district: spot.district || '',
-    latitude: String(spot.latitude ?? ''),
-    longitude: String(spot.longitude ?? ''),
+    name: spot.name || "",
+    dish_name: spot.dish_name || "",
+    category: spot.category || "",
+    district: spot.district || "",
+    latitude: String(spot.latitude ?? ""),
+    longitude: String(spot.longitude ?? ""),
     rating: spot.rating || null,
-    notes: spot.notes || '',
-    tags: spot.tags || '',
+    notes: spot.notes || "",
+    tags: spot.tags || "",
     recipe_id: spot.recipe_id || null,
-  })
-  Object.keys(formErrors).forEach((key) => delete formErrors[key])
-  showPreviewMarker(spot.latitude, spot.longitude)
-  sidebarMode.value = 'add'
+  });
+  Object.keys(formErrors).forEach((key) => delete formErrors[key]);
+  showPreviewMarker(spot.latitude, spot.longitude);
+  sidebarMode.value = "add";
+  setDetailDrawer(false);
+  setFilterDrawer(true);
 }
 
 function validateForm() {
-  Object.keys(formErrors).forEach((key) => delete formErrors[key])
-  if (!form.name.trim()) formErrors.name = 'Vui lòng nhập tên địa điểm.'
+  Object.keys(formErrors).forEach((key) => delete formErrors[key]);
+  if (!form.name.trim()) formErrors.name = "Enter a place name.";
 
-  const latitude = Number(form.latitude)
-  const longitude = Number(form.longitude)
+  const latitude = Number(form.latitude);
+  const longitude = Number(form.longitude);
   if (
-    form.latitude === '' ||
-    form.longitude === '' ||
+    form.latitude === "" ||
+    form.longitude === "" ||
     !Number.isFinite(latitude) ||
     !Number.isFinite(longitude)
   ) {
-    formErrors.coordinates = 'Vui lòng chọn vị trí trên bản đồ.'
+    formErrors.coordinates = "Select a location on the map.";
   }
-  return Object.keys(formErrors).length === 0
+  return Object.keys(formErrors).length === 0;
 }
 
 function payload() {
@@ -800,230 +1123,540 @@ function payload() {
     notes: form.notes.trim() || null,
     tags: form.tags.trim() || null,
     recipe_id: form.recipe_id || null,
-  }
+  };
 }
 
 async function submitForm() {
-  if (!validateForm() || submitting.value) return
+  if (!validateForm() || submitting.value) return;
 
-  const wasEditing = isEditing.value
-  submitting.value = true
+  const wasEditing = isEditing.value;
+  submitting.value = true;
   try {
     const spot = wasEditing
       ? await foodSpotStore.updateSpot(editingSpotId.value, payload())
-      : await foodSpotStore.addSpot(payload())
+      : await foodSpotStore.addSpot(payload());
 
-    clearPreviewMarker()
-    editingSpotId.value = null
-    foodSpotStore.setSelectedSpot(spot)
-    sidebarMode.value = 'list'
-    renderMarkers()
-    focusSpot(spot)
+    clearPreviewMarker();
+    editingSpotId.value = null;
+    foodSpotStore.setSelectedSpot(spot);
+    sidebarMode.value = "list";
+    scheduleMarkerRender();
+    setFilterDrawer(false);
+    showDetail(spot);
     uiStore.setSuccess(
-      wasEditing ? 'Địa điểm đã được cập nhật.' : 'Địa điểm mới đã được lưu.',
+      wasEditing ? "The place was updated." : "The new place was saved.",
       {
-        title: wasEditing ? 'Cập nhật thành công' : 'Đã thêm vào bản đồ',
-        eyebrow: 'Bản đồ ẩm thực cá nhân',
-        icon: 'map-pin',
+        title: wasEditing ? "Update successful" : "Added to the map",
+        eyebrow: "Personal food map",
+        icon: "map-pin",
       },
-    )
+    );
   } catch (error) {
-    formErrors.submit = error.message
+    formErrors.submit = error.message;
   } finally {
-    submitting.value = false
+    submitting.value = false;
   }
 }
 
 function focusSpot(spot, openPopup = true) {
-  if (!map || !spot) return
-  map.flyTo([spot.latitude, spot.longitude], 16, { duration: 0.8 })
+  if (!map || !spot) return;
+  map.flyTo([spot.latitude, spot.longitude], 16, { duration: 0.8 });
   if (openPopup) {
-    window.clearTimeout(popupTimer)
+    window.clearTimeout(popupTimer);
     popupTimer = window.setTimeout(() => {
-      const marker = markersById.get(spot.id)
-      if (!marker || !markerCluster) return
-      markerCluster.zoomToShowLayer(marker, () => marker.openPopup())
-    }, 500)
+      const marker = markersById.get(spot.id);
+      if (!marker || !markerCluster) return;
+      markerCluster.zoomToShowLayer(marker, () => marker.openPopup());
+    }, 500);
   }
 }
 
 function showDetail(spot, moveMap = true) {
-  foodSpotStore.setSelectedSpot(spot)
-  sidebarMode.value = 'list'
-  stopPicking()
-  clearPreviewMarker()
-  if (moveMap) focusSpot(spot)
+  selectedRestaurant.value = null;
+  selectedCommunitySpot.value = null;
+  foodSpotStore.setSelectedSpot(spot);
+  sidebarMode.value = "list";
+  stopPicking();
+  clearPreviewMarker();
+  if (moveMap) focusSpot(spot);
+  setFilterDrawer(false);
+  setDetailDrawer(true);
 }
 
-function backToList() {
-  foodSpotStore.setSelectedSpot(null)
-  sidebarMode.value = 'list'
-  stopPicking()
-  clearPreviewMarker()
-  map?.closePopup()
+function showCommunityDetail(spot, moveMap = true) {
+  selectedRestaurant.value = null;
+  selectedCommunitySpot.value = spot;
+  foodSpotStore.setSelectedSpot(null);
+  stopPicking();
+  clearPreviewMarker();
+  if (moveMap) focusCoordinates(spot);
+  setFilterDrawer(false);
+  setDetailDrawer(true);
 }
 
-async function removeSpot(spot) {
-  if (!spot || deletingSpotId.value) return
-  if (!window.confirm(`Xoá "${spot.name}" khỏi bản đồ ẩm thực của bạn?`)) return
+function showRestaurantDetail(restaurant, moveMap = true) {
+  selectedCommunitySpot.value = null;
+  selectedRestaurant.value = restaurant;
+  foodSpotStore.setSelectedSpot(null);
+  stopPicking();
+  clearPreviewMarker();
+  if (moveMap) focusCoordinates(restaurant);
+  setFilterDrawer(false);
+  setDetailDrawer(true);
+}
 
-  deletingSpotId.value = spot.id
-  try {
-    await foodSpotStore.removeSpot(spot.id)
-    renderMarkers()
-    sidebarMode.value = 'list'
-    uiStore.setSuccess('Địa điểm đã được xoá khỏi bản đồ.', {
-      title: 'Đã xoá địa điểm',
-      eyebrow: 'Bản đồ ẩm thực cá nhân',
-      icon: 'trash',
-    })
-  } catch (error) {
-    uiStore.setError(error.message, {
-      title: 'Không thể xoá địa điểm',
-      eyebrow: 'Bản đồ ẩm thực',
-    })
-  } finally {
-    deletingSpotId.value = null
+function focusCoordinates(place) {
+  if (
+    !map ||
+    !Number.isFinite(Number(place?.latitude)) ||
+    !Number.isFinite(Number(place?.longitude))
+  )
+    return;
+  map.flyTo([Number(place.latitude), Number(place.longitude)], 16, {
+    duration: 0.8,
+  });
+}
+
+function selectDiscovery(place) {
+  if (!place) return;
+  if (place.type === "restaurant") {
+    showRestaurantDetail(place.raw);
+  } else if (place.type === "community") {
+    showCommunityDetail(place.raw);
+  } else {
+    showDetail(place.raw);
   }
 }
 
+function backToList() {
+  foodSpotStore.setSelectedSpot(null);
+  selectedRestaurant.value = null;
+  selectedCommunitySpot.value = null;
+  sidebarMode.value = "list";
+  stopPicking();
+  clearPreviewMarker();
+  map?.closePopup();
+  setDetailDrawer(false);
+}
+
+async function removeSpot(spot) {
+  if (!spot || deletingSpotId.value) return;
+  if (!window.confirm(`Delete "${spot.name}" from your food map?`)) return;
+
+  deletingSpotId.value = spot.id;
+  try {
+    await foodSpotStore.removeSpot(spot.id);
+    scheduleMarkerRender();
+    sidebarMode.value = "list";
+    setDetailDrawer(false);
+    uiStore.setSuccess("The place was removed from the map.", {
+      title: "Place deleted",
+      eyebrow: "Personal food map",
+      icon: "trash",
+    });
+  } catch (error) {
+    uiStore.setError(error.message, {
+      title: "Place could not be deleted",
+      eyebrow: "Food map",
+    });
+  } finally {
+    deletingSpotId.value = null;
+  }
+}
+
+function handleScanUrl() {
+  const value = scanUrl.value.trim();
+  if (!value) {
+    scanInput.value?.focus();
+    return;
+  }
+
+  console.info("[FoodStory scan placeholder]", value);
+  if (!/^https?:\/\//i.test(value)) {
+    restaurantFilters.search = value;
+    if (mapMode.value === "community") {
+      communitySearch.value = value;
+    } else {
+      personalSearch.value = value;
+    }
+  }
+  isResultSheetOpen.value = true;
+  invalidateMapAfterTransition();
+}
+
+function focusScanInput() {
+  scanInput.value?.focus();
+}
+
+function locateUser() {
+  if (!map) return;
+  map.locate({ setView: true, maxZoom: 16, watch: false });
+}
+
+function openDirections(place = selectedDiscovery.value) {
+  if (!place) return;
+  window.open(
+    `https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`,
+    "_blank",
+    "noopener,noreferrer",
+  );
+}
+
+function toggleSavedPlace(place = selectedDiscovery.value) {
+  if (!place) return;
+  const next = new Set(savedPlaceKeys.value);
+  if (next.has(place.key)) {
+    next.delete(place.key);
+  } else {
+    next.add(place.key);
+  }
+  savedPlaceKeys.value = next;
+}
+
+function isPlaceSaved(place) {
+  return Boolean(place && savedPlaceKeys.value.has(place.key));
+}
+
+async function sharePlace(place = selectedDiscovery.value) {
+  if (!place) return;
+  const shareData = {
+    title: place.name,
+    text: `${place.name} · ${place.category} · ${place.address}`,
+    url: `https://www.google.com/maps/search/?api=1&query=${place.latitude},${place.longitude}`,
+  };
+
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData);
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(shareData.url);
+      uiStore.setSuccess("The place link was copied.", {
+        title: "Ready to share",
+        eyebrow: "FoodStory Taste Map",
+        icon: "send",
+      });
+    }
+  } catch (error) {
+    if (error?.name !== "AbortError") {
+      uiStore.setError("This place cannot be shared right now.", {
+        title: "Sharing failed",
+        eyebrow: "FoodStory Taste Map",
+      });
+    }
+  }
+}
+
+function formatPlaceMeta(place) {
+  return place.distance || place.price || place.address || place.district;
+}
+
 function clearFilters() {
-  Object.assign(filters, { district: '', category: '', rating: '' })
+  Object.assign(filters, { district: "", category: "", rating: "" });
 }
 
 function clearCommunityFilters() {
-  communitySearch.value = ''
-  Object.assign(communityFilters, { district: '', category: '' })
+  communitySearch.value = "";
+  Object.assign(communityFilters, { district: "", category: "" });
 }
 
 function splitTags(tags) {
-  return String(tags || '')
-    .split(',')
+  return String(tags || "")
+    .split(",")
     .map((tag) => tag.trim())
-    .filter(Boolean)
+    .filter(Boolean);
 }
 
 function formatDate(value) {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  return new Intl.DateTimeFormat('vi-VN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(date)
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
 }
 
 watch(
   () => [filters.district, filters.category, filters.rating],
   () => {
-    if (mapMode.value !== 'personal') return
-    window.clearTimeout(filterTimer)
-    filterTimer = window.setTimeout(fetchSpots, 180)
+    if (mapMode.value !== "personal") return;
+    window.clearTimeout(filterTimer);
+    filterTimer = window.setTimeout(fetchSpots, 180);
   },
-)
+);
 
 watch(
-  () => [communitySearch.value, communityFilters.district, communityFilters.category],
+  () => [
+    communitySearch.value,
+    communityFilters.district,
+    communityFilters.category,
+  ],
   () => {
-    if (mapMode.value !== 'community') return
-    window.clearTimeout(communitySearchTimer)
-    communitySearchTimer = window.setTimeout(fetchCommunitySpots, 400)
+    if (mapMode.value !== "community") return;
+    window.clearTimeout(communitySearchTimer);
+    communitySearchTimer = window.setTimeout(fetchCommunitySpots, 400);
   },
-)
+);
 
 watch(
   () => restaurantFilters.search,
   () => {
-    window.clearTimeout(restaurantSearchTimer)
-    restaurantSearchTimer = window.setTimeout(fetchRestaurants, 400)
+    window.clearTimeout(restaurantSearchTimer);
+    restaurantSearchTimer = window.setTimeout(fetchRestaurants, 400);
   },
-)
+);
 
-watch([showRestaurants, showPersonalSpots], () => syncLayerVisibility())
+watch([showRestaurants, showPersonalSpots], () => syncLayerVisibility());
 
 watch(
   () => foodSpotStore.spots,
   () => {
-    if (mapMode.value !== 'community') renderMarkers()
+    if (mapMode.value !== "community") scheduleMarkerRender();
   },
-  { deep: true },
-)
+  { flush: "post" },
+);
 
 watch(
   () => foodSpotStore.communitySpots,
   () => {
-    if (mapMode.value === 'community') renderMarkers()
+    if (mapMode.value === "community") scheduleMarkerRender();
   },
-  { deep: true },
-)
+  { flush: "post" },
+);
 
 watch(
   () => restaurantStore.restaurants,
-  () => renderRestaurantMarkers(),
-  { deep: true },
-)
+  () => scheduleRestaurantRender(),
+  { flush: "post" },
+);
 
 onMounted(async () => {
-  await nextTick()
-  initialiseMap()
-  if (mapMode.value === 'community') {
+  await nextTick();
+  initialiseMap();
+  if (mapMode.value === "community") {
     try {
-      await foodSpotStore.fetchSpots()
+      await foodSpotStore.fetchSpots();
     } catch {
       // Community results can still load if personal statistics are unavailable.
     }
-    await fetchCommunitySpots()
-  } else if (mapMode.value === 'stats') {
-    await fetchAllPersonalSpots()
+    await fetchCommunitySpots();
+  } else if (mapMode.value === "stats") {
+    await fetchAllPersonalSpots();
   } else {
-    await fetchSpots()
+    await fetchSpots();
   }
-  await fetchRestaurants()
-})
+  await fetchRestaurants();
+});
 
 onBeforeUnmount(() => {
-  window.clearTimeout(filterTimer)
-  window.clearTimeout(communitySearchTimer)
-  window.clearTimeout(restaurantSearchTimer)
-  window.clearTimeout(popupTimer)
-  stopPicking()
-  markersById.clear()
-  markerCluster = null
-  restaurantCluster = null
-  previewMarker = null
+  window.clearTimeout(filterTimer);
+  window.clearTimeout(communitySearchTimer);
+  window.clearTimeout(restaurantSearchTimer);
+  window.clearTimeout(popupTimer);
+  window.clearTimeout(layoutTimer);
+  if (markerRenderFrame) window.cancelAnimationFrame(markerRenderFrame);
+  if (restaurantRenderFrame) window.cancelAnimationFrame(restaurantRenderFrame);
+  stopPicking();
+  markersById.clear();
+  markerCluster = null;
+  restaurantCluster = null;
+  previewMarker = null;
 
   if (map) {
-    map.off()
-    map.remove()
-    map = null
-    mapInitialised.value = false
+    map.off();
+    map.remove();
+    map = null;
+    mapInitialised.value = false;
   }
-})
+});
 </script>
 
 <template>
-  <section class="food-map-page" :class="`mode-${mapMode}`">
-    <aside class="food-map-sidebar" aria-label="Quản lý bản đồ ẩm thực">
+  <section
+    class="food-map-page"
+    :class="[`mode-${mapMode}`, { 'results-collapsed': !isResultSheetOpen }]"
+  >
+    <form class="taste-scan-bar" @submit.prevent="handleScanUrl">
+      <span class="taste-scan-link" aria-hidden="true">🔗</span>
+      <label class="sr-only" for="taste-map-scan">Scan a food link</label>
+      <input
+        id="taste-map-scan"
+        ref="scanInput"
+        v-model="scanUrl"
+        type="text"
+        maxlength="500"
+        placeholder="Paste a TikTok, Instagram, Facebook, or YouTube Shorts food link..."
+      />
+      <button type="submit">
+        SCAN NGAY <span aria-hidden="true">✨</span>
+      </button>
+    </form>
+
+    <button class="taste-menu-button" type="button" aria-label="Open main menu">
+      ☰
+    </button>
+
+    <div class="taste-top-actions" aria-label="User actions">
+      <button type="button" aria-label="Notifications">
+        🔔
+        <span aria-hidden="true">3</span>
+      </button>
+      <button class="taste-avatar-button" type="button" aria-label="Account">
+        <img :src="streetImage" alt="" loading="lazy" decoding="async" />
+      </button>
+    </div>
+
+    <button
+      class="taste-locate-button"
+      type="button"
+      aria-label="Locate my current position"
+      @click="locateUser"
+    >
+      ⌖
+    </button>
+
+    <button
+      class="taste-edge-handle taste-edge-handle-left"
+      type="button"
+      aria-label="Open filters"
+      :aria-expanded="isFilterDrawerOpen"
+      @click="setFilterDrawer(true)"
+    >
+      <AppIcon name="filter" size="18" />
+      <span>Filters</span>
+    </button>
+
+    <button
+      class="taste-edge-handle taste-edge-handle-right"
+      type="button"
+      aria-label="Open place details"
+      :aria-expanded="isDetailDrawerOpen"
+      @click="setDetailDrawer(true)"
+    >
+      <AppIcon name="map-pin" size="18" />
+      <span>Details</span>
+    </button>
+
+    <button
+      v-if="isFilterDrawerOpen || isDetailDrawerOpen"
+      class="taste-drawer-backdrop"
+      type="button"
+      aria-label="Close open panel"
+      @click="
+        setFilterDrawer(false);
+        setDetailDrawer(false);
+      "
+    ></button>
+
+    <section
+      class="taste-result-sheet"
+      :class="{ collapsed: !isResultSheetOpen }"
+      aria-label="Matching results"
+    >
+      <button
+        class="taste-sheet-handle"
+        type="button"
+        :aria-label="isResultSheetOpen ? 'Collapse results' : 'Expand results'"
+        :aria-expanded="isResultSheetOpen"
+        @click="toggleResultSheet"
+      >
+        <span></span>
+      </button>
+      <div class="taste-sheet-heading">
+        <div>
+          <h2>✨ Matching Results</h2>
+          <p>{{ resultSheetSubtitle }}</p>
+        </div>
+        <span>{{ resultPlaces.length }} places</span>
+      </div>
+      <div v-if="resultPlaces.length" class="taste-result-list">
+        <article
+          v-for="place in resultPlaces"
+          :key="place.key"
+          class="taste-result-card"
+          :class="{ active: selectedDiscovery?.key === place.key }"
+          tabindex="0"
+          role="button"
+          @click="selectDiscovery(place)"
+          @keydown.enter.prevent="selectDiscovery(place)"
+          @keydown.space.prevent="selectDiscovery(place)"
+        >
+          <img :src="place.image" :alt="place.name" />
+          <div class="taste-result-copy">
+            <span>{{ place.category }}</span>
+            <strong>{{ place.name }}</strong>
+            <p>{{ formatPlaceMeta(place) }}</p>
+            <small>
+              <b>{{ place.rating ? place.rating.toFixed(1) : "New" }} ★</b>
+              <span v-if="place.price">{{ place.price }}</span>
+            </small>
+          </div>
+          <button
+            type="button"
+            :class="{ saved: isPlaceSaved(place) }"
+            :aria-label="
+              isPlaceSaved(place)
+                ? `Remove ${place.name} from saved places`
+                : `Save ${place.name}`
+            "
+            @click.stop="toggleSavedPlace(place)"
+          >
+            <AppIcon name="heart" size="17" />
+          </button>
+        </article>
+      </div>
+      <div v-else class="taste-result-empty">
+        <AppIcon name="search" size="24" />
+        <span>No matching places yet. Try changing your filters.</span>
+      </div>
+    </section>
+
+    <button
+      class="taste-floating-scan"
+      :class="{ raised: isResultSheetOpen }"
+      type="button"
+      aria-label="Scan food from a link"
+      @click="focusScanInput"
+    >
+      <AppIcon name="sparkles" size="22" />
+      <span>Scan food</span>
+    </button>
+
+    <aside
+      class="food-map-sidebar"
+      :class="{ open: isFilterDrawerOpen }"
+      aria-label="Manage food map"
+      :aria-hidden="!isFilterDrawerOpen"
+      :inert="!isFilterDrawerOpen"
+    >
+      <button
+        class="taste-drawer-close"
+        type="button"
+        aria-label="Close filters"
+        @click="setFilterDrawer(false)"
+      >
+        <AppIcon name="x" size="20" />
+      </button>
       <header class="food-map-sidebar-header">
         <div>
           <p class="food-map-kicker">{{ sidebarKicker }}</p>
           <h1>{{ sidebarTitle }}</h1>
-          <p class="food-map-storyline">Mỗi quán ăn là một câu chuyện</p>
+          <p class="food-map-storyline">Every food place tells a story</p>
           <p class="food-map-layer-counts">
-            {{ restaurantStore.restaurants.length }} nhà hàng
+            {{ restaurantStore.restaurants.length }} restaurants
             <span>•</span>
-            {{ foodSpotStore.spots.length }} địa điểm của tôi
+            {{ foodSpotStore.spots.length }} personal places
           </p>
         </div>
         <span class="food-map-count">{{ sidebarCount }}</span>
       </header>
 
-      <nav class="food-map-mode-toggle" aria-label="Chế độ bản đồ">
+      <nav class="food-map-mode-toggle" aria-label="Map mode">
         <button
           v-for="mode in [
-            ['personal', 'Của Tôi'],
-            ['community', 'Cộng Đồng'],
-            ['stats', 'Thống Kê'],
+            ['personal', 'My Places'],
+            ['community', 'Community'],
+            ['stats', 'Statistics'],
           ]"
           :key="mode[0]"
           type="button"
@@ -1035,111 +1668,147 @@ onBeforeUnmount(() => {
         </button>
       </nav>
 
-      <section class="food-map-layer-toggle" aria-label="Lớp hiển thị trên bản đồ">
-        <span>Hiện trên bản đồ:</span>
+      <section class="food-map-layer-toggle" aria-label="Map display layers">
+        <span>Show on map:</span>
         <div>
           <label class="restaurant" :class="{ active: showRestaurants }">
             <input v-model="showRestaurants" type="checkbox" />
-            <span aria-hidden="true">{{ showRestaurants ? '✓' : '' }}</span>
-            Nhà Hàng
+            <span aria-hidden="true">{{ showRestaurants ? "✓" : "" }}</span>
+            Restaurants
           </label>
           <label class="personal" :class="{ active: showPersonalSpots }">
             <input v-model="showPersonalSpots" type="checkbox" />
-            <span aria-hidden="true">{{ showPersonalSpots ? '✓' : '' }}</span>
+            <span aria-hidden="true">{{ showPersonalSpots ? "✓" : "" }}</span>
             {{ spotLayerLabel }}
           </label>
         </div>
-        <small v-if="restaurantStore.loading">Đang tải dữ liệu nhà hàng...</small>
-        <small v-else-if="restaurantStore.error" class="error">{{ restaurantStore.error }}</small>
+        <small v-if="restaurantStore.loading">Loading restaurant data...</small>
+        <small v-else-if="restaurantStore.error" class="error">{{
+          restaurantStore.error
+        }}</small>
         <small v-else-if="restaurantStore.restaurants.length === 0">
-          Chưa có nhà hàng nào để hiển thị trên bản đồ.
+          There are no restaurants to display on the map.
         </small>
       </section>
 
-      <section v-if="initialDish && mapMode === 'community'" class="food-map-recipe-banner">
-        <p>Đang xem: <strong>"{{ initialDish }}"</strong></p>
-        <span>Địa điểm từ cộng đồng FoodStory</span>
+      <section
+        v-if="initialDish && mapMode === 'community'"
+        class="food-map-recipe-banner"
+      >
+        <p>
+          Viewing: <strong>"{{ initialDish }}"</strong>
+        </p>
+        <span>Places from the FoodStory community</span>
         <button type="button" @click="addFromRecipe">
           <AppIcon name="map-pin" size="16" />
-          Thêm Chỗ Tôi Hay Ăn
+          Add My Favorite Place
         </button>
       </section>
 
-      <div v-if="sidebarMode === 'list' && mapMode === 'personal'" class="food-map-sidebar-body">
+      <div
+        v-if="sidebarMode === 'list' && mapMode === 'personal'"
+        class="food-map-sidebar-body"
+      >
         <label class="food-map-personal-search">
-          <span class="sr-only">Tìm trong địa điểm của tôi</span>
+          <span class="sr-only">Search my places</span>
           <AppIcon name="search" size="17" />
           <input
             v-model="personalSearch"
             type="search"
             maxlength="150"
-            placeholder="Tìm quán ăn, món ngon, địa điểm..."
+            placeholder="Search restaurants, dishes, or places..."
           />
           <button
             v-if="personalSearch"
             type="button"
-            aria-label="Xoá nội dung tìm kiếm"
+            aria-label="Clear search"
             @click="personalSearch = ''"
           >
             ×
           </button>
         </label>
 
-        <section class="food-map-filters" aria-label="Bộ lọc địa điểm">
+        <section class="food-map-filters" aria-label="Place filters">
           <div class="food-map-filter-heading">
-            <span><AppIcon name="filter" size="17" /> Bộ lọc trải nghiệm</span>
-            <button v-if="hasActiveFilters" type="button" @click="clearFilters">Đặt lại</button>
+            <span><AppIcon name="filter" size="17" /> Discovery filters</span>
+            <button v-if="hasActiveFilters" type="button" @click="clearFilters">
+              Reset
+            </button>
           </div>
           <div class="food-map-filter-grid">
             <label>
-              <span>Quận/Huyện</span>
+              <span>District</span>
               <select v-model="filters.district">
-                <option value="">Tất cả khu vực</option>
-                <option v-for="item in districts" :key="item" :value="item">{{ item }}</option>
+                <option value="">All areas</option>
+                <option v-for="item in districts" :key="item" :value="item">
+                  {{ item }}
+                </option>
               </select>
             </label>
             <label>
-              <span>Danh mục</span>
+              <span>Category</span>
               <select v-model="filters.category">
-                <option value="">Tất cả món</option>
-                <option v-for="item in categories" :key="item" :value="item">{{ item }}</option>
+                <option value="">All food</option>
+                <option v-for="item in categories" :key="item" :value="item">
+                  {{ item }}
+                </option>
               </select>
             </label>
             <label>
-              <span>Đánh giá tối thiểu</span>
+              <span>Minimum rating</span>
               <select v-model="filters.rating">
-                <option value="">Mọi đánh giá</option>
+                <option value="">Any rating</option>
                 <option v-for="value in 5" :key="value" :value="value">
-                  {{ value }} sao trở lên
+                  {{ value }} stars and above
                 </option>
               </select>
             </label>
           </div>
         </section>
 
-        <button class="food-map-primary-action" type="button" @click="openAddForm">
+        <button
+          class="food-map-primary-action"
+          type="button"
+          @click="openAddForm"
+        >
           <AppIcon name="map-pin" size="19" />
-          Thêm Địa Điểm Mới
+          Add New Place
         </button>
 
         <div v-if="foodSpotStore.loading" class="food-map-state" role="status">
           <span class="food-map-spinner"></span>
-          <p>Đang tải những địa điểm của bạn...</p>
+          <p>Loading your places...</p>
         </div>
-        <div v-else-if="foodSpotStore.error" class="food-map-state" role="alert">
+        <div
+          v-else-if="foodSpotStore.error"
+          class="food-map-state"
+          role="alert"
+        >
           <p>{{ foodSpotStore.error }}</p>
-          <button type="button" @click="fetchSpots">Thử lại</button>
+          <button type="button" @click="fetchSpots">Try again</button>
         </div>
-        <div v-else-if="foodSpotStore.spots.length === 0" class="food-map-state">
-          <span class="food-map-empty-icon"><AppIcon name="map-pin" size="30" /></span>
-          <h2>Chưa có điểm dừng chân</h2>
-          <p>Bạn chưa có địa điểm nào. Hãy thêm địa điểm đầu tiên!</p>
-          <button type="button" @click="openAddForm">Thêm Ngay</button>
+        <div
+          v-else-if="foodSpotStore.spots.length === 0"
+          class="food-map-state"
+        >
+          <span class="food-map-empty-icon"
+            ><AppIcon name="map-pin" size="30"
+          /></span>
+          <h2>No saved stops yet</h2>
+          <p>You do not have any places yet. Add your first one.</p>
+          <button type="button" @click="openAddForm">Add Now</button>
         </div>
-        <div v-else-if="displayedPersonalSpots.length === 0" class="food-map-state compact">
-          <span class="food-map-empty-icon"><AppIcon name="search" size="26" /></span>
-          <p>Không tìm thấy địa điểm phù hợp với "{{ personalSearch }}".</p>
-          <button type="button" @click="personalSearch = ''">Xoá tìm kiếm</button>
+        <div
+          v-else-if="displayedPersonalSpots.length === 0"
+          class="food-map-state compact"
+        >
+          <span class="food-map-empty-icon"
+            ><AppIcon name="search" size="26"
+          /></span>
+          <p>No places match "{{ personalSearch }}".</p>
+          <button type="button" @click="personalSearch = ''">
+            Clear search
+          </button>
         </div>
 
         <div v-else class="food-map-spot-list">
@@ -1152,24 +1821,38 @@ onBeforeUnmount(() => {
             @click="showDetail(spot)"
           >
             <span class="food-map-card-rank">{{ index + 1 }}</span>
-            <span class="food-map-card-thumb" :style="{ backgroundImage: `url(${streetImage})` }"></span>
+            <span
+              class="food-map-card-thumb"
+              :style="{ backgroundImage: `url(${streetImage})` }"
+            ></span>
             <span class="food-map-card-copy">
               <span class="food-map-card-topline">
                 <strong>{{ spot.name }}</strong>
-                <small aria-label="Đánh giá">{{ Number(spot.rating || 0).toFixed(1) }} ★</small>
+                <small aria-label="Rating"
+                  >{{ Number(spot.rating || 0).toFixed(1) }} ★</small
+                >
               </span>
-              <span>{{ spot.dish_name || 'Chưa thêm món ăn' }}</span>
+              <span>{{ spot.dish_name || "No dish added" }}</span>
               <span class="food-map-card-meta">
-                <em v-if="spot.category" :style="{ '--spot-color': categoryColor(spot.category) }">
+                <em
+                  v-if="spot.category"
+                  :style="{ '--spot-color': categoryColor(spot.category) }"
+                >
                   {{ spot.category }}
                 </em>
-                <small><AppIcon name="map-pin" size="13" /> {{ spot.district || 'TP. Hồ Chí Minh' }}</small>
+                <small
+                  ><AppIcon name="map-pin" size="13" />
+                  {{ spot.district || "Ho Chi Minh City" }}</small
+                >
               </span>
             </span>
           </button>
         </div>
 
-        <section class="restaurant-filter-panel" :class="{ open: restaurantFiltersOpen }">
+        <section
+          class="restaurant-filter-panel"
+          :class="{ open: restaurantFiltersOpen }"
+        >
           <button
             class="restaurant-filter-toggle"
             type="button"
@@ -1178,52 +1861,64 @@ onBeforeUnmount(() => {
           >
             <span>
               <AppIcon name="store" size="17" />
-              Lọc Nhà Hàng Trên Bản Đồ
+              Filter Restaurants on the Map
             </span>
-            <span aria-hidden="true">{{ restaurantFiltersOpen ? '▲' : '▼' }}</span>
+            <span aria-hidden="true">{{
+              restaurantFiltersOpen ? "▲" : "▼"
+            }}</span>
           </button>
 
           <div v-if="restaurantFiltersOpen" class="restaurant-filter-content">
             <div class="restaurant-filter-grid">
               <label>
-                <span>Quận/Huyện</span>
+                <span>District</span>
                 <select v-model="restaurantFilters.district">
-                  <option value="">Tất cả khu vực</option>
-                  <option v-for="item in districts" :key="item" :value="item">{{ item }}</option>
+                  <option value="">All areas</option>
+                  <option v-for="item in districts" :key="item" :value="item">
+                    {{ item }}
+                  </option>
                 </select>
               </label>
               <label>
-                <span>Danh mục</span>
+                <span>Category</span>
                 <select v-model="restaurantFilters.category">
-                  <option value="">Tất cả danh mục</option>
-                  <option v-for="item in restaurantCategories" :key="item" :value="item">
+                  <option value="">All categories</option>
+                  <option
+                    v-for="item in restaurantCategories"
+                    :key="item"
+                    :value="item"
+                  >
                     {{ item }}
                   </option>
                 </select>
               </label>
               <label class="wide">
-                <span>Tìm kiếm</span>
+                <span>Search</span>
                 <input
                   v-model="restaurantFilters.search"
                   type="search"
                   maxlength="150"
-                  placeholder="Tên nhà hàng, món ăn..."
+                  placeholder="Restaurant name or dish..."
                 />
               </label>
               <label class="wide">
-                <span>Đánh giá tối thiểu</span>
+                <span>Minimum rating</span>
                 <select v-model="restaurantFilters.min_rating">
-                  <option value="">Mọi đánh giá</option>
+                  <option value="">Any rating</option>
                   <option v-for="value in 5" :key="value" :value="value">
-                    {{ value }} sao trở lên
+                    {{ value }} stars and above
                   </option>
                 </select>
               </label>
             </div>
 
             <div class="restaurant-filter-actions">
-              <button type="button" :disabled="restaurantStore.loading" @click="applyRestaurantFilters">
-                {{ restaurantStore.loading ? 'Đang lọc...' : 'Áp Dụng' }}
+              <button
+                type="button"
+                :disabled="restaurantStore.loading"
+                @click="applyRestaurantFilters"
+              >
+                {{ restaurantStore.loading ? "Filtering..." : "Apply" }}
               </button>
               <button
                 class="secondary"
@@ -1231,21 +1926,28 @@ onBeforeUnmount(() => {
                 :disabled="restaurantStore.loading"
                 @click="clearRestaurantFilters"
               >
-                Xoá Bộ Lọc
+                Clear Filters
               </button>
             </div>
 
-            <p v-if="restaurantStore.error" class="restaurant-filter-message error">
+            <p
+              v-if="restaurantStore.error"
+              class="restaurant-filter-message error"
+            >
               {{ restaurantStore.error }}
             </p>
             <p
-              v-else-if="!restaurantStore.loading && restaurantStore.restaurants.length === 0"
+              v-else-if="
+                !restaurantStore.loading &&
+                restaurantStore.restaurants.length === 0
+              "
               class="restaurant-filter-message"
             >
-              Không tìm thấy nhà hàng phù hợp. Hãy thử xoá bộ lọc.
+              No matching restaurants found. Try clearing the filters.
             </p>
             <p v-else class="restaurant-filter-message">
-              {{ restaurantStore.restaurants.length }} nhà hàng đang hiển thị trên bản đồ.
+              {{ restaurantStore.restaurants.length }} restaurants are displayed
+              on the map.
             </p>
           </div>
         </section>
@@ -1257,36 +1959,44 @@ onBeforeUnmount(() => {
         :class="{ loading: foodSpotStore.communityLoading }"
       >
         <label class="food-map-community-search">
-          <span class="sr-only">Tìm kiếm địa điểm cộng đồng</span>
+          <span class="sr-only">Search community places</span>
           <AppIcon name="search" size="17" />
           <input
             v-model="communitySearch"
             type="search"
             maxlength="150"
-            placeholder="Tìm món ăn, địa điểm..."
+            placeholder="Search dishes or places..."
           />
         </label>
 
-        <section class="food-map-filters" aria-label="Bộ lọc cộng đồng">
+        <section class="food-map-filters" aria-label="Community filters">
           <div class="food-map-filter-heading">
-            <span><AppIcon name="filter" size="17" /> Bộ lọc cộng đồng</span>
-            <button v-if="hasCommunityFilters" type="button" @click="clearCommunityFilters">
-              Đặt lại
+            <span><AppIcon name="filter" size="17" /> Community filters</span>
+            <button
+              v-if="hasCommunityFilters"
+              type="button"
+              @click="clearCommunityFilters"
+            >
+              Reset
             </button>
           </div>
           <div class="food-map-filter-grid">
             <label>
-              <span>Quận/Huyện</span>
+              <span>District</span>
               <select v-model="communityFilters.district">
-                <option value="">Tất cả khu vực</option>
-                <option v-for="item in districts" :key="item" :value="item">{{ item }}</option>
+                <option value="">All areas</option>
+                <option v-for="item in districts" :key="item" :value="item">
+                  {{ item }}
+                </option>
               </select>
             </label>
             <label>
-              <span>Danh mục</span>
+              <span>Category</span>
               <select v-model="communityFilters.category">
-                <option value="">Tất cả món</option>
-                <option v-for="item in categories" :key="item" :value="item">{{ item }}</option>
+                <option value="">All food</option>
+                <option v-for="item in categories" :key="item" :value="item">
+                  {{ item }}
+                </option>
               </select>
             </label>
           </div>
@@ -1294,15 +2004,24 @@ onBeforeUnmount(() => {
 
         <div class="food-map-community-summary">
           <span>{{ communityResultText }}</span>
-          <small v-if="foodSpotStore.communityLoading">Đang cập nhật...</small>
+          <small v-if="foodSpotStore.communityLoading">Updating...</small>
         </div>
 
-        <div v-if="foodSpotStore.communityError" class="food-map-state compact" role="alert">
+        <div
+          v-if="foodSpotStore.communityError"
+          class="food-map-state compact"
+          role="alert"
+        >
           <p>{{ foodSpotStore.communityError }}</p>
-          <button type="button" @click="fetchCommunitySpots">Thử lại</button>
+          <button type="button" @click="fetchCommunitySpots">Try again</button>
         </div>
-        <div v-else-if="foodSpotStore.communitySpots.length === 0" class="food-map-state compact">
-          <span class="food-map-empty-icon community"><AppIcon name="map-pin" size="28" /></span>
+        <div
+          v-else-if="foodSpotStore.communitySpots.length === 0"
+          class="food-map-state compact"
+        >
+          <span class="food-map-empty-icon community"
+            ><AppIcon name="map-pin" size="28"
+          /></span>
           <p>{{ communityResultText }}</p>
         </div>
         <div v-else class="food-map-spot-list">
@@ -1311,7 +2030,7 @@ onBeforeUnmount(() => {
             :key="spot.id"
             type="button"
             class="food-map-spot-card community"
-            @click="focusSpot(spot)"
+            @click="showCommunityDetail(spot)"
           >
             <span
               class="food-map-card-pin"
@@ -1322,82 +2041,124 @@ onBeforeUnmount(() => {
                 <strong>{{ spot.name }}</strong>
                 <small>{{ ratingText(spot.rating) }}</small>
               </span>
-              <span>{{ spot.dish_name || 'Chưa thêm món ăn' }}</span>
+              <span>{{ spot.dish_name || "No dish added" }}</span>
               <span class="food-map-card-meta">
                 <em v-if="spot.category">{{ spot.category }}</em>
-                <small><AppIcon name="map-pin" size="13" /> {{ spot.district || 'TP. Hồ Chí Minh' }}</small>
+                <small
+                  ><AppIcon name="map-pin" size="13" />
+                  {{ spot.district || "Ho Chi Minh City" }}</small
+                >
               </span>
             </span>
           </button>
         </div>
       </div>
 
-      <div v-else-if="sidebarMode === 'list' && mapMode === 'stats'" class="food-map-sidebar-body">
-        <div v-if="foodSpotStore.loading" class="food-map-state compact" role="status">
+      <div
+        v-else-if="sidebarMode === 'list' && mapMode === 'stats'"
+        class="food-map-sidebar-body"
+      >
+        <div
+          v-if="foodSpotStore.loading"
+          class="food-map-state compact"
+          role="status"
+        >
           <span class="food-map-spinner"></span>
-          <p>Đang tổng hợp hành trình ẩm thực...</p>
+          <p>Summarizing your food journey...</p>
         </div>
         <div v-else-if="personalStats.total === 0" class="food-map-state">
-          <span class="food-map-empty-icon"><AppIcon name="map-pin" size="30" /></span>
-          <h2>Chưa có dữ liệu thống kê</h2>
-          <p>Thêm địa điểm để xem thống kê</p>
-          <button type="button" @click="addFromStats">Thêm Ngay</button>
+          <span class="food-map-empty-icon"
+            ><AppIcon name="map-pin" size="30"
+          /></span>
+          <h2>No statistics yet</h2>
+          <p>Add places to view your statistics.</p>
+          <button type="button" @click="addFromStats">Add Now</button>
         </div>
         <template v-else>
           <section class="food-map-stats-summary">
             <article>
               <strong>{{ personalStats.total }}</strong>
-              <span>địa điểm</span>
+              <span>places</span>
             </article>
             <article>
               <strong>{{ personalStats.averageRating.toFixed(1) }} ★</strong>
-              <span>trung bình</span>
+              <span>average</span>
             </article>
             <article>
               <strong>{{ personalStats.favoriteDistrict }}</strong>
-              <span>quận yêu thích</span>
+              <span>favorite district</span>
             </article>
           </section>
 
           <section class="food-map-stats-panel">
-            <h2>Top 3 Quận Hay Đến Nhất</h2>
-            <p v-if="personalStats.districtsRanking.length === 0" class="food-map-stats-empty">
-              Chưa có thông tin quận/huyện.
+            <h2>Top 3 Most Visited Districts</h2>
+            <p
+              v-if="personalStats.districtsRanking.length === 0"
+              class="food-map-stats-empty"
+            >
+              No district information is available.
             </p>
-            <div v-for="item in personalStats.districtsRanking" :key="item.label" class="food-map-stat-row">
-              <div><span>{{ item.label }}</span><small>{{ item.count }} · {{ item.percentage }}%</small></div>
-              <span class="food-map-stat-track"><i :style="{ width: `${item.percentage}%` }"></i></span>
+            <div
+              v-for="item in personalStats.districtsRanking"
+              :key="item.label"
+              class="food-map-stat-row"
+            >
+              <div>
+                <span>{{ item.label }}</span
+                ><small>{{ item.count }} · {{ item.percentage }}%</small>
+              </div>
+              <span class="food-map-stat-track"
+                ><i :style="{ width: `${item.percentage}%` }"></i
+              ></span>
             </div>
           </section>
 
           <section class="food-map-stats-panel">
-            <h2>Top 3 Món Hay Ăn Nhất</h2>
-            <p v-if="personalStats.dishesRanking.length === 0" class="food-map-stats-empty">
-              Chưa có tên món ăn.
+            <h2>Top 3 Most Frequent Dishes</h2>
+            <p
+              v-if="personalStats.dishesRanking.length === 0"
+              class="food-map-stats-empty"
+            >
+              No dish names are available.
             </p>
-            <div v-for="item in personalStats.dishesRanking" :key="item.label" class="food-map-stat-row">
-              <div><span>{{ item.label }}</span><small>{{ item.count }} · {{ item.percentage }}%</small></div>
-              <span class="food-map-stat-track"><i :style="{ width: `${item.percentage}%` }"></i></span>
+            <div
+              v-for="item in personalStats.dishesRanking"
+              :key="item.label"
+              class="food-map-stat-row"
+            >
+              <div>
+                <span>{{ item.label }}</span
+                ><small>{{ item.count }} · {{ item.percentage }}%</small>
+              </div>
+              <span class="food-map-stat-track"
+                ><i :style="{ width: `${item.percentage}%` }"></i
+              ></span>
             </div>
           </section>
 
           <section class="food-map-stats-panel">
-            <h2>Phân Bố Đánh Giá</h2>
-            <div v-for="item in personalStats.ratingDistribution" :key="item.rating" class="food-map-rating-row">
+            <h2>Rating Distribution</h2>
+            <div
+              v-for="item in personalStats.ratingDistribution"
+              :key="item.rating"
+              class="food-map-rating-row"
+            >
               <span>{{ item.rating }}★</span>
-              <span class="food-map-stat-track"><i :style="{ width: `${item.percentage}%` }"></i></span>
+              <span class="food-map-stat-track"
+                ><i :style="{ width: `${item.percentage}%` }"></i
+              ></span>
               <small>{{ item.count }}</small>
             </div>
           </section>
 
           <section class="food-map-stats-panel">
-            <h2>Gần Đây Nhất</h2>
+            <h2>Most Recent</h2>
             <button
               v-for="spot in personalStats.recent"
               :key="spot.id"
               type="button"
               class="food-map-recent-spot"
-              @click="focusSpot(spot)"
+              @click="showDetail(spot)"
             >
               <span>{{ spot.name }}</span>
               <small>{{ formatDate(spot.created_at) }}</small>
@@ -1406,66 +2167,108 @@ onBeforeUnmount(() => {
         </template>
       </div>
 
-      <div v-else-if="sidebarMode === 'add' && mapMode === 'personal'" class="food-map-sidebar-body">
+      <div
+        v-else-if="sidebarMode === 'add' && mapMode === 'personal'"
+        class="food-map-sidebar-body"
+      >
         <button class="food-map-back" type="button" @click="cancelForm">
-          <AppIcon name="arrow-left" size="16" /> Quay lại
+          <AppIcon name="arrow-left" size="16" /> Back
         </button>
         <div class="food-map-mode-heading">
-          <p class="food-map-kicker">{{ isEditing ? 'Cập nhật bộ sưu tập' : 'Lưu một kỷ niệm mới' }}</p>
-          <h2>{{ isEditing ? 'Chỉnh Sửa Địa Điểm' : 'Thêm Địa Điểm Mới' }}</h2>
-          <p>Ghi lại món ngon và vị trí để dễ dàng quay lại lần sau.</p>
+          <p class="food-map-kicker">
+            {{ isEditing ? "Update your collection" : "Save a new memory" }}
+          </p>
+          <h2>{{ isEditing ? "Edit Place" : "Add New Place" }}</h2>
+          <p>Record the food and location so you can easily return later.</p>
         </div>
 
         <form class="food-map-form" @submit.prevent="submitForm">
           <label>
-            <span>Tên địa điểm <b>*</b></span>
+            <span>Place name <b>*</b></span>
             <input
               v-model="form.name"
               type="text"
               maxlength="150"
-              placeholder="Ví dụ: Phở gia truyền cô Ba"
+              placeholder="Example: Aunt Ba's Traditional Pho"
               :aria-invalid="Boolean(formErrors.name)"
             />
-            <small v-if="formErrors.name" class="food-map-field-error">{{ formErrors.name }}</small>
+            <small v-if="formErrors.name" class="food-map-field-error">{{
+              formErrors.name
+            }}</small>
           </label>
           <label>
-            <span>Tên món ăn</span>
-            <input v-model="form.dish_name" type="text" maxlength="150" placeholder="Món bạn đã thưởng thức" />
+            <span>Dish name</span>
+            <input
+              v-model="form.dish_name"
+              type="text"
+              maxlength="150"
+              placeholder="The dish you enjoyed"
+            />
           </label>
 
           <div class="food-map-form-row">
             <label>
-              <span>Danh mục</span>
+              <span>Category</span>
               <select v-model="form.category">
-                <option value="">Chọn danh mục</option>
-                <option v-for="item in categories" :key="item" :value="item">{{ item }}</option>
+                <option value="">Select a category</option>
+                <option v-for="item in categories" :key="item" :value="item">
+                  {{ item }}
+                </option>
               </select>
             </label>
             <label>
-              <span>Quận/Huyện</span>
+              <span>District</span>
               <select v-model="form.district">
-                <option value="">Chọn khu vực</option>
-                <option v-for="item in districts" :key="item" :value="item">{{ item }}</option>
+                <option value="">Select an area</option>
+                <option v-for="item in districts" :key="item" :value="item">
+                  {{ item }}
+                </option>
               </select>
             </label>
           </div>
 
           <fieldset class="food-map-fieldset">
-            <legend>Vị trí <b>*</b></legend>
+            <legend>Location <b>*</b></legend>
             <div class="food-map-form-row">
-              <label><span>Vĩ độ</span><input :value="form.latitude" readonly placeholder="10.8231000" /></label>
-              <label><span>Kinh độ</span><input :value="form.longitude" readonly placeholder="106.6297000" /></label>
+              <label
+                ><span>Latitude</span
+                ><input
+                  :value="form.latitude"
+                  readonly
+                  placeholder="10.8231000"
+              /></label>
+              <label
+                ><span>Longitude</span
+                ><input
+                  :value="form.longitude"
+                  readonly
+                  placeholder="106.6297000"
+              /></label>
             </div>
-            <button type="button" :class="{ active: pickingMode }" @click="startPicking">
+            <button
+              type="button"
+              :class="{ active: pickingMode }"
+              @click="startPicking"
+            >
               <AppIcon name="map-pin" size="17" />
-              {{ pickingMode ? 'Đang chờ chọn vị trí...' : 'Chọn Vị Trí Trên Bản Đồ' }}
+              {{
+                pickingMode
+                  ? "Waiting for a map location..."
+                  : "Choose Location on Map"
+              }}
             </button>
-            <small v-if="formErrors.coordinates" class="food-map-field-error">{{ formErrors.coordinates }}</small>
+            <small v-if="formErrors.coordinates" class="food-map-field-error">{{
+              formErrors.coordinates
+            }}</small>
           </fieldset>
 
           <fieldset class="food-map-fieldset">
-            <legend>Đánh giá cá nhân</legend>
-            <div class="food-map-stars" role="radiogroup" aria-label="Đánh giá cá nhân">
+            <legend>Personal rating</legend>
+            <div
+              class="food-map-stars"
+              role="radiogroup"
+              aria-label="Personal rating"
+            >
               <button
                 v-for="value in 5"
                 :key="value"
@@ -1477,65 +2280,133 @@ onBeforeUnmount(() => {
               >
                 ★
               </button>
-              <button v-if="form.rating" class="clear" type="button" @click="form.rating = null">
-                Bỏ đánh giá
+              <button
+                v-if="form.rating"
+                class="clear"
+                type="button"
+                @click="form.rating = null"
+              >
+                Clear rating
               </button>
             </div>
           </fieldset>
 
           <label>
-            <span>Ghi chú</span>
-            <textarea v-model="form.notes" rows="4" placeholder="Không gian, hương vị, món nên thử..."></textarea>
+            <span>Notes</span>
+            <textarea
+              v-model="form.notes"
+              rows="4"
+              placeholder="Atmosphere, flavors, recommended dishes..."
+            ></textarea>
           </label>
           <label>
             <span>Tags</span>
-            <input v-model="form.tags" maxlength="255" placeholder="ăn sáng, giá tốt, đi cùng bạn bè" />
-            <small class="food-map-hint">Phân cách bằng dấu phẩy.</small>
+            <input
+              v-model="form.tags"
+              maxlength="255"
+              placeholder="breakfast, good value, friends"
+            />
+            <small class="food-map-hint">Separate tags with commas.</small>
           </label>
-          <p v-if="formErrors.submit" class="food-map-submit-error" role="alert">{{ formErrors.submit }}</p>
+          <p
+            v-if="formErrors.submit"
+            class="food-map-submit-error"
+            role="alert"
+          >
+            {{ formErrors.submit }}
+          </p>
 
           <div class="food-map-form-actions">
             <button class="food-map-save" type="submit" :disabled="submitting">
               <span v-if="submitting" class="food-map-spinner small"></span>
               <AppIcon v-else name="check" size="18" />
-              {{ submitting ? 'Đang lưu...' : isEditing ? 'Lưu Thay Đổi' : 'Lưu Địa Điểm' }}
+              {{
+                submitting
+                  ? "Saving..."
+                  : isEditing
+                    ? "Save Changes"
+                    : "Save Place"
+              }}
             </button>
-            <button class="food-map-secondary" type="button" :disabled="submitting" @click="cancelForm">Huỷ</button>
+            <button
+              class="food-map-secondary"
+              type="button"
+              :disabled="submitting"
+              @click="cancelForm"
+            >
+              Cancel
+            </button>
           </div>
         </form>
       </div>
 
       <div
-        v-else-if="sidebarMode === 'detail' && mapMode === 'personal' && selectedSpot"
+        v-else-if="
+          sidebarMode === 'detail' && mapMode === 'personal' && selectedSpot
+        "
         class="food-map-sidebar-body"
       >
         <button class="food-map-back" type="button" @click="backToList">
-          <AppIcon name="arrow-left" size="16" /> Quay Lại
+          <AppIcon name="arrow-left" size="16" /> Back
         </button>
         <div class="food-map-detail-hero">
-          <span class="food-map-detail-pin" :style="{ '--spot-color': markerColor(selectedSpot.rating) }">
+          <span
+            class="food-map-detail-pin"
+            :style="{ '--spot-color': markerColor(selectedSpot.rating) }"
+          >
             <AppIcon name="map-pin" size="26" />
           </span>
-          <p class="food-map-kicker">{{ selectedSpot.category || 'Điểm đến ẩm thực' }}</p>
+          <p class="food-map-kicker">
+            {{ selectedSpot.category || "Food destination" }}
+          </p>
           <h2>{{ selectedSpot.name }}</h2>
-          <p>{{ selectedSpot.dish_name || 'Chưa thêm tên món ăn' }}</p>
+          <p>{{ selectedSpot.dish_name || "No dish name added" }}</p>
           <div>{{ ratingText(selectedSpot.rating) }}</div>
         </div>
 
         <dl class="food-map-details">
-          <div><dt><AppIcon name="map-pin" size="16" /> Khu vực</dt><dd>{{ selectedSpot.district || 'TP. Hồ Chí Minh' }}</dd></div>
-          <div><dt><AppIcon name="store" size="16" /> Danh mục</dt><dd>{{ selectedSpot.category || 'Chưa phân loại' }}</dd></div>
-          <div><dt><AppIcon name="clock" size="16" /> Ngày lưu</dt><dd>{{ formatDate(selectedSpot.created_at) }}</dd></div>
-          <div class="wide"><dt><AppIcon name="message" size="16" /> Ghi chú</dt><dd>{{ selectedSpot.notes || 'Bạn chưa thêm ghi chú cho địa điểm này.' }}</dd></div>
+          <div>
+            <dt><AppIcon name="map-pin" size="16" /> Area</dt>
+            <dd>{{ selectedSpot.district || "Ho Chi Minh City" }}</dd>
+          </div>
+          <div>
+            <dt><AppIcon name="store" size="16" /> Category</dt>
+            <dd>{{ selectedSpot.category || "Uncategorized" }}</dd>
+          </div>
+          <div>
+            <dt><AppIcon name="clock" size="16" /> Saved date</dt>
+            <dd>{{ formatDate(selectedSpot.created_at) }}</dd>
+          </div>
+          <div class="wide">
+            <dt><AppIcon name="message" size="16" /> Notes</dt>
+            <dd>
+              {{
+                selectedSpot.notes || "You have not added notes for this place."
+              }}
+            </dd>
+          </div>
         </dl>
         <div v-if="splitTags(selectedSpot.tags).length" class="food-map-tags">
-          <span v-for="tag in splitTags(selectedSpot.tags)" :key="tag">#{{ tag }}</span>
+          <span v-for="tag in splitTags(selectedSpot.tags)" :key="tag"
+            >#{{ tag }}</span
+          >
         </div>
         <div class="food-map-detail-actions">
-          <button type="button" @click="editSpot(selectedSpot)"><AppIcon name="pen" size="17" /> Chỉnh Sửa</button>
-          <button class="danger" type="button" :disabled="deletingSpotId === selectedSpot.id" @click="removeSpot(selectedSpot)">
+          <button type="button" @click="editSpot(selectedSpot)">
+            <AppIcon name="pen" size="17" /> Edit
+          </button>
+          <button
+            class="danger"
+            type="button"
+            :disabled="deletingSpotId === selectedSpot.id"
+            @click="removeSpot(selectedSpot)"
+          >
             <AppIcon name="trash" size="17" />
-            {{ deletingSpotId === selectedSpot.id ? 'Đang xoá...' : 'Xoá Địa Điểm' }}
+            {{
+              deletingSpotId === selectedSpot.id
+                ? "Deleting..."
+                : "Delete Place"
+            }}
           </button>
         </div>
       </div>
@@ -1543,18 +2414,24 @@ onBeforeUnmount(() => {
 
     <div class="food-map-canvas">
       <div class="food-map-city-label" aria-hidden="true">
-        <span>Thành phố Hồ Chí Minh</span>
+        <span>Ho Chi Minh City</span>
       </div>
       <div v-if="pickingMode" class="food-map-picking-banner" role="status">
         <AppIcon name="map-pin" size="19" />
-        <span>Nhấp vào bản đồ để chọn vị trí</span>
-        <button type="button" @click="stopPicking">Huỷ</button>
+        <span>Click the map to select a location</span>
+        <button type="button" @click="stopPicking">Cancel</button>
       </div>
-      <div ref="mapElement" class="food-map-leaflet" aria-label="Bản đồ địa điểm ẩm thực"></div>
+      <div
+        ref="mapElement"
+        class="food-map-leaflet"
+        aria-label="Food places map"
+      ></div>
       <div class="food-map-legend">
-        <strong>{{ isCommunityMode ? 'Điểm cộng đồng' : 'Danh mục' }}</strong>
+        <strong>{{
+          isCommunityMode ? "Community places" : "Categories"
+        }}</strong>
         <template v-if="isCommunityMode">
-          <span><i style="--legend-color: #3d9cff"></i>Địa điểm công khai</span>
+          <span><i style="--legend-color: #3d9cff"></i>Public places</span>
         </template>
         <template v-else>
           <span v-for="item in categoryLegend" :key="item.label">
@@ -1564,92 +2441,160 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <aside class="food-map-detail-panel" aria-label="Chi tiết địa điểm">
-      <template v-if="featuredSpot">
-        <div class="food-map-detail-photo">
-          <img :src="streetImage" :alt="featuredSpot.dish_name || featuredSpot.name" />
-          <span class="food-map-detail-status">
-            <AppIcon name="check" size="14" />
-            Đã ăn
-          </span>
-          <button type="button" aria-label="Đánh dấu yêu thích">
-            <AppIcon name="heart" size="18" />
+    <aside
+      class="taste-detail-drawer"
+      :class="{ open: isDetailDrawerOpen }"
+      aria-label="Place details"
+      :aria-hidden="!isDetailDrawerOpen"
+      :inert="!isDetailDrawerOpen"
+    >
+      <button
+        class="taste-drawer-close"
+        type="button"
+        aria-label="Close place details"
+        @click="setDetailDrawer(false)"
+      >
+        <AppIcon name="x" size="20" />
+      </button>
+
+      <template v-if="selectedDiscovery">
+        <div class="taste-detail-media">
+          <img :src="selectedDiscovery.image" :alt="selectedDiscovery.name" />
+          <span>{{ selectedDiscovery.source }}</span>
+          <button
+            type="button"
+            :class="{ saved: isPlaceSaved(selectedDiscovery) }"
+            :aria-label="
+              isPlaceSaved(selectedDiscovery)
+                ? 'Remove saved place'
+                : 'Save place'
+            "
+            @click="toggleSavedPlace(selectedDiscovery)"
+          >
+            <AppIcon name="heart" size="19" />
           </button>
         </div>
 
-        <section class="food-map-detail-copy">
-          <p class="food-map-kicker">{{ featuredSpot.category || 'Điểm đến ẩm thực' }}</p>
-          <h2>{{ featuredSpot.name }}</h2>
-          <p class="food-map-detail-dish">{{ featuredSpot.dish_name || 'Một địa điểm đang chờ bạn khám phá' }}</p>
-
-          <div class="food-map-detail-rating">
-            <strong>{{ Number(featuredSpot.rating || 0).toFixed(1) }} ★</strong>
-            <span>{{ featuredSpot.rating ? 'Đánh giá của bạn' : 'Chưa đánh giá' }}</span>
+        <div class="taste-detail-content">
+          <div class="taste-detail-title">
+            <span>{{ selectedDiscovery.category }}</span>
+            <h2>{{ selectedDiscovery.name }}</h2>
+            <p>{{ selectedDiscovery.dish }}</p>
           </div>
 
-          <div class="food-map-detail-line">
-            <AppIcon name="map-pin" size="18" />
-            <span>{{ featuredSpot.district || 'TP. Hồ Chí Minh' }}</span>
+          <div class="taste-detail-rating">
+            <strong>
+              {{
+                selectedDiscovery.rating
+                  ? selectedDiscovery.rating.toFixed(1)
+                  : "New"
+              }}
+              ★
+            </strong>
+            <span v-if="selectedDiscovery.price">{{
+              selectedDiscovery.price
+            }}</span>
+            <span v-if="selectedDiscovery.distance">{{
+              selectedDiscovery.distance
+            }}</span>
           </div>
-          <div class="food-map-detail-line">
-            <AppIcon name="utensils" size="18" />
-            <span>Danh mục: {{ featuredSpot.category || 'Chưa phân loại' }}</span>
-          </div>
-        </section>
 
-        <section class="food-map-note-card">
-          <header>
-            <span><AppIcon name="message" size="16" /> Ghi chú của bạn</span>
-            <button type="button" aria-label="Chỉnh sửa ghi chú" @click="editSpot(featuredSpot)">
-              <AppIcon name="pen" size="16" />
-            </button>
-          </header>
-          <p>{{ featuredSpot.notes || 'Hãy lưu lại hương vị, không gian và món bạn muốn thử lần sau.' }}</p>
-          <div v-if="splitTags(featuredSpot.tags).length" class="food-map-tags">
-            <span v-for="tag in splitTags(featuredSpot.tags)" :key="tag">#{{ tag }}</span>
-          </div>
-        </section>
+          <dl class="taste-detail-facts">
+            <div>
+              <dt><AppIcon name="map-pin" size="17" /> Address</dt>
+              <dd>{{ selectedDiscovery.address }}</dd>
+            </div>
+            <div v-if="selectedDiscovery.openingHours">
+              <dt><AppIcon name="clock" size="17" /> Opening hours</dt>
+              <dd>{{ selectedDiscovery.openingHours }}</dd>
+            </div>
+            <div>
+              <dt><AppIcon name="send" size="17" /> Discovery source</dt>
+              <dd>{{ selectedDiscovery.source }}</dd>
+            </div>
+          </dl>
 
-        <section v-if="featuredSpot.recipe_id" class="food-map-related-recipe">
-          <p class="food-map-kicker">Công thức liên quan</p>
-          <RouterLink :to="{ name: 'recipe-detail', params: { id: featuredSpot.recipe_id } }">
-            <img :src="streetImage" alt="" />
+          <section class="taste-detail-story">
+            <span>Place story</span>
+            <p>{{ selectedDiscovery.description }}</p>
+          </section>
+
+          <div
+            v-if="
+              selectedDiscovery.isOwned &&
+              splitTags(selectedDiscovery.raw.tags).length
+            "
+            class="food-map-tags"
+          >
+            <span
+              v-for="tag in splitTags(selectedDiscovery.raw.tags)"
+              :key="tag"
+            >
+              #{{ tag }}
+            </span>
+          </div>
+
+          <RouterLink
+            v-if="selectedDiscovery.isOwned && selectedDiscovery.raw.recipe_id"
+            class="taste-related-recipe"
+            :to="{
+              name: 'recipe-detail',
+              params: { id: selectedDiscovery.raw.recipe_id },
+            }"
+          >
+            <AppIcon name="book-open" size="19" />
             <span>
-              <strong>{{ featuredSpot.dish_name || 'Khám phá công thức' }}</strong>
-              <small>bởi FoodStory Kitchen</small>
+              <strong>View related recipe</strong>
+              <small>{{ selectedDiscovery.raw.dish_name }}</small>
             </span>
             <AppIcon name="arrow-right" size="18" />
           </RouterLink>
-        </section>
 
-        <div class="food-map-detail-footer">
-          <button type="button" @click="editSpot(featuredSpot)">
-            <AppIcon name="pen" size="17" /> Chỉnh sửa
-          </button>
-          <button
-            class="danger"
-            type="button"
-            :disabled="deletingSpotId === featuredSpot.id"
-            @click="removeSpot(featuredSpot)"
+          <div class="taste-detail-actions">
+            <button class="primary" type="button" @click="openDirections()">
+              <AppIcon name="map-pin" size="18" />
+              Directions
+            </button>
+            <button type="button" @click="toggleSavedPlace()">
+              <AppIcon name="bookmark" size="18" />
+              {{ isPlaceSaved(selectedDiscovery) ? "Saved" : "Save" }}
+            </button>
+            <button type="button" @click="sharePlace()">
+              <AppIcon name="send" size="18" />
+              Share
+            </button>
+          </div>
+
+          <div
+            v-if="selectedDiscovery.isOwned"
+            class="taste-detail-owner-actions"
           >
-            <AppIcon name="trash" size="17" />
-            {{ deletingSpotId === featuredSpot.id ? 'Đang xoá...' : 'Xoá' }}
-          </button>
-          <button class="primary" type="button" @click="focusSpot(featuredSpot)">
-            <AppIcon name="map-pin" size="17" /> Mở bản đồ
-          </button>
+            <button type="button" @click="editSpot(selectedDiscovery.raw)">
+              <AppIcon name="pen" size="17" />
+              Edit
+            </button>
+            <button
+              class="danger"
+              type="button"
+              :disabled="deletingSpotId === selectedDiscovery.id"
+              @click="removeSpot(selectedDiscovery.raw)"
+            >
+              <AppIcon name="trash" size="17" />
+              {{
+                deletingSpotId === selectedDiscovery.id
+                  ? "Deleting..."
+                  : "Delete place"
+              }}
+            </button>
+          </div>
         </div>
       </template>
 
-      <div v-else class="food-map-detail-empty">
-        <span><AppIcon name="map-pin" size="30" /></span>
-        <p class="food-map-kicker">Nhật ký ẩm thực</p>
-        <h2>Chọn một địa điểm</h2>
-        <p>Thông tin, ghi chú và thao tác chỉnh sửa sẽ xuất hiện tại đây.</p>
-        <button v-if="mapMode === 'personal'" type="button" @click="openAddForm">
-          <AppIcon name="map-pin" size="17" />
-          Thêm địa điểm đầu tiên
-        </button>
+      <div v-else class="taste-detail-empty">
+        <span><AppIcon name="map-pin" size="32" /></span>
+        <p class="food-map-kicker">FoodStory Taste Map</p>
+        <h2>Select a place</h2>
+        <p>Select a place on the map to view its details.</p>
       </div>
     </aside>
   </section>
@@ -1681,7 +2626,11 @@ onBeforeUnmount(() => {
   flex-direction: column;
   border-right: 1px solid var(--map-border);
   background:
-    radial-gradient(circle at 15% 0%, rgba(230, 83, 63, 0.13), transparent 18rem),
+    radial-gradient(
+      circle at 15% 0%,
+      rgba(230, 83, 63, 0.13),
+      transparent 18rem
+    ),
     linear-gradient(180deg, #1e2023, #17191b);
   box-shadow: 18px 0 45px rgba(0, 0, 0, 0.22);
 }
@@ -1804,7 +2753,10 @@ onBeforeUnmount(() => {
   cursor: pointer;
   font-size: 10px;
   font-weight: 850;
-  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
 }
 
 .food-map-layer-toggle input {
@@ -1857,7 +2809,11 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(244, 162, 97, 0.3);
   border-radius: 13px;
   color: #f5dcc7;
-  background: linear-gradient(135deg, rgba(244, 162, 97, 0.16), rgba(230, 83, 63, 0.08));
+  background: linear-gradient(
+    135deg,
+    rgba(244, 162, 97, 0.16),
+    rgba(230, 83, 63, 0.08)
+  );
   font-size: 11px;
 }
 
@@ -2768,7 +3724,9 @@ onBeforeUnmount(() => {
   border: 4px solid rgba(255, 255, 255, 0.96);
   border-radius: 50%;
   background: var(--marker-color);
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--marker-color) 24%, transparent), 0 8px 18px rgba(0, 0, 0, 0.32);
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--marker-color) 24%, transparent),
+    0 8px 18px rgba(0, 0, 0, 0.32);
 }
 
 :deep(.food-map-marker-dot.preview) {
@@ -2782,7 +3740,9 @@ onBeforeUnmount(() => {
   height: 14px;
   border-width: 3px;
   opacity: 0.9;
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--marker-color) 22%, transparent), 0 7px 15px rgba(0, 0, 0, 0.28);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--marker-color) 22%, transparent),
+    0 7px 15px rgba(0, 0, 0, 0.28);
 }
 
 :deep(.restaurant-marker-shell),
@@ -2800,9 +3760,13 @@ onBeforeUnmount(() => {
   border: 2px solid #fff;
   border-radius: 12px;
   color: #fff;
-  background: var(--restaurant-gradient, linear-gradient(135deg, #fb923c, #ea580c));
+  background: var(
+    --restaurant-gradient,
+    linear-gradient(135deg, #fb923c, #ea580c)
+  );
   box-shadow:
-    0 0 0 5px color-mix(in srgb, var(--restaurant-color, #f97316) 22%, transparent),
+    0 0 0 5px
+      color-mix(in srgb, var(--restaurant-color, #f97316) 22%, transparent),
     0 8px 18px rgba(0, 0, 0, 0.3);
 }
 
@@ -2936,7 +3900,10 @@ onBeforeUnmount(() => {
   display: grid;
   height: 80px;
   place-items: center;
-  background: var(--restaurant-gradient, linear-gradient(135deg, #fb923c, #ea580c));
+  background: var(
+    --restaurant-gradient,
+    linear-gradient(135deg, #fb923c, #ea580c)
+  );
 }
 
 :deep(.restaurant-popup-emoji) {
@@ -3019,8 +3986,12 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: 8px;
   color: #fff;
-  background: var(--restaurant-gradient, linear-gradient(135deg, #fb923c, #ea580c));
-  box-shadow: 0 7px 16px color-mix(in srgb, var(--restaurant-color, #f97316) 26%, transparent);
+  background: var(
+    --restaurant-gradient,
+    linear-gradient(135deg, #fb923c, #ea580c)
+  );
+  box-shadow: 0 7px 16px
+    color-mix(in srgb, var(--restaurant-color, #f97316) 26%, transparent);
   cursor: pointer;
   font-size: 11px;
   font-weight: 900;
@@ -3053,16 +4024,24 @@ onBeforeUnmount(() => {
 }
 
 @keyframes food-map-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes food-map-pulse {
-  50% { transform: scale(1.1); }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 @media (max-width: 1050px) {
-  .food-map-page { grid-template-columns: 340px minmax(0, 1fr); }
-  .food-map-legend { display: none; }
+  .food-map-page {
+    grid-template-columns: 340px minmax(0, 1fr);
+  }
+  .food-map-legend {
+    display: none;
+  }
 }
 
 @media (max-width: 760px) {
@@ -3074,23 +4053,42 @@ onBeforeUnmount(() => {
     flex-direction: column;
   }
 
-  .food-map-sidebar { min-height: 520px; border-right: 0; }
-  .food-map-sidebar-body { max-height: 620px; }
-  .food-map-canvas { order: -1; height: 54vh; min-height: 410px; padding: 10px; }
-  .food-map-leaflet { min-height: 390px; border-radius: 14px; }
+  .food-map-sidebar {
+    min-height: 520px;
+    border-right: 0;
+  }
+  .food-map-sidebar-body {
+    max-height: 620px;
+  }
+  .food-map-canvas {
+    order: -1;
+    height: 54vh;
+    min-height: 410px;
+    padding: 10px;
+  }
+  .food-map-leaflet {
+    min-height: 390px;
+    border-radius: 14px;
+  }
 }
 
 @media (max-width: 430px) {
   .food-map-filter-grid,
   .food-map-form-row,
-  .food-map-details { grid-template-columns: 1fr; }
+  .food-map-details {
+    grid-template-columns: 1fr;
+  }
   .food-map-filter-grid label:last-child,
-  .food-map-details .wide { grid-column: auto; }
+  .food-map-details .wide {
+    grid-column: auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .food-map-spinner,
-  :deep(.food-map-marker-dot.preview) { animation: none; }
+  :deep(.food-map-marker-dot.preview) {
+    animation: none;
+  }
 }
 
 /* Editorial food-map redesign */
@@ -3110,8 +4108,16 @@ onBeforeUnmount(() => {
   height: calc(100svh - var(--nav-height));
   min-height: 720px;
   background:
-    radial-gradient(circle at 7% 14%, rgba(188, 149, 85, 0.1), transparent 17rem),
-    radial-gradient(circle at 93% 90%, rgba(214, 115, 55, 0.08), transparent 20rem),
+    radial-gradient(
+      circle at 7% 14%,
+      rgba(188, 149, 85, 0.1),
+      transparent 17rem
+    ),
+    radial-gradient(
+      circle at 93% 90%,
+      rgba(214, 115, 55, 0.08),
+      transparent 20rem
+    ),
     #f8f0e3;
   color: var(--map-text);
 }
@@ -3120,8 +4126,14 @@ onBeforeUnmount(() => {
   border-right: 1px solid var(--map-border);
   background:
     linear-gradient(rgba(255, 250, 241, 0.94), rgba(255, 250, 241, 0.94)),
-    radial-gradient(circle at 16% 9%, rgba(167, 126, 67, 0.18) 0 1px, transparent 1.5px);
-  background-size: auto, 15px 15px;
+    radial-gradient(
+      circle at 16% 9%,
+      rgba(167, 126, 67, 0.18) 0 1px,
+      transparent 1.5px
+    );
+  background-size:
+    auto,
+    15px 15px;
   box-shadow: 12px 0 36px rgba(99, 66, 31, 0.08);
 }
 
@@ -3614,7 +4626,13 @@ onBeforeUnmount(() => {
 .food-map-canvas {
   padding: 18px 12px;
   background:
-    linear-gradient(90deg, rgba(255, 250, 241, 0.4), transparent 20%, transparent 80%, rgba(255, 250, 241, 0.4)),
+    linear-gradient(
+      90deg,
+      rgba(255, 250, 241, 0.4),
+      transparent 20%,
+      transparent 80%,
+      rgba(255, 250, 241, 0.4)
+    ),
     #f3e8d6;
 }
 
@@ -3659,8 +4677,12 @@ onBeforeUnmount(() => {
   content: "";
 }
 
-.food-map-city-label::before { left: 8px; }
-.food-map-city-label::after { right: 8px; }
+.food-map-city-label::before {
+  left: 8px;
+}
+.food-map-city-label::after {
+  right: 8px;
+}
 
 .food-map-picking-banner {
   top: 84px;
@@ -3717,8 +4739,14 @@ onBeforeUnmount(() => {
   color: var(--map-text);
   background:
     linear-gradient(rgba(255, 250, 241, 0.96), rgba(255, 250, 241, 0.96)),
-    radial-gradient(circle at 80% 10%, rgba(177, 129, 69, 0.13) 0 1px, transparent 1.5px);
-  background-size: auto, 14px 14px;
+    radial-gradient(
+      circle at 80% 10%,
+      rgba(177, 129, 69, 0.13) 0 1px,
+      transparent 1.5px
+    );
+  background-size:
+    auto,
+    14px 14px;
   box-shadow: 0 15px 35px rgba(99, 66, 31, 0.08);
   scrollbar-color: rgba(177, 117, 56, 0.3) transparent;
   scrollbar-width: thin;
@@ -4054,9 +5082,13 @@ onBeforeUnmount(() => {
   border: 3px solid #fffaf2;
   border-radius: 12px;
   color: #fff;
-  background: var(--restaurant-gradient, linear-gradient(135deg, #fb923c, #ea580c));
+  background: var(
+    --restaurant-gradient,
+    linear-gradient(135deg, #fb923c, #ea580c)
+  );
   box-shadow:
-    0 0 0 5px color-mix(in srgb, var(--restaurant-color, #f97316) 18%, transparent),
+    0 0 0 5px
+      color-mix(in srgb, var(--restaurant-color, #f97316) 18%, transparent),
     0 6px 16px rgba(104, 61, 22, 0.24);
 }
 
@@ -4187,9 +5219,9 @@ onBeforeUnmount(() => {
   }
 
   .food-map-canvas {
-    order: 0;
-    height: 58vh;
-    min-height: 430px;
+    order: -1;
+    height: 54svh;
+    min-height: 390px;
     padding: 10px;
   }
 
@@ -4259,5 +5291,1587 @@ onBeforeUnmount(() => {
   .food-map-detail-footer button.primary {
     grid-column: 1 / -1;
   }
+}
+
+/* Immersive FoodStory Taste Map */
+.food-map-page {
+  --food-orange: #f6782c;
+  --food-orange-dark: #d95320;
+  --food-cream: #fff7e9;
+  --food-card: rgba(255, 253, 248, 0.9);
+  --food-text: #432d20;
+  --food-muted: #826d5d;
+  --map-text: var(--food-text);
+  --map-muted: var(--food-muted);
+  --map-border: rgba(111, 75, 43, 0.14);
+  position: relative;
+  display: block;
+  width: 100%;
+  height: calc(100svh - var(--nav-height, 0px));
+  min-height: 620px;
+  overflow: hidden;
+  color: var(--food-text);
+  background: #eadcc8;
+  isolation: isolate;
+}
+
+.food-map-canvas {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  background: #eadcc8;
+}
+
+.food-map-leaflet {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: #e8dcc8;
+  box-shadow: none;
+}
+
+.food-map-city-label,
+.food-map-legend {
+  display: none;
+}
+
+.taste-scan-bar {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  z-index: 1500;
+  display: grid;
+  width: min(760px, calc(100% - 210px));
+  min-height: 60px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 7px 8px 7px 17px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.88);
+  box-shadow:
+    0 18px 45px rgba(82, 52, 27, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(18px) saturate(1.18);
+  transform: translateX(-50%);
+}
+
+.taste-scan-link {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--food-orange-dark);
+  background: #fff0dc;
+  font-size: 16px;
+}
+
+.taste-scan-bar input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--food-text);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.taste-scan-bar input::placeholder {
+  color: #9c8878;
+  opacity: 1;
+}
+
+.taste-scan-bar button {
+  min-height: 46px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(135deg, #ff8a35, var(--food-orange-dark));
+  box-shadow: 0 10px 22px rgba(217, 83, 32, 0.25);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.taste-scan-bar button:hover {
+  box-shadow: 0 13px 27px rgba(217, 83, 32, 0.32);
+  transform: translateY(-1px);
+}
+
+.taste-edge-handle {
+  position: absolute;
+  top: 48%;
+  z-index: 1400;
+  display: flex;
+  min-width: 48px;
+  min-height: 116px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  color: #694631;
+  background: rgba(255, 250, 241, 0.9);
+  box-shadow: 0 12px 30px rgba(76, 50, 28, 0.16);
+  backdrop-filter: blur(14px);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  transform: translateY(-50%);
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.3s ease;
+}
+
+.taste-edge-handle span {
+  writing-mode: vertical-rl;
+}
+
+.taste-edge-handle:hover {
+  color: #fff;
+  background: var(--food-orange);
+}
+
+.taste-edge-handle-left {
+  left: 0;
+  border-left: 0;
+  border-radius: 0 22px 22px 0;
+}
+
+.taste-edge-handle-right {
+  right: 0;
+  border-right: 0;
+  border-radius: 22px 0 0 22px;
+}
+
+.taste-drawer-backdrop {
+  position: absolute;
+  z-index: 3000;
+  inset: 0;
+  border: 0;
+  background: rgba(55, 35, 22, 0.18);
+  backdrop-filter: blur(2px);
+}
+
+.food-map-sidebar {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 12px;
+  z-index: 4000;
+  display: flex;
+  width: min(370px, calc(100% - 24px));
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  flex-direction: column;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  border-radius: 26px;
+  color: var(--food-text);
+  background:
+    radial-gradient(circle at 0 0, rgba(255, 185, 121, 0.22), transparent 38%),
+    rgba(255, 250, 241, 0.95);
+  box-shadow: 22px 24px 55px rgba(68, 43, 23, 0.2);
+  backdrop-filter: blur(22px) saturate(1.08);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(calc(-100% - 28px));
+  transition:
+    transform 0.3s ease,
+    opacity 0.2s ease;
+}
+
+.food-map-sidebar.open {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.taste-detail-drawer {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 4100;
+  display: flex;
+  width: min(420px, calc(100% - 24px));
+  overflow: hidden auto;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 26px;
+  color: var(--food-text);
+  background: rgba(255, 250, 241, 0.96);
+  box-shadow: -22px 24px 55px rgba(68, 43, 23, 0.2);
+  backdrop-filter: blur(22px) saturate(1.08);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(calc(100% + 28px));
+  transition:
+    transform 0.3s ease,
+    opacity 0.2s ease;
+  scrollbar-color: rgba(220, 99, 40, 0.34) transparent;
+  scrollbar-width: thin;
+}
+
+.taste-detail-drawer.open {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.taste-drawer-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgba(112, 77, 48, 0.12);
+  border-radius: 50%;
+  color: #694c38;
+  background: rgba(255, 253, 248, 0.9);
+  box-shadow: 0 8px 20px rgba(78, 49, 25, 0.13);
+  backdrop-filter: blur(10px);
+}
+
+.food-map-sidebar .taste-drawer-close {
+  top: 18px;
+}
+
+.food-map-sidebar-header {
+  flex: 0 0 auto;
+  padding: 25px 62px 18px 24px;
+  border-bottom-color: rgba(111, 75, 43, 0.12);
+  background: transparent;
+}
+
+.food-map-sidebar-header h1 {
+  color: var(--food-text);
+  font-size: 24px;
+}
+
+.food-map-sidebar-body {
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 28px;
+  scrollbar-color: rgba(220, 99, 40, 0.3) transparent;
+  scrollbar-width: thin;
+}
+
+.food-map-mode-toggle {
+  flex: 0 0 auto;
+  border-color: rgba(115, 76, 43, 0.12);
+  background: rgba(126, 83, 43, 0.05);
+}
+
+.food-map-mode-toggle button {
+  color: #8d7765;
+}
+
+.food-map-mode-toggle button.active {
+  border-color: transparent;
+  background: linear-gradient(135deg, #ff8a35, var(--food-orange-dark));
+  box-shadow: 0 8px 20px rgba(217, 83, 32, 0.2);
+}
+
+.food-map-layer-toggle {
+  flex: 0 0 auto;
+}
+
+.food-map-layer-toggle label {
+  color: #846f5e;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.food-map-layer-toggle label.restaurant.active,
+.food-map-layer-toggle label.personal.active {
+  color: #fff;
+}
+
+.food-map-primary-action,
+.food-map-save {
+  background: linear-gradient(135deg, #ff8a35, var(--food-orange-dark));
+}
+
+.food-map-detail-panel {
+  display: none !important;
+}
+
+.taste-result-sheet {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  z-index: 1800;
+  width: min(78%, 1120px);
+  min-width: 640px;
+  height: 224px;
+  padding: 13px 16px 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 25px;
+  background: rgba(255, 250, 241, 0.9);
+  box-shadow: 0 20px 48px rgba(73, 46, 24, 0.2);
+  backdrop-filter: blur(20px) saturate(1.12);
+  transform: translateX(-50%);
+  transition:
+    transform 0.3s ease,
+    opacity 0.2s ease;
+}
+
+.taste-result-sheet.collapsed {
+  transform: translate(-50%, calc(100% - 43px));
+}
+
+.taste-sheet-handle {
+  display: grid;
+  width: 100%;
+  height: 18px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+}
+
+.taste-sheet-handle span {
+  width: 52px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(115, 79, 50, 0.25);
+}
+
+.taste-sheet-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 3px 11px;
+}
+
+.taste-sheet-heading h2 {
+  margin: 0;
+  color: var(--food-text);
+  font-size: 17px;
+}
+
+.taste-sheet-heading p {
+  margin: 3px 0 0;
+  color: var(--food-muted);
+  font-size: 11px;
+}
+
+.taste-sheet-heading > span {
+  color: var(--food-orange-dark);
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.taste-result-list {
+  display: flex;
+  gap: 11px;
+  overflow-x: auto;
+  padding: 1px 2px 9px;
+  scroll-snap-type: x proximity;
+  scrollbar-color: rgba(225, 106, 46, 0.28) transparent;
+  scrollbar-width: thin;
+}
+
+.taste-result-card {
+  position: relative;
+  display: grid;
+  min-width: 265px;
+  max-width: 265px;
+  min-height: 124px;
+  grid-template-columns: 94px minmax(0, 1fr);
+  gap: 11px;
+  padding: 8px 38px 8px 8px;
+  border: 1px solid rgba(113, 77, 46, 0.11);
+  border-radius: 18px;
+  color: var(--food-text);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 8px 18px rgba(83, 54, 29, 0.07);
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.taste-result-card:hover,
+.taste-result-card:focus-visible,
+.taste-result-card.active {
+  border-color: rgba(240, 112, 46, 0.38);
+  outline: 0;
+  box-shadow: 0 12px 24px rgba(104, 58, 24, 0.13);
+  transform: translateY(-2px);
+}
+
+.taste-result-card img {
+  width: 94px;
+  height: 108px;
+  border-radius: 13px;
+  object-fit: cover;
+}
+
+.taste-result-copy {
+  display: flex;
+  min-width: 0;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.taste-result-copy > span {
+  overflow: hidden;
+  color: var(--food-orange-dark);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.taste-result-copy strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--food-text);
+  font-size: 13px;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.taste-result-copy p {
+  overflow: hidden;
+  margin: 0;
+  color: var(--food-muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.taste-result-copy small {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #9a8069;
+  font-size: 9px;
+}
+
+.taste-result-copy small b {
+  color: #dc8b12;
+}
+
+.taste-result-card > button {
+  position: absolute;
+  top: 10px;
+  right: 9px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #a38772;
+  background: rgba(255, 250, 241, 0.9);
+}
+
+.taste-result-card > button.saved {
+  color: #e85d34;
+  background: #fff0e7;
+}
+
+.taste-result-card > button.saved .app-icon,
+.taste-detail-media > button.saved .app-icon {
+  fill: currentColor;
+}
+
+.taste-result-empty {
+  display: flex;
+  min-height: 120px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--food-muted);
+  font-size: 12px;
+}
+
+.taste-floating-scan {
+  position: absolute;
+  right: 24px;
+  bottom: 76px;
+  z-index: 1900;
+  display: flex;
+  width: 82px;
+  height: 82px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  border: 4px solid rgba(255, 250, 241, 0.92);
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(145deg, #ff943f, #dc5321);
+  box-shadow:
+    0 16px 32px rgba(188, 67, 23, 0.33),
+    0 0 0 7px rgba(246, 120, 44, 0.13);
+  font-size: 9px;
+  font-weight: 900;
+  transition:
+    bottom 0.3s ease,
+    transform 0.2s ease;
+}
+
+.taste-floating-scan.raised {
+  bottom: 262px;
+}
+
+.taste-floating-scan:hover {
+  transform: translateY(-3px) scale(1.02);
+}
+
+.taste-detail-media {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 12px 12px 0;
+}
+
+.taste-detail-media img {
+  width: 100%;
+  height: 235px;
+  border-radius: 19px;
+  object-fit: cover;
+  box-shadow: inset 0 0 0 1px rgba(83, 51, 27, 0.08);
+}
+
+.taste-detail-media > span {
+  position: absolute;
+  bottom: 14px;
+  left: 24px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #64412d;
+  background: rgba(255, 250, 241, 0.92);
+  box-shadow: 0 6px 16px rgba(75, 45, 23, 0.13);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.taste-detail-media > button {
+  position: absolute;
+  right: 24px;
+  bottom: 14px;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #855f47;
+  background: rgba(255, 250, 241, 0.94);
+  box-shadow: 0 6px 16px rgba(75, 45, 23, 0.13);
+}
+
+.taste-detail-media > button.saved {
+  color: #e85d34;
+}
+
+.taste-detail-content {
+  display: grid;
+  gap: 17px;
+  padding: 21px 22px 25px;
+}
+
+.taste-detail-title {
+  display: grid;
+  gap: 5px;
+}
+
+.taste-detail-title > span,
+.taste-detail-story > span {
+  color: var(--food-orange-dark);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.taste-detail-title h2 {
+  margin: 0;
+  color: var(--food-text);
+  font-size: clamp(25px, 2.2vw, 32px);
+  line-height: 1.08;
+}
+
+.taste-detail-title p {
+  margin: 0;
+  color: var(--food-muted);
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.taste-detail-rating {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.taste-detail-rating strong,
+.taste-detail-rating span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #fff0df;
+  font-size: 10px;
+}
+
+.taste-detail-rating strong {
+  color: #d98911;
+}
+
+.taste-detail-rating span {
+  color: #795e49;
+}
+
+.taste-detail-facts {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  border-top: 1px solid rgba(113, 76, 44, 0.11);
+  border-bottom: 1px solid rgba(113, 76, 44, 0.11);
+}
+
+.taste-detail-facts > div {
+  display: grid;
+  gap: 5px;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(113, 76, 44, 0.08);
+}
+
+.taste-detail-facts > div:last-child {
+  border-bottom: 0;
+}
+
+.taste-detail-facts dt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #a06b42;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.taste-detail-facts dd {
+  margin: 0 0 0 24px;
+  color: #655141;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.taste-detail-story {
+  display: grid;
+  gap: 7px;
+  padding: 15px;
+  border-radius: 15px;
+  background: rgba(255, 239, 216, 0.58);
+}
+
+.taste-detail-story p {
+  margin: 0;
+  color: #6f5947;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.taste-related-recipe {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid rgba(113, 76, 44, 0.12);
+  border-radius: 14px;
+  color: #76533a;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.taste-related-recipe span {
+  display: grid;
+  gap: 2px;
+}
+
+.taste-related-recipe strong {
+  color: var(--food-text);
+  font-size: 11px;
+}
+
+.taste-related-recipe small {
+  color: var(--food-muted);
+  font-size: 9px;
+}
+
+.taste-detail-actions {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1fr;
+  gap: 8px;
+}
+
+.taste-detail-actions button,
+.taste-detail-owner-actions button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid rgba(113, 76, 44, 0.13);
+  border-radius: 12px;
+  color: #6f5542;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.taste-detail-actions button.primary {
+  border-color: transparent;
+  color: #fff;
+  background: linear-gradient(135deg, #ff8a35, var(--food-orange-dark));
+  box-shadow: 0 9px 18px rgba(217, 83, 32, 0.2);
+}
+
+.taste-detail-owner-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.taste-detail-owner-actions button.danger {
+  color: #d34a3e;
+  border-color: rgba(211, 74, 62, 0.2);
+  background: rgba(255, 239, 236, 0.72);
+}
+
+.taste-detail-empty {
+  display: flex;
+  min-height: 100%;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  padding: 38px 28px;
+  text-align: center;
+}
+
+.taste-detail-empty > span {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 5px;
+  place-items: center;
+  border-radius: 24px;
+  color: var(--food-orange-dark);
+  background: #fff0df;
+  box-shadow: inset 0 0 0 1px rgba(220, 89, 35, 0.1);
+}
+
+.taste-detail-empty h2 {
+  margin: 0;
+  color: var(--food-text);
+  font-size: 25px;
+}
+
+.taste-detail-empty > p:last-child {
+  max-width: 260px;
+  margin: 0;
+  color: var(--food-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.food-map-picking-banner {
+  top: 94px;
+  z-index: 2100;
+  border: 1px solid rgba(241, 111, 44, 0.3);
+  border-radius: 999px;
+  color: var(--food-text);
+  background: rgba(255, 250, 241, 0.95);
+}
+
+:deep(.leaflet-tile-pane) {
+  filter: sepia(0.28) saturate(0.74) brightness(1.07) contrast(0.9);
+}
+
+:deep(.leaflet-control-zoom) {
+  overflow: hidden;
+  border: 1px solid rgba(119, 81, 48, 0.16) !important;
+  border-radius: 15px !important;
+  box-shadow: 0 12px 28px rgba(75, 46, 22, 0.16) !important;
+}
+
+:deep(.leaflet-control-zoom a) {
+  width: 42px;
+  height: 42px;
+  border-color: rgba(116, 77, 44, 0.1);
+  color: #765239;
+  background: rgba(255, 250, 241, 0.94);
+  font-size: 20px;
+  line-height: 42px;
+  backdrop-filter: blur(12px);
+}
+
+:deep(.leaflet-bottom.leaflet-right) {
+  right: 112px;
+  bottom: 260px;
+}
+
+.food-map-page.results-collapsed :deep(.leaflet-bottom.leaflet-right) {
+  bottom: 70px;
+}
+
+:deep(.leaflet-control-attribution) {
+  border-radius: 9px 0 0 0;
+  color: #806c58;
+  background: rgba(255, 250, 241, 0.72);
+  font-size: 9px;
+}
+
+:deep(.food-map-marker-shell),
+:deep(.restaurant-marker-shell),
+:deep(.taste-map-cluster-shell) {
+  border: 0;
+  background: transparent;
+}
+
+:deep(.taste-food-marker) {
+  position: relative;
+  display: flex;
+  width: 58px;
+  height: 68px;
+  align-items: center;
+  flex-direction: column;
+  filter: drop-shadow(0 9px 11px rgba(75, 43, 20, 0.24));
+}
+
+:deep(.taste-food-marker-core) {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 4px solid rgba(255, 253, 248, 0.98);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 35% 28%,
+      rgba(255, 255, 255, 0.32),
+      transparent 33%
+    ),
+    var(--restaurant-gradient, var(--marker-color));
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--marker-color) 22%, transparent),
+    inset 0 -5px 12px rgba(98, 43, 16, 0.12);
+  font-size: 23px;
+}
+
+:deep(.taste-food-marker-rating) {
+  position: relative;
+  z-index: 2;
+  min-width: 38px;
+  margin-top: -4px;
+  padding: 3px 6px;
+  border: 2px solid #fffdf8;
+  border-radius: 999px;
+  color: #7b4c2d;
+  background: #fff6e9;
+  box-shadow: 0 4px 8px rgba(76, 44, 20, 0.13);
+  font-size: 8px;
+  font-weight: 950;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+:deep(.taste-food-marker.community .taste-food-marker-rating) {
+  color: #47658a;
+}
+
+:deep(.taste-food-marker.preview .taste-food-marker-core) {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+:deep(.taste-map-cluster) {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 4px solid rgba(255, 253, 248, 0.95);
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, #ff913a, #d95120);
+  box-shadow:
+    0 0 0 7px rgba(246, 120, 44, 0.18),
+    0 10px 20px rgba(105, 50, 20, 0.25);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+:deep(.taste-map-cluster.restaurant) {
+  background: linear-gradient(135deg, #f78731, #bd4c22);
+}
+
+@media (max-width: 1120px) {
+  .food-map-page {
+    display: block;
+    height: calc(100svh - var(--nav-height, 0px));
+    min-height: 600px;
+    overflow: hidden;
+  }
+
+  .food-map-canvas {
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .food-map-leaflet {
+    min-height: 0;
+    border-radius: 0;
+  }
+
+  .food-map-sidebar,
+  .taste-detail-drawer {
+    min-height: 0;
+    margin: 0;
+  }
+
+  .taste-result-sheet {
+    width: calc(100% - 150px);
+    min-width: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .food-map-page {
+    height: calc(100svh - var(--nav-height, 0px));
+    min-height: 560px;
+  }
+
+  .taste-scan-bar {
+    top: 10px;
+    width: calc(100% - 20px);
+    min-height: 54px;
+    gap: 7px;
+    padding: 6px 6px 6px 12px;
+  }
+
+  .taste-scan-link {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+
+  .taste-scan-bar input {
+    font-size: 11px;
+  }
+
+  .taste-scan-bar button {
+    min-height: 42px;
+    padding: 0 13px;
+    font-size: 9px;
+  }
+
+  .taste-edge-handle {
+    top: 74px;
+    min-width: 0;
+    min-height: 36px;
+    flex-direction: row;
+    gap: 6px;
+    padding: 0 11px;
+    border-radius: 999px;
+    font-size: 10px;
+    transform: none;
+  }
+
+  .taste-edge-handle span {
+    writing-mode: horizontal-tb;
+  }
+
+  .taste-edge-handle-left {
+    left: 10px;
+    border-left: 1px solid rgba(255, 255, 255, 0.7);
+  }
+
+  .taste-edge-handle-right {
+    right: 10px;
+    border-right: 1px solid rgba(255, 255, 255, 0.7);
+  }
+
+  .food-map-sidebar,
+  .taste-detail-drawer {
+    top: auto;
+    right: 8px;
+    bottom: 0;
+    left: 8px;
+    width: auto;
+    height: min(82svh, 720px);
+    border-radius: 26px 26px 0 0;
+    opacity: 0;
+    transform: translateY(calc(100% + 20px));
+  }
+
+  .food-map-sidebar.open,
+  .taste-detail-drawer.open {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .taste-detail-media img {
+    height: 210px;
+  }
+
+  .taste-result-sheet {
+    bottom: 8px;
+    width: calc(100% - 16px);
+    height: 228px;
+    min-width: 0;
+    padding-right: 11px;
+    padding-left: 11px;
+    border-radius: 22px;
+  }
+
+  .taste-sheet-heading p {
+    max-width: 235px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .taste-result-card {
+    min-width: 238px;
+    max-width: 238px;
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+
+  .taste-result-card img {
+    width: 82px;
+  }
+
+  .taste-floating-scan {
+    right: 14px;
+    bottom: 66px;
+    width: 70px;
+    height: 70px;
+  }
+
+  .taste-floating-scan.raised {
+    bottom: 254px;
+  }
+
+  .food-map-picking-banner {
+    top: 118px;
+    width: calc(100% - 30px);
+    justify-content: center;
+  }
+
+  :deep(.leaflet-bottom.leaflet-right) {
+    right: 88px;
+    bottom: 246px;
+  }
+
+  .food-map-page.results-collapsed :deep(.leaflet-bottom.leaflet-right) {
+    bottom: 58px;
+  }
+}
+
+@media (max-width: 480px) {
+  .taste-scan-bar input::placeholder {
+    color: transparent;
+  }
+
+  .taste-scan-bar input {
+    font-size: 10px;
+  }
+
+  .taste-scan-bar button {
+    padding: 0 10px;
+  }
+
+  .taste-sheet-heading {
+    align-items: flex-start;
+  }
+
+  .taste-sheet-heading > span {
+    display: none;
+  }
+
+  .taste-detail-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .taste-detail-actions button.primary {
+    grid-column: 1 / -1;
+  }
+
+  .food-map-sidebar-header {
+    padding-right: 60px;
+  }
+}
+
+/* Final optimized mockup pass: food photo pins, vertical result cards, and smoother map panning */
+.food-map-page,
+.food-map-canvas,
+.food-map-leaflet {
+  contain: layout paint style;
+}
+
+.food-map-leaflet {
+  will-change: transform;
+}
+
+.taste-menu-button {
+  position: absolute;
+  top: 24px;
+  left: 28px;
+  z-index: 1600;
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 50%;
+  color: #432d20;
+  background: rgba(255, 253, 248, 0.9);
+  box-shadow: 0 14px 34px rgba(82, 52, 27, 0.16);
+  backdrop-filter: blur(14px);
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.taste-top-actions {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  z-index: 1600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.taste-top-actions button {
+  position: relative;
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 50%;
+  background: rgba(255, 253, 248, 0.9);
+  box-shadow: 0 14px 34px rgba(82, 52, 27, 0.16);
+  backdrop-filter: blur(14px);
+}
+
+.taste-top-actions button > span {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 2px solid #fffaf2;
+  border-radius: 50%;
+  color: #fff;
+  background: #e95b2b;
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.taste-avatar-button img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.taste-locate-button {
+  position: absolute;
+  right: 116px;
+  bottom: 334px;
+  z-index: 1600;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 50%;
+  color: #573d2b;
+  background: rgba(255, 253, 248, 0.92);
+  box-shadow: 0 12px 28px rgba(82, 52, 27, 0.16);
+  backdrop-filter: blur(14px);
+  font-size: 21px;
+  font-weight: 900;
+}
+
+.taste-menu-button,
+.taste-top-actions button,
+.taste-locate-button,
+.taste-edge-handle,
+.taste-floating-scan {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+:deep(.leaflet-tile-pane) {
+  filter: sepia(0.34) saturate(0.68) hue-rotate(340deg) brightness(1.1)
+    contrast(0.86);
+  opacity: 0.88;
+}
+
+:deep(.leaflet-container) {
+  background: #f2e3cd;
+}
+
+:deep(.taste-food-marker) {
+  width: 76px;
+  height: 92px;
+  filter: drop-shadow(0 12px 18px rgba(164, 91, 32, 0.22));
+  transform: translateZ(0);
+}
+
+:deep(.taste-food-marker-core) {
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border: 4px solid rgba(255, 253, 248, 0.98);
+  border-radius: 50%;
+  background: #fff8ef;
+  box-shadow:
+    0 0 0 2px rgba(240, 112, 46, 0.9),
+    0 10px 22px rgba(94, 52, 24, 0.18);
+}
+
+:deep(.taste-food-marker-core img) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+:deep(.taste-food-marker-rating) {
+  min-width: 44px;
+  margin-top: -3px;
+  padding: 5px 8px;
+  border: 2px solid #fffdf8;
+  border-radius: 999px;
+  color: #5d3b25;
+  background: #fffaf2;
+  box-shadow: 0 6px 14px rgba(76, 44, 20, 0.14);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+:deep(.taste-food-marker.preview .taste-food-marker-core) {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, #ff8a35, #d95320);
+}
+
+:deep(.taste-map-cluster) {
+  width: 52px;
+  height: 52px;
+  border: 4px solid rgba(255, 253, 248, 0.95);
+  background: linear-gradient(135deg, #ff8a35, #e04f18);
+  box-shadow:
+    0 0 0 8px rgba(246, 120, 44, 0.15),
+    0 12px 24px rgba(105, 50, 20, 0.28);
+  font-size: 14px;
+}
+
+.taste-result-sheet {
+  width: min(1080px, calc(100% - 520px));
+  min-width: 720px;
+  height: 296px;
+  padding: 14px 22px 22px;
+  border-radius: 34px;
+  contain: layout paint style;
+  will-change: transform;
+}
+
+.taste-sheet-heading h2 {
+  font-size: 22px;
+}
+
+.taste-result-list {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 180px;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x proximity;
+}
+
+.taste-result-card {
+  display: grid;
+  min-width: 180px;
+  max-width: 180px;
+  min-height: 192px;
+  grid-template-columns: 1fr;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  contain: layout paint style;
+}
+
+.taste-result-card:hover,
+.taste-result-card:focus-visible,
+.taste-result-card.active {
+  transform: translateY(-2px) translateZ(0);
+}
+
+.taste-result-card img {
+  width: 100%;
+  height: 116px;
+  border-radius: 0;
+  object-fit: cover;
+}
+
+.taste-result-copy {
+  padding: 10px 12px 12px;
+}
+
+.taste-result-copy > span {
+  display: none;
+}
+
+.taste-result-copy strong {
+  font-size: 13px;
+  -webkit-line-clamp: 1;
+}
+
+.taste-result-copy p {
+  font-size: 10px;
+}
+
+.taste-result-card > button {
+  top: 10px;
+  right: 10px;
+  color: #fff;
+  background: rgba(66, 36, 20, 0.3);
+  backdrop-filter: blur(8px);
+}
+
+@media (max-width: 1120px) {
+  .taste-result-sheet {
+    width: calc(100% - 150px);
+    min-width: 0;
+  }
+
+  .taste-locate-button {
+    right: 104px;
+  }
+}
+
+@media (max-width: 760px) {
+  .taste-menu-button {
+    top: 74px;
+    left: 10px;
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+  }
+
+  .taste-top-actions {
+    top: 74px;
+    right: 10px;
+  }
+
+  .taste-top-actions button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .taste-top-actions button:first-child {
+    display: none;
+  }
+
+  .taste-avatar-button img {
+    width: 31px;
+    height: 31px;
+  }
+
+  .taste-locate-button {
+    right: 88px;
+    bottom: 306px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .taste-result-sheet {
+    width: calc(100% - 16px);
+    height: 242px;
+    min-width: 0;
+  }
+
+  .taste-result-list {
+    grid-auto-columns: 158px;
+  }
+
+  .taste-result-card {
+    min-width: 158px;
+    max-width: 158px;
+    min-height: 184px;
+  }
+
+  .taste-result-card img {
+    height: 108px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .taste-scan-bar button,
+  .taste-result-card,
+  .taste-floating-scan,
+  .food-map-sidebar,
+  .taste-detail-drawer,
+  .taste-result-sheet {
+    transition: none !important;
+  }
+}
+
+/* ==========================================================
+   SMOOTH MAP HOTFIX: preserve street detail and reduce rendering lag
+   ========================================================== */
+:deep(.leaflet-tile-pane) {
+  filter: saturate(0.98) contrast(1.03) brightness(0.99) !important;
+  opacity: 1 !important;
+}
+
+:deep(.leaflet-container) {
+  background: #eee7dc !important;
+}
+
+:deep(.leaflet-marker-icon),
+:deep(.leaflet-marker-shadow),
+:deep(.food-map-marker-shell),
+:deep(.restaurant-marker-shell),
+:deep(.taste-map-cluster-shell) {
+  will-change: auto !important;
+  transform-style: flat !important;
+}
+
+:deep(.taste-food-marker) {
+  width: 58px !important;
+  height: 72px !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+:deep(.taste-food-marker-core) {
+  display: grid !important;
+  width: 46px !important;
+  height: 46px !important;
+  place-items: center !important;
+  overflow: hidden !important;
+  border: 3px solid rgba(255, 253, 248, 0.96) !important;
+  border-radius: 50% !important;
+  background: var(
+    --restaurant-gradient,
+    linear-gradient(135deg, #ff9345, #dc5b28)
+  ) !important;
+  box-shadow: 0 3px 9px rgba(74, 45, 24, 0.18) !important;
+  font-size: 20px !important;
+}
+
+:deep(.taste-food-marker-core img) {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+:deep(.taste-food-marker-emoji) {
+  line-height: 1 !important;
+  filter: none !important;
+}
+
+:deep(.taste-food-marker-rating) {
+  min-width: 34px !important;
+  margin-top: -3px !important;
+  padding: 3px 6px !important;
+  border: 1px solid rgba(255, 253, 248, 0.98) !important;
+  border-radius: 999px !important;
+  color: #5f3a24 !important;
+  background: rgba(255, 250, 242, 0.96) !important;
+  box-shadow: 0 2px 5px rgba(76, 44, 20, 0.13) !important;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+}
+
+:deep(.taste-map-cluster) {
+  width: 42px !important;
+  height: 42px !important;
+  border: 3px solid rgba(255, 253, 248, 0.96) !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #f98c3d, #d95a24) !important;
+  box-shadow: 0 4px 10px rgba(105, 50, 20, 0.22) !important;
+  font-size: 12px !important;
+}
+
+.taste-scan-bar,
+.taste-result-sheet,
+.taste-edge-handle,
+.taste-top-actions button,
+.taste-menu-button,
+.taste-floating-scan,
+.taste-locate-button {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.taste-menu-button,
+.taste-top-actions button,
+.taste-locate-button,
+.taste-edge-handle,
+.taste-floating-scan {
+  transform: none !important;
+  will-change: auto !important;
+}
+
+.taste-result-sheet {
+  contain: layout paint !important;
+  will-change: auto !important;
+  box-shadow: 0 10px 24px rgba(75, 46, 22, 0.12) !important;
 }
 </style>

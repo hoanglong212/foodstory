@@ -815,7 +815,7 @@ async function deleteRecipe(recipe) {
           >
             <AppIcon name="send" size="17" />
             <span>
-              {{ authStore.isLoggedIn ? 'Gửi công thức của bạn' : 'Đăng nhập để gửi công thức' }}
+              {{ authStore.isLoggedIn ? 'Submit your recipe' : 'Log in to submit a recipe' }}
             </span>
           </RouterLink>
 

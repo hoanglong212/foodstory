@@ -22,13 +22,13 @@ router.get('/', async (req, res, next) => {
         : Number(req.query.min_rating)
 
     if (district === undefined || category === undefined || search === undefined) {
-      return res.status(400).json({ error: 'Bộ lọc nhà hàng không hợp lệ.' })
+      return res.status(400).json({ error: 'The restaurant filters are invalid.' })
     }
     if (
       minimumRating !== null &&
       (!Number.isFinite(minimumRating) || minimumRating < 0 || minimumRating > 5)
     ) {
-      return res.status(400).json({ error: 'Đánh giá tối thiểu phải từ 0 đến 5.' })
+      return res.status(400).json({ error: 'The minimum rating must be between 0 and 5.' })
     }
 
     const conditions = ['1 = 1']

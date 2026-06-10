@@ -36,7 +36,7 @@ export const useRestaurantStore = defineStore('restaurants', {
         )
         return this.restaurants
       } catch (error) {
-        this.error = getApiError(error, 'Không thể tải danh sách nhà hàng.')
+        this.error = getApiError(error, 'The restaurant list could not be loaded.')
         throw new Error(this.error)
       } finally {
         this.loading = false

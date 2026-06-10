@@ -57,31 +57,31 @@ async function validatePayload(body) {
       : toPositiveInt(body.recipe_id)
 
   if (!name) {
-    return { error: 'Tên địa điểm là bắt buộc và không được vượt quá 150 ký tự.' }
+    return { error: 'The place name is required and cannot exceed 150 characters.' }
   }
   if (dishName === undefined || category === undefined || district === undefined) {
-    return { error: 'Một hoặc nhiều trường văn bản vượt quá độ dài cho phép.' }
+    return { error: 'One or more text fields exceed the allowed length.' }
   }
   if (notes === undefined || tags === undefined) {
-    return { error: 'Ghi chú hoặc tags vượt quá độ dài cho phép.' }
+    return { error: 'Notes or tags exceed the allowed length.' }
   }
   if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
-    return { error: 'Vĩ độ phải nằm trong khoảng từ -90 đến 90.' }
+    return { error: 'Latitude must be between -90 and 90.' }
   }
   if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
-    return { error: 'Kinh độ phải nằm trong khoảng từ -180 đến 180.' }
+    return { error: 'Longitude must be between -180 and 180.' }
   }
   if (rating !== null && (!Number.isInteger(rating) || rating < 1 || rating > 5)) {
-    return { error: 'Đánh giá phải là số nguyên từ 1 đến 5.' }
+    return { error: 'The rating must be an integer from 1 to 5.' }
   }
   if (body.recipe_id !== '' && body.recipe_id !== null && body.recipe_id !== undefined && !recipeId) {
-    return { error: 'Công thức liên kết không hợp lệ.' }
+    return { error: 'The linked recipe is invalid.' }
   }
 
   if (recipeId) {
     const [recipes] = await pool.execute('SELECT id FROM recipes WHERE id = ?', [recipeId])
     if (recipes.length === 0) {
-      return { error: 'Không tìm thấy công thức liên kết.', status: 400 }
+      return { error: 'The linked recipe could not be found.', status: 400 }
     }
   }
 
@@ -118,7 +118,7 @@ router.get('/public', async (req, res, next) => {
     const district = optionalText(req.query.district, 80)
 
     if (dish === undefined || category === undefined || district === undefined) {
-      return res.status(400).json({ error: 'Bộ lọc cộng đồng không hợp lệ.' })
+      return res.status(400).json({ error: 'The community filters are invalid.' })
     }
 
     if (dish) {
@@ -164,13 +164,13 @@ router.get('/', async (req, res, next) => {
         : parseNumber(req.query.rating)
 
     if (district === undefined || category === undefined) {
-      return res.status(400).json({ error: 'Bộ lọc không hợp lệ.' })
+      return res.status(400).json({ error: 'The filters are invalid.' })
     }
     if (
       minimumRating !== null &&
       (!Number.isInteger(minimumRating) || minimumRating < 1 || minimumRating > 5)
     ) {
-      return res.status(400).json({ error: 'Mức đánh giá tối thiểu phải từ 1 đến 5.' })
+      return res.status(400).json({ error: 'The minimum rating must be between 1 and 5.' })
     }
 
     if (district) {
@@ -239,15 +239,15 @@ router.put('/:id', async (req, res, next) => {
   try {
     const spotId = toPositiveInt(req.params.id)
     if (!spotId) {
-      return res.status(400).json({ error: 'Mã địa điểm không hợp lệ.' })
+      return res.status(400).json({ error: 'The place ID is invalid.' })
     }
 
     const existing = await getSpotById(spotId)
     if (!existing) {
-      return res.status(404).json({ error: 'Không tìm thấy địa điểm.' })
+      return res.status(404).json({ error: 'The place could not be found.' })
     }
     if (existing.user_id !== req.user.id) {
-      return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa địa điểm này.' })
+      return res.status(403).json({ error: 'You do not have permission to edit this place.' })
     }
 
     const validation = await validatePayload(req.body)
@@ -287,15 +287,15 @@ router.delete('/:id', async (req, res, next) => {
   try {
     const spotId = toPositiveInt(req.params.id)
     if (!spotId) {
-      return res.status(400).json({ error: 'Mã địa điểm không hợp lệ.' })
+      return res.status(400).json({ error: 'The place ID is invalid.' })
     }
 
     const existing = await getSpotById(spotId)
     if (!existing) {
-      return res.status(404).json({ error: 'Không tìm thấy địa điểm.' })
+      return res.status(404).json({ error: 'The place could not be found.' })
     }
     if (existing.user_id !== req.user.id) {
-      return res.status(403).json({ error: 'Bạn không có quyền xoá địa điểm này.' })
+      return res.status(403).json({ error: 'You do not have permission to delete this place.' })
     }
 
     await pool.execute('DELETE FROM food_spots WHERE id = ? AND user_id = ?', [

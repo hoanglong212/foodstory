@@ -505,7 +505,7 @@ router.post('/submissions', requireAuth, async (req, res, next) => {
     await connection.commit()
     const recipe = await fetchRecipeDetail(recipeId, req.user)
     return res.status(201).json({
-      message: 'Công thức đã được gửi và đang chờ quản trị viên duyệt.',
+      message: 'The recipe was submitted and is awaiting administrator review.',
       recipe,
     })
   } catch (error) {

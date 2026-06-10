@@ -25,11 +25,11 @@ const uiStore = useUiStore()
 
 const activeSection = ref('overview')
 const sections = [
-  { id: 'overview', label: 'Tổng Quan', icon: 'home' },
-  { id: 'recipes', label: 'Công Thức', icon: 'book-open' },
-  { id: 'users', label: 'Người Dùng', icon: 'users' },
-  { id: 'comments', label: 'Bình Luận', icon: 'message' },
-  { id: 'pending', label: 'Chờ Duyệt', icon: 'clock' },
+  { id: 'overview', label: 'Overview', icon: 'home' },
+  { id: 'recipes', label: 'Recipes', icon: 'book-open' },
+  { id: 'users', label: 'Users', icon: 'users' },
+  { id: 'comments', label: 'Comments', icon: 'message' },
+  { id: 'pending', label: 'Pending Review', icon: 'clock' },
 ]
 
 const loading = reactive({
@@ -62,28 +62,28 @@ const pendingPagination = reactive({ currentPage: 1, totalPages: 1, totalItems: 
 const statsCards = computed(() => [
   {
     key: 'total_users',
-    label: 'Người dùng',
+    label: 'Users',
     value: adminStore.stats.total_users,
     section: 'users',
     icon: 'users',
   },
   {
     key: 'total_recipes',
-    label: 'Công thức',
+    label: 'Recipes',
     value: adminStore.stats.total_recipes,
     section: 'recipes',
     icon: 'book-open',
   },
   {
     key: 'total_comments',
-    label: 'Bình luận',
+    label: 'Comments',
     value: adminStore.stats.total_comments,
     section: 'comments',
     icon: 'message',
   },
   {
     key: 'pending_recipes',
-    label: 'Chờ duyệt',
+    label: 'Pending',
     value: adminStore.stats.pending_recipes,
     section: 'pending',
     icon: 'clock',
@@ -91,7 +91,7 @@ const statsCards = computed(() => [
   },
   {
     key: 'total_spots',
-    label: 'Địa điểm',
+    label: 'Places',
     value: adminStore.stats.total_spots,
     section: 'overview',
     icon: 'map-pin',
@@ -99,12 +99,12 @@ const statsCards = computed(() => [
 ])
 
 function formatNumber(value) {
-  return new Intl.NumberFormat('vi-VN').format(Number(value || 0))
+  return new Intl.NumberFormat('en-US').format(Number(value || 0))
 }
 
 function formatDate(value) {
-  if (!value) return 'Chưa có'
-  return new Intl.DateTimeFormat('vi-VN', {
+  if (!value) return 'Not available'
+  return new Intl.DateTimeFormat('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value))
@@ -117,16 +117,16 @@ function truncate(value, maxLength = 60) {
 
 function statusLabel(status) {
   return {
-    approved: 'Đã duyệt',
-    pending: 'Chờ duyệt',
-    rejected: 'Từ chối',
+    approved: 'Approved',
+    pending: 'Pending',
+    rejected: 'Rejected',
   }[status] || status
 }
 
 function showError(error, fallback) {
   uiStore.setError(getApiError(error, fallback), {
     title: 'Admin Dashboard',
-    eyebrow: 'Quản trị',
+    eyebrow: 'Administration',
   })
 }
 
@@ -143,7 +143,7 @@ async function loadStats(options = {}) {
   try {
     await adminStore.fetchStats(options)
   } catch (error) {
-    showError(error, 'Không thể tải thống kê.')
+    showError(error, 'Statistics could not be loaded.')
   }
 }
 
@@ -159,7 +159,7 @@ async function loadRecipes(page = recipeFilters.page) {
     Object.assign(recipePagination, response.data)
     recipeFilters.page = response.data.currentPage
   } catch (error) {
-    showError(error, 'Không thể tải công thức.')
+    showError(error, 'Recipes could not be loaded.')
   } finally {
     loading.recipes = false
   }
@@ -180,7 +180,7 @@ async function loadUsers(page = userFilters.page) {
     Object.assign(userPagination, response.data)
     userFilters.page = response.data.currentPage
   } catch (error) {
-    showError(error, 'Không thể tải người dùng.')
+    showError(error, 'Users could not be loaded.')
   } finally {
     loading.users = false
   }
@@ -197,7 +197,7 @@ async function loadComments(page = commentFilters.page) {
     Object.assign(commentPagination, response.data)
     commentFilters.page = response.data.currentPage
   } catch (error) {
-    showError(error, 'Không thể tải bình luận.')
+    showError(error, 'Comments could not be loaded.')
   } finally {
     loading.comments = false
   }
@@ -211,7 +211,7 @@ async function loadPending(page = pendingFilters.page) {
     Object.assign(pendingPagination, response.data)
     pendingFilters.page = response.data.currentPage
   } catch (error) {
-    showError(error, 'Không thể tải danh sách chờ duyệt.')
+    showError(error, 'The review queue could not be loaded.')
   } finally {
     loading.pending = false
   }
@@ -232,21 +232,21 @@ async function setSection(section) {
 }
 
 async function removeRecipe(recipe) {
-  if (!window.confirm(`Xóa công thức "${recipe.title}"? Hành động này không thể hoàn tác.`)) {
+  if (!window.confirm(`Delete the recipe "${recipe.title}"? This action cannot be undone.`)) {
     return
   }
 
   actionId.value = `delete-recipe-${recipe.id}`
   try {
     await deleteAdminRecipe(recipe.id)
-    uiStore.setSuccess('Đã xóa công thức.')
+    uiStore.setSuccess('The recipe was deleted.')
     await Promise.all([
       loadRecipes(recipePagination.currentPage),
       loadPending(pendingPagination.currentPage),
       loadStats({ silent: true }),
     ])
   } catch (error) {
-    showError(error, 'Không thể xóa công thức.')
+    showError(error, 'The recipe could not be deleted.')
   } finally {
     actionId.value = ''
   }
@@ -256,14 +256,14 @@ async function approveRecipe(recipe) {
   actionId.value = `approve-${recipe.id}`
   try {
     await approveAdminRecipe(recipe.id)
-    uiStore.setSuccess(`Đã duyệt "${recipe.title}".`)
+    uiStore.setSuccess(`Approved "${recipe.title}".`)
     await Promise.all([
       loadRecipes(recipePagination.currentPage),
       loadPending(pendingPagination.currentPage),
       loadStats({ silent: true }),
     ])
   } catch (error) {
-    showError(error, 'Không thể duyệt công thức.')
+    showError(error, 'The recipe could not be approved.')
   } finally {
     actionId.value = ''
   }
@@ -277,7 +277,7 @@ function startReject(recipe) {
 async function rejectRecipe(recipe) {
   const reason = String(rejectionReasons[recipe.id] || '').trim()
   if (!reason) {
-    uiStore.setError('Vui lòng nhập lý do từ chối.')
+    uiStore.setError('Enter a rejection reason.')
     return
   }
 
@@ -286,22 +286,22 @@ async function rejectRecipe(recipe) {
     await rejectAdminRecipe(recipe.id, reason)
     rejectingRecipeId.value = null
     rejectionReasons[recipe.id] = ''
-    uiStore.setSuccess(`Đã từ chối "${recipe.title}".`)
+    uiStore.setSuccess(`Rejected "${recipe.title}".`)
     await Promise.all([
       loadRecipes(recipePagination.currentPage),
       loadPending(pendingPagination.currentPage),
       loadStats({ silent: true }),
     ])
   } catch (error) {
-    showError(error, 'Không thể từ chối công thức.')
+    showError(error, 'The recipe could not be rejected.')
   } finally {
     actionId.value = ''
   }
 }
 
 async function toggleBan(user) {
-  const action = user.is_banned ? 'bỏ cấm' : 'cấm'
-  if (!window.confirm(`Xác nhận ${action} tài khoản "${user.username}"?`)) {
+  const action = user.is_banned ? 'unban' : 'ban'
+  if (!window.confirm(`Confirm that you want to ${action} the account "${user.username}"?`)) {
     return
   }
 
@@ -319,7 +319,7 @@ async function toggleBan(user) {
       loadStats({ silent: true }),
     ])
   } catch (error) {
-    showError(error, 'Không thể cập nhật trạng thái tài khoản.')
+    showError(error, 'The account status could not be updated.')
   } finally {
     actionId.value = ''
   }
@@ -328,7 +328,7 @@ async function toggleBan(user) {
 async function changeRole(user) {
   const role = roleDrafts[user.id]
   if (role === user.role) return
-  if (!window.confirm(`Đổi role của "${user.username}" thành ${role}?`)) {
+  if (!window.confirm(`Change the role of "${user.username}" to ${role}?`)) {
     roleDrafts[user.id] = user.role
     return
   }
@@ -337,31 +337,31 @@ async function changeRole(user) {
   try {
     await updateAdminUserRole(user.id, role)
     user.role = role
-    uiStore.setSuccess('Đã cập nhật role người dùng.')
+    uiStore.setSuccess('The user role was updated.')
     await loadStats({ silent: true })
   } catch (error) {
     roleDrafts[user.id] = user.role
-    showError(error, 'Không thể cập nhật role.')
+    showError(error, 'The role could not be updated.')
   } finally {
     actionId.value = ''
   }
 }
 
 async function removeComment(comment) {
-  if (!window.confirm(`Xóa bình luận của "${comment.username}"?`)) {
+  if (!window.confirm(`Delete the comment from "${comment.username}"?`)) {
     return
   }
 
   actionId.value = `comment-${comment.id}`
   try {
     await deleteAdminComment(comment.id)
-    uiStore.setSuccess('Đã xóa bình luận.')
+    uiStore.setSuccess('The comment was deleted.')
     await Promise.all([
       loadComments(commentPagination.currentPage),
       loadStats({ silent: true }),
     ])
   } catch (error) {
-    showError(error, 'Không thể xóa bình luận.')
+    showError(error, 'The comment could not be deleted.')
   } finally {
     actionId.value = ''
   }
@@ -378,12 +378,12 @@ onMounted(() => {
       <div>
         <p class="admin-eyebrow">FoodStory Control Center</p>
         <h1>Admin Dashboard</h1>
-        <p>Quản lý nội dung, người dùng và hoạt động kiểm duyệt.</p>
+        <p>Manage content, users, and moderation activity.</p>
       </div>
       <div class="admin-welcome">
-        <span>Đang đăng nhập</span>
+        <span>Signed in</span>
         <strong>{{ authStore.user?.username }}</strong>
-        <small>{{ formatNumber(adminStore.stats.total_admins) }} quản trị viên</small>
+        <small>{{ formatNumber(adminStore.stats.total_admins) }} administrators</small>
       </div>
     </header>
 
@@ -411,12 +411,12 @@ onMounted(() => {
         <section v-if="activeSection === 'overview'" class="admin-section">
           <div class="admin-section-heading">
             <div>
-              <p>Tổng quan</p>
-              <h2>Hoạt động FoodStory</h2>
+              <p>Overview</p>
+              <h2>FoodStory Activity</h2>
             </div>
             <button type="button" :disabled="adminStore.loading" @click="loadStats()">
               <AppIcon name="sparkles" size="16" />
-              Làm mới
+              Refresh
             </button>
           </div>
 
@@ -438,11 +438,11 @@ onMounted(() => {
           <div v-else class="activity-grid">
             <article class="activity-card">
               <header>
-                <span><AppIcon name="clock" size="17" /> Chờ duyệt mới nhất</span>
-                <button type="button" @click="setSection('pending')">Xem tất cả</button>
+                <span><AppIcon name="clock" size="17" /> Latest pending submissions</span>
+                <button type="button" @click="setSection('pending')">View all</button>
               </header>
               <div v-if="adminStore.recent.pending_recipes.length === 0" class="activity-empty">
-                Không có công thức chờ duyệt.
+                There are no recipes awaiting review.
               </div>
               <button
                 v-for="recipe in adminStore.recent.pending_recipes"
@@ -453,7 +453,7 @@ onMounted(() => {
               >
                 <span>
                   <strong>{{ recipe.title }}</strong>
-                  <small>{{ recipe.submitter_name || 'Hệ thống' }}</small>
+                  <small>{{ recipe.submitter_name || 'System' }}</small>
                 </span>
                 <time>{{ formatDate(recipe.created_at) }}</time>
               </button>
@@ -461,11 +461,11 @@ onMounted(() => {
 
             <article class="activity-card">
               <header>
-                <span><AppIcon name="message" size="17" /> Bình luận gần đây</span>
-                <button type="button" @click="setSection('comments')">Quản lý</button>
+                <span><AppIcon name="message" size="17" /> Recent comments</span>
+                <button type="button" @click="setSection('comments')">Manage</button>
               </header>
               <div v-if="adminStore.recent.comments.length === 0" class="activity-empty">
-                Chưa có bình luận.
+                There are no comments yet.
               </div>
               <div
                 v-for="comment in adminStore.recent.comments"
@@ -482,11 +482,11 @@ onMounted(() => {
 
             <article class="activity-card">
               <header>
-                <span><AppIcon name="users" size="17" /> Người dùng mới</span>
-                <button type="button" @click="setSection('users')">Quản lý</button>
+                <span><AppIcon name="users" size="17" /> New users</span>
+                <button type="button" @click="setSection('users')">Manage</button>
               </header>
               <div v-if="adminStore.recent.users.length === 0" class="activity-empty">
-                Chưa có người dùng.
+                There are no users yet.
               </div>
               <div
                 v-for="user in adminStore.recent.users"
@@ -505,74 +505,74 @@ onMounted(() => {
 
         <section v-else-if="activeSection === 'recipes'" class="admin-section">
           <div class="admin-section-heading">
-            <div><p>Quản lý</p><h2>Công Thức</h2></div>
+            <div><p>Manage</p><h2>Recipes</h2></div>
             <button type="button" class="primary" @click="router.push('/recipes/new')">
-              <AppIcon name="pen" size="16" /> Tạo Recipe Mới
+              <AppIcon name="pen" size="16" /> Create New Recipe
             </button>
           </div>
 
           <form class="admin-toolbar" @submit.prevent="loadRecipes(1)">
-            <input v-model="recipeFilters.search" type="search" maxlength="120" placeholder="Tìm công thức..." />
+            <input v-model="recipeFilters.search" type="search" maxlength="120" placeholder="Search recipes..." />
             <select v-model="recipeFilters.status">
-              <option value="">Tất cả trạng thái</option>
-              <option value="approved">Đã duyệt</option>
-              <option value="pending">Chờ duyệt</option>
-              <option value="rejected">Từ chối</option>
+              <option value="">All statuses</option>
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+              <option value="rejected">Rejected</option>
             </select>
-            <button type="submit">Tìm</button>
+            <button type="submit">Search</button>
           </form>
 
           <div class="table-shell">
             <table class="admin-table">
               <thead>
-                <tr><th>ID</th><th>Tên Công Thức</th><th>Danh Mục</th><th>Người gửi</th><th>Trạng Thái</th><th>Rating</th><th>Actions</th></tr>
+                <tr><th>ID</th><th>Recipe Name</th><th>Category</th><th>Submitted By</th><th>Status</th><th>Rating</th><th>Actions</th></tr>
               </thead>
               <tbody>
-                <tr v-if="loading.recipes"><td colspan="7" class="table-message">Đang tải...</td></tr>
-                <tr v-else-if="recipes.length === 0"><td colspan="7" class="table-message">Không có công thức phù hợp.</td></tr>
+                <tr v-if="loading.recipes"><td colspan="7" class="table-message">Loading...</td></tr>
+                <tr v-else-if="recipes.length === 0"><td colspan="7" class="table-message">No matching recipes found.</td></tr>
                 <tr v-for="recipe in recipes" v-else :key="recipe.id">
                   <td>#{{ recipe.id }}</td>
                   <td class="title-cell"><strong>{{ recipe.title }}</strong><small>{{ formatDate(recipe.created_at) }}</small></td>
                   <td>{{ recipe.category_name }}</td>
-                  <td>{{ recipe.submitter_name || 'Hệ thống' }}</td>
+                  <td>{{ recipe.submitter_name || 'System' }}</td>
                   <td><span :class="['status-pill', recipe.status]">{{ statusLabel(recipe.status) }}</span></td>
                   <td>{{ recipe.rating_count ? `${recipe.avg_rating.toFixed(1)} ★` : '—' }}</td>
                   <td>
                     <div class="action-row">
-                      <button class="btn-action btn-edit" type="button" @click="router.push(`/recipes/${recipe.id}/edit`)">Sửa</button>
-                      <button class="btn-action btn-delete" type="button" :disabled="actionId === `delete-recipe-${recipe.id}`" @click="removeRecipe(recipe)">Xóa</button>
-                      <button v-if="recipe.status === 'pending'" class="btn-action btn-approve" type="button" :disabled="Boolean(actionId)" @click="approveRecipe(recipe)">Duyệt</button>
-                      <button v-if="recipe.status === 'pending'" class="btn-action btn-reject" type="button" :disabled="Boolean(actionId)" @click="startReject(recipe)">Từ Chối</button>
+                      <button class="btn-action btn-edit" type="button" @click="router.push(`/recipes/${recipe.id}/edit`)">Edit</button>
+                      <button class="btn-action btn-delete" type="button" :disabled="actionId === `delete-recipe-${recipe.id}`" @click="removeRecipe(recipe)">Delete</button>
+                      <button v-if="recipe.status === 'pending'" class="btn-action btn-approve" type="button" :disabled="Boolean(actionId)" @click="approveRecipe(recipe)">Approve</button>
+                      <button v-if="recipe.status === 'pending'" class="btn-action btn-reject" type="button" :disabled="Boolean(actionId)" @click="startReject(recipe)">Reject</button>
                     </div>
                     <form v-if="rejectingRecipeId === recipe.id" class="reject-form" @submit.prevent="rejectRecipe(recipe)">
-                      <input v-model="rejectionReasons[recipe.id]" maxlength="500" placeholder="Lý do từ chối..." />
-                      <button type="submit" :disabled="actionId === `reject-${recipe.id}`">Xác nhận</button>
-                      <button type="button" @click="rejectingRecipeId = null">Hủy</button>
+                      <input v-model="rejectionReasons[recipe.id]" maxlength="500" placeholder="Rejection reason..." />
+                      <button type="submit" :disabled="actionId === `reject-${recipe.id}`">Confirm</button>
+                      <button type="button" @click="rejectingRecipeId = null">Cancel</button>
                     </form>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <nav class="admin-pagination"><button :disabled="recipePagination.currentPage <= 1" @click="loadRecipes(recipePagination.currentPage - 1)">Trước</button><span>Trang {{ recipePagination.currentPage }} / {{ recipePagination.totalPages }}</span><button :disabled="recipePagination.currentPage >= recipePagination.totalPages" @click="loadRecipes(recipePagination.currentPage + 1)">Sau</button></nav>
+          <nav class="admin-pagination"><button :disabled="recipePagination.currentPage <= 1" @click="loadRecipes(recipePagination.currentPage - 1)">Previous</button><span>Page {{ recipePagination.currentPage }} / {{ recipePagination.totalPages }}</span><button :disabled="recipePagination.currentPage >= recipePagination.totalPages" @click="loadRecipes(recipePagination.currentPage + 1)">Next</button></nav>
         </section>
 
         <section v-else-if="activeSection === 'users'" class="admin-section">
-          <div class="admin-section-heading"><div><p>Quản lý</p><h2>Người Dùng</h2></div><span>{{ formatNumber(userPagination.totalItems) }} tài khoản</span></div>
+          <div class="admin-section-heading"><div><p>Manage</p><h2>Users</h2></div><span>{{ formatNumber(userPagination.totalItems) }} accounts</span></div>
           <form class="admin-toolbar" @submit.prevent="loadUsers(1)">
-            <input v-model="userFilters.search" type="search" maxlength="120" placeholder="Tìm username hoặc email..." />
-            <select v-model="userFilters.role"><option value="">Tất cả role</option><option value="admin">Admin</option><option value="user">User</option></select>
-            <button type="submit">Tìm</button>
+            <input v-model="userFilters.search" type="search" maxlength="120" placeholder="Search username or email..." />
+            <select v-model="userFilters.role"><option value="">All roles</option><option value="admin">Admin</option><option value="user">User</option></select>
+            <button type="submit">Search</button>
           </form>
           <div class="table-shell">
             <table class="admin-table">
               <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Recipes</th><th>Comments</th><th>Actions</th></tr></thead>
               <tbody>
-                <tr v-if="loading.users"><td colspan="7" class="table-message">Đang tải...</td></tr>
-                <tr v-else-if="users.length === 0"><td colspan="7" class="table-message">Không có người dùng phù hợp.</td></tr>
+                <tr v-if="loading.users"><td colspan="7" class="table-message">Loading...</td></tr>
+                <tr v-else-if="users.length === 0"><td colspan="7" class="table-message">No matching users found.</td></tr>
                 <tr v-for="user in users" v-else :key="user.id" :class="{ 'row-banned': user.is_banned }">
                   <td>#{{ user.id }}</td>
-                  <td class="title-cell"><strong>{{ user.username }}</strong><small v-if="user.is_banned">Tài khoản bị cấm</small></td>
+                  <td class="title-cell"><strong>{{ user.username }}</strong><small v-if="user.is_banned">Banned account</small></td>
                   <td>{{ user.email }}</td>
                   <td><span :class="['role-pill', user.role]">{{ user.role }}</span></td>
                   <td>{{ user.recipe_count }}</td><td>{{ user.comment_count }}</td>
@@ -580,69 +580,69 @@ onMounted(() => {
                     <div class="user-actions">
                       <button class="btn-action btn-ban" type="button" :disabled="user.id === authStore.user?.id || Boolean(actionId)" @click="toggleBan(user)">{{ user.is_banned ? 'Unban' : 'Ban' }}</button>
                       <select v-model="roleDrafts[user.id]" :disabled="user.id === authStore.user?.id || Boolean(actionId)"><option value="user">user</option><option value="admin">admin</option></select>
-                      <button class="btn-action btn-edit" type="button" :disabled="user.id === authStore.user?.id || roleDrafts[user.id] === user.role || Boolean(actionId)" @click="changeRole(user)">Đổi Role</button>
+                      <button class="btn-action btn-edit" type="button" :disabled="user.id === authStore.user?.id || roleDrafts[user.id] === user.role || Boolean(actionId)" @click="changeRole(user)">Change Role</button>
                     </div>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <nav class="admin-pagination"><button :disabled="userPagination.currentPage <= 1" @click="loadUsers(userPagination.currentPage - 1)">Trước</button><span>Trang {{ userPagination.currentPage }} / {{ userPagination.totalPages }}</span><button :disabled="userPagination.currentPage >= userPagination.totalPages" @click="loadUsers(userPagination.currentPage + 1)">Sau</button></nav>
+          <nav class="admin-pagination"><button :disabled="userPagination.currentPage <= 1" @click="loadUsers(userPagination.currentPage - 1)">Previous</button><span>Page {{ userPagination.currentPage }} / {{ userPagination.totalPages }}</span><button :disabled="userPagination.currentPage >= userPagination.totalPages" @click="loadUsers(userPagination.currentPage + 1)">Next</button></nav>
         </section>
 
         <section v-else-if="activeSection === 'comments'" class="admin-section">
-          <div class="admin-section-heading"><div><p>Quản lý</p><h2>Bình Luận</h2></div><span>{{ formatNumber(commentPagination.totalItems) }} bình luận</span></div>
-          <form class="admin-toolbar single" @submit.prevent="loadComments(1)"><input v-model="commentFilters.search" type="search" maxlength="120" placeholder="Tìm nội dung, user hoặc recipe..." /><button type="submit">Tìm</button></form>
+          <div class="admin-section-heading"><div><p>Manage</p><h2>Comments</h2></div><span>{{ formatNumber(commentPagination.totalItems) }} comments</span></div>
+          <form class="admin-toolbar single" @submit.prevent="loadComments(1)"><input v-model="commentFilters.search" type="search" maxlength="120" placeholder="Search content, user, or recipe..." /><button type="submit">Search</button></form>
           <div class="table-shell">
             <table class="admin-table">
-              <thead><tr><th>ID</th><th>User</th><th>Recipe</th><th>Comment</th><th>Ngày</th><th>Actions</th></tr></thead>
+              <thead><tr><th>ID</th><th>User</th><th>Recipe</th><th>Comment</th><th>Date</th><th>Actions</th></tr></thead>
               <tbody>
-                <tr v-if="loading.comments"><td colspan="6" class="table-message">Đang tải...</td></tr>
-                <tr v-else-if="comments.length === 0"><td colspan="6" class="table-message">Không có bình luận phù hợp.</td></tr>
+                <tr v-if="loading.comments"><td colspan="6" class="table-message">Loading...</td></tr>
+                <tr v-else-if="comments.length === 0"><td colspan="6" class="table-message">No matching comments found.</td></tr>
                 <tr v-for="comment in comments" v-else :key="comment.id">
                   <td>#{{ comment.id }}</td><td>{{ comment.username }}</td>
                   <td><button class="table-link" type="button" @click="router.push(`/recipes/${comment.recipe_id}`)">{{ comment.recipe_title }}</button></td>
                   <td :title="comment.content">{{ truncate(comment.content) }}</td><td>{{ formatDate(comment.created_at) }}</td>
-                  <td><button class="btn-action btn-delete" type="button" :disabled="actionId === `comment-${comment.id}`" @click="removeComment(comment)">Xóa</button></td>
+                  <td><button class="btn-action btn-delete" type="button" :disabled="actionId === `comment-${comment.id}`" @click="removeComment(comment)">Delete</button></td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <nav class="admin-pagination"><button :disabled="commentPagination.currentPage <= 1" @click="loadComments(commentPagination.currentPage - 1)">Trước</button><span>Trang {{ commentPagination.currentPage }} / {{ commentPagination.totalPages }}</span><button :disabled="commentPagination.currentPage >= commentPagination.totalPages" @click="loadComments(commentPagination.currentPage + 1)">Sau</button></nav>
+          <nav class="admin-pagination"><button :disabled="commentPagination.currentPage <= 1" @click="loadComments(commentPagination.currentPage - 1)">Previous</button><span>Page {{ commentPagination.currentPage }} / {{ commentPagination.totalPages }}</span><button :disabled="commentPagination.currentPage >= commentPagination.totalPages" @click="loadComments(commentPagination.currentPage + 1)">Next</button></nav>
         </section>
 
         <section v-else class="admin-section">
-          <div class="admin-section-heading"><div><p>Kiểm duyệt</p><h2>Công Thức Chờ Duyệt</h2></div><span class="pending-count">{{ formatNumber(pendingPagination.totalItems) }} đang chờ</span></div>
-          <div v-if="loading.pending" class="admin-empty">Đang tải danh sách kiểm duyệt...</div>
-          <div v-else-if="pendingRecipes.length === 0" class="admin-empty">Không có công thức chờ duyệt.</div>
+          <div class="admin-section-heading"><div><p>Moderation</p><h2>Recipes Pending Review</h2></div><span class="pending-count">{{ formatNumber(pendingPagination.totalItems) }} pending</span></div>
+          <div v-if="loading.pending" class="admin-empty">Loading the moderation queue...</div>
+          <div v-else-if="pendingRecipes.length === 0" class="admin-empty">There are no recipes awaiting review.</div>
           <div v-else class="pending-list">
             <article v-for="recipe in pendingRecipes" :key="recipe.id" class="pending-card">
               <img :src="recipe.image_url || '/images/food-placeholder.jpg'" :alt="recipe.title" @error="$event.currentTarget.src = '/images/food-placeholder.jpg'" />
               <div class="pending-body">
                 <div class="pending-meta"><span>{{ recipe.category_name }}</span><time>{{ formatDate(recipe.created_at) }}</time></div>
                 <h3>{{ recipe.title }}</h3>
-                <p>{{ recipe.description || 'Chưa có mô tả.' }}</p>
+                <p>{{ recipe.description || 'No description available.' }}</p>
                 <dl>
-                  <div><dt>Người gửi</dt><dd>{{ recipe.submitter_name || 'Hệ thống' }}<small>{{ recipe.submitter_email }}</small></dd></div>
-                  <div><dt>Thời gian</dt><dd>{{ Number(recipe.prep_time || 0) + Number(recipe.cook_time || 0) }} phút · {{ recipe.servings || '?' }} người</dd></div>
-                  <div><dt>Tags</dt><dd>{{ recipe.tag_names || 'Không có' }}</dd></div>
-                  <div class="wide"><dt>Nguyên liệu</dt><dd class="pre-line">{{ recipe.ingredient_summary || 'Chưa có nguyên liệu.' }}</dd></div>
-                  <div class="wide"><dt>Hướng dẫn</dt><dd class="pre-line">{{ recipe.instructions }}</dd></div>
+                  <div><dt>Submitted by</dt><dd>{{ recipe.submitter_name || 'System' }}<small>{{ recipe.submitter_email }}</small></dd></div>
+                  <div><dt>Time</dt><dd>{{ Number(recipe.prep_time || 0) + Number(recipe.cook_time || 0) }} minutes · {{ recipe.servings || '?' }} servings</dd></div>
+                  <div><dt>Tags</dt><dd>{{ recipe.tag_names || 'None' }}</dd></div>
+                  <div class="wide"><dt>Ingredients</dt><dd class="pre-line">{{ recipe.ingredient_summary || 'No ingredients available.' }}</dd></div>
+                  <div class="wide"><dt>Instructions</dt><dd class="pre-line">{{ recipe.instructions }}</dd></div>
                 </dl>
                 <div class="pending-actions">
-                  <button class="btn-action btn-approve" type="button" :disabled="Boolean(actionId)" @click="approveRecipe(recipe)">Duyệt</button>
-                  <button class="btn-action btn-reject" type="button" :disabled="Boolean(actionId)" @click="startReject(recipe)">Từ Chối</button>
-                  <button class="btn-action btn-edit" type="button" @click="router.push(`/recipes/${recipe.id}/edit`)">Xem / Sửa</button>
+                  <button class="btn-action btn-approve" type="button" :disabled="Boolean(actionId)" @click="approveRecipe(recipe)">Approve</button>
+                  <button class="btn-action btn-reject" type="button" :disabled="Boolean(actionId)" @click="startReject(recipe)">Reject</button>
+                  <button class="btn-action btn-edit" type="button" @click="router.push(`/recipes/${recipe.id}/edit`)">View / Edit</button>
                 </div>
                 <form v-if="rejectingRecipeId === recipe.id" class="reject-form pending-reject" @submit.prevent="rejectRecipe(recipe)">
-                  <input v-model="rejectionReasons[recipe.id]" maxlength="500" placeholder="Lý do từ chối bắt buộc..." />
-                  <button type="submit" :disabled="actionId === `reject-${recipe.id}`">Xác nhận từ chối</button>
-                  <button type="button" @click="rejectingRecipeId = null">Hủy</button>
+                  <input v-model="rejectionReasons[recipe.id]" maxlength="500" placeholder="A rejection reason is required..." />
+                  <button type="submit" :disabled="actionId === `reject-${recipe.id}`">Confirm rejection</button>
+                  <button type="button" @click="rejectingRecipeId = null">Cancel</button>
                 </form>
               </div>
             </article>
           </div>
-          <nav class="admin-pagination"><button :disabled="pendingPagination.currentPage <= 1" @click="loadPending(pendingPagination.currentPage - 1)">Trước</button><span>Trang {{ pendingPagination.currentPage }} / {{ pendingPagination.totalPages }}</span><button :disabled="pendingPagination.currentPage >= pendingPagination.totalPages" @click="loadPending(pendingPagination.currentPage + 1)">Sau</button></nav>
+          <nav class="admin-pagination"><button :disabled="pendingPagination.currentPage <= 1" @click="loadPending(pendingPagination.currentPage - 1)">Previous</button><span>Page {{ pendingPagination.currentPage }} / {{ pendingPagination.totalPages }}</span><button :disabled="pendingPagination.currentPage >= pendingPagination.totalPages" @click="loadPending(pendingPagination.currentPage + 1)">Next</button></nav>
         </section>
       </div>
     </div>
@@ -979,7 +979,8 @@ button.activity-row:hover,
 
 @media (max-width: 760px) {
   .admin-sidebar {
-    top: var(--nav-height);
+    top: 65px;
+    z-index: 30;
     min-height: 0;
     border-color: var(--admin-border);
     background: var(--admin-surface-soft);

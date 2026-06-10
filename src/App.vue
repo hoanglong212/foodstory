@@ -16,23 +16,23 @@ const router = useRouter()
 
 const navItems = computed(() => {
   const baseItems = [
-    { to: '/', label: 'Trang Chủ', icon: 'home' },
-    { to: '/news', label: 'Tin Tức', icon: 'newspaper' },
-    { to: '/about', label: 'Về Chúng Tôi', icon: 'users' },
-    { to: '/recipes', label: 'Công Thức', icon: 'book-open' },
+    { to: '/', label: 'Home', icon: 'home' },
+    { to: '/news', label: 'News', icon: 'newspaper' },
+    { to: '/about', label: 'About Us', icon: 'users' },
+    { to: '/recipes', label: 'Recipes', icon: 'book-open' },
   ]
 
   if (!authStore.isLoggedIn) {
     return [
       ...baseItems,
-      { to: '/login', label: 'Đăng Nhập', icon: 'users' },
-      { to: '/register', label: 'Đăng Ký', icon: 'send' },
+      { to: '/login', label: 'Login', icon: 'users' },
+      { to: '/register', label: 'Register', icon: 'send' },
     ]
   }
 
   return [
     ...baseItems,
-    { to: '/food-map', label: 'Bản Đồ Ẩm Thực', icon: 'map-pin' },
+    { to: '/food-map', label: 'Food Map', icon: 'map-pin' },
     ...(authStore.isAdmin
       ? [
           {
@@ -43,7 +43,7 @@ const navItems = computed(() => {
           },
         ]
       : []),
-    { to: '/profile', label: 'Hồ Sơ', icon: 'chef-hat' },
+    { to: '/profile', label: 'Profile', icon: 'chef-hat' },
   ]
 })
 
@@ -54,10 +54,10 @@ const socialLinks = [
 ]
 
 const footerCategories = [
-  { label: 'Ẩm Thực Việt', value: 'Ẩm Thực Việt' },
-  { label: 'Đường Phố', value: 'Đường Phố' },
-  { label: 'Công Thức', value: 'Công Thức' },
-  { label: 'Xu Hướng', value: 'Xu Hướng' },
+  { label: 'Vietnamese Cuisine', value: 'Vietnamese Cuisine' },
+  { label: 'Street Food', value: 'Street Food' },
+  { label: 'Recipes', value: 'Recipes' },
+  { label: 'Trends', value: 'Trends' },
 ]
 
 const isDark = computed(() => uiStore.darkMode)
@@ -91,7 +91,7 @@ async function logout() {
 }
 
 function handleAuthExpired(event) {
-  const message = event.detail?.message || 'Phiên đăng nhập đã hết hạn'
+  const message = event.detail?.message || 'Your login session has expired.'
   authStore.clearAuth(message)
   uiStore.setError(message)
 
@@ -297,14 +297,14 @@ watch(
           @click="toggleTheme"
         >
           <AppIcon :name="isDark ? 'moon' : 'sun'" size="18" />
-          <span class="sr-only">{{ isDark ? 'Chế độ tối' : 'Chế độ sáng' }}</span>
+          <span class="sr-only">{{ isDark ? 'Dark mode' : 'Light mode' }}</span>
         </button>
         <button
           class="mobile-menu-toggle"
           type="button"
           :aria-expanded="isMobileNavOpen"
           aria-controls="primary-navigation"
-          :aria-label="isMobileNavOpen ? 'Đóng menu điều hướng' : 'Mở menu điều hướng'"
+          :aria-label="isMobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'"
           @click="toggleMobileNav"
         >
           <AppIcon :name="isMobileNavOpen ? 'x' : 'menu'" size="20" />
@@ -333,7 +333,7 @@ watch(
             </span>
             <span>FoodStory</span>
           </RouterLink>
-          <p>"Khám phá ẩm thực, lưu giữ kỷ niệm"</p>
+          <p>"Discover food, preserve memories"</p>
           <div class="social-row" aria-label="Social links">
             <a
               v-for="social in socialLinks"
@@ -349,14 +349,14 @@ watch(
         </div>
 
         <div>
-          <h2>Khám Phá</h2>
-          <RouterLink to="/">Trang Chủ</RouterLink>
-          <RouterLink to="/news">Tin Tức Ẩm Thực</RouterLink>
-          <RouterLink to="/about">Về FoodStory</RouterLink>
+          <h2>Explore</h2>
+          <RouterLink to="/">Home</RouterLink>
+          <RouterLink to="/news">Food News</RouterLink>
+          <RouterLink to="/about">About FoodStory</RouterLink>
         </div>
 
         <div>
-          <h2>Danh Mục</h2>
+          <h2>Categories</h2>
           <RouterLink
             v-for="category in footerCategories"
             :key="category.value"
@@ -367,28 +367,28 @@ watch(
         </div>
 
         <div>
-          <h2>Liên Hệ</h2>
-          <p>Có câu hỏi, địa điểm hay công thức muốn chia sẻ với FoodStory?</p>
+          <h2>Contact</h2>
+          <p>Have a question, place, or recipe to share with FoodStory?</p>
           <div class="footer-contact-list">
             <span>
               <AppIcon name="map-pin" size="17" />
-              TP. Hồ Chí Minh, Việt Nam
+              Ho Chi Minh City, Vietnam
             </span>
             <span>
               <AppIcon name="clock" size="17" />
-              Phản hồi trong 24 giờ
+              Replies within 24 hours
             </span>
           </div>
           <a class="footer-email" href="mailto:hello@foodstory.vn">hello@foodstory.vn</a>
           <RouterLink class="footer-submit" to="/about">
             <AppIcon name="send" size="16" />
-            Gửi câu chuyện ẩm thực
+            Share a food story
           </RouterLink>
         </div>
       </section>
 
       <div class="footer-bottom">
-        <span>© 2026 FoodStory. Đồ án Sinh Viên - Giai Đoạn 2.</span>
+        <span>© 2026 FoodStory. Student Project - Stage 2.</span>
         <span>Built with Vue, Vite, Pinia, Express and MySQL</span>
       </div>
     </footer>
