@@ -12,8 +12,11 @@ import checklistRoutes from './routes/checklistRoutes.js'
 import foodSpotsRoutes from './routes/foodSpots.js'
 import restaurantsRoutes from './routes/restaurants.js'
 import chatbotRoutes from './routes/chatbot.js'
+import foodStoryChatbotRoutes from './routes/chatbotRoutes.js'
 import adminRoutes from './routes/admin.js'
 import pool from './db.js'
+import aiRoutes from './routes/aiRoutes.js'
+
 import { initWebSocketServer } from './websocket/wsServer.js'
 
 const app = express()
@@ -83,6 +86,8 @@ app.use('/api/food-spots', foodSpotsRoutes)
 app.use('/api/restaurants', restaurantsRoutes)
 app.use('/api/chatbot', chatbotRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/ai', aiRoutes)
+app.use('/api/chatbot', foodStoryChatbotRoutes)
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found.' })
