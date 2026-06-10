@@ -42,7 +42,7 @@ export const useAdminStore = defineStore('admin', {
         }
         return response.data
       } catch (error) {
-        this.error = getApiError(error, 'Không thể tải thống kê quản trị.')
+        this.error = getApiError(error, 'Admin statistics could not be loaded.')
         if (!options.silent) {
           throw new Error(this.error)
         }

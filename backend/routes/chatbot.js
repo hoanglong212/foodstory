@@ -52,11 +52,11 @@ router.post('/', optionalAuth, async (req, res, next) => {
     const message = typeof req.body?.message === 'string' ? req.body.message.trim() : ''
 
     if (!message) {
-      return res.status(400).json({ error: 'Vui lòng nhập câu hỏi cho FoodBot.' })
+      return res.status(400).json({ error: 'Enter a question for FoodBot.' })
     }
     if (message.length > MAX_MESSAGE_LENGTH) {
       return res.status(400).json({
-        error: `Câu hỏi không được vượt quá ${MAX_MESSAGE_LENGTH} ký tự.`,
+        error: `The question cannot exceed ${MAX_MESSAGE_LENGTH} characters.`,
       })
     }
 
@@ -70,9 +70,9 @@ router.post('/', optionalAuth, async (req, res, next) => {
       return res.json({
         type: 'unknown',
         message:
-          'Mình chưa hiểu câu hỏi của bạn. Thử hỏi kiểu: "phở ngon quận 1" hoặc "công thức bánh mì" nhé!',
+          'I did not understand that question. Try asking "best pho in District 1" or "banh mi recipe".',
         results: [],
-        suggestions: ['Phở ngon ở Quận 1', 'Quán rẻ Bình Thạnh', 'Công thức bánh mì'],
+        suggestions: ['Best pho in District 1', 'Affordable restaurants in Binh Thanh', 'Banh mi recipe'],
       })
     }
 
@@ -81,9 +81,9 @@ router.post('/', optionalAuth, async (req, res, next) => {
     if (wantsOnlyPersonalSpots && !req.user) {
       return res.json({
         type: 'spots',
-        message: 'Bạn cần đăng nhập để xem địa điểm đã lưu nhé!',
+        message: 'You need to log in to view saved places.',
         results: [],
-        suggestions: ['Đăng nhập', 'Tìm quán ăn'],
+        suggestions: ['Log in', 'Find restaurants'],
       })
     }
 

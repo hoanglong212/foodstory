@@ -16,7 +16,7 @@ const displayDate = computed(() => {
     return ''
   }
 
-  return new Intl.DateTimeFormat('vi-VN', {
+  return new Intl.DateTimeFormat('en-US', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -70,7 +70,7 @@ onBeforeUnmount(() => {
   <section class="news-detail page-pad">
     <RouterLink class="text-link back-link" to="/news">
       <AppIcon name="arrow-left" size="16" />
-      <span>Quay lại Tin Tức</span>
+      <span>Back to News</span>
     </RouterLink>
 
     <p v-if="isLoading" class="status-panel">Loading news...</p>
@@ -98,9 +98,9 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-else class="empty-state">
-      Không tìm thấy bài viết này.
+      This article could not be found.
       <RouterLink class="text-link" to="/news">
-        <span>Xem lại danh sách tin tức</span>
+        <span>Return to the news list</span>
         <AppIcon name="arrow-right" size="16" />
       </RouterLink>
     </div>

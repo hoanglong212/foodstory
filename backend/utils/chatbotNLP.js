@@ -1,135 +1,106 @@
 export const INTENTS = {
   FIND_RESTAURANT: [
-    'tìm',
-    'quán',
-    'nhà hàng',
-    'ăn ở đâu',
-    'gợi ý',
+    'find',
+    'restaurant',
+    'where to eat',
+    'suggest',
     'recommend',
-    'chỗ ăn',
-    'địa điểm',
+    'place to eat',
+    'food place',
   ],
-  FIND_RECIPE: ['công thức', 'nấu', 'recipe', 'cách làm', 'nguyên liệu', 'món'],
-  FIND_SPOT: ['điểm của tôi', 'địa điểm của tôi', 'đã lưu', 'spot', 'tôi đã ăn', 'lịch sử'],
+  FIND_RECIPE: ['recipe', 'cook', 'how to make', 'ingredients', 'dish'],
+  FIND_SPOT: ['my places', 'saved places', 'saved spot', 'spot', 'places i visited', 'history'],
   TOP_RATED: [
-    'ngon nhất',
-    'tốt nhất',
+    'best',
+    'top rated',
     'hot',
-    'nổi tiếng',
-    'rating cao',
-    'được đánh giá cao',
+    'popular',
+    'high rating',
+    'highly rated',
   ],
-  CHEAP: ['rẻ', 'bình dân', 'giá rẻ', 'tiết kiệm', 'không đắt'],
+  CHEAP: ['cheap', 'affordable', 'budget', 'inexpensive'],
   NEARBY_DISTRICT: [],
 }
 
 export const DISTRICTS = {
-  'quận 1': 'Quận 1',
-  'q.1': 'Quận 1',
-  q1: 'Quận 1',
-  'quận 2': 'Quận 2',
-  'q.2': 'Quận 2',
-  q2: 'Quận 2',
-  'quận 3': 'Quận 3',
-  'q.3': 'Quận 3',
-  q3: 'Quận 3',
-  'quận 4': 'Quận 4',
-  'q.4': 'Quận 4',
-  q4: 'Quận 4',
-  'quận 5': 'Quận 5',
-  'q.5': 'Quận 5',
-  q5: 'Quận 5',
-  'quận 6': 'Quận 6',
-  'q.6': 'Quận 6',
-  q6: 'Quận 6',
-  'quận 7': 'Quận 7',
-  'q.7': 'Quận 7',
-  q7: 'Quận 7',
-  'quận 8': 'Quận 8',
-  'q.8': 'Quận 8',
-  q8: 'Quận 8',
-  'quận 9': 'Thành phố Thủ Đức',
-  'q.9': 'Thành phố Thủ Đức',
-  q9: 'Thành phố Thủ Đức',
-  'quận 10': 'Quận 10',
-  'q.10': 'Quận 10',
-  q10: 'Quận 10',
-  'quận 11': 'Quận 11',
-  'q.11': 'Quận 11',
-  q11: 'Quận 11',
-  'quận 12': 'Quận 12',
-  'q.12': 'Quận 12',
-  q12: 'Quận 12',
-  'bình thạnh': 'Bình Thạnh',
-  'binh thanh': 'Bình Thạnh',
-  bthạnh: 'Bình Thạnh',
-  'gò vấp': 'Gò Vấp',
-  'go vap': 'Gò Vấp',
-  govap: 'Gò Vấp',
-  'tân bình': 'Tân Bình',
-  'tan binh': 'Tân Bình',
-  tanbình: 'Tân Bình',
-  'tân phú': 'Tân Phú',
-  'tan phu': 'Tân Phú',
-  'phú nhuận': 'Phú Nhuận',
-  'phu nhuan': 'Phú Nhuận',
-  'thủ đức': 'Thành phố Thủ Đức',
-  'thu duc': 'Thành phố Thủ Đức',
-  'bình chánh': 'Bình Chánh',
-  'binh chanh': 'Bình Chánh',
-  'nhà bè': 'Nhà Bè',
-  'nha be': 'Nhà Bè',
-  'củ chi': 'Củ Chi',
-  'cu chi': 'Củ Chi',
-  'hóc môn': 'Hóc Môn',
-  'hoc mon': 'Hóc Môn',
+  'district 1': 'District 1',
+  d1: 'District 1',
+  'district 2': 'District 2',
+  d2: 'District 2',
+  'district 3': 'District 3',
+  d3: 'District 3',
+  'district 4': 'District 4',
+  d4: 'District 4',
+  'district 5': 'District 5',
+  d5: 'District 5',
+  'district 6': 'District 6',
+  d6: 'District 6',
+  'district 7': 'District 7',
+  d7: 'District 7',
+  'district 8': 'District 8',
+  d8: 'District 8',
+  'district 9': 'District 9',
+  d9: 'District 9',
+  'district 10': 'District 10',
+  d10: 'District 10',
+  'district 11': 'District 11',
+  d11: 'District 11',
+  'district 12': 'District 12',
+  d12: 'District 12',
+  'binh thanh': 'Binh Thanh',
+  'binh tan': 'Binh Tan',
+  'go vap': 'Go Vap',
+  'tan binh': 'Tan Binh',
+  'tan phu': 'Tan Phu',
+  'phu nhuan': 'Phu Nhuan',
+  'thu duc': 'Thu Duc City',
+  'thu duc city': 'Thu Duc City',
+  'binh chanh': 'Binh Chanh',
+  'nha be': 'Nha Be',
+  'can gio': 'Can Gio',
+  'cu chi': 'Cu Chi',
+  'hoc mon': 'Hoc Mon',
 }
 
 export const FOOD_KEYWORDS = {
-  'bún bò': 'Bún Bò',
-  'cơm tấm': 'Cơm Tấm',
-  'bánh mì': 'Bánh Mì',
-  'hủ tiếu': 'Hủ Tiếu',
-  'hải sản': 'Hải Sản',
-  'bánh xèo': 'Bánh Xèo',
-  'bánh cuốn': 'Bánh Cuốn',
-  'cà phê': 'Café',
-  'nem nướng': 'Nem Nướng',
-  phở: 'Phở',
-  pho: 'Phở',
-  bún: 'Bún',
-  bun: 'Bún',
-  cơm: 'Cơm',
-  com: 'Cơm',
-  dimsum: 'Dimsum',
-  lẩu: 'Lẩu',
-  lau: 'Lẩu',
-  café: 'Café',
-  cafe: 'Café',
-  chè: 'Chè',
-  che: 'Chè',
-  bò: 'Bò',
-  gà: 'Gà Nướng',
-  ga: 'Gà Nướng',
-  ốc: 'Hải Sản',
-  nem: 'Nem Nướng',
+  'beef noodle soup': 'Beef Noodle Soup',
+  'broken rice': 'Broken Rice',
+  'banh mi': 'Banh Mi',
+  'hu tieu': 'Hu Tieu',
+  seafood: 'Seafood',
+  'savory pancake': 'Savory Pancakes',
+  'steamed rice rolls': 'Steamed Rice Rolls',
+  coffee: 'Cafe',
+  cafe: 'Cafe',
+  'grilled pork rolls': 'Grilled Pork Rolls',
+  pho: 'Pho',
+  noodles: 'Noodles',
+  rice: 'Rice',
+  'dim sum': 'Dim Sum',
+  dimsum: 'Dim Sum',
+  'hot pot': 'Hot Pot',
+  dessert: 'Dessert',
+  congee: 'Congee',
+  beef: 'Beef',
+  chicken: 'Grilled Chicken',
+  snacks: 'Snacks',
 }
 
 export const PRICE_KEYWORDS = {
-  cheap: ['rẻ', 'bình dân', 'giá rẻ', 'tiết kiệm', 'không đắt'],
-  mid: ['giá vừa', 'tầm trung', 'trung bình'],
-  expensive: ['sang', 'cao cấp', 'xịn'],
+  cheap: ['cheap', 'affordable', 'budget', 'inexpensive'],
+  mid: ['mid-range', 'moderate', 'average price'],
+  expensive: ['expensive', 'premium', 'upscale'],
 }
 
-const GREETINGS = ['xin chào', 'hello', 'hi', 'chào', 'hey']
-const HELP_KEYWORDS = ['giúp', 'help', 'làm gì được', 'hướng dẫn']
-const RECIPE_STRONG_KEYWORDS = ['công thức', 'nấu', 'recipe', 'cách làm', 'nguyên liệu']
-const RESTAURANT_STRONG_KEYWORDS = ['quán', 'nhà hàng', 'ăn ở đâu', 'chỗ ăn']
-const RESTAURANT_GENERIC_KEYWORDS = ['tìm', 'gợi ý', 'recommend', 'địa điểm']
+const GREETINGS = ['hello', 'hi', 'hey', 'good morning', 'good afternoon']
+const HELP_KEYWORDS = ['help', 'what can you do', 'guide']
+const RECIPE_STRONG_KEYWORDS = ['recipe', 'cook', 'how to make', 'ingredients']
+const RESTAURANT_STRONG_KEYWORDS = ['restaurant', 'where to eat', 'place to eat']
+const RESTAURANT_GENERIC_KEYWORDS = ['find', 'suggest', 'recommend', 'place']
 
 function cleanText(value) {
   return String(value || '')
-    .toLocaleLowerCase('vi')
+    .toLocaleLowerCase('en')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -168,13 +139,13 @@ function extractKeyword(message, category) {
     ...RECIPE_STRONG_KEYWORDS,
     ...RESTAURANT_STRONG_KEYWORDS,
     ...RESTAURANT_GENERIC_KEYWORDS,
-    'món',
-    'ngon',
-    'ở',
-    'tại',
-    'cho tôi',
-    'với',
-    'nhé',
+    'dish',
+    'food',
+    'best',
+    'in',
+    'at',
+    'for me',
+    'please',
   ].sort((left, right) => right.length - left.length)
 
   removable.forEach((phrase) => {
@@ -217,7 +188,7 @@ export function detectMatchedIntents(message) {
     includesAny(lower, RESTAURANT_GENERIC_KEYWORDS) ||
     includesAny(lower, INTENTS.TOP_RATED) ||
     includesAny(lower, INTENTS.CHEAP) ||
-    lower.includes('món')
+    lower.includes('food')
 
   if (hasFoodOrDistrict || hasRestaurantModifier) {
     return ['FIND_RESTAURANT']
@@ -374,71 +345,71 @@ export function generateResponse(intent, entities, results, options = {}) {
     if (intent === 'combined') {
       return {
         message:
-          'Mình chưa tìm thấy kết quả phù hợp từ nhà hàng, công thức hoặc địa điểm đã lưu. Thử câu hỏi cụ thể hơn nhé!',
-        suggestions: ['Tìm quán ăn', 'Công thức bánh mì', 'Địa điểm đã lưu'],
+          'I could not find matching restaurants, recipes, or saved places. Try a more specific question.',
+        suggestions: ['Find restaurants', 'Banh mi recipe', 'Saved places'],
       }
     }
     if (intent === 'FIND_RECIPE') {
       return {
-        message: `Mình chưa tìm thấy công thức phù hợp cho "${resultLabel(entities, 'món này')}". Thử tên món hoặc nguyên liệu khác nhé!`,
-        suggestions: ['Xem tất cả công thức', 'Công thức bánh mì'],
+        message: `I could not find a recipe for "${resultLabel(entities, 'this dish')}". Try another dish or ingredient.`,
+        suggestions: ['View all recipes', 'Banh mi recipe'],
       }
     }
     if (intent === 'FIND_SPOT') {
       return {
-        message: 'Bạn chưa có địa điểm đã lưu phù hợp với yêu cầu này.',
-        suggestions: ['Mở bản đồ ẩm thực', 'Tìm quán ăn'],
+        message: 'You do not have any saved places matching this request.',
+        suggestions: ['Open food map', 'Find restaurants'],
       }
     }
 
     return {
-      message: `Xin lỗi, mình không tìm thấy ${entities.category || 'địa điểm'}${entities.district ? ` ở ${entities.district}` : ''} phù hợp. Thử khu vực hoặc món khác nhé!`,
-      suggestions: ['Xem tất cả nhà hàng', 'Tìm món khác'],
+      message: `Sorry, I could not find a matching ${entities.category || 'place'}${entities.district ? ` in ${entities.district}` : ''}. Try another area or dish.`,
+      suggestions: ['View all restaurants', 'Find another dish'],
     }
   }
 
   if (intent === 'FIND_RESTAURANT') {
     const topPlace = results[0]
     const filters = [
-      entities.price === '$' ? 'bình dân' : '',
+      entities.price === '$' ? 'affordable' : '',
       entities.category || '',
-      entities.district ? `ở ${entities.district}` : 'tại TP.HCM',
+      entities.district ? `in ${entities.district}` : 'in Ho Chi Minh City',
     ]
       .filter(Boolean)
       .join(' ')
 
     return {
-      message: `Tìm thấy ${total} quán ${filters}. Nổi bật nhất: ${topPlace.name} (${Number(topPlace.avg_rating || 0).toFixed(1)} sao).`,
+      message: `I found ${total} restaurants ${filters}. Top result: ${topPlace.name} (${Number(topPlace.avg_rating || 0).toFixed(1)} stars).`,
       suggestions: [
-        'Xem trên bản đồ',
-        `Tìm thêm ${entities.category || 'món ngon'}`,
-        'Quán giá rẻ',
+        'View on map',
+        `Find more ${entities.category || 'good food'}`,
+        'Affordable restaurants',
       ],
     }
   }
 
   if (intent === 'FIND_RECIPE') {
     return {
-      message: `Tìm thấy ${total} công thức phù hợp cho "${resultLabel(entities, 'món bạn tìm')}".`,
-      suggestions: ['Xem công thức', 'Công thức bánh mì'],
+      message: `I found ${total} recipes matching "${resultLabel(entities, 'your search')}".`,
+      suggestions: ['View recipe', 'Banh mi recipe'],
     }
   }
 
   if (intent === 'FIND_SPOT') {
     return {
-      message: `Bạn có ${total} địa điểm đã lưu phù hợp.`,
-      suggestions: ['Mở bản đồ ẩm thực', 'Tìm quán ăn'],
+      message: `You have ${total} matching saved places.`,
+      suggestions: ['Open food map', 'Find restaurants'],
     }
   }
 
   const loginNote = options.requiresLogin
-    ? ' Đăng nhập để mình tìm thêm trong các địa điểm bạn đã lưu.'
+    ? ' Log in so I can also search your saved places.'
     : ''
   return {
-    message: `Mình tìm thấy ${total} kết quả từ FoodStory.${loginNote}`,
+    message: `I found ${total} results from FoodStory.${loginNote}`,
     suggestions: options.requiresLogin
-      ? ['Đăng nhập', 'Tìm quán ăn', 'Tìm công thức']
-      : ['Tìm quán ăn', 'Tìm công thức', 'Địa điểm đã lưu'],
+      ? ['Log in', 'Find restaurants', 'Find recipes']
+      : ['Find restaurants', 'Find recipes', 'Saved places'],
   }
 }
 
@@ -447,30 +418,30 @@ export function handleSmallTalk(message) {
 
   if (GREETINGS.some((greeting) => includesConversationKeyword(lower, greeting))) {
     return {
-      message: `Xin chào! Mình là FoodBot.
+      message: `Hello! I am FoodBot.
 
-Mình có thể giúp bạn:
-• Tìm quán ăn ngon theo khu vực
-• Gợi ý món ăn theo sở thích
-• Tìm công thức nấu ăn
-• Xem lại địa điểm bạn đã lưu
+I can help you:
+• Find restaurants by area
+• Suggest food based on your preferences
+• Find cooking recipes
+• Review your saved places
 
-Thử hỏi: "Phở ngon ở Quận 1"`,
+Try asking: "Best pho in District 1"`,
       type: 'greeting',
-      suggestions: ['Phở ngon ở Quận 1', 'Quán cà phê Bình Thạnh', 'Công thức bánh mì'],
+      suggestions: ['Best pho in District 1', 'Cafe in Binh Thanh', 'Banh mi recipe'],
     }
   }
 
   if (HELP_KEYWORDS.some((keyword) => lower.includes(keyword))) {
     return {
-      message: `FoodBot có thể giúp bạn:
+      message: `FoodBot can help you:
 
-• Tìm quán ăn: "phở ngon quận 1", "cafe bình thạnh"
-• Tìm công thức: "công thức bánh mì", "cách nấu phở"
-• Địa điểm của tôi: "tôi đã lưu gì"
-• Gợi ý: "món ngon nhất", "quán rẻ ngon"`,
+• Find restaurants: "best pho in District 1", "cafe in Binh Thanh"
+• Find recipes: "banh mi recipe", "how to cook pho"
+• Search your places: "what places have I saved"
+• Get suggestions: "best food", "good affordable restaurants"`,
       type: 'help',
-      suggestions: ['Tìm quán ăn', 'Tìm công thức', 'Địa điểm đã lưu'],
+      suggestions: ['Find restaurants', 'Find recipes', 'Saved places'],
     }
   }
 

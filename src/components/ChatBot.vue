@@ -44,12 +44,12 @@ function resultKind(message, result) {
 
 function ratingLabel(value) {
   const rating = Number(value || 0)
-  return rating > 0 ? `${rating.toFixed(1)} ★` : 'Chưa có đánh giá'
+  return rating > 0 ? `${rating.toFixed(1)} ★` : 'No ratings yet'
 }
 
 function recipeTime(recipe) {
   const total = Number(recipe.prep_time || 0) + Number(recipe.cook_time || 0)
-  return total > 0 ? `${total} phút` : 'Chưa rõ thời gian'
+  return total > 0 ? `${total} minutes` : 'Time not available'
 }
 
 function mapQueryFor(result) {
@@ -78,16 +78,16 @@ function openLogin() {
 }
 
 async function handleSuggestion(suggestion, message) {
-  const normalized = suggestion.toLocaleLowerCase('vi')
+  const normalized = suggestion.toLocaleLowerCase('en')
   const firstResult = message.results?.[0]
 
-  if (normalized.includes('đăng nhập')) {
+  if (normalized.includes('log in') || normalized.includes('login')) {
     openLogin()
     return
   }
   if (
-    normalized.includes('bản đồ') ||
-    normalized.includes('tất cả nhà hàng')
+    normalized.includes('map') ||
+    normalized.includes('all restaurants')
   ) {
     openMap(firstResult)
     return
@@ -95,12 +95,12 @@ async function handleSuggestion(suggestion, message) {
   if (
     firstResult &&
     resultKind(message, firstResult) === 'recipe' &&
-    (normalized.includes('xem công thức') || normalized.includes('lưu yêu thích'))
+    (normalized.includes('view recipe') || normalized.includes('save favorite'))
   ) {
     openRecipe(firstResult)
     return
   }
-  if (normalized.includes('tất cả công thức')) {
+  if (normalized.includes('all recipes')) {
     closeChat()
     router.push('/recipes')
     return
@@ -140,10 +140,10 @@ async function sendMessage(text = inputText.value) {
   } catch {
     messages.value.push({
       role: 'bot',
-      content: 'Xin lỗi, có lỗi xảy ra. Thử lại nhé!',
+      content: 'Sorry, something went wrong. Please try again.',
       type: 'error',
       results: [],
-      suggestions: ['Thử lại'],
+      suggestions: ['Try again'],
     })
   } finally {
     isLoading.value = false
@@ -156,10 +156,10 @@ onMounted(() => {
   messages.value.push({
     role: 'bot',
     content:
-      'Xin chào! Mình là FoodBot. Hỏi mình về quán ăn, công thức hoặc địa điểm đã lưu nhé!',
+      'Hello! I am FoodBot. Ask me about restaurants, recipes, or saved places.',
     type: 'greeting',
     results: [],
-    suggestions: ['Phở ngon ở Quận 1', 'Café Bình Thạnh', 'Công thức bánh mì'],
+    suggestions: ['Best pho in District 1', 'Cafe in Binh Thanh', 'Banh mi recipe'],
   })
   hasUnread.value = true
 })
@@ -171,7 +171,7 @@ onMounted(() => {
       v-if="!isOpen"
       class="chat-bubble-btn"
       type="button"
-      aria-label="Mở FoodBot"
+      aria-label="Open FoodBot"
       :aria-expanded="isOpen"
       @click="openChat"
     >
@@ -192,10 +192,10 @@ onMounted(() => {
           </span>
           <span>
             <strong>FoodBot</strong>
-            <small>Trợ lý ẩm thực FoodStory</small>
+            <small>FoodStory food assistant</small>
           </span>
         </span>
-        <button type="button" aria-label="Đóng FoodBot" @click="closeChat">×</button>
+        <button type="button" aria-label="Close FoodBot" @click="closeChat">×</button>
       </header>
 
       <div ref="messagesElement" class="chat-messages" aria-live="polite">
@@ -211,7 +211,7 @@ onMounted(() => {
           <div
             v-if="message.results?.length"
             class="result-list"
-            :aria-label="`${message.results.length} kết quả`"
+            :aria-label="`${message.results.length} results`"
           >
             <article
               v-for="result in message.results"
@@ -220,21 +220,21 @@ onMounted(() => {
             >
               <template v-if="resultKind(message, result) === 'restaurant'">
                 <div class="result-card-topline">
-                  <span class="result-badge">{{ result.category || 'Nhà hàng' }}</span>
+                  <span class="result-badge">{{ result.category || 'Restaurant' }}</span>
                   <span class="result-rating">{{ ratingLabel(result.avg_rating) }}</span>
                 </div>
                 <h3>{{ result.name }}</h3>
                 <p class="result-location">
                   <AppIcon name="map-pin" size="13" />
-                  {{ result.address || result.district || 'TP. Hồ Chí Minh' }}
+                  {{ result.address || result.district || 'Ho Chi Minh City' }}
                 </p>
                 <p class="result-description">
-                  <strong>{{ result.price_range || 'Chưa rõ giá' }}</strong>
+                  <strong>{{ result.price_range || 'Price not available' }}</strong>
                   <span>•</span>
-                  {{ result.description || 'Chưa có mô tả.' }}
+                  {{ result.description || 'No description available.' }}
                 </p>
                 <button type="button" class="result-action" @click="openMap(result)">
-                  Xem trên bản đồ
+                  View on map
                   <AppIcon name="arrow-right" size="14" />
                 </button>
               </template>
@@ -247,34 +247,34 @@ onMounted(() => {
                     @error="$event.currentTarget.src = '/images/food-placeholder.jpg'"
                   />
                   <div>
-                    <span class="result-badge">{{ result.category || 'Công thức' }}</span>
+                    <span class="result-badge">{{ result.category || 'Recipe' }}</span>
                     <h3>{{ result.title }}</h3>
                     <p class="recipe-result-meta">
                       <span><AppIcon name="clock" size="13" /> {{ recipeTime(result) }}</span>
-                      <span><AppIcon name="users" size="13" /> {{ result.servings || '?' }} người</span>
+                      <span><AppIcon name="users" size="13" /> {{ result.servings || '?' }} servings</span>
                     </p>
                     <p class="result-rating">{{ ratingLabel(result.avg_rating) }}</p>
                   </div>
                 </div>
                 <button type="button" class="result-action" @click="openRecipe(result)">
-                  Xem công thức
+                  View recipe
                   <AppIcon name="arrow-right" size="14" />
                 </button>
               </template>
 
               <template v-else-if="resultKind(message, result) === 'spot'">
                 <div class="result-card-topline">
-                  <span class="result-badge">{{ result.category || 'Đã lưu' }}</span>
+                  <span class="result-badge">{{ result.category || 'Saved' }}</span>
                   <span class="result-rating">{{ ratingLabel(result.rating) }}</span>
                 </div>
                 <h3>{{ result.name }}</h3>
-                <p>{{ result.dish_name || 'Chưa thêm tên món' }}</p>
+                <p>{{ result.dish_name || 'No dish name added' }}</p>
                 <p class="result-location">
                   <AppIcon name="map-pin" size="13" />
-                  {{ result.district || 'TP. Hồ Chí Minh' }}
+                  {{ result.district || 'Ho Chi Minh City' }}
                 </p>
                 <button type="button" class="result-action" @click="openMap(result)">
-                  Mở bản đồ
+                  Open map
                   <AppIcon name="arrow-right" size="14" />
                 </button>
               </template>
@@ -296,7 +296,7 @@ onMounted(() => {
         </div>
 
         <div v-if="isLoading" class="message-row message-bot">
-          <div class="msg-bot typing-bubble" aria-label="FoodBot đang trả lời">
+          <div class="msg-bot typing-bubble" aria-label="FoodBot is responding">
             <span class="typing-indicator" aria-hidden="true">
               <span></span><span></span><span></span>
             </span>
@@ -305,19 +305,19 @@ onMounted(() => {
       </div>
 
       <form class="chat-input-area" @submit.prevent="sendMessage()">
-        <label class="sr-only" for="foodbot-input">Nhập câu hỏi cho FoodBot</label>
+        <label class="sr-only" for="foodbot-input">Enter a question for FoodBot</label>
         <input
           id="foodbot-input"
           v-model="inputText"
           type="text"
           maxlength="500"
           autocomplete="off"
-          placeholder="Hỏi FoodBot..."
+          placeholder="Ask FoodBot..."
           :disabled="isLoading"
         />
         <button
           type="submit"
-          aria-label="Gửi tin nhắn"
+          aria-label="Send message"
           :disabled="isLoading || !inputText.trim()"
         >
           <AppIcon name="send" size="19" />

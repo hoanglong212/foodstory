@@ -869,13 +869,13 @@ watch(
         <AppIcon :name="isRejected ? 'message' : 'clock'" size="20" />
         <div>
           <strong>
-            {{ isRejected ? 'Công thức chưa được duyệt' : 'Công thức đang chờ duyệt' }}
+            {{ isRejected ? 'Recipe was not approved' : 'Recipe is pending review' }}
           </strong>
           <p v-if="isRejected">
-            {{ recipe.rejection_reason || 'Quản trị viên chưa cung cấp lý do từ chối.' }}
+            {{ recipe.rejection_reason || 'The administrator did not provide a rejection reason.' }}
           </p>
           <p v-else>
-            Chỉ bạn và quản trị viên có thể xem trang này trước khi công thức được xuất bản.
+            Only you and administrators can view this page before the recipe is published.
           </p>
         </div>
       </div>
@@ -948,7 +948,7 @@ watch(
               @click="openRecipeOnMap"
             >
               <AppIcon name="map-pin" size="18" />
-              <span>Xem Trên Bản Đồ</span>
+              <span>View on Map</span>
             </button>
             <button
               v-if="authStore.isLoggedIn"

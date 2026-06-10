@@ -43,7 +43,7 @@ export const useFoodSpotStore = defineStore('foodSpots', {
         }
         return this.spots
       } catch (error) {
-        this.error = getApiError(error, 'Không thể tải bản đồ ẩm thực.')
+        this.error = getApiError(error, 'The food map could not be loaded.')
         throw new Error(this.error)
       } finally {
         this.loading = false
@@ -57,7 +57,7 @@ export const useFoodSpotStore = defineStore('foodSpots', {
         this.communitySpots = (Array.isArray(response.data) ? response.data : []).map(normalizeSpot)
         return this.communitySpots
       } catch (error) {
-        this.communityError = getApiError(error, 'Không thể tải địa điểm từ cộng đồng.')
+        this.communityError = getApiError(error, 'Community places could not be loaded.')
         throw new Error(this.communityError)
       } finally {
         this.communityLoading = false
@@ -73,7 +73,7 @@ export const useFoodSpotStore = defineStore('foodSpots', {
         this.selectedSpot = spot
         return spot
       } catch (error) {
-        this.error = getApiError(error, 'Không thể thêm địa điểm.')
+        this.error = getApiError(error, 'The place could not be added.')
         throw new Error(this.error)
       } finally {
         this.loading = false
@@ -89,7 +89,7 @@ export const useFoodSpotStore = defineStore('foodSpots', {
         this.selectedSpot = spot
         return spot
       } catch (error) {
-        this.error = getApiError(error, 'Không thể cập nhật địa điểm.')
+        this.error = getApiError(error, 'The place could not be updated.')
         throw new Error(this.error)
       } finally {
         this.loading = false
@@ -106,7 +106,7 @@ export const useFoodSpotStore = defineStore('foodSpots', {
         }
         return true
       } catch (error) {
-        this.error = getApiError(error, 'Không thể xoá địa điểm.')
+        this.error = getApiError(error, 'The place could not be deleted.')
         throw new Error(this.error)
       } finally {
         this.loading = false

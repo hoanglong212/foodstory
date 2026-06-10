@@ -380,10 +380,10 @@ export const useRecipeStore = defineStore('recipes', {
       const uiStore = useUiStore()
       try {
         const response = await api.post('/recipes/submissions', payload)
-        uiStore.setSuccess(response.data.message || 'Công thức đã được gửi để xét duyệt.')
+        uiStore.setSuccess(response.data.message || 'The recipe was submitted for review.')
         return response.data.recipe
       } catch (error) {
-        const message = getApiError(error, 'Không thể gửi công thức.')
+        const message = getApiError(error, 'The recipe could not be submitted.')
         uiStore.setError(message)
         throw new Error(message)
       }

@@ -64,7 +64,7 @@ const pageNumbers = computed(() => {
   return Array.from({ length: totalPages.value }, (_, index) => index + 1)
 })
 
-const popularTags = ['miền bắc', 'miền nam', 'công thức', 'bún bò', 'cà phê', 'lẩu']
+const popularTags = ['northern food', 'southern food', 'recipes', 'beef noodle soup', 'coffee', 'hot pot']
 
 async function fetchNews(page = currentPage.value) {
   if (!isAlive) {
@@ -193,10 +193,10 @@ onBeforeUnmount(() => {
 <template>
   <section class="news-page page-pad">
     <div class="section-heading">
-      <p class="eyebrow">Tin Tức FoodStory</p>
-      <h1>Tin Tức Ẩm Thực</h1>
+      <p class="eyebrow">FoodStory News</p>
+      <h1>Food News</h1>
       <p>
-        Tìm bài viết theo ngày, tiêu đề, nội dung hoặc danh mục từ dữ liệu API/MySQL.
+        Find articles by date, title, content, or category from the API/MySQL database.
       </p>
     </div>
 
@@ -204,28 +204,28 @@ onBeforeUnmount(() => {
       <label>
         <span class="field-label">
           <AppIcon name="search" size="16" />
-          Từ khóa
+          Keyword
         </span>
         <input
           v-model="keyword"
           type="search"
-          placeholder="Tìm theo tiêu đề, nội dung, ngày, danh mục..."
+          placeholder="Search by title, content, date, or category..."
         />
       </label>
       <label>
         <span class="field-label">
           <AppIcon name="calendar" size="16" />
-          Ngày
+          Date
         </span>
         <input v-model="selectedDate" type="date" />
       </label>
       <label>
         <span class="field-label">
           <AppIcon name="filter" size="16" />
-          Danh mục
+          Category
         </span>
         <select v-model="selectedCategory">
-          <option value="all">Tất Cả</option>
+          <option value="all">All</option>
           <option v-for="category in categories" :key="category" :value="category">
             {{ category }}
           </option>
@@ -255,7 +255,7 @@ onBeforeUnmount(() => {
               <h2>{{ item.title }}</h2>
               <p>{{ item.content }}</p>
               <RouterLink :to="{ name: 'news-detail', params: { id: item.id } }">
-                <span>Đọc thêm</span>
+                <span>Read more</span>
                 <AppIcon name="arrow-right" size="16" />
               </RouterLink>
             </div>
@@ -263,13 +263,13 @@ onBeforeUnmount(() => {
         </template>
 
         <p v-if="!isLoading && !errorMessage && totalItems === 0" class="empty-state">
-          Không tìm thấy tin phù hợp.
+          No matching articles found.
         </p>
 
         <nav v-if="totalItems > 0" class="pagination" aria-label="News pagination">
           <button :disabled="currentPage === 1" type="button" @click="goToPage(currentPage - 1)">
             <AppIcon name="arrow-left" size="16" />
-            <span>Trước</span>
+            <span>Previous</span>
           </button>
           <button
             v-for="page in pageNumbers"
@@ -286,7 +286,7 @@ onBeforeUnmount(() => {
             type="button"
             @click="goToPage(currentPage + 1)"
           >
-            <span>Sau</span>
+            <span>Next</span>
             <AppIcon name="arrow-right" size="16" />
           </button>
         </nav>
@@ -296,7 +296,7 @@ onBeforeUnmount(() => {
         <section>
           <h2>
             <AppIcon name="tags" size="19" />
-            Chủ đề nổi bật
+            Popular topics
           </h2>
           <div class="tag-cloud">
             <button v-for="tag in popularTags" :key="tag" type="button" @click="keyword = tag">
@@ -309,11 +309,11 @@ onBeforeUnmount(() => {
           <span aria-hidden="true">
             <AppIcon name="chef-hat" size="34" stroke-width="1.8" />
           </span>
-          <h2>Có Công Thức Hay?</h2>
-          <p>Chia sẻ với cộng đồng FoodStory!</p>
+          <h2>Have a Great Recipe?</h2>
+          <p>Share it with the FoodStory community!</p>
           <RouterLink class="btn btn-light" to="/about">
             <AppIcon name="send" size="18" />
-            <span>Gửi Công Thức</span>
+            <span>Submit a Recipe</span>
           </RouterLink>
         </section>
       </aside>

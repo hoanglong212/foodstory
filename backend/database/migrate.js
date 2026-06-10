@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import pool from '../db.js'
 import { migrateAdminDashboard } from './migrateAdminDashboard.js'
+import { migrateLegacyEnglishData } from './migrateLegacyEnglishData.js'
 import { migrateRecipeMetadata } from './migrateRecipeMetadata.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -128,6 +129,7 @@ async function migrate() {
   await migrateAdminDashboard()
   await migrateRecipeMetadata()
   await runSqlMigrations()
+  await migrateLegacyEnglishData()
   console.log('Database migrations completed.')
 }
 

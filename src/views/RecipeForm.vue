@@ -10,26 +10,26 @@ const recipeStore = useRecipeStore()
 const isEditMode = computed(() => Boolean(route.params.id))
 const isSubmissionMode = computed(() => route.name === 'recipe-submit')
 const pageEyebrow = computed(() => {
-  if (isSubmissionMode.value) return 'Đóng góp từ cộng đồng'
-  return 'Quản lý công thức'
+  if (isSubmissionMode.value) return 'Community contribution'
+  return 'Recipe management'
 })
 const pageTitle = computed(() => {
-  if (isEditMode.value) return 'Chỉnh sửa công thức'
-  if (isSubmissionMode.value) return 'Gửi công thức của bạn'
-  return 'Tạo công thức mới'
+  if (isEditMode.value) return 'Edit recipe'
+  if (isSubmissionMode.value) return 'Submit your recipe'
+  return 'Create a new recipe'
 })
 const pageDescription = computed(() => {
   if (isSubmissionMode.value) {
-    return 'Chia sẻ công thức với FoodStory. Nội dung sẽ được quản trị viên kiểm tra trước khi xuất bản.'
+    return 'Share your recipe with FoodStory. An administrator will review it before publication.'
   }
-  return 'Điền đầy đủ thông tin để lưu công thức vào thư viện FoodStory.'
+  return 'Complete the information below to save the recipe to the FoodStory library.'
 })
 const submitLabel = computed(() => {
   if (isSubmitting.value) {
-    return isSubmissionMode.value ? 'Đang gửi...' : 'Đang lưu...'
+    return isSubmissionMode.value ? 'Submitting...' : 'Saving...'
   }
-  if (isSubmissionMode.value) return 'Gửi để xét duyệt'
-  return isEditMode.value ? 'Lưu thay đổi' : 'Tạo công thức'
+  if (isSubmissionMode.value) return 'Submit for review'
+  return isEditMode.value ? 'Save changes' : 'Create recipe'
 })
 const isSubmitting = ref(false)
 const isLoadingForm = ref(false)
@@ -314,27 +314,27 @@ onBeforeUnmount(() => {
         {{ loadError || serverError }}
       </p>
 
-      <p v-if="isLoadingForm" class="status-panel">Đang tải biểu mẫu...</p>
+      <p v-if="isLoadingForm" class="status-panel">Loading form...</p>
 
       <div v-else-if="submittedRecipe" class="submission-success" role="status">
         <span class="submission-success-icon">
           <AppIcon name="check" size="28" />
         </span>
-        <p class="eyebrow">Đã gửi thành công</p>
+        <p class="eyebrow">Submitted successfully</p>
         <h2>{{ submittedRecipe.title }}</h2>
         <p>
-          Công thức của bạn đang ở trạng thái chờ duyệt. Quản trị viên sẽ kiểm tra trước khi
-          công thức xuất hiện trong thư viện công khai.
+          Your recipe is pending review. An administrator will check it before
+          it appears in the public library.
         </p>
         <div class="form-actions">
           <RouterLink
             class="btn btn-primary"
             :to="{ name: 'recipe-detail', params: { id: submittedRecipe.id } }"
           >
-            Xem yêu cầu
+            View submission
           </RouterLink>
           <RouterLink class="btn btn-outline" to="/recipes">
-            Về trang công thức
+            Back to recipes
           </RouterLink>
         </div>
       </div>
@@ -346,7 +346,7 @@ onBeforeUnmount(() => {
         @submit.prevent="handleSubmit"
       >
         <div class="form-field">
-          <label for="recipe-title">Tên công thức</label>
+          <label for="recipe-title">Recipe name</label>
           <input
             id="recipe-title"
             v-focus
@@ -362,14 +362,14 @@ onBeforeUnmount(() => {
 
         <div class="form-grid two">
           <div class="form-field">
-            <label for="recipe-category">Danh mục</label>
+            <label for="recipe-category">Category</label>
             <select
               id="recipe-category"
               v-model="form.category_id"
               :aria-invalid="Boolean(errors.category_id)"
               aria-describedby="recipe-category-error"
             >
-              <option value="">Chọn danh mục</option>
+              <option value="">Select a category</option>
               <option
                 v-for="category in recipeStore.categories"
                 :key="category.id"
@@ -384,7 +384,7 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="form-field">
-            <label for="recipe-tags">Thẻ</label>
+            <label for="recipe-tags">Tags</label>
             <select id="recipe-tags" v-model="form.tags" multiple>
               <option v-for="tag in recipeStore.tags" :key="tag.id" :value="tag.id">
                 {{ tag.name }}
@@ -394,7 +394,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="form-field">
-          <label for="recipe-image">Đường dẫn ảnh</label>
+          <label for="recipe-image">Image URL</label>
           <input
             id="recipe-image"
             v-model="form.image_url"
@@ -408,12 +408,12 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="form-field">
-          <label for="recipe-description">Mô tả</label>
+          <label for="recipe-description">Description</label>
           <textarea
             id="recipe-description"
             v-model="form.description"
             rows="4"
-            placeholder="Mô tả ngắn về món ăn"
+            placeholder="A short description of the dish"
             :aria-invalid="Boolean(errors.description)"
             aria-describedby="recipe-description-error"
           ></textarea>
@@ -423,7 +423,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="form-field">
-          <label for="recipe-instructions">Cách làm</label>
+          <label for="recipe-instructions">Instructions</label>
           <textarea
             id="recipe-instructions"
             v-model="form.instructions"
@@ -437,17 +437,17 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="form-field">
-          <label for="recipe-ingredients">Nguyên liệu</label>
+          <label for="recipe-ingredients">Ingredients</label>
           <textarea
             id="recipe-ingredients"
             v-model="form.ingredientsText"
             rows="6"
-            placeholder="Mỗi dòng một nguyên liệu: Tên | số lượng"
+            placeholder="One ingredient per line: Name | quantity"
             :aria-invalid="Boolean(errors.ingredientsText)"
             aria-describedby="recipe-ingredients-help recipe-ingredients-error"
           ></textarea>
           <small id="recipe-ingredients-help">
-            Mỗi dòng một nguyên liệu. Ví dụ: Bánh phở | 400g
+            Enter one ingredient per line. Example: Rice noodles | 400g
           </small>
           <p
             v-if="errors.ingredientsText"
@@ -459,7 +459,7 @@ onBeforeUnmount(() => {
         </div>
 
         <fieldset class="nutrition-fieldset">
-          <legend>Dinh dưỡng</legend>
+          <legend>Nutrition</legend>
           <div class="form-grid four">
             <div class="form-field">
               <label for="recipe-calories">Calories</label>
@@ -526,7 +526,7 @@ onBeforeUnmount(() => {
             <span>{{ submitLabel }}</span>
           </button>
           <button class="btn btn-outline" type="button" @click="handleCancel">
-            Hủy
+            Cancel
           </button>
         </div>
       </form>
