@@ -17,18 +17,28 @@
     "seed:recipes:sql": "node database/seedRecipes.js --write-sql",
     "seed:users": "node database/seedUsers.js",
     "sync:ai-knowledge": "node scripts/syncFoodStoryKnowledge.js",
+    "sync:image-embeddings": "node scripts/precomputeImageEmbeddings.js",
     "test:api": "node scripts/apiSmokeTest.js",
     "test:ai-retrieval": "node scripts/testAiRetrievalCases.js",
-    "test:foodstory-chatbot": "node scripts/testFoodStoryChatbotCases.js"
+    "test:foodstory-chatbot": "node scripts/testFoodStoryChatbotCases.js",
+    "test:food-map-discovery": "node scripts/testFoodMapDiscoveryCases.js"
   },
   "dependencies": {
+    "@tesseract.js-data/eng": "^1.0.0",
+    "@tesseract.js-data/vie": "^1.0.0",
+    "ai": "^6.0.201",
+    "axios": "^1.17.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "form-data": "^4.0.5",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.1.1",
     "mysql2": "^3.11.5",
+    "open": "^11.0.0",
     "openai": "^6.42.0",
+    "tesseract.js": "^7.0.0",
     "ws": "^8.21.0"
   },
   "devDependencies": {

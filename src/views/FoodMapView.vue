@@ -16,6 +16,7 @@ import streetImage from "../assets/street.jpg";
 import { useFoodSpotStore } from "../stores/foodSpotStore";
 import { useRestaurantStore } from "../stores/restaurantStore";
 import { useUiStore } from "../stores/uiStore";
+import api, { getApiError } from "../services/api";
 
 const HCMC_CENTER = [10.7769, 106.7009];
 const MAX_VISIBLE_MARKERS = 100;
@@ -110,6 +111,27 @@ const initialMode = ["personal", "community", "stats"].includes(
 const initialRecipeId = /^[1-9]\d*$/.test(String(route.query.recipe_id || ""))
   ? Number(route.query.recipe_id)
   : null;
+const initialRestaurantId = /^[1-9]\d*$/.test(
+  String(route.query.restaurant_id || ""),
+)
+  ? Number(route.query.restaurant_id)
+  : null;
+const initialFoodSpotId = /^[1-9]\d*$/.test(
+  String(route.query.food_spot_id || ""),
+)
+  ? Number(route.query.food_spot_id)
+  : null;
+const shouldOpenAddDraft = route.query.add === "1";
+const initialVisualDraft = {
+  dish_name:
+    typeof route.query.dish === "string" ? route.query.dish.trim() : "",
+  category:
+    typeof route.query.category === "string"
+      ? route.query.category.trim()
+      : "",
+  notes:
+    typeof route.query.notes === "string" ? route.query.notes.trim() : "",
+};
 const mapElement = ref(null);
 const mapInitialised = ref(false);
 const mapMode = ref(initialMode);
@@ -122,6 +144,17 @@ const isDetailDrawerOpen = ref(false);
 const isResultSheetOpen = ref(true);
 const scanUrl = ref(initialDish);
 const scanInput = ref(null);
+const discoveryFileInput = ref(null);
+const discoveryHintInput = ref(null);
+const discoveryFile = ref(null);
+const discoveryPreviewUrl = ref("");
+const discoveryHint = ref("");
+const discoveryResult = ref(null);
+const discoveryError = ref("");
+const discoveryPanelOpen = ref(false);
+const discoveryLoading = ref(false);
+const discoveryLoadingStep = ref(0);
+const discoveryDragging = ref(false);
 const selectedRestaurant = ref(null);
 const selectedCommunitySpot = ref(null);
 const savedPlaceKeys = ref(new Set());
@@ -151,11 +184,30 @@ let communitySearchTimer = 0;
 let restaurantSearchTimer = 0;
 let popupTimer = 0;
 let layoutTimer = 0;
+let discoveryLoadingTimer = 0;
 let markerRenderFrame = 0;
 let restaurantRenderFrame = 0;
 const markersById = new Map();
+const discoveryLoadingSteps = [
+  "Reading image text",
+  "Identifying dish signals",
+  "Finding the real-world place",
+  "Checking FoodStory Map",
+  "Preparing result",
+];
 
 const selectedSpot = computed(() => foodSpotStore.selectedSpot);
+const discoveryStatusLabel = computed(() => {
+  const labels = {
+    external_place_found_in_foodmap: "Found in FoodStory Map",
+    external_place_found_not_in_foodmap: "Place found outside FoodStory Map",
+    external_place_not_found_dish_identified: "Dish identified",
+    external_place_not_found_unclear: "Place and dish unclear",
+    url_extraction_failed: "Screenshot needed",
+    unclear: "Input unclear",
+  };
+  return labels[discoveryResult.value?.status] || "Food Map discovery";
+});
 const isEditing = computed(() => editingSpotId.value !== null);
 const isCommunityMode = computed(() => mapMode.value === "community");
 const spotLayerLabel = computed(() =>
@@ -1264,28 +1316,256 @@ async function removeSpot(spot) {
   }
 }
 
-function handleScanUrl() {
+function isHttpUrl(value) {
+  return /^https?:\/\/\S+$/i.test(String(value || "").trim());
+}
+
+function validateDiscoveryFile(file) {
+  const allowedTypes = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+  ]);
+  if (!allowedTypes.has(file.type)) {
+    return "Choose a JPEG, PNG, WebP, or GIF image.";
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    return "The image must be 5MB or smaller.";
+  }
+  return "";
+}
+
+function revokeDiscoveryPreview() {
+  if (!discoveryPreviewUrl.value) return;
+  URL.revokeObjectURL(discoveryPreviewUrl.value);
+  discoveryPreviewUrl.value = "";
+}
+
+function selectDiscoveryFile(file) {
+  const validationError = validateDiscoveryFile(file);
+  if (validationError) {
+    discoveryError.value = validationError;
+    return;
+  }
+
+  revokeDiscoveryPreview();
+  discoveryFile.value = file;
+  discoveryPreviewUrl.value = URL.createObjectURL(file);
+  discoveryResult.value = null;
+  discoveryError.value = "";
+  discoveryPanelOpen.value = true;
+}
+
+function handleDiscoveryFileChange(event) {
+  const file = event.target.files?.[0];
+  event.target.value = "";
+  if (file) selectDiscoveryFile(file);
+}
+
+function handleDiscoveryDrop(event) {
+  discoveryDragging.value = false;
+  if (discoveryLoading.value) return;
+  const file = event.dataTransfer?.files?.[0];
+  if (file) selectDiscoveryFile(file);
+}
+
+function openDiscoveryFilePicker() {
+  discoveryPanelOpen.value = true;
+  if (!discoveryLoading.value) discoveryFileInput.value?.click();
+}
+
+function startDiscoveryLoading() {
+  discoveryLoadingStep.value = 0;
+  window.clearInterval(discoveryLoadingTimer);
+  discoveryLoadingTimer = window.setInterval(() => {
+    if (discoveryLoadingStep.value < discoveryLoadingSteps.length - 2) {
+      discoveryLoadingStep.value += 1;
+    }
+  }, 650);
+}
+
+function stopDiscoveryLoading() {
+  window.clearInterval(discoveryLoadingTimer);
+  discoveryLoadingTimer = 0;
+}
+
+function wait(milliseconds) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+async function focusDiscoveryFoodMapMatch(match) {
+  if (!match) return;
+
+  if (match.sourceType === "restaurant") {
+    showRestaurants.value = true;
+    Object.assign(restaurantFilters, {
+      district: "",
+      category: "",
+      search: "",
+      min_rating: "",
+    });
+    await fetchRestaurants();
+    const restaurant =
+      restaurantStore.restaurants.find(
+        (item) => Number(item.id) === Number(match.sourceId),
+      ) || {
+        id: Number(match.sourceId),
+        name: match.name,
+        category: match.category,
+        district: match.district,
+        address: match.address,
+        latitude: match.latitude,
+        longitude: match.longitude,
+        avg_rating: 0,
+      };
+    showRestaurantDetail(restaurant);
+  } else if (match.sourceType === "food_spot") {
+    communitySearch.value = "";
+    Object.assign(communityFilters, { district: "", category: "" });
+    await setMapMode("community");
+    const spot =
+      foodSpotStore.communitySpots.find(
+        (item) => Number(item.id) === Number(match.sourceId),
+      ) || {
+        id: Number(match.sourceId),
+        name: match.name,
+        dish_name: match.dishName,
+        category: match.category,
+        district: match.district,
+        latitude: match.latitude,
+        longitude: match.longitude,
+        rating: null,
+      };
+    showCommunityDetail(spot);
+  }
+
+  isResultSheetOpen.value = true;
+}
+
+function discoveryDraftPrefill(draft) {
+  if (!draft) return {};
+  return {
+    name: draft.name || "",
+    dish_name: draft.dish_name || "",
+    category: draft.category || "",
+    district: draft.district || "",
+    latitude:
+      draft.latitude === null || draft.latitude === undefined
+        ? ""
+        : String(draft.latitude),
+    longitude:
+      draft.longitude === null || draft.longitude === undefined
+        ? ""
+        : String(draft.longitude),
+    notes: draft.notes || "",
+    tags: draft.tags || "",
+  };
+}
+
+async function addDiscoveryDraft() {
+  const draft = discoveryResult.value?.suggestedDraft;
+  if (!draft) return;
+  await setMapMode("personal");
+  openAddForm(discoveryDraftPrefill(draft));
+  discoveryPanelOpen.value = false;
+}
+
+function resetFoodMapDiscovery() {
+  stopDiscoveryLoading();
+  revokeDiscoveryPreview();
+  discoveryFile.value = null;
+  discoveryHint.value = "";
+  discoveryResult.value = null;
+  discoveryError.value = "";
+  discoveryLoadingStep.value = 0;
+}
+
+async function submitFoodMapDiscovery() {
+  if (discoveryLoading.value) return;
+
+  const sourceUrl = isHttpUrl(scanUrl.value) ? scanUrl.value.trim() : "";
+  if (!discoveryFile.value && !sourceUrl) {
+    discoveryPanelOpen.value = true;
+    discoveryError.value =
+      "Upload a screenshot/photo or paste a full http(s) social/video URL.";
+    return;
+  }
+
+  discoveryPanelOpen.value = true;
+  discoveryLoading.value = true;
+  discoveryResult.value = null;
+  discoveryError.value = "";
+  startDiscoveryLoading();
+
+  try {
+    const formData = new FormData();
+    if (discoveryFile.value) formData.append("image", discoveryFile.value);
+    if (discoveryHint.value.trim()) {
+      formData.append("hint", discoveryHint.value.trim());
+    }
+    if (sourceUrl) formData.append("sourceUrl", sourceUrl);
+
+    const response = await api.post("/food-map/discover", formData, {
+      timeout: 60_000,
+    });
+    discoveryLoadingStep.value = discoveryLoadingSteps.length - 1;
+    await wait(250);
+    discoveryResult.value = response.data;
+
+    if (
+      response.data.status === "external_place_found_in_foodmap" &&
+      response.data.foodMapMatch
+    ) {
+      await focusDiscoveryFoodMapMatch(response.data.foodMapMatch);
+    }
+  } catch (error) {
+    const responseData = error.response?.data;
+    if (responseData?.status) {
+      discoveryResult.value = responseData;
+    } else {
+      discoveryError.value = getApiError(
+        error,
+        "Food Map discovery is temporarily unavailable.",
+      );
+    }
+  } finally {
+    stopDiscoveryLoading();
+    discoveryLoading.value = false;
+  }
+}
+
+async function handleScanUrl() {
   const value = scanUrl.value.trim();
-  if (!value) {
+  if (!value && !discoveryFile.value) {
+    discoveryPanelOpen.value = true;
     scanInput.value?.focus();
     return;
   }
 
-  console.info("[FoodStory scan placeholder]", value);
-  if (!/^https?:\/\//i.test(value)) {
+  if (value && !isHttpUrl(value) && !discoveryFile.value) {
     restaurantFilters.search = value;
     if (mapMode.value === "community") {
       communitySearch.value = value;
     } else {
       personalSearch.value = value;
     }
+    isResultSheetOpen.value = true;
+    invalidateMapAfterTransition();
+    return;
   }
-  isResultSheetOpen.value = true;
-  invalidateMapAfterTransition();
+
+  await submitFoodMapDiscovery();
 }
 
 function focusScanInput() {
+  discoveryPanelOpen.value = true;
   scanInput.value?.focus();
+}
+
+function focusDiscoveryHint() {
+  discoveryPanelOpen.value = true;
+  nextTick(() => discoveryHintInput.value?.focus());
 }
 
 function locateUser() {
@@ -1446,6 +1726,33 @@ onMounted(async () => {
     await fetchSpots();
   }
   await fetchRestaurants();
+  if (initialRestaurantId) {
+    const restaurant = restaurantStore.restaurants.find(
+      (item) => Number(item.id) === initialRestaurantId,
+    );
+    if (restaurant) {
+      showRestaurantDetail(restaurant);
+      isResultSheetOpen.value = true;
+    }
+  } else if (initialFoodSpotId) {
+    const spotSource =
+      mapMode.value === "community"
+        ? foodSpotStore.communitySpots
+        : foodSpotStore.spots;
+    const spot = spotSource.find(
+      (item) => Number(item.id) === initialFoodSpotId,
+    );
+    if (spot) {
+      if (mapMode.value === "community") {
+        showCommunityDetail(spot);
+      } else {
+        showDetail(spot);
+      }
+      isResultSheetOpen.value = true;
+    }
+  } else if (shouldOpenAddDraft) {
+    openAddForm(initialVisualDraft);
+  }
 });
 
 onBeforeUnmount(() => {
@@ -1454,6 +1761,8 @@ onBeforeUnmount(() => {
   window.clearTimeout(restaurantSearchTimer);
   window.clearTimeout(popupTimer);
   window.clearTimeout(layoutTimer);
+  stopDiscoveryLoading();
+  revokeDiscoveryPreview();
   if (markerRenderFrame) window.cancelAnimationFrame(markerRenderFrame);
   if (restaurantRenderFrame) window.cancelAnimationFrame(restaurantRenderFrame);
   stopPicking();
@@ -1478,7 +1787,9 @@ onBeforeUnmount(() => {
   >
     <form class="taste-scan-bar" @submit.prevent="handleScanUrl">
       <span class="taste-scan-link" aria-hidden="true">🔗</span>
-      <label class="sr-only" for="taste-map-scan">Scan a food link</label>
+      <label class="sr-only" for="taste-map-scan">
+        Find a food place from a social or video link
+      </label>
       <input
         id="taste-map-scan"
         ref="scanInput"
@@ -1487,10 +1798,359 @@ onBeforeUnmount(() => {
         maxlength="500"
         placeholder="Paste a TikTok, Instagram, Facebook, or YouTube Shorts food link..."
       />
-      <button type="submit">
-        SCAN NGAY <span aria-hidden="true">✨</span>
+      <button
+        class="taste-scan-upload"
+        type="button"
+        aria-label="Upload a food screenshot or photo"
+        title="Upload screenshot or photo"
+        @click="openDiscoveryFilePicker"
+      >
+        <AppIcon name="camera" size="18" />
+      </button>
+      <button
+        class="taste-scan-submit"
+        type="submit"
+        :disabled="discoveryLoading"
+      >
+        {{ discoveryLoading ? "FINDING..." : "FIND ON MAP" }}
       </button>
     </form>
+
+    <input
+      ref="discoveryFileInput"
+      class="food-map-discovery-file"
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/gif"
+      @change="handleDiscoveryFileChange"
+    />
+
+    <section
+      v-if="discoveryPanelOpen"
+      class="food-map-discovery-panel"
+      aria-label="Find a place from social media or a photo"
+    >
+      <header class="food-map-discovery-header">
+        <div>
+          <span>Food Map social/photo discovery</span>
+          <h2>Find this place on FoodStory Map</h2>
+          <p>Place first, dish fallback. Upload a screenshot for social video sources.</p>
+        </div>
+        <button
+          type="button"
+          aria-label="Close discovery panel"
+          @click="discoveryPanelOpen = false"
+        >
+          <AppIcon name="x" size="18" />
+        </button>
+      </header>
+
+      <div class="food-map-discovery-inputs">
+        <button
+          type="button"
+          :class="[
+            'food-map-discovery-drop',
+            { filled: discoveryPreviewUrl, dragging: discoveryDragging },
+          ]"
+          :disabled="discoveryLoading"
+          @click="openDiscoveryFilePicker"
+          @dragenter.prevent="discoveryDragging = true"
+          @dragover.prevent="discoveryDragging = true"
+          @dragleave.prevent="discoveryDragging = false"
+          @drop.prevent="handleDiscoveryDrop"
+        >
+          <img
+            v-if="discoveryPreviewUrl"
+            :src="discoveryPreviewUrl"
+            alt="Food discovery preview"
+          />
+          <template v-else>
+            <AppIcon name="camera" size="27" />
+            <strong>Upload screenshot or photo</strong>
+            <small>JPEG, PNG, WebP or GIF, up to 5MB</small>
+          </template>
+        </button>
+
+        <label class="food-map-discovery-hint">
+          <span>Optional hint</span>
+          <input
+            ref="discoveryHintInput"
+            v-model="discoveryHint"
+            type="text"
+            maxlength="200"
+            :disabled="discoveryLoading"
+            placeholder="Dish, district, or place: Restaurant Name"
+          />
+          <small>
+            A venue name, district, or storefront clue improves the external place search.
+          </small>
+        </label>
+      </div>
+
+      <p v-if="discoveryError" class="food-map-discovery-error" role="alert">
+        {{ discoveryError }}
+      </p>
+
+      <div class="food-map-discovery-actions">
+        <button
+          type="button"
+          :disabled="
+            discoveryLoading ||
+            (!discoveryFile && !isHttpUrl(scanUrl))
+          "
+          @click="submitFoodMapDiscovery"
+        >
+          <AppIcon name="search" size="16" />
+          {{ discoveryLoading ? "Finding the place..." : "Find place" }}
+        </button>
+        <button
+          v-if="discoveryFile || discoveryResult"
+          class="secondary"
+          type="button"
+          :disabled="discoveryLoading"
+          @click="resetFoodMapDiscovery"
+        >
+          Reset
+        </button>
+      </div>
+
+      <ol
+        v-if="discoveryLoading"
+        class="food-map-discovery-loading"
+        aria-live="polite"
+      >
+        <li
+          v-for="(step, index) in discoveryLoadingSteps"
+          :key="step"
+          :class="{
+            active: index === discoveryLoadingStep,
+            complete: index < discoveryLoadingStep,
+          }"
+        >
+          <span>
+            <AppIcon
+              v-if="index < discoveryLoadingStep"
+              name="check"
+              size="12"
+            />
+            <template v-else>{{ index + 1 }}</template>
+          </span>
+          {{ step }}
+        </li>
+      </ol>
+
+      <article
+        v-if="discoveryResult && !discoveryLoading"
+        :class="[
+          'food-map-discovery-result',
+          `status-${discoveryResult.status}`,
+        ]"
+      >
+        <div class="food-map-discovery-result-heading">
+          <span>{{ discoveryStatusLabel }}</span>
+          <h3>{{ discoveryResult.message }}</h3>
+          <p v-if="discoveryResult.visualUnderstanding?.caption">
+            {{ discoveryResult.visualUnderstanding.caption }}
+          </p>
+        </div>
+
+        <div
+          v-if="
+            discoveryResult.visualUnderstanding?.placeName ||
+            discoveryResult.visualUnderstanding?.dishName ||
+            discoveryResult.visualUnderstanding?.category
+          "
+          class="food-map-discovery-clues"
+        >
+          <span v-if="discoveryResult.visualUnderstanding.placeName">
+            Place: <b>{{ discoveryResult.visualUnderstanding.placeName }}</b>
+          </span>
+          <span v-if="discoveryResult.visualUnderstanding.dishName">
+            Dish: <b>{{ discoveryResult.visualUnderstanding.dishName }}</b>
+          </span>
+          <span v-if="discoveryResult.visualUnderstanding.category">
+            Category: <b>{{ discoveryResult.visualUnderstanding.category }}</b>
+          </span>
+        </div>
+
+        <div
+          v-if="
+            discoveryResult.visualUnderstanding?.ocrText ||
+            discoveryResult.visualUnderstanding?.ocrUsable === false
+          "
+          class="food-map-discovery-ocr"
+        >
+          <template
+            v-if="discoveryResult.visualUnderstanding?.ocrUsable !== false"
+          >
+            <span>Text found in image</span>
+            <p>{{ discoveryResult.visualUnderstanding.ocrText }}</p>
+          </template>
+          <template v-else>
+            <span>Image text</span>
+            <p>No reliable text was found in this image.</p>
+          </template>
+          <small
+            v-if="
+              Number.isFinite(
+                discoveryResult.visualUnderstanding.ocrConfidence,
+              )
+            "
+          >
+            OCR confidence:
+            {{
+              Math.round(
+                discoveryResult.visualUnderstanding.ocrConfidence * 100,
+              )
+            }}%
+          </small>
+        </div>
+
+        <div
+          v-if="discoveryResult.externalPlace"
+          class="food-map-discovery-external"
+        >
+          <div>
+            <span>
+              {{
+                discoveryResult.status === "external_place_found_in_foodmap"
+                  ? "Found in FoodStory Map"
+                  : "Found outside FoodStory, not in map yet"
+              }}
+            </span>
+            <strong>{{ discoveryResult.externalPlace.name }}</strong>
+            <p>
+              {{
+                discoveryResult.externalPlace.address ||
+                discoveryResult.externalPlace.district ||
+                discoveryResult.externalPlace.category ||
+                "Address needs verification"
+              }}
+            </p>
+          </div>
+          <b>{{ discoveryResult.externalPlace.source }}</b>
+        </div>
+
+        <div
+          v-if="
+            discoveryResult.status === 'external_place_found_in_foodmap' &&
+            discoveryResult.foodMapMatch
+          "
+          class="food-map-discovery-match"
+        >
+          <div>
+            <span>
+              {{ discoveryResult.foodMapMatch.sourceType === "food_spot"
+                ? "Community food spot"
+                : "Restaurant" }}
+            </span>
+            <strong>{{ discoveryResult.foodMapMatch.name }}</strong>
+            <p>
+              {{ discoveryResult.foodMapMatch.category || "FoodStory Map" }}
+              <template v-if="discoveryResult.foodMapMatch.district">
+                · {{ discoveryResult.foodMapMatch.district }}
+              </template>
+            </p>
+          </div>
+          <b class="food-map-discovery-score">
+            {{ Math.round(discoveryResult.foodMapMatch.confidence * 100) }}%
+            match score
+          </b>
+          <button
+            type="button"
+            @click="focusDiscoveryFoodMapMatch(discoveryResult.foodMapMatch)"
+          >
+            Focus marker
+          </button>
+        </div>
+
+        <div
+          v-if="
+            [
+              'external_place_found_not_in_foodmap',
+              'external_place_not_found_dish_identified',
+            ].includes(discoveryResult.status)
+          "
+          class="food-map-discovery-draft"
+        >
+          <div>
+            <span>New Food Map draft</span>
+            <strong>
+              {{
+                discoveryResult.suggestedDraft?.name ||
+                discoveryResult.suggestedDraft?.dish_name ||
+                "New food spot"
+              }}
+            </strong>
+            <p>
+              {{
+                discoveryResult.suggestedDraft?.category ||
+                "Category needs confirmation"
+              }}
+              <template v-if="discoveryResult.suggestedDraft?.district">
+                · {{ discoveryResult.suggestedDraft.district }}
+              </template>
+            </p>
+          </div>
+          <div class="food-map-discovery-draft-actions">
+            <button type="button" @click="addDiscoveryDraft">
+              Add to Food Map
+            </button>
+            <button class="secondary" type="button" @click="addDiscoveryDraft">
+              Edit before adding
+            </button>
+          </div>
+        </div>
+
+        <div
+          v-if="
+            discoveryResult.status ===
+            'external_place_not_found_dish_identified'
+          "
+          class="food-map-discovery-dish-help"
+        >
+          <p>
+            The dish is identified, but there is not enough place evidence yet.
+            Add a restaurant or district hint, or upload a clearer screenshot.
+          </p>
+          <button class="secondary" type="button" @click="focusDiscoveryHint">
+            Add hint
+          </button>
+          <button
+            class="secondary"
+            type="button"
+            @click="openDiscoveryFilePicker"
+          >
+            Upload clearer screenshot
+          </button>
+        </div>
+
+        <div
+          v-if="
+            [
+              'url_extraction_failed',
+              'unclear',
+              'external_place_not_found_unclear',
+            ].includes(discoveryResult.status)
+          "
+          class="food-map-discovery-fallback"
+        >
+          <p>
+            Use a close, clear screenshot with the dish, storefront, logo, or
+            place name visible. You can also add a hint.
+          </p>
+          <button type="button" @click="openDiscoveryFilePicker">
+            Upload screenshot
+          </button>
+          <button
+            class="secondary"
+            type="button"
+            @click="focusDiscoveryHint"
+          >
+            Add hint
+          </button>
+        </div>
+      </article>
+    </section>
 
     <button class="taste-menu-button" type="button" aria-label="Open main menu">
       ☰
@@ -5349,7 +6009,7 @@ onBeforeUnmount(() => {
   display: grid;
   width: min(760px, calc(100% - 210px));
   min-height: 60px;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 11px;
   padding: 7px 8px 7px 17px;
@@ -5390,7 +6050,24 @@ onBeforeUnmount(() => {
   opacity: 1;
 }
 
-.taste-scan-bar button {
+.taste-scan-upload {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgba(217, 83, 32, 0.16);
+  border-radius: 50%;
+  color: var(--food-orange-dark);
+  background: #fff4e6;
+}
+
+.taste-scan-upload:hover {
+  color: #fff;
+  background: var(--food-orange);
+}
+
+.taste-scan-submit {
   min-height: 46px;
   padding: 0 22px;
   border: 0;
@@ -5407,9 +6084,406 @@ onBeforeUnmount(() => {
     box-shadow 0.2s ease;
 }
 
-.taste-scan-bar button:hover {
+.taste-scan-submit:hover:not(:disabled) {
   box-shadow: 0 13px 27px rgba(217, 83, 32, 0.32);
   transform: translateY(-1px);
+}
+
+.taste-scan-submit:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.food-map-discovery-file {
+  display: none;
+}
+
+.food-map-discovery-panel {
+  position: absolute;
+  top: 92px;
+  left: 50%;
+  z-index: 1800;
+  width: min(760px, calc(100% - 210px));
+  max-height: calc(100% - 120px);
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 24px;
+  color: var(--food-text);
+  background: rgba(255, 252, 246, 0.97);
+  box-shadow: 0 24px 70px rgba(76, 45, 24, 0.24);
+  transform: translateX(-50%);
+}
+
+.food-map-discovery-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.food-map-discovery-header span,
+.food-map-discovery-result-heading > span,
+.food-map-discovery-match span,
+.food-map-discovery-draft span,
+.food-map-discovery-ocr span,
+.food-map-discovery-external span {
+  color: var(--food-orange-dark);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.food-map-discovery-header h2 {
+  margin-top: 4px;
+  font-size: 23px;
+}
+
+.food-map-discovery-header p {
+  margin: 5px 0 0;
+  color: var(--food-muted);
+  font-size: 11px;
+}
+
+.food-map-discovery-header > button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(111, 75, 43, 0.13);
+  border-radius: 50%;
+  color: var(--food-muted);
+  background: #fff;
+}
+
+.food-map-discovery-inputs {
+  display: grid;
+  margin-top: 16px;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.food-map-discovery-drop {
+  display: flex;
+  min-height: 132px;
+  overflow: hidden;
+  padding: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 7px;
+  border: 1.5px dashed rgba(217, 83, 32, 0.3);
+  border-radius: 16px;
+  color: var(--food-orange-dark);
+  background: #fff7eb;
+}
+
+.food-map-discovery-drop.dragging {
+  border-color: var(--food-orange-dark);
+  background: #fff0dc;
+}
+
+.food-map-discovery-drop.filled {
+  padding: 0;
+  border-style: solid;
+}
+
+.food-map-discovery-drop img {
+  width: 100%;
+  height: 132px;
+  object-fit: cover;
+}
+
+.food-map-discovery-drop strong {
+  color: var(--food-text);
+  font-size: 12px;
+}
+
+.food-map-discovery-drop small {
+  color: var(--food-muted);
+  font-size: 9px;
+}
+
+.food-map-discovery-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.food-map-discovery-hint > span {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.food-map-discovery-hint input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(111, 75, 43, 0.18);
+  border-radius: 13px;
+  outline: 0;
+  color: var(--food-text);
+  background: #fff;
+}
+
+.food-map-discovery-hint input:focus {
+  border-color: var(--food-orange);
+  box-shadow: 0 0 0 3px rgba(246, 120, 44, 0.12);
+}
+
+.food-map-discovery-hint small {
+  color: var(--food-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.food-map-discovery-error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(196, 52, 52, 0.22);
+  border-radius: 11px;
+  color: #9f2f2f;
+  background: #fff1f0;
+  font-size: 11px;
+}
+
+.food-map-discovery-actions,
+.food-map-discovery-draft-actions,
+.food-map-discovery-fallback,
+.food-map-discovery-dish-help {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.food-map-discovery-actions {
+  margin-top: 14px;
+}
+
+.food-map-discovery-actions button,
+.food-map-discovery-match button,
+.food-map-discovery-draft-actions button,
+.food-map-discovery-fallback button,
+.food-map-discovery-dish-help button {
+  display: inline-flex;
+  min-height: 40px;
+  padding: 0 14px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 11px;
+  color: #fff;
+  background: var(--food-orange-dark);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.food-map-discovery-actions button.secondary,
+.food-map-discovery-draft-actions button.secondary,
+.food-map-discovery-fallback button.secondary,
+.food-map-discovery-dish-help button.secondary {
+  border: 1px solid rgba(111, 75, 43, 0.16);
+  color: var(--food-text);
+  background: #fff;
+}
+
+.food-map-discovery-actions button:disabled {
+  opacity: 0.5;
+}
+
+.food-map-discovery-loading {
+  display: grid;
+  margin: 15px 0 0;
+  padding: 13px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  border-radius: 14px;
+  background: #fff7eb;
+  list-style: none;
+}
+
+.food-map-discovery-loading li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--food-muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.food-map-discovery-loading li > span {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(111, 75, 43, 0.16);
+  border-radius: 50%;
+}
+
+.food-map-discovery-loading li.active {
+  color: var(--food-orange-dark);
+}
+
+.food-map-discovery-loading li.complete {
+  color: #318765;
+}
+
+.food-map-discovery-result {
+  margin-top: 15px;
+  padding: 16px;
+  border: 1px solid rgba(111, 75, 43, 0.14);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.food-map-discovery-result.status-external_place_found_in_foodmap {
+  border-color: rgba(49, 135, 101, 0.3);
+}
+
+.food-map-discovery-result-heading h3 {
+  margin-top: 5px;
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.food-map-discovery-result-heading p {
+  margin: 7px 0 0;
+  color: var(--food-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.food-map-discovery-clues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.food-map-discovery-clues span {
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: var(--food-muted);
+  background: #fff5e6;
+  font-size: 9px;
+}
+
+.food-map-discovery-ocr,
+.food-map-discovery-external {
+  margin-top: 13px;
+  padding: 12px 13px;
+  border: 1px solid rgba(111, 75, 43, 0.14);
+  border-radius: 13px;
+  background: #fffaf2;
+}
+
+.food-map-discovery-ocr p {
+  max-height: 100px;
+  margin: 6px 0 0;
+  overflow: auto;
+  color: var(--food-text);
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-line;
+}
+
+.food-map-discovery-ocr small {
+  display: block;
+  margin-top: 5px;
+  color: var(--food-muted);
+  font-size: 9px;
+}
+
+.food-map-discovery-external {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-color: rgba(246, 120, 44, 0.22);
+  background: #fff6e9;
+}
+
+.food-map-discovery-external strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.food-map-discovery-external p {
+  margin: 3px 0 0;
+  color: var(--food-muted);
+  font-size: 10px;
+}
+
+.food-map-discovery-external > b {
+  color: var(--food-muted);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.food-map-discovery-match,
+.food-map-discovery-draft {
+  display: grid;
+  margin-top: 13px;
+  padding: 13px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(49, 135, 101, 0.2);
+  border-radius: 13px;
+  background: #f3fbf7;
+}
+
+.food-map-discovery-match strong,
+.food-map-discovery-draft strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.food-map-discovery-match p,
+.food-map-discovery-draft p {
+  margin: 3px 0 0;
+  color: var(--food-muted);
+  font-size: 10px;
+}
+
+.food-map-discovery-score {
+  padding: 6px 8px;
+  border-radius: 999px;
+  color: #287153;
+  background: #dff4e9;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.food-map-discovery-draft {
+  grid-template-columns: minmax(0, 1fr) auto;
+  border-color: rgba(246, 120, 44, 0.22);
+  background: #fff8ef;
+}
+
+.food-map-discovery-fallback {
+  margin-top: 13px;
+  flex-wrap: wrap;
+}
+
+.food-map-discovery-fallback p,
+.food-map-discovery-dish-help p {
+  width: 100%;
+  margin: 0;
+  color: var(--food-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.food-map-discovery-dish-help {
+  margin-top: 13px;
+  flex-wrap: wrap;
 }
 
 .taste-edge-handle {
@@ -6301,10 +7375,49 @@ onBeforeUnmount(() => {
     font-size: 11px;
   }
 
-  .taste-scan-bar button {
+  .taste-scan-submit {
     min-height: 42px;
     padding: 0 13px;
     font-size: 9px;
+  }
+
+  .taste-scan-upload {
+    width: 36px;
+    height: 36px;
+  }
+
+  .food-map-discovery-panel {
+    top: 72px;
+    width: calc(100% - 16px);
+    max-height: calc(100% - 82px);
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .food-map-discovery-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .food-map-discovery-drop {
+    min-height: 112px;
+  }
+
+  .food-map-discovery-drop img {
+    height: 150px;
+  }
+
+  .food-map-discovery-loading {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .food-map-discovery-match,
+  .food-map-discovery-draft {
+    grid-template-columns: 1fr;
+  }
+
+  .food-map-discovery-draft-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .taste-edge-handle {
@@ -6419,8 +7532,18 @@ onBeforeUnmount(() => {
     font-size: 10px;
   }
 
-  .taste-scan-bar button {
+  .taste-scan-submit {
     padding: 0 10px;
+  }
+
+  .taste-scan-submit {
+    max-width: 92px;
+    line-height: 1.1;
+    white-space: normal;
+  }
+
+  .food-map-discovery-header h2 {
+    font-size: 19px;
   }
 
   .taste-sheet-heading {
@@ -6759,7 +7882,8 @@ onBeforeUnmount(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .taste-scan-bar button,
+  .taste-scan-submit,
+  .taste-scan-upload,
   .taste-result-card,
   .taste-floating-scan,
   .food-map-sidebar,

@@ -16,6 +16,8 @@ import foodStoryChatbotRoutes from './routes/chatbotRoutes.js'
 import adminRoutes from './routes/admin.js'
 import pool from './db.js'
 import aiRoutes from './routes/aiRoutes.js'
+import visionRoutes from './routes/vision.js'
+import foodMapDiscoveryRoutes from './routes/foodMapDiscoveryRoutes.js'
 
 import { initWebSocketServer } from './websocket/wsServer.js'
 
@@ -87,6 +89,8 @@ app.use('/api/restaurants', restaurantsRoutes)
 app.use('/api/chatbot', chatbotRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/ai', aiRoutes)
+app.use('/api/vision', visionRoutes)
+app.use('/api/food-map', foodMapDiscoveryRoutes)
 app.use('/api/chatbot', foodStoryChatbotRoutes)
 
 app.use((req, res) => {

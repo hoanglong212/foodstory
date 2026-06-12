@@ -12,6 +12,12 @@ const pool = mysql.createPool({
   queueLimit: 0,
 })
 
+function parseJsonColumn(value, fallback) {
+  if (value === null || value === undefined) return fallback
+  if (typeof value !== 'string') return value
+  return JSON.parse(value)
+}
+
 export async function saveAiDocumentWithEmbedding({
   sourceType,
   sourceId,
@@ -92,12 +98,13 @@ export async function getAllAiEmbeddings() {
       d.metadata
     FROM ai_embeddings e
     JOIN ai_documents d ON d.id = e.document_id
+    WHERE e.embedding_type = 'text'
     `
   )
 
   return rows.map((row) => ({
     ...row,
-    embedding: JSON.parse(row.embedding),
-    metadata: row.metadata ? JSON.parse(row.metadata) : {},
+    embedding: parseJsonColumn(row.embedding, []),
+    metadata: parseJsonColumn(row.metadata, {}),
   }))
 }

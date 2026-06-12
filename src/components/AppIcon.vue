@@ -38,6 +38,10 @@ const icons = {
     { type: 'rect', x: 3, y: 4, width: 18, height: 18, rx: 2 },
     { type: 'path', d: 'M3 10h18' },
   ],
+  camera: [
+    { type: 'path', d: 'M14.5 4 16 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1.5-3z' },
+    { type: 'circle', cx: 12, cy: 13, r: 3.5 },
+  ],
   'chef-hat': [
     { type: 'path', d: 'M6 13.8a5 5 0 0 1 .8-9.9A5.5 5.5 0 0 1 17.2 4a5 5 0 0 1 .8 9.8' },
     { type: 'path', d: 'M6 13h12v7H6z' },

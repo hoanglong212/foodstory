@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from './AppIcon.vue'
 import api from '../services/api'
@@ -13,11 +13,14 @@ const isOpen = ref(false)
 const messages = ref([])
 const inputText = ref('')
 const isLoading = ref(false)
+const isSearchingImage = ref(false)
 const hasUnread = ref(false)
 const messagesElement = ref(null)
 const lastRecipeId = ref(null)
 const lastRecipeTitle = ref(null)
 const lastRestaurantId = ref(null)
+const imagePreviewUrls = new Set()
+const isBusy = computed(() => isLoading.value || isSearchingImage.value)
 
 function scrollToBottom() {
   const element = messagesElement.value
@@ -73,6 +76,19 @@ function openMap(result = {}) {
 function openRecipe(result) {
   closeChat()
   router.push(`/recipes/${result.id}`)
+}
+
+function openVisionRecipe(result) {
+  closeChat()
+  router.push(`/recipes/${result.source_id}`)
+}
+
+function openVisionRestaurant(result) {
+  closeChat()
+  router.push({
+    path: '/food-map',
+    query: { dish: result.category || result.title || undefined },
+  })
 }
 
 function openLogin() {
@@ -187,7 +203,7 @@ async function handleSuggestion(suggestion, message) {
 
 async function sendMessage(text = inputText.value) {
   const content = String(text || '').trim()
-  if (!content || isLoading.value) return
+  if (!content || isBusy.value) return
 
   messages.value.push({ role: 'user', content })
   inputText.value = ''
@@ -240,6 +256,77 @@ async function sendMessage(text = inputText.value) {
   }
 }
 
+async function handleImageUpload(event) {
+  const input = event.target
+  const file = input.files?.[0]
+  input.value = ''
+
+  if (!file || isBusy.value) return
+
+  if (!file.type.startsWith('image/')) {
+    messages.value.push({
+      role: 'bot',
+      content: 'Please choose a JPEG, PNG, WebP, or GIF image.',
+      type: 'error',
+    })
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    messages.value.push({
+      role: 'bot',
+      content: 'The image must be 5MB or smaller.',
+      type: 'error',
+    })
+    return
+  }
+
+  const imagePreview = URL.createObjectURL(file)
+  imagePreviewUrls.add(imagePreview)
+  messages.value.push({
+    role: 'user',
+    content: 'Searching FoodStory with this image...',
+    imagePreview,
+  })
+  isSearchingImage.value = true
+
+  await nextTick()
+  scrollToBottom()
+
+  try {
+    const formData = new FormData()
+    formData.append('image', file)
+    const response = await api.post('/vision/search', formData, { timeout: 20_000 })
+    const { recipes = [], restaurants = [], total = 0 } = response.data
+
+    if (total === 0) {
+      messages.value.push({
+        role: 'bot',
+        content:
+          "I couldn't find a similar dish in FoodStory. Try a clearer, closer photo of the food.",
+        type: 'vision_no_result',
+      })
+    } else {
+      messages.value.push({
+        role: 'bot',
+        content: `Found ${total} similar FoodStory item${total === 1 ? '' : 's'}.`,
+        type: 'vision_result',
+        visionRecipes: recipes,
+        visionRestaurants: restaurants,
+      })
+    }
+  } catch (error) {
+    messages.value.push({
+      role: 'bot',
+      content: error.response?.data?.error || 'Image search failed. Please try again.',
+      type: 'error',
+    })
+  } finally {
+    isSearchingImage.value = false
+    await nextTick()
+    scrollToBottom()
+  }
+}
+
 onMounted(() => {
   messages.value.push({
     role: 'bot',
@@ -257,6 +344,11 @@ onMounted(() => {
     ],
   })
   hasUnread.value = true
+})
+
+onBeforeUnmount(() => {
+  imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url))
+  imagePreviewUrls.clear()
 })
 
 </script>
@@ -301,7 +393,13 @@ onMounted(() => {
           :class="['message-row', `message-${message.role}`]"
         >
           <div :class="message.role === 'bot' ? 'msg-bot' : 'msg-user'">
-            {{ message.content }}
+            <span>{{ message.content }}</span>
+            <img
+              v-if="message.imagePreview"
+              :src="message.imagePreview"
+              alt="Uploaded food search"
+              class="chat-image-preview"
+            />
           </div>
 
           <div
@@ -309,6 +407,68 @@ onMounted(() => {
             class="rag-warning"
           >
             {{ warningText(message.retrievalStatus) }}
+          </div>
+
+          <div
+            v-if="message.type === 'vision_result'"
+            class="vision-results"
+          >
+            <section v-if="message.visionRecipes?.length" class="vision-section">
+              <p class="vision-label">Similar recipes</p>
+              <button
+                v-for="recipe in message.visionRecipes"
+                :key="`vision-recipe-${recipe.source_id}`"
+                type="button"
+                class="vision-card"
+                @click="openVisionRecipe(recipe)"
+              >
+                <img
+                  :src="recipe.image_url || '/images/food-placeholder.jpg'"
+                  :alt="recipe.title"
+                  class="vision-card-img"
+                  @error="$event.currentTarget.src = '/images/food-placeholder.jpg'"
+                />
+                <span class="vision-card-info">
+                  <strong>{{ recipe.title }}</strong>
+                  <small>
+                    {{ recipe.category || 'Recipe' }}
+                    <span v-if="recipe.avg_rating">
+                      &middot; {{ ratingLabel(recipe.avg_rating) }}
+                    </span>
+                  </small>
+                  <span class="similarity-badge">
+                    {{ Math.round(recipe.similarity * 100) }}% match
+                  </span>
+                </span>
+              </button>
+            </section>
+
+            <section v-if="message.visionRestaurants?.length" class="vision-section">
+              <p class="vision-label">Similar restaurants</p>
+              <button
+                v-for="restaurant in message.visionRestaurants"
+                :key="`vision-restaurant-${restaurant.source_id}`"
+                type="button"
+                class="vision-card"
+                @click="openVisionRestaurant(restaurant)"
+              >
+                <span class="vision-card-info">
+                  <strong>{{ restaurant.title }}</strong>
+                  <small>
+                    {{ restaurant.category || 'Restaurant' }}
+                    <span v-if="restaurant.district">
+                      &middot; {{ restaurant.district }}
+                    </span>
+                    <span v-if="restaurant.avg_rating">
+                      &middot; {{ ratingLabel(restaurant.avg_rating) }}
+                    </span>
+                  </small>
+                  <span class="similarity-badge">
+                    {{ Math.round(restaurant.similarity * 100) }}% match
+                  </span>
+                </span>
+              </button>
+            </section>
           </div>
 
           <div
@@ -428,7 +588,7 @@ onMounted(() => {
               :key="suggestion"
               type="button"
               class="suggestion-chip"
-              :disabled="isLoading"
+              :disabled="isBusy"
               @click="handleSuggestion(suggestion, message)"
             >
               {{ suggestion }}
@@ -436,7 +596,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div v-if="isLoading" class="message-row message-bot">
+        <div v-if="isBusy" class="message-row message-bot">
           <div class="msg-bot typing-bubble" aria-label="FoodBot is responding">
             <span class="typing-indicator" aria-hidden="true">
               <span></span><span></span><span></span>
@@ -454,12 +614,26 @@ onMounted(() => {
           maxlength="500"
           autocomplete="off"
           placeholder="Ask FoodBot..."
-          :disabled="isLoading"
+          :disabled="isBusy"
         />
+        <label
+          class="camera-btn"
+          :class="{ disabled: isBusy }"
+          title="Search by image"
+        >
+          <span class="sr-only">Search FoodStory by image</span>
+          <AppIcon name="camera" size="19" />
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            :disabled="isBusy"
+            @change="handleImageUpload"
+          />
+        </label>
         <button
           type="submit"
           aria-label="Send message"
-          :disabled="isLoading || !inputText.trim()"
+          :disabled="isBusy || !inputText.trim()"
         >
           <AppIcon name="send" size="19" />
         </button>
@@ -648,6 +822,89 @@ onMounted(() => {
   border-radius: 16px 4px 16px 16px;
   color: #fff;
   background: #e53e3e;
+}
+
+.chat-image-preview {
+  display: block;
+  max-width: 160px;
+  max-height: 120px;
+  margin-top: 7px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.vision-results,
+.vision-section {
+  display: grid;
+  width: 100%;
+  gap: 7px;
+}
+
+.vision-section + .vision-section {
+  margin-top: 4px;
+}
+
+.vision-label {
+  margin: 0;
+  color: #aaa;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.vision-card {
+  display: flex;
+  width: 100%;
+  padding: 8px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #38383c;
+  border-radius: 10px;
+  color: #ddd;
+  background: #262629;
+  text-align: left;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.vision-card:hover {
+  border-color: #e53e3e;
+  transform: translateY(-1px);
+}
+
+.vision-card-img {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  border-radius: 7px;
+  object-fit: cover;
+}
+
+.vision-card-info {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.vision-card-info strong {
+  overflow: hidden;
+  color: #fff;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vision-card-info small {
+  color: #aaa;
+  font-size: 10px;
+}
+
+.similarity-badge {
+  width: fit-content;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: #4ade80;
+  background: #183326;
+  font-size: 9px;
+  font-weight: 800;
 }
 
 .result-list {
@@ -844,13 +1101,13 @@ onMounted(() => {
   display: grid;
   min-height: 64px;
   padding: 10px 12px;
-  grid-template-columns: minmax(0, 1fr) 40px;
+  grid-template-columns: minmax(0, 1fr) 40px 40px;
   gap: 8px;
   border-top: 1px solid #353538;
   background: #202023;
 }
 
-.chat-input-area input {
+.chat-input-area > input {
   min-width: 0;
   padding: 0 13px;
   border: 1px solid #3a3a3e;
@@ -861,12 +1118,38 @@ onMounted(() => {
   font-size: 12px;
 }
 
-.chat-input-area input::placeholder {
+.chat-input-area > input::placeholder {
   color: #777;
 }
 
-.chat-input-area input:focus {
+.chat-input-area > input:focus {
   border-color: #e53e3e;
+}
+
+.camera-btn {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid #3a3a3e;
+  border-radius: 11px;
+  color: #ddd;
+  background: #29292c;
+  cursor: pointer;
+}
+
+.camera-btn:hover:not(.disabled) {
+  border-color: #e53e3e;
+  color: #fff;
+}
+
+.camera-btn.disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.camera-btn input {
+  display: none;
 }
 
 .chat-input-area > button {

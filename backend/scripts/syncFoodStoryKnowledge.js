@@ -38,7 +38,9 @@ function joinParts(parts) {
 }
 
 async function clearAiTables() {
-  await pool.execute('DELETE FROM ai_embeddings')
+  await pool.execute(
+    "DELETE FROM ai_embeddings WHERE embedding_type = 'text' OR embedding_type IS NULL"
+  )
   await pool.execute('DELETE FROM ai_documents')
   console.log('Cleared old AI knowledge.')
 }
