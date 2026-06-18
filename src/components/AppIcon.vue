@@ -38,6 +38,10 @@ const icons = {
     { type: 'rect', x: 3, y: 4, width: 18, height: 18, rx: 2 },
     { type: 'path', d: 'M3 10h18' },
   ],
+  camera: [
+    { type: 'path', d: 'M14.5 4 16 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1.5-3z' },
+    { type: 'circle', cx: 12, cy: 13, r: 3.5 },
+  ],
   'chef-hat': [
     { type: 'path', d: 'M6 13.8a5 5 0 0 1 .8-9.9A5.5 5.5 0 0 1 17.2 4a5 5 0 0 1 .8 9.8' },
     { type: 'path', d: 'M6 13h12v7H6z' },
@@ -85,6 +89,11 @@ const icons = {
   mail: [
     { type: 'rect', x: 3, y: 5, width: 18, height: 14, rx: 2 },
     { type: 'path', d: 'm3 7 9 6 9-6' },
+  ],
+  menu: [
+    { type: 'path', d: 'M4 6h16' },
+    { type: 'path', d: 'M4 12h16' },
+    { type: 'path', d: 'M4 18h16' },
   ],
   'map-pin': [
     { type: 'path', d: 'M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z' },
@@ -167,6 +176,10 @@ const icons = {
     { type: 'circle', cx: 9, cy: 7, r: 4 },
     { type: 'path', d: 'M22 21v-2a4 4 0 0 0-3-3.87' },
     { type: 'path', d: 'M16 3.13a4 4 0 0 1 0 7.75' },
+  ],
+  x: [
+    { type: 'path', d: 'M18 6 6 18' },
+    { type: 'path', d: 'm6 6 12 12' },
   ],
   utensils: [
     { type: 'path', d: 'M4 3v7' },

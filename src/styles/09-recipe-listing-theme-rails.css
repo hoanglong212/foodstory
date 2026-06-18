@@ -39,7 +39,8 @@
 :root[data-theme="dark"] body:has(.recipe-reference-page) .main-nav a,
 :root[data-theme="dark"] body:has(.recipe-reference-page) .user-chip,
 :root[data-theme="dark"] body:has(.recipe-reference-page) .logout-button,
-:root[data-theme="dark"] body:has(.recipe-reference-page) .theme-toggle {
+:root[data-theme="dark"] body:has(.recipe-reference-page) .theme-toggle,
+:root[data-theme="dark"] body:has(.recipe-reference-page) .mobile-menu-toggle {
   color: #d8cec4;
 }
 

@@ -9,39 +9,39 @@ const selectedStyle = ref("homemade");
 const foodStyles = [
   {
     value: "street",
-    label: "Người Săn Món Phố",
+    label: "Street Food Hunter",
     icon: "store",
     image:
       "https://images.unsplash.com/photo-1750315606996-9f42c4c81a20?auto=format&fit=crop&w=640&q=70",
     description:
-      "Bạn mê hàng quán địa phương, vị cay nồng, món ăn nhanh và năng lượng náo nhiệt của phố xá.",
-    result: "Hôm nay bạn là Người Săn Món Phố",
+      "You love local eateries, bold spice, quick bites, and the lively energy of the streets.",
+    result: "Today you are a Street Food Hunter",
   },
   {
     value: "homemade",
-    label: "Tín Đồ Cơm Nhà",
+    label: "Home Cooking Lover",
     icon: "home",
     image:
       "https://images.unsplash.com/photo-1775148582534-44e3700ed081?auto=format&fit=crop&w=640&q=70",
     description:
-      "Bạn thích những bữa cơm ấm áp, công thức quen thuộc và hương vị gợi nhớ gia đình.",
-    result: "Hôm nay bạn là Tín Đồ Cơm Nhà",
+      "You enjoy comforting meals, familiar recipes, and flavors that remind you of family.",
+    result: "Today you are a Home Cooking Lover",
   },
 ];
 
 const aboutHighlights = [
-  { label: "Công Thức", icon: "book-open" },
-  { label: "Địa Điểm", icon: "map-pin" },
-  { label: "Đánh Giá", icon: "star" },
+  { label: "Recipes", icon: "book-open" },
+  { label: "Places", icon: "map-pin" },
+  { label: "Reviews", icon: "star" },
 ];
 
 const fullName = computed(() => `${firstName.value} ${lastName.value}`.trim());
 const greeting = computed(() => {
   if (!fullName.value) {
-    return "Nhập tên của bạn để xem lời chào mừng...";
+    return "Enter your name to see a welcome message...";
   }
 
-  return `Xin chào, ${fullName.value}! Chào mừng bạn đến với FoodStory.`;
+  return `Hello, ${fullName.value}! Welcome to FoodStory.`;
 });
 
 const selectedFoodStyle = computed(() => {
@@ -60,7 +60,7 @@ const selectedFoodStyle = computed(() => {
         alt="A bowl of Vietnamese noodle soup"
         decoding="async"
       />
-      <blockquote>"Ẩm thực là ngôn ngữ của tình yêu"</blockquote>
+      <blockquote>"Food is the language of love"</blockquote>
       <div class="about-icons">
         <span v-for="item in aboutHighlights" :key="item.label">
           <AppIcon :name="item.icon" size="17" />
@@ -76,42 +76,42 @@ const selectedFoodStyle = computed(() => {
         </span>
         <strong>FoodStory</strong>
       </p>
-      <h1>Về FoodStory</h1>
+      <h1>About FoodStory</h1>
       <p>
-        FoodStory là blog ẩm thực Việt Nam, nơi chúng tôi kể những câu chuyện
-        qua từng bữa cơm. Từ công thức truyền thống của bà nội đến những món ăn
-        đường phố náo nhiệt, mỗi bài viết là một hành trình khám phá.
+        FoodStory is a Vietnamese food blog where we tell stories through every
+        meal. From family recipes passed down through generations to vibrant
+        street food, every article is a journey of discovery.
       </p>
       <p>
-        Đây là đồ án Giai Đoạn 1 của nhóm sinh viên, được xây dựng bằng Vue,
-        Vite và Vue Router theo phong cách hiện đại, dễ đọc và dễ mở rộng.
+        This student project was built with Vue, Vite, and Vue Router using a
+        modern, readable, and extensible approach.
       </p>
 
       <div class="stats-row">
         <span>
           <AppIcon name="book-open" size="18" />
-          <strong>200+</strong>Công Thức
+          <strong>200+</strong>Recipes
         </span>
         <span>
           <AppIcon name="map-pin" size="18" />
-          <strong>50+</strong>Địa Điểm
+          <strong>50+</strong>Places
         </span>
         <span>
           <AppIcon name="users" size="18" />
-          <strong>10K+</strong>Người Đọc
+          <strong>10K+</strong>Readers
         </span>
       </div>
 
       <section class="welcome-panel">
-        <h2>Xin Chào!</h2>
+        <h2>Hello!</h2>
         <div class="name-grid">
           <label>
-            <span>Tên</span>
-            <input v-model="firstName" type="text" placeholder="VD: Minh" />
+            <span>First Name</span>
+            <input v-model="firstName" type="text" placeholder="Example: Minh" />
           </label>
           <label>
-            <span>Họ</span>
-            <input v-model="lastName" type="text" placeholder="VD: Nguyễn" />
+            <span>Last Name</span>
+            <input v-model="lastName" type="text" placeholder="Example: Nguyen" />
           </label>
         </div>
         <p class="welcome-message">{{ greeting }}</p>
@@ -120,7 +120,7 @@ const selectedFoodStyle = computed(() => {
 
     <section class="choice-panel">
       <div class="choice-heading">
-        <p class="eyebrow">Gu Ẩm Thực</p>
+        <p class="eyebrow">Food Personality</p>
         <h2>Find Your Food Mood</h2>
       </div>
 

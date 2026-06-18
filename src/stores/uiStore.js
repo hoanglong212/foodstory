@@ -28,6 +28,8 @@ export const useUiStore = defineStore('ui', {
     isLoading: false,
     errorMsg: '',
     successMsg: '',
+    notificationId: 0,
+    notificationOptions: {},
   }),
   actions: {
     setDarkMode(value) {
@@ -41,17 +43,22 @@ export const useUiStore = defineStore('ui', {
     setLoading(value) {
       this.isLoading = Boolean(value)
     },
-    setError(message) {
+    setError(message, options = {}) {
       this.errorMsg = message || ''
       this.successMsg = ''
+      this.notificationOptions = options
+      this.notificationId += 1
     },
-    setSuccess(message) {
+    setSuccess(message, options = {}) {
       this.successMsg = message || ''
       this.errorMsg = ''
+      this.notificationOptions = options
+      this.notificationId += 1
     },
     clearMessages() {
       this.errorMsg = ''
       this.successMsg = ''
+      this.notificationOptions = {}
     },
   },
 })

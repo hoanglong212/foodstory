@@ -1,6 +1,7 @@
 import express from 'express'
 import pool from '../db.js'
 import { requireAuth } from '../middleware/authMiddleware.js'
+import { broadcastToAll } from '../websocket/wsServer.js'
 
 const router = express.Router()
 
@@ -58,7 +59,10 @@ router.post('/checklists', requireAuth, async (req, res, next) => {
   try {
     await connection.beginTransaction()
 
-    const [recipes] = await connection.execute('SELECT id FROM recipes WHERE id = ?', [recipeId])
+    const [recipes] = await connection.execute(
+      "SELECT id, title FROM recipes WHERE id = ? AND status = 'approved'",
+      [recipeId],
+    )
     if (recipes.length === 0) {
       await connection.rollback()
       return res.status(404).json({ error: 'Recipe not found.' })
@@ -96,6 +100,19 @@ router.post('/checklists', requireAuth, async (req, res, next) => {
 
     await connection.commit()
     const checklist = await getChecklist(req.user.id, recipeId)
+
+    broadcastToAll(
+      {
+        type: 'checklist_generated',
+        recipeId,
+        recipeTitle: recipes[0].title,
+        userId: req.user.id,
+        username: req.user.username,
+        itemCount: checklist?.items?.length || 0,
+      },
+      { excludeUserId: req.user.id },
+    )
+
     return res.status(201).json({ checklist })
   } catch (error) {
     await connection.rollback()

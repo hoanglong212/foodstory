@@ -37,7 +37,7 @@ router.post('/recipes/:id/rating', requireAuth, async (req, res, next) => {
     await connection.beginTransaction()
 
     const [recipes] = await connection.execute(
-      'SELECT id FROM recipes WHERE id = ? FOR UPDATE',
+      "SELECT id FROM recipes WHERE id = ? AND status = 'approved' FOR UPDATE",
       [recipeId],
     )
     if (recipes.length === 0) {

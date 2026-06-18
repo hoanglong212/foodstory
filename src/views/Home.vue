@@ -1,6 +1,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import AppIcon from "../components/AppIcon.vue";
+import SkeletonCard from "../components/SkeletonCard.vue";
 import { fetchDailyMeal } from "../services/mealApi";
 
 const fallbackMeal = {
@@ -9,7 +10,9 @@ const fallbackMeal = {
   category: "British",
   area: "Beef",
   description:
-    "Một món bánh mặn giàu hương vị, gợi ý cho ngày muốn đổi bữa nhưng vẫn giữ cảm giác ấm cúng của căn bếp gia đình.",
+    "A rich savory pie for days when you want something different without losing the comfort of a home-cooked meal.",
+  tags: [],
+  ingredients: [],
 };
 
 const dailyMeal = ref(fallbackMeal);
@@ -21,46 +24,47 @@ let fallbackTimer = 0;
 
 const featuredRecipes = [
   {
-    title: "Phở Bò Hà Nội Truyền Thống",
-    category: "Món Súp",
+    title: "Traditional Hanoi Beef Pho",
+    category: "Soup",
     image:
       "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=640&q=70",
     description:
-      "Nước dùng ninh chậm, thơm hồi quế, thịt bò mềm và bánh phở trắng mượt.",
-    time: "12 giờ",
-    serves: "4 người",
+      "Slow-simmered broth scented with star anise and cinnamon, tender beef, and silky rice noodles.",
+    time: "12 hours",
+    serves: "4 servings",
     rating: "4.9",
   },
   {
-    title: "Bánh Mì Pate Sài Gòn",
-    category: "Bánh Mì",
+    title: "Saigon Pate Banh Mi",
+    category: "Banh Mi",
     image:
       "https://images.unsplash.com/photo-1600454309261-3dc9b7597637?auto=format&fit=crop&w=640&q=70",
     description:
-      "Ổ bánh giòn rụm với pate, chả lụa, rau thơm, đồ chua và tương ớt.",
-    time: "30 phút",
-    serves: "2 người",
+      "A crisp baguette filled with pate, Vietnamese pork sausage, herbs, pickles, and chili sauce.",
+    time: "30 minutes",
+    serves: "2 servings",
     rating: "4.7",
   },
   {
-    title: "Cơm Rang Dương Châu",
-    category: "Món Xào",
+    title: "Yangzhou Fried Rice",
+    category: "Stir-Fry",
     image:
       "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=640&q=70",
     description:
-      "Cơm rang thập cẩm với tôm, trứng, rau củ nhiều màu sắc và hành lá.",
-    time: "20 phút",
-    serves: "3 người",
+      "Colorful fried rice with shrimp, egg, mixed vegetables, and scallions.",
+    time: "20 minutes",
+    serves: "3 servings",
     rating: "4.5",
   },
 ];
 
 const categories = [
-  { label: "Ẩm Thực Việt", icon: "bowl", accent: "red" },
-  { label: "Đường Phố", icon: "store", accent: "pink" },
-  { label: "Công Thức", icon: "book-open", accent: "blue" },
-  { label: "Xu Hướng", icon: "trending-up", accent: "orange" },
-  { label: "Nguyên Liệu", icon: "leaf", accent: "green" },
+  { label: "Vietnamese Cuisine", icon: "bowl", accent: "red" },
+  { label: "Street Food", icon: "store", accent: "pink" },
+  { label: "Recipes", icon: "book-open", accent: "blue" },
+  { label: "Trends", icon: "trending-up", accent: "orange" },
+  { label: "Ingredients", icon: "leaf", accent: "green" },
+  { label: "News", icon: "newspaper", accent: "purple" },
 ];
 
 async function loadDailyMeal() {
@@ -79,7 +83,7 @@ async function loadDailyMeal() {
     if (!isAlive) {
       return;
     }
-    dailyMealError.value = "Không thể tải nhanh gợi ý từ TheMealDB, đang hiển thị món dự phòng.";
+    dailyMealError.value = "TheMealDB suggestion could not be loaded, so a fallback meal is shown.";
     dailyMeal.value = fallbackMeal;
   } finally {
     if (isAlive) {
@@ -113,20 +117,20 @@ onBeforeUnmount(() => {
 <template>
   <section class="hero-section">
     <div class="hero-content page-pad">
-      <p class="eyebrow">Blog Ẩm Thực Việt Nam</p>
-      <h1>Khám Phá Ẩm Thực <span>Việt Nam</span></h1>
+      <p class="eyebrow">Vietnamese Food Blog</p>
+      <h1>Discover <span>Vietnamese Cuisine</span></h1>
       <p class="hero-copy">
-        Chào mừng bạn đến với FoodStory, nơi mỗi món ăn là một câu chuyện từ bếp
-        nhà đến con phố náo nhiệt.
+        Welcome to FoodStory, where every dish tells a story from the home
+        kitchen to the liveliest streets.
       </p>
       <div class="hero-actions">
         <RouterLink class="btn btn-primary" to="/news">
           <AppIcon name="newspaper" size="19" />
-          <span>Xem Tin Tức</span>
+          <span>View News</span>
         </RouterLink>
         <RouterLink class="btn btn-outline" to="/about">
           <AppIcon name="users" size="19" />
-          <span>Về Chúng Tôi</span>
+          <span>About Us</span>
         </RouterLink>
       </div>
     </div>
@@ -135,11 +139,11 @@ onBeforeUnmount(() => {
   <section class="section page-pad">
     <div class="section-heading split-heading">
       <div>
-        <p class="text-red">Công Thức Nổi Bật</p>
-        <h2>Những Món Ăn Được Yêu Thích Nhất</h2>
+        <p class="text-red">Featured Recipes</p>
+        <h2>Our Most Loved Dishes</h2>
       </div>
       <RouterLink class="text-link" to="/news">
-        <span>Xem tất cả</span>
+        <span>View all</span>
         <AppIcon name="arrow-right" size="17" />
       </RouterLink>
     </div>
@@ -178,7 +182,7 @@ onBeforeUnmount(() => {
               {{ recipe.rating }}
             </strong>
             <RouterLink to="/news">
-              <span>Xem Thêm</span>
+              <span>View More</span>
               <AppIcon name="arrow-right" size="16" />
             </RouterLink>
           </div>
@@ -193,10 +197,11 @@ onBeforeUnmount(() => {
       <h2>Daily Inspiration</h2>
     </div>
 
-    <p v-if="dailyMealLoading" class="status-panel">Đang tải món ăn hôm nay...</p>
     <p v-if="dailyMealError" class="form-error" role="status">{{ dailyMealError }}</p>
+    
+    <SkeletonCard v-if="dailyMealLoading" variant="random-card" />
 
-    <article v-if="dailyMeal" class="random-card">
+    <article v-if="dailyMeal && !dailyMealLoading" class="random-card">
       <img
         :src="dailyMeal.image"
         :alt="`Meal inspiration: ${dailyMeal.title}`"
@@ -212,6 +217,23 @@ onBeforeUnmount(() => {
         <p>
           {{ dailyMeal.description.slice(0, 220) }}...
         </p>
+        
+        <div v-if="dailyMeal.tags && dailyMeal.tags.length" class="meal-tags">
+          <span v-for="tag in dailyMeal.tags" :key="tag" class="tag-badge">
+            {{ tag }}
+          </span>
+        </div>
+
+        <div v-if="dailyMeal.ingredients && dailyMeal.ingredients.length" class="meal-ingredients">
+          <p class="ingredients-label">Key Ingredients:</p>
+          <ul class="ingredients-list">
+            <li v-for="(ingredient, idx) in dailyMeal.ingredients.slice(0, 3)" :key="idx">
+              <span>{{ ingredient.name }}</span>
+              <span v-if="ingredient.measure" class="measure">{{ ingredient.measure }}</span>
+            </li>
+          </ul>
+        </div>
+
         <RouterLink class="btn btn-primary" to="/recipes">
           <AppIcon name="utensils" size="19" />
           <span>Explore Recipes</span>
@@ -222,16 +244,16 @@ onBeforeUnmount(() => {
 
   <section class="quote-band page-pad">
     <blockquote>
-      <span>"Ẩm thực là ngôn ngữ của tình yêu -</span>
-      <strong>mỗi bữa ăn là một kỷ niệm."</strong>
+      <span>"Food is the language of love -</span>
+      <strong>every meal is a memory."</strong>
     </blockquote>
     <p>- FoodStory</p>
   </section>
 
   <section class="category-band page-pad">
     <div class="section-heading centered">
-      <p class="eyebrow">Khám Phá Theo Danh Mục</p>
-      <h2>Chủ Đề Ẩm Thực</h2>
+      <p class="eyebrow">Explore by Category</p>
+      <h2>Food Topics</h2>
     </div>
     <div class="category-grid">
       <article

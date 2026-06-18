@@ -12,6 +12,7 @@ const state = {
   existingRecipeId: 0,
   existingNewsId: 0,
   tempRecipeId: 0,
+  tempSubmissionId: 0,
   tempCommentId: 0,
   tempChecklistItemId: 0,
   results: [],
@@ -93,6 +94,9 @@ async function login(email, password) {
 }
 
 async function cleanup() {
+  if (state.tempSubmissionId && state.adminToken) {
+    await request('DELETE', `/recipes/${state.tempSubmissionId}`, { token: state.adminToken })
+  }
   if (state.tempRecipeId && state.adminToken) {
     await request('DELETE', `/recipes/${state.tempRecipeId}`, { token: state.adminToken })
   }
@@ -215,6 +219,69 @@ async function main() {
       ],
       tags: tagIds,
     }
+
+    await test('Recipe submission missing token', 401, 'POST', '/recipes/submissions', {
+      body: tempRecipePayload,
+    })
+    await test('Recipe submission validation rejects empty body', 400, 'POST', '/recipes/submissions', {
+      token: state.userToken,
+      body: {},
+    })
+    const submissionTitle = `API Smoke Pending Submission ${Date.now()}`
+    const submittedRecipe = await test(
+      'Recipe submission creates pending recipe',
+      201,
+      'POST',
+      '/recipes/submissions',
+      {
+        token: state.userToken,
+        body: {
+          ...tempRecipePayload,
+          title: submissionTitle,
+          description: 'Temporary pending recipe submitted by a normal user.',
+        },
+      },
+      (res) => res.data?.recipe?.status === 'pending',
+    )
+    state.tempSubmissionId = submittedRecipe.data?.recipe?.id || 0
+    await test(
+      'Pending recipe hidden from anonymous detail',
+      404,
+      'GET',
+      `/recipes/${state.tempSubmissionId}`,
+    )
+    await test(
+      'Pending recipe visible to submitter',
+      200,
+      'GET',
+      `/recipes/${state.tempSubmissionId}`,
+      { token: state.userToken },
+      (res) => res.data?.recipe?.status === 'pending',
+    )
+    await test(
+      'Pending recipe hidden from public recipe list',
+      200,
+      'GET',
+      `/recipes?search=${encodeURIComponent(submissionTitle)}&page=1&pageSize=10`,
+      {},
+      (res) => res.data?.items?.length === 0,
+    )
+    await test(
+      'Pending recipe visible in admin moderation list',
+      200,
+      'GET',
+      `/admin/recipes?status=pending&search=${encodeURIComponent(submissionTitle)}&page=1`,
+      { token: state.adminToken },
+      (res) => res.data?.items?.some((recipe) => recipe.id === state.tempSubmissionId),
+    )
+    await test(
+      'Admin deletes pending submission',
+      200,
+      'DELETE',
+      `/recipes/${state.tempSubmissionId}`,
+      { token: state.adminToken },
+    )
+    state.tempSubmissionId = 0
 
     const createdRecipe = await test('Recipe create admin success', 201, 'POST', '/recipes', {
       token: state.adminToken,

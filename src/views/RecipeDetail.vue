@@ -49,6 +49,9 @@ let actionSuccessTimer = 0
 const ratingButtons = [1, 2, 3, 4, 5]
 const recipe = computed(() => recipeStore.selectedRecipe)
 const canManageRecipe = computed(() => authStore.isAdmin)
+const moderationStatus = computed(() => recipe.value?.status || 'approved')
+const isAwaitingModeration = computed(() => moderationStatus.value === 'pending')
+const isRejected = computed(() => moderationStatus.value === 'rejected')
 const categoryLabel = computed(() => firstPresent(recipe.value?.category_name) || 'Recipe')
 const heroImage = computed(() => firstPresent(recipe.value?.image_url) || FALLBACK_IMAGE)
 const averageRating = computed(() => safeNumber(recipe.value?.avg_rating || recipe.value?.average_rating))
@@ -423,6 +426,19 @@ async function shareRecipe() {
   }
 }
 
+function openRecipeOnMap() {
+  if (!recipe.value?.id) return
+
+  router.push({
+    path: '/food-map',
+    query: {
+      recipe_id: recipe.value.id,
+      dish: recipe.value.title,
+      mode: 'community',
+    },
+  })
+}
+
 function formatDate(value) {
   if (!value) {
     return ''
@@ -534,8 +550,6 @@ async function generateChecklist() {
     if (!isAlive || !checklist) {
       return
     }
-    showSuccessMessage('Checklist generated.')
-    uiStore.setSuccess('Checklist generated.')
   } catch (error) {
     if (!isAlive) {
       return
@@ -847,6 +861,25 @@ watch(
     <p v-else-if="recipeStore.error" class="form-error" role="alert">{{ recipeStore.error }}</p>
 
     <article v-else-if="recipe" class="recipe-article" :class="{ 'cook-mode-active': isCookMode }">
+      <div
+        v-if="isAwaitingModeration || isRejected"
+        :class="['moderation-banner', moderationStatus]"
+        role="status"
+      >
+        <AppIcon :name="isRejected ? 'message' : 'clock'" size="20" />
+        <div>
+          <strong>
+            {{ isRejected ? 'Recipe was not approved' : 'Recipe is pending review' }}
+          </strong>
+          <p v-if="isRejected">
+            {{ recipe.rejection_reason || 'The administrator did not provide a rejection reason.' }}
+          </p>
+          <p v-else>
+            Only you and administrators can view this page before the recipe is published.
+          </p>
+        </div>
+      </div>
+
       <nav class="recipe-breadcrumb" aria-label="Breadcrumb">
         <RouterLink to="/recipes">Recipes</RouterLink>
         <span>/</span>
@@ -907,6 +940,15 @@ watch(
             <button class="recipe-action-link" type="button" @click="shareRecipe">
               <AppIcon name="send" size="18" />
               <span>Share</span>
+            </button>
+            <button
+              v-if="authStore.isLoggedIn"
+              class="recipe-action-link"
+              type="button"
+              @click="openRecipeOnMap"
+            >
+              <AppIcon name="map-pin" size="18" />
+              <span>View on Map</span>
             </button>
             <button
               v-if="authStore.isLoggedIn"
@@ -1295,7 +1337,7 @@ watch(
             </nav>
           </section>
 
-          <section class="recipe-side-card recipe-checklist-side">
+          <section id="ingredient-checklist" class="recipe-side-card recipe-checklist-side">
             <div class="recipe-side-heading">
               <span class="recipe-side-heading-icon checklist">
                 <AppIcon name="check" size="18" />
@@ -1349,3 +1391,45 @@ watch(
     </article>
   </section>
 </template>
+
+<style scoped>
+.moderation-banner {
+  display: flex;
+  max-width: 1180px;
+  margin: 0 auto 24px;
+  padding: 15px 18px;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid rgba(180, 112, 20, 0.42);
+  border-radius: 10px;
+  color: #8a570f;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.moderation-banner.rejected {
+  border-color: rgba(216, 67, 77, 0.42);
+  color: var(--accent);
+  background: rgba(216, 67, 77, 0.09);
+}
+
+:global(:root[data-theme="dark"]) .moderation-banner.pending {
+  color: #fde68a;
+  background: rgba(180, 83, 9, 0.18);
+}
+
+.moderation-banner div {
+  display: grid;
+  gap: 3px;
+}
+
+.moderation-banner strong {
+  color: currentColor;
+}
+
+.moderation-banner p {
+  margin: 0;
+  color: var(--muted-strong);
+  font-size: 13px;
+  line-height: 1.5;
+}
+</style>

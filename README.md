@@ -20,7 +20,9 @@ copy .env.example .env
 npm run dev
 ```
 
-Create the MySQL database with `backend/database/schema.sql`, seed recipes with `backend/database/seed.sql`, create hashed users with `npm run seed:users`, and migrate Stage 1 news with `npm run migrate:news`.
+Before starting the backend, start MySQL, create the database with `backend/database/schema.sql`, run migrations with `npm run migrate`, seed recipes with `backend/database/seed.sql`, create hashed users with `npm run seed:users`, and migrate Stage 1 news with `npm run migrate:news`.
+
+For an existing database, run `npm run migrate` after pulling backend changes. On Windows PowerShell systems that block `npm.ps1`, use `npm.cmd run dev`.
 
 ## API Testing
 

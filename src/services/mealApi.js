@@ -65,8 +65,25 @@ export async function fetchDailyMeal() {
     category: meal.strCategory,
     area: meal.strArea,
     description: meal.strInstructions,
+    tags: (meal.strTags || '').split(',').filter(tag => tag.trim()).map(tag => tag.trim()).slice(0, 3),
+    ingredients: extractIngredients(meal),
   }
 
   writeCachedMeal(mealSummary)
   return mealSummary
+}
+
+function extractIngredients(meal) {
+  const ingredients = []
+  for (let i = 1; i <= 20; i++) {
+    const ingredient = meal[`strIngredient${i}`]
+    const measure = meal[`strMeasure${i}`]
+    if (ingredient && ingredient.trim()) {
+      ingredients.push({
+        name: ingredient.trim(),
+        measure: (measure || '').trim(),
+      })
+    }
+  }
+  return ingredients.slice(0, 5)
 }

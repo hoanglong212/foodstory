@@ -29,7 +29,7 @@ api.interceptors.response.use(
       window.localStorage.removeItem(CURRENT_USER_KEY)
       window.dispatchEvent(
         new CustomEvent('foodstory-auth-expired', {
-          detail: { message: 'Phiên đăng nhập đã hết hạn' },
+          detail: { message: 'Your login session has expired.' },
         }),
       )
     }

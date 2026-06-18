@@ -376,6 +376,18 @@ export const useRecipeStore = defineStore('recipes', {
         throw new Error(message)
       }
     },
+    async submitRecipe(payload) {
+      const uiStore = useUiStore()
+      try {
+        const response = await api.post('/recipes/submissions', payload)
+        uiStore.setSuccess(response.data.message || 'The recipe was submitted for review.')
+        return response.data.recipe
+      } catch (error) {
+        const message = getApiError(error, 'The recipe could not be submitted.')
+        uiStore.setError(message)
+        throw new Error(message)
+      }
+    },
     async updateRecipe(id, payload) {
       const uiStore = useUiStore()
       try {

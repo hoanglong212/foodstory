@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS food_spots (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  recipe_id INT NULL,
+  name VARCHAR(150) NOT NULL,
+  dish_name VARCHAR(150) NULL,
+  category VARCHAR(80) NULL,
+  district VARCHAR(80) NULL,
+  latitude DECIMAL(10,7) NOT NULL,
+  longitude DECIMAL(10,7) NOT NULL,
+  rating TINYINT NULL CHECK (rating BETWEEN 1 AND 5),
+  notes TEXT NULL,
+  tags VARCHAR(255) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE SET NULL,
+  INDEX idx_user_id (user_id),
+  INDEX idx_recipe_id (recipe_id),
+  INDEX idx_coordinates (latitude, longitude)
+);

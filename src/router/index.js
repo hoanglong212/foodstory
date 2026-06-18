@@ -12,6 +12,8 @@ const RecipeForm = () => import('../views/RecipeForm.vue')
 const Login = () => import('../views/Login.vue')
 const Register = () => import('../views/Register.vue')
 const Profile = () => import('../views/Profile.vue')
+const FoodMapView = () => import('../views/FoodMapView.vue')
+const AdminDashboardView = () => import('../views/AdminDashboardView.vue')
 const NotFound = () => import('../views/NotFound.vue')
 
 const router = createRouter({
@@ -47,8 +49,8 @@ const router = createRouter({
     },
     {
       path: '/admin',
-      name: 'admin',
-      component: Recipes,
+      name: 'AdminDashboard',
+      component: AdminDashboardView,
       meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
@@ -56,6 +58,12 @@ const router = createRouter({
       name: 'recipe-new',
       component: RecipeForm,
       meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/recipes/submit',
+      name: 'recipe-submit',
+      component: RecipeForm,
+      meta: { requiresAuth: true, userSubmission: true },
     },
     {
       path: '/recipes/:id',
@@ -84,6 +92,12 @@ const router = createRouter({
       path: '/profile',
       name: 'profile',
       component: Profile,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/food-map',
+      name: 'FoodMap',
+      component: FoodMapView,
       meta: { requiresAuth: true },
     },
     {
@@ -129,7 +143,11 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresAdmin && !authStore.isAdmin) {
     uiStore.setError('Admin permission is required for that page.')
-    return { name: authStore.isLoggedIn ? 'recipes' : 'login' }
+    return { name: authStore.isLoggedIn ? 'home' : 'login' }
+  }
+
+  if (to.meta.userSubmission && authStore.isAdmin) {
+    return { name: 'AdminDashboard' }
   }
 
   if (to.meta.guestOnly && authStore.isLoggedIn) {
