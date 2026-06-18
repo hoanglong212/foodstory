@@ -46,7 +46,7 @@ const upload = multer({
   limits: {
     fileSize: MAX_IMAGE_BYTES,
     files: 1,
-    fields: 2,
+    fields: 3,
   },
   fileFilter(req, file, callback) {
     if (!ALLOWED_IMAGE_TYPES.has(file.mimetype)) {
@@ -84,7 +84,10 @@ export function createFoodMapSocialDiscoveryRouter({
         return next(uploadError)
       }
 
-      const parsedUrl = optionalString(req.body?.url, MAX_URL_LENGTH)
+      const parsedUrl = optionalString(
+        req.body?.url ?? req.body?.sourceUrl,
+        MAX_URL_LENGTH,
+      )
       const parsedHint = optionalString(req.body?.hint, MAX_HINT_LENGTH)
       if (parsedUrl.error) {
         return validationError(res, `URL ${parsedUrl.error}.`, 'url')

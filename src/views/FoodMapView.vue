@@ -189,24 +189,55 @@ let markerRenderFrame = 0;
 let restaurantRenderFrame = 0;
 const markersById = new Map();
 const discoveryLoadingSteps = [
+  "Reading social input",
   "Reading image text",
-  "Identifying dish signals",
-  "Finding the real-world place",
-  "Checking FoodStory Map",
+  "Extracting OCR evidence",
   "Preparing result",
 ];
 
 const selectedSpot = computed(() => foodSpotStore.selectedSpot);
 const discoveryStatusLabel = computed(() => {
   const labels = {
+    address_found: "Address evidence found",
+    place_name_found: "Place name evidence found",
+    dish_only: "Dish evidence found",
     external_place_found_in_foodmap: "Found in FoodStory Map",
     external_place_found_not_in_foodmap: "Place found outside FoodStory Map",
     external_place_not_found_dish_identified: "Dish identified",
     external_place_not_found_unclear: "Place and dish unclear",
+    place_found_in_foodmap: "Found in FoodStory Map",
+    place_found_not_in_foodmap: "Place evidence found",
+    dish_identified_only: "Dish evidence found",
+    needs_screenshot_or_hint: "Screenshot or hint needed",
     url_extraction_failed: "Screenshot needed",
     unclear: "Input unclear",
   };
   return labels[discoveryResult.value?.status] || "Food Map discovery";
+});
+const discoveryOcrEvidence = computed(() => {
+  const result = discoveryResult.value;
+  if (!result) return null;
+  if (result.ocrEvidence) return result.ocrEvidence;
+
+  const visual = result.visualUnderstanding;
+  if (!visual || (!visual.ocrText && visual.ocrUsable !== false)) return null;
+  return {
+    text: visual.ocrText || null,
+    usable: visual.ocrUsable !== false && Boolean(visual.ocrText),
+    confidence: visual.ocrConfidence,
+    reason: visual.ocrReason || null,
+    lines: visual.ocrLines || [],
+    debug: { implemented: true },
+  };
+});
+const shouldShowDiscoveryOcr = computed(() => {
+  const evidence = discoveryOcrEvidence.value;
+  if (!evidence) return false;
+  return Boolean(
+    evidence.text ||
+      evidence.debug?.implemented ||
+      (evidence.reason && evidence.reason !== "not_provided"),
+  );
 });
 const isEditing = computed(() => editingSpotId.value !== null);
 const isCommunityMode = computed(() => mapMode.value === "community");
@@ -1504,9 +1535,9 @@ async function submitFoodMapDiscovery() {
     if (discoveryHint.value.trim()) {
       formData.append("hint", discoveryHint.value.trim());
     }
-    if (sourceUrl) formData.append("sourceUrl", sourceUrl);
+    if (sourceUrl) formData.append("url", sourceUrl);
 
-    const response = await api.post("/food-map/discover", formData, {
+    const response = await api.post("/food-map/social-discovery", formData, {
       timeout: 60_000,
     });
     discoveryLoadingStep.value = discoveryLoadingSteps.length - 1;
@@ -1973,17 +2004,14 @@ onBeforeUnmount(() => {
         </div>
 
         <div
-          v-if="
-            discoveryResult.visualUnderstanding?.ocrText ||
-            discoveryResult.visualUnderstanding?.ocrUsable === false
-          "
+          v-if="shouldShowDiscoveryOcr"
           class="food-map-discovery-ocr"
         >
           <template
-            v-if="discoveryResult.visualUnderstanding?.ocrUsable !== false"
+            v-if="discoveryOcrEvidence?.usable !== false && discoveryOcrEvidence?.text"
           >
             <span>Text found in image</span>
-            <p>{{ discoveryResult.visualUnderstanding.ocrText }}</p>
+            <p>{{ discoveryOcrEvidence.text }}</p>
           </template>
           <template v-else>
             <span>Image text</span>
@@ -1992,14 +2020,14 @@ onBeforeUnmount(() => {
           <small
             v-if="
               Number.isFinite(
-                discoveryResult.visualUnderstanding.ocrConfidence,
+                discoveryOcrEvidence?.confidence,
               )
             "
           >
             OCR confidence:
             {{
               Math.round(
-                discoveryResult.visualUnderstanding.ocrConfidence * 100,
+                discoveryOcrEvidence.confidence * 100,
               )
             }}%
           </small>
