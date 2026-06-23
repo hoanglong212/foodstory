@@ -14,6 +14,7 @@ import {
 } from '../services/foodMapSocialDiscoveryService.js'
 import {
   extractFoodMapEntities,
+  isDescriptiveSocialTitle,
 } from '../services/foodMapEntityExtractionService.js'
 import {
   buildFoodMapLocationQuery,
@@ -24,12 +25,26 @@ import {
   isPrivateIpAddress,
 } from '../services/socialUrlExtractionService.js'
 import {
+  resolveSocialInput,
+} from '../services/socialInputResolverService.js'
+import {
+  parseYouTubeVideoId,
+  resolveYouTubeUrl,
+} from '../services/socialUrlProviders/youtubeUrlProvider.js'
+import {
+  runFoodMapEvidenceValidation,
+  shouldRunGeminiEvidenceValidation,
+  validateFoodMapEvidenceWithGemini,
+} from '../services/geminiEvidenceValidationService.js'
+import {
   extractTextPlaceSignal,
 } from '../services/textPlaceSignalExtractor.js'
 import {
   extractLocalOcrSignals,
   preprocessLocalOcrImage,
 } from '../services/localOcrService.js'
+
+process.env.FOOD_MAP_EVIDENCE_VALIDATOR = 'rule'
 
 const tinyPng = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
@@ -57,7 +72,7 @@ const metadataHtml = `<!doctype html>
   </body>
 </html>`
 const mockOcrSuccess = async () => ({
-  text: 'COM TAM THANH TU\n123 Le Loi, District 1\n0909 000 111',
+  text: 'COM TAM THANH TU\n123 Le Loi, District 1\nĐT: 0909 000 111',
   usable: true,
   ocrUsable: true,
   confidence: 0.87,
@@ -65,7 +80,7 @@ const mockOcrSuccess = async () => ({
   lines: [
     { text: 'COM TAM THANH TU', confidence: 0.91, type: 'sign' },
     { text: '123 Le Loi, District 1', confidence: 0.84, type: 'address' },
-    { text: '0909 000 111', confidence: 0.86, type: 'phone' },
+    { text: 'ĐT: 0909 000 111', confidence: 0.86, type: 'phone' },
   ],
   warnings: [],
   debug: {
@@ -129,8 +144,161 @@ function analyzerWith(fetchImpl, overrides = {}, dependencyOverrides = {}) {
   return (input) =>
     analyzeFoodMapSocialDiscovery(input, {
       extractSocialUrlSignals: extractorWith(fetchImpl, overrides),
+      metadataOcrEnabled: false,
+      evidenceValidatorMode: 'rule',
       ...dependencyOverrides,
     })
+}
+
+function metadataSignals(overrides = {}) {
+  return {
+    finalUrl: null,
+    platform: 'web',
+    title: null,
+    description: null,
+    ogTitle: null,
+    ogDescription: null,
+    ogImage: null,
+    twitterTitle: null,
+    twitterDescription: null,
+    twitterImage: null,
+    canonicalUrl: null,
+    siteName: null,
+    rawTextSnippet: null,
+    jsonLdBusinesses: [],
+    extractionStatus: 'success',
+    warnings: [],
+    ...overrides,
+  }
+}
+
+const disabledLocationResolution = async () => ({
+  status: 'provider_disabled',
+  resolvedLocation: null,
+  candidates: [],
+  confidence: 0,
+  reason: 'provider_disabled',
+  warnings: [],
+})
+
+function rulePipelineDependencies(overrides = {}) {
+  return {
+    extractFoodMapEntities,
+    resolveFoodMapLocation: disabledLocationResolution,
+    metadataOcrEnabled: false,
+    evidenceValidatorMode: 'rule',
+    ...overrides,
+  }
+}
+
+function geminiValidationResult(overrides = {}) {
+  return {
+    status: 'validated',
+    confidence: 0.9,
+    correctedEntities: {
+      placeName: null,
+      address: null,
+      phones: [],
+      dishNames: [],
+      locationHints: [],
+      ...(overrides.correctedEntities || {}),
+    },
+    rejectedEntities: [],
+    canResolveLocation: false,
+    recommendedNextAction: 'ask_for_hint',
+    warnings: [],
+    ...overrides,
+    correctedEntities: {
+      placeName: null,
+      address: null,
+      phones: [],
+      dishNames: [],
+      locationHints: [],
+      ...(overrides.correctedEntities || {}),
+    },
+  }
+}
+
+function mockedGeminiDependencies(result, overrides = {}) {
+  return rulePipelineDependencies({
+    evidenceValidatorMode: 'gemini',
+    geminiEvidenceValidationOptions: {
+      apiKey: 'mock-gemini-key',
+      model: 'mock-gemini-model',
+      invokeGemini: async () => result,
+    },
+    ...overrides,
+  })
+}
+
+function resolvedYouTubeEvidence({
+  title,
+  thumbnailText = null,
+  warnings = [],
+} = {}) {
+  const textSources = [
+    title
+      ? {
+          type: 'youtube_title',
+          text: title,
+          confidence: 0.66,
+          source: 'youtube_api',
+        }
+      : null,
+    thumbnailText
+      ? {
+          type: 'thumbnail_ocr',
+          text: thumbnailText,
+          confidence: 0.42,
+          source: 'youtube_thumbnail',
+        }
+      : null,
+  ].filter(Boolean)
+  return {
+    inputType: 'youtube_url',
+    sourceUrl: 'https://www.youtube.com/shorts/test-video',
+    platform: 'youtube',
+    textSources,
+    mediaSources: [],
+    warnings,
+    debug: {
+      provider: 'youtube',
+      extractionStatus: 'success',
+      metadataOcrStatus: thumbnailText ? 'usable' : 'not_available',
+      videoId: 'test-video',
+      urlEvidence: {
+        platform: 'youtube',
+        provider: 'youtube',
+        resolvedInputType: 'youtube_url',
+        extractionStatus: 'success',
+        videoId: 'test-video',
+        title: title || null,
+        description: null,
+        channelTitle: 'Test Channel',
+        publishedAt: null,
+        ogTitle: null,
+        ogDescription: null,
+        jsonLdEvidence: [],
+        thumbnailUrl: null,
+        thumbnailOcrStatus: thumbnailText ? 'usable' : 'not_available',
+        warnings,
+      },
+    },
+    mediaOcrEvidence: thumbnailText
+      ? {
+          text: thumbnailText,
+          usable: true,
+          ocrUsable: true,
+          confidence: 0.42,
+          reason: 'usable',
+          lines: [],
+          strongLines: [],
+          weakLines: [],
+          warnings: [],
+          debug: { provider: 'mock' },
+        }
+      : null,
+  }
 }
 
 function assertNoPlaceOrDishClaims(result) {
@@ -161,7 +329,7 @@ function normalizeForAssert(value) {
 }
 
 function assertEntitiesContract(entities) {
-  assert.deepEqual(Object.keys(entities), [
+  assert.deepEqual(Object.keys(entities).slice(0, 9), [
     'address',
     'placeName',
     'phones',
@@ -189,6 +357,10 @@ function assertEntitiesContract(entities) {
   assert.ok(Array.isArray(entities.priceHints))
   assert.ok(Array.isArray(entities.locationHints))
   assert.ok(Array.isArray(entities.warnings))
+  if (Object.hasOwn(entities, 'extractorUsed')) {
+    assert.equal(typeof entities.extractorUsed, 'string')
+    assert.equal(typeof entities.mergeDebug, 'object')
+  }
 }
 
 function assertLocationQueryContract(locationQuery) {
@@ -196,8 +368,11 @@ function assertLocationQueryContract(locationQuery) {
     'query',
     'canResolveLocation',
     'confidence',
+    'score',
     'reason',
+    'strategy',
     'components',
+    'evidence',
     'warnings',
   ])
   assert.deepEqual(Object.keys(locationQuery.components), [
@@ -210,11 +385,14 @@ function assertLocationQueryContract(locationQuery) {
   ])
   assert.equal(typeof locationQuery.canResolveLocation, 'boolean')
   assert.equal(typeof locationQuery.confidence, 'number')
+  assert.equal(typeof locationQuery.score, 'number')
   assert.equal(typeof locationQuery.reason, 'string')
+  assert.equal(typeof locationQuery.strategy, 'string')
   assert.ok(Array.isArray(locationQuery.components.phones))
   assert.ok(Array.isArray(locationQuery.components.dishNames))
   assert.ok(Array.isArray(locationQuery.components.locationHints))
   assert.ok(Array.isArray(locationQuery.components.priceHints))
+  assert.ok(Array.isArray(locationQuery.evidence))
   assert.ok(Array.isArray(locationQuery.warnings))
 }
 
@@ -228,6 +406,8 @@ function assertStableResponseContract(result) {
     'textSources',
     'entities',
     'locationQuery',
+    'locationResolution',
+    'nextAction',
     'place',
     'dishFallback',
     'addPlaceDraft',
@@ -260,6 +440,11 @@ function assertStableResponseContract(result) {
   assert.ok(Array.isArray(result.textSources))
   assertEntitiesContract(result.entities)
   assertLocationQueryContract(result.locationQuery)
+  assert.equal(typeof result.locationResolution.status, 'string')
+  assert.ok(Array.isArray(result.locationResolution.candidates))
+  assert.equal(typeof result.nextAction.type, 'string')
+  assert.equal(typeof result.nextAction.message, 'string')
+  assert.equal(typeof result.nextAction.payload, 'object')
   assert.deepEqual(Object.keys(result.place), [
     'name',
     'address',
@@ -337,6 +522,1278 @@ async function run() {
   )
   assert.equal(detectSocialPlatform('not a url'), 'unknown')
   console.log('PASS: social platform detection is deterministic by hostname')
+
+  const youtubeVideoId = 'UElkbCq1pw8'
+  assert.equal(
+    parseYouTubeVideoId(
+      `https://www.youtube.com/shorts/${youtubeVideoId}?si=abc`,
+    ),
+    youtubeVideoId,
+  )
+  assert.equal(
+    detectSocialPlatform(
+      `https://www.youtube.com/shorts/${youtubeVideoId}?si=abc`,
+    ),
+    'youtube',
+  )
+  assert.equal(
+    parseYouTubeVideoId(
+      `https://www.youtube.com/watch?v=${youtubeVideoId}&t=10`,
+    ),
+    youtubeVideoId,
+  )
+  assert.equal(
+    parseYouTubeVideoId(`https://youtu.be/${youtubeVideoId}`),
+    youtubeVideoId,
+  )
+  assert.equal(
+    parseYouTubeVideoId(
+      `https://m.youtube.com/watch?v=${youtubeVideoId}`,
+    ),
+    youtubeVideoId,
+  )
+  console.log('PASS: YouTube watch, mobile, short, and youtu.be IDs parse safely')
+
+  const firstClassHint = await resolveSocialInput(
+    { hint: 'Quán cháo lòng Mộc Quận 5' },
+    { metadataOcrEnabled: false },
+  )
+  const firstClassHintSource = firstClassHint.textSources.find(
+    (source) => source.type === 'user_hint',
+  )
+  assert.deepEqual(firstClassHintSource, {
+    type: 'user_hint',
+    text: 'Quán cháo lòng Mộc Quận 5',
+    confidence: 0.95,
+    source: 'user_hint',
+  })
+  console.log('PASS: user hint becomes a first-class text source')
+
+  const hintAddressResult = await analyzeFoodMapSocialDiscovery(
+    {
+      hint: '65 Đường Láng, Đống Đa, Hà Nội',
+    },
+    rulePipelineDependencies(),
+  )
+  assert.equal(hintAddressResult.entities.address.source, 'hint')
+  assert.match(hintAddressResult.entities.address.value, /Đường Láng/i)
+  assert.ok(
+    hintAddressResult.entities.address.evidence.some((item) =>
+      /Đống Đa/i.test(item),
+    ),
+  )
+  assert.ok(
+    hintAddressResult.entities.locationHints.some((item) =>
+      /Ha Noi|Hà Nội/i.test(item.value),
+    ),
+  )
+  assert.equal(hintAddressResult.locationQuery.canResolveLocation, true)
+  assert.match(hintAddressResult.locationQuery.query, /Đường Láng/i)
+  console.log('PASS: hint-only address produces evidence-backed location query')
+
+  const weakSocialMetadata = async ({ url }) =>
+    metadataSignals({
+      finalUrl: url,
+      platform: 'instagram',
+      ogTitle: 'cháo',
+    })
+  const weakUrlStrongHint = await analyzeFoodMapSocialDiscovery(
+    {
+      url: 'https://www.instagram.com/reel/public-example',
+      hint: 'Quán cháo lòng Mộc Quận 5',
+    },
+    rulePipelineDependencies({
+      extractSocialUrlSignals: weakSocialMetadata,
+    }),
+  )
+  assert.equal(
+    weakUrlStrongHint.textSources.some(
+      (source) =>
+        source.type === 'user_hint' &&
+        source.source === 'user_hint' &&
+        source.confidence === 0.95,
+    ),
+    true,
+  )
+  assert.ok(
+    weakUrlStrongHint.entities.dishNames.some((item) =>
+      /cháo/i.test(item.value),
+    ),
+  )
+  assert.ok(
+    weakUrlStrongHint.entities.locationHints.some((item) =>
+      /quan 5|quận 5/i.test(item.value),
+    ),
+  )
+  assert.equal(weakUrlStrongHint.entities.placeName.source, 'hint')
+  assert.equal(weakUrlStrongHint.locationQuery.canResolveLocation, true)
+  assert.match(weakUrlStrongHint.locationQuery.query, /quan 5|quận 5/i)
+  assert.ok(weakUrlStrongHint.debug.warnings.includes('weak_url_metadata'))
+  assert.equal(weakUrlStrongHint.debug.urlEvidence.platform, 'instagram')
+  assert.equal(
+    weakUrlStrongHint.debug.urlEvidence.provider,
+    'generic_social',
+  )
+  assert.equal(
+    weakUrlStrongHint.debug.urlEvidence.resolvedInputType,
+    'generic_social_url',
+  )
+  assert.equal(weakUrlStrongHint.debug.urlEvidence.ogTitle, 'cháo')
+  console.log('PASS: strong hint rescues weak one-word social metadata')
+
+  const weakUrlOnly = await analyzeFoodMapSocialDiscovery(
+    {
+      url: 'https://www.instagram.com/reel/weak-public-example',
+    },
+    rulePipelineDependencies({
+      extractSocialUrlSignals: weakSocialMetadata,
+    }),
+  )
+  assert.equal(weakUrlOnly.status, 'dish_only')
+  assert.equal(weakUrlOnly.locationQuery.canResolveLocation, false)
+  assert.equal(weakUrlOnly.nextAction.type, 'ask_for_hint')
+  assert.equal(weakUrlOnly.place.existsInFoodMap, false)
+  console.log('PASS: weak one-word URL evidence remains dish-only and asks for a hint')
+
+  const dishOnlyHint = await analyzeFoodMapSocialDiscovery(
+    { hint: 'cháo' },
+    rulePipelineDependencies(),
+  )
+  assert.equal(dishOnlyHint.status, 'dish_only')
+  assert.equal(dishOnlyHint.locationQuery.canResolveLocation, false)
+  assert.notEqual(dishOnlyHint.nextAction.type, 'focus_existing_place')
+  assert.notEqual(dishOnlyHint.nextAction.type, 'review_draft_place')
+  console.log('PASS: vague dish-only hint cannot resolve or claim a place')
+
+  let missingKeyApiCalls = 0
+  const missingYoutubeKey = await resolveYouTubeUrl(
+    {
+      url: `https://www.youtube.com/shorts/${youtubeVideoId}`,
+    },
+    {
+      apiKey: '',
+      extractUrlSignals: async ({ url }) =>
+        metadataSignals({
+          finalUrl: url,
+          platform: 'youtube',
+          extractionStatus: 'blocked',
+        }),
+      fetchYouTubeApi: async () => {
+        missingKeyApiCalls += 1
+        return { items: [] }
+      },
+      fetchOEmbed: async () => ({
+        title: 'Public food short',
+        author_name: 'Public channel',
+        thumbnail_url: 'https://images.example.test/youtube-thumb.jpg',
+      }),
+    },
+  )
+  assert.equal(missingKeyApiCalls, 0)
+  assert.ok(missingYoutubeKey.warnings.includes('youtube_api_key_missing'))
+  assert.equal(missingYoutubeKey.debug.videoId, youtubeVideoId)
+  assert.ok(
+    missingYoutubeKey.textSources.some(
+      (source) =>
+        source.type === 'youtube_title' &&
+        source.source === 'youtube_oembed',
+    ),
+  )
+  console.log('PASS: missing YouTube API key is explicit and uses mocked fallback')
+
+  let youtubeOEmbedCalls = 0
+  const mockedYoutube = await resolveYouTubeUrl(
+    {
+      url: `https://m.youtube.com/watch?v=${youtubeVideoId}`,
+    },
+    {
+      apiKey: 'mock-youtube-key',
+      extractUrlSignals: async ({ url }) =>
+        metadataSignals({
+          finalUrl: url,
+          platform: 'youtube',
+          extractionStatus: 'blocked',
+          ogTitle: 'Fallback title',
+        }),
+      fetchYouTubeApi: async ({ videoId }) => ({
+        items: [
+          {
+            snippet: {
+              title: `Food short ${videoId}`,
+              description: 'A public description with Quận 3 context',
+              channelTitle: 'Public Food Channel',
+              thumbnails: {
+                high: {
+                  url: 'https://images.example.test/youtube-thumb.jpg',
+                },
+              },
+            },
+          },
+        ],
+      }),
+      fetchOEmbed: async () => {
+        youtubeOEmbedCalls += 1
+        return {}
+      },
+    },
+  )
+  assert.equal(youtubeOEmbedCalls, 0)
+  assert.ok(
+    mockedYoutube.textSources.some(
+      (source) =>
+        source.type === 'youtube_title' &&
+        source.source === 'youtube_api' &&
+        /Food short/.test(source.text),
+    ),
+  )
+  assert.ok(
+    mockedYoutube.textSources.some(
+      (source) =>
+        source.type === 'youtube_description' &&
+        source.source === 'youtube_api' &&
+        /public description/i.test(source.text),
+    ),
+  )
+  assert.ok(
+    mockedYoutube.textSources.some(
+      (source) =>
+        source.type === 'youtube_channel' &&
+        source.text === 'Public Food Channel',
+    ),
+  )
+  assert.ok(
+    !mockedYoutube.warnings.includes('youtube_api_key_missing'),
+  )
+  assert.equal(
+    mockedYoutube.mediaSources[0].url,
+    'https://images.example.test/youtube-thumb.jpg',
+  )
+  console.log('PASS: mocked YouTube API snippet becomes bounded evidence')
+
+  const youtubeHttpCase = async ({
+    apiStatus = 200,
+    apiPayload = { items: [] },
+    apiBody = null,
+    apiError = null,
+  }) =>
+    resolveYouTubeUrl(
+      {
+        url: `https://www.youtube.com/shorts/${youtubeVideoId}`,
+      },
+      {
+        apiKey: 'mock-configured-key',
+        extractUrlSignals: async ({ url }) =>
+          metadataSignals({
+            finalUrl: url,
+            platform: 'youtube',
+            extractionStatus: 'blocked',
+          }),
+        fetchImpl: async (requestUrl) => {
+          const parsed = new URL(requestUrl)
+          if (parsed.hostname === 'www.googleapis.com') {
+            if (apiError) throw apiError
+            return new Response(
+              apiBody === null ? JSON.stringify(apiPayload) : apiBody,
+              {
+                status: apiStatus,
+                headers: { 'content-type': 'application/json' },
+              },
+            )
+          }
+          return new Response(
+            JSON.stringify({
+              title: 'Fallback public title',
+              author_name: 'Fallback public channel',
+            }),
+            {
+              status: 200,
+              headers: { 'content-type': 'application/json' },
+            },
+          )
+        },
+      },
+    )
+
+  const emptyYoutubeItems = await youtubeHttpCase({
+    apiPayload: { items: [] },
+  })
+  assert.ok(
+    emptyYoutubeItems.warnings.includes(
+      'youtube_video_not_found_or_unavailable',
+    ),
+  )
+  assert.ok(
+    emptyYoutubeItems.textSources.some(
+      (source) => source.source === 'youtube_oembed',
+    ),
+  )
+
+  const forbiddenYoutube = await youtubeHttpCase({
+    apiStatus: 403,
+    apiPayload: {
+      error: {
+        code: 403,
+        errors: [{ reason: 'accessNotConfigured' }],
+      },
+    },
+  })
+  assert.ok(
+    forbiddenYoutube.warnings.includes(
+      'youtube_api_forbidden_or_disabled',
+    ),
+  )
+
+  const quotaYoutube = await youtubeHttpCase({
+    apiStatus: 403,
+    apiPayload: {
+      error: {
+        code: 403,
+        errors: [{ reason: 'quotaExceeded' }],
+      },
+    },
+  })
+  assert.ok(quotaYoutube.warnings.includes('youtube_quota_exceeded'))
+
+  const invalidKeyYoutube = await youtubeHttpCase({
+    apiStatus: 400,
+    apiPayload: {
+      error: {
+        code: 400,
+        errors: [{ reason: 'keyInvalid' }],
+      },
+    },
+  })
+  assert.ok(invalidKeyYoutube.warnings.includes('youtube_api_key_invalid'))
+
+  const timeoutError = new Error('timeout')
+  timeoutError.name = 'AbortError'
+  const timeoutYoutube = await youtubeHttpCase({
+    apiError: timeoutError,
+  })
+  assert.ok(timeoutYoutube.warnings.includes('youtube_api_timeout'))
+
+  const malformedYoutube = await youtubeHttpCase({
+    apiBody: 'not-json',
+  })
+  assert.ok(
+    malformedYoutube.warnings.includes('youtube_api_invalid_response'),
+  )
+
+  const fetchFailureYoutube = await youtubeHttpCase({
+    apiError: new Error('network unavailable'),
+  })
+  assert.ok(
+    fetchFailureYoutube.warnings.includes('youtube_api_fetch_failed'),
+  )
+  console.log('PASS: YouTube API failures map to bounded warnings with fallback')
+
+  const downloadedMediaUrls = []
+  const youtubeThumbnailInput = await resolveSocialInput(
+    {
+      url: `https://www.youtube.com/shorts/${youtubeVideoId}`,
+    },
+    {
+      extractUrlSignals: async ({ url }) =>
+        metadataSignals({
+          finalUrl: url,
+          platform: 'youtube',
+          extractionStatus: 'blocked',
+        }),
+      providerOptions: {
+        apiKey: 'mock-youtube-key',
+        fetchYouTubeApi: async () => ({
+          items: [
+            {
+              snippet: {
+                title: 'Public food short',
+                description: 'Public description',
+                channelTitle: 'Public Food Channel',
+                thumbnails: {
+                  maxres: {
+                    url: 'https://images.example.test/youtube-thumb.jpg',
+                  },
+                },
+              },
+            },
+          ],
+        }),
+        fetchOEmbed: async () => {
+          throw new Error('oEmbed should not be needed')
+        },
+      },
+      downloadMedia: async ({ url }) => {
+        downloadedMediaUrls.push(url)
+        return {
+          status: 'success',
+          finalUrl: url,
+          buffer: tinyPng,
+          contentType: 'image/png',
+          warnings: [],
+        }
+      },
+      extractMetadataOcr: async () => ({
+        text: 'PHỞ MỘC\nQuận 3',
+        usable: true,
+        ocrUsable: true,
+        confidence: 0.91,
+        reason: 'usable',
+        lines: [],
+        strongLines: [],
+        weakLines: [],
+        warnings: [],
+        debug: { provider: 'mock' },
+      }),
+      metadataOcrEnabled: true,
+    },
+  )
+  assert.deepEqual(downloadedMediaUrls, [
+    'https://images.example.test/youtube-thumb.jpg',
+  ])
+  assert.equal(
+    youtubeThumbnailInput.textSources.some(
+      (source) =>
+        source.type === 'thumbnail_ocr' &&
+        source.source === 'youtube_thumbnail',
+    ),
+    true,
+  )
+  assert.equal(
+    youtubeThumbnailInput.debug.urlEvidence.thumbnailOcrStatus,
+    'usable',
+  )
+  assert.equal(
+    youtubeThumbnailInput.debug.urlEvidence.thumbnailUrl,
+    'https://images.example.test/youtube-thumb.jpg',
+  )
+  assert.equal(
+    youtubeThumbnailInput.debug.urlEvidence.videoId,
+    youtubeVideoId,
+  )
+  const youtubePublicDebug = await analyzeFoodMapSocialDiscovery(
+    {
+      url: `https://www.youtube.com/shorts/${youtubeVideoId}`,
+    },
+    rulePipelineDependencies({
+      resolveSocialInput: async () => youtubeThumbnailInput,
+    }),
+  )
+  assert.equal(youtubePublicDebug.debug.urlEvidence.videoId, youtubeVideoId)
+  assert.equal(
+    youtubePublicDebug.debug.urlEvidence.channelTitle,
+    'Public Food Channel',
+  )
+  console.log('PASS: thumbnail OCR uses only mocked image bytes, never video content')
+
+  const failedThumbnailInput = await resolveSocialInput(
+    {
+      url: `https://youtube.com/shorts/${youtubeVideoId}`,
+    },
+    {
+      extractUrlSignals: async ({ url }) =>
+        metadataSignals({
+          finalUrl: url,
+          platform: 'youtube',
+          extractionStatus: 'blocked',
+        }),
+      providerOptions: {
+        apiKey: 'mock-configured-key',
+        fetchYouTubeApi: async () => ({
+          items: [
+            {
+              snippet: {
+                title: 'Public food short',
+                description: 'Public description',
+                channelTitle: 'Public channel',
+                thumbnails: {
+                  high: {
+                    url: 'https://images.example.test/youtube-thumb.jpg',
+                  },
+                },
+              },
+            },
+          ],
+        }),
+      },
+      downloadMedia: async ({ url }) => ({
+        status: 'success',
+        finalUrl: url,
+        buffer: tinyPng,
+        contentType: 'image/png',
+        warnings: [],
+      }),
+      extractMetadataOcr: async () => {
+        throw new Error('mock OCR failure')
+      },
+      metadataOcrEnabled: true,
+      metadataOcrTimeoutMs: 50,
+    },
+  )
+  assert.ok(failedThumbnailInput.warnings.includes('thumbnail_ocr_failed'))
+  assert.equal(
+    failedThumbnailInput.debug.urlEvidence.thumbnailOcrStatus,
+    'failed',
+  )
+  assert.ok(
+    failedThumbnailInput.textSources.some(
+      (source) => source.type === 'youtube_title',
+    ),
+  )
+  console.log('PASS: thumbnail OCR failure does not fail YouTube resolution')
+
+  const secretValue = ['mock', 'youtube', 'secret'].join('-')
+  const secretSafeYoutube = await resolveSocialInput(
+    {
+      url: `https://youtu.be/${youtubeVideoId}`,
+    },
+    {
+      extractUrlSignals: async ({ url }) =>
+        metadataSignals({
+          finalUrl: url,
+          platform: 'youtube',
+          extractionStatus: 'blocked',
+        }),
+      providerOptions: {
+        apiKey: secretValue,
+        fetchYouTubeApi: async () => {
+          const error = new Error(`request failed for ${secretValue}`)
+          error.status = 403
+          error.reasons = ['accessNotConfigured']
+          throw error
+        },
+        fetchOEmbed: async () => ({
+          title: 'Fallback public title',
+          author_name: 'Fallback public channel',
+        }),
+      },
+      metadataOcrEnabled: false,
+    },
+  )
+  assert.doesNotMatch(JSON.stringify(secretSafeYoutube), new RegExp(secretValue))
+  assert.equal(secretSafeYoutube.debug.urlEvidence.videoId, youtubeVideoId)
+  console.log('PASS: YouTube key never reaches bounded output or debug')
+
+  const cadenceReviewTitle = isDescriptiveSocialTitle('7 ngày ăn thử')
+  assert.equal(cadenceReviewTitle.isDescriptive, true)
+  assert.ok(cadenceReviewTitle.reasons.includes('cadence_count_phrase'))
+  assert.ok(
+    cadenceReviewTitle.reasons.includes('first_person_review_language'),
+  )
+  assert.ok(cadenceReviewTitle.confidence >= 0.7)
+
+  const rankedDistrictTitle = isDescriptiveSocialTitle(
+    'Top 10 quán ngon Quận 7',
+  )
+  assert.equal(rankedDistrictTitle.isDescriptive, true)
+  assert.ok(rankedDistrictTitle.reasons.includes('cadence_count_phrase'))
+  assert.ok(
+    rankedDistrictTitle.reasons.includes('no_distinctive_proper_noun'),
+  )
+  const rankedDistrictEntities = extractFoodMapEntities({
+    inputSignals: {
+      title: 'Top 10 quán ngon Quận 7',
+    },
+  })
+  assert.equal(rankedDistrictEntities.placeName.value, null)
+  assert.ok(
+    rankedDistrictEntities.locationHints.some(
+      (item) => normalizeForAssert(item.value) === 'quan 7',
+    ),
+  )
+  assert.ok(
+    rankedDistrictEntities.warnings.includes('cadence_count_phrase'),
+  )
+  assert.ok(
+    rankedDistrictEntities.warnings.includes(
+      'no_distinctive_proper_noun',
+    ),
+  )
+
+  for (const distinctiveTitle of [
+    'Phở Bà Huyện - 123 Lê Lợi',
+    'Quán ốc số 7 Nguyễn Trãi',
+    'Bún bò Huế ngon nhất Đà Nẵng',
+  ]) {
+    assert.equal(
+      isDescriptiveSocialTitle(distinctiveTitle).isDescriptive,
+      false,
+    )
+  }
+  assert.deepEqual(isDescriptiveSocialTitle(null), {
+    isDescriptive: false,
+    reasons: [],
+    confidence: 0,
+  })
+  console.log('PASS: descriptive social title classifier preserves distinctive names')
+
+  const lowConfidenceTitleEntities = extractFoodMapEntities({
+    inputSignals: {
+      title: 'Quán Mộc Official',
+    },
+  })
+  assert.equal(lowConfidenceTitleEntities.placeName.value, 'Quán Mộc Official')
+  assert.ok(lowConfidenceTitleEntities.placeName.confidence < 0.4)
+  assert.ok(
+    lowConfidenceTitleEntities.warnings.includes(
+      'low_confidence_social_content_metadata',
+    ),
+  )
+  console.log('PASS: borderline social metadata lowers title place confidence')
+
+  const descriptiveReviewTitle =
+    'Quán 7 ngày 7 món như thế này không cần suy nghĩ ăn gì | TÚ HIỆU TRƯỞNG OFFICIAL #shorts'
+  const descriptiveResolvedInput = resolvedYouTubeEvidence({
+    title: descriptiveReviewTitle,
+    thumbnailText: 'MAY MIỆNB',
+  })
+  const descriptiveRuleEntities = extractFoodMapEntities({
+    inputSignals: { title: descriptiveReviewTitle },
+    ocrEvidence: descriptiveResolvedInput.mediaOcrEvidence,
+    textSources: descriptiveResolvedInput.textSources,
+  })
+  const descriptiveDraftQuery = buildFoodMapLocationQuery({
+    entities: descriptiveRuleEntities,
+  })
+  assert.equal(descriptiveRuleEntities.placeName.value, null)
+  assert.ok(
+    descriptiveRuleEntities.warnings.includes('cadence_count_phrase'),
+  )
+  assert.ok(
+    descriptiveRuleEntities.warnings.includes('social_content_metadata'),
+  )
+  assert.equal(
+    descriptiveRuleEntities.locationHints.some(
+      (item) => normalizeForAssert(item.value) === 'quan 7',
+    ),
+    false,
+  )
+  assert.ok(
+    descriptiveRuleEntities.warnings.includes(
+      'venue_number_not_district',
+    ),
+  )
+  assert.equal(descriptiveDraftQuery.canResolveLocation, false)
+  assert.equal(descriptiveDraftQuery.query, null)
+  assert.equal(
+    shouldRunGeminiEvidenceValidation({
+      inputType: 'youtube_url',
+      platform: 'youtube',
+      urlEvidence: descriptiveResolvedInput.debug.urlEvidence,
+      textSources: descriptiveResolvedInput.textSources,
+      ocrEvidence: descriptiveResolvedInput.mediaOcrEvidence,
+      ruleEntities: descriptiveRuleEntities,
+      draftLocationQuery: descriptiveDraftQuery,
+    }),
+    false,
+  )
+  console.log('PASS: descriptive venue numbers do not become district evidence')
+
+  const rejectedDescriptiveTitle = await analyzeFoodMapSocialDiscovery(
+    {
+      url: 'https://www.youtube.com/shorts/test-video',
+    },
+    mockedGeminiDependencies(
+      geminiValidationResult({
+        status: 'insufficient_evidence',
+        confidence: 0.2,
+        correctedEntities: {
+          placeName: 'Quán 7 ngày',
+          locationHints: ['quan 7'],
+        },
+        rejectedEntities: [
+          {
+            field: 'placeName',
+            value: 'Quán 7 ngày',
+            reason:
+              'descriptive review phrase, not a distinctive business name',
+          },
+          {
+            field: 'locationHints',
+            value: 'quan 7',
+            reason: 'Quán 7 is not evidence for Quận 7',
+          },
+        ],
+        canResolveLocation: false,
+        recommendedNextAction: 'ask_for_hint',
+      }),
+      {
+        resolveSocialInput: async () => descriptiveResolvedInput,
+      },
+    ),
+  )
+  assert.equal(rejectedDescriptiveTitle.entities.placeName.value, null)
+  assert.equal(
+    rejectedDescriptiveTitle.entities.locationHints.some(
+      (item) => normalizeForAssert(item.value) === 'quan 7',
+    ),
+    false,
+  )
+  assert.equal(
+    rejectedDescriptiveTitle.locationQuery.canResolveLocation,
+    false,
+  )
+  assert.equal(rejectedDescriptiveTitle.locationQuery.query, null)
+  assert.equal(rejectedDescriptiveTitle.nextAction.type, 'ask_for_hint')
+  assert.equal(
+    rejectedDescriptiveTitle.debug.evidenceValidation.status,
+    'insufficient_evidence',
+  )
+  assert.equal(
+    rejectedDescriptiveTitle.debug.evidenceValidation.rejectedEntities.length,
+    2,
+  )
+  console.log('PASS: Gemini validator rejects descriptive YouTube false positives')
+
+  const dishDistrictRejected = await analyzeFoodMapSocialDiscovery(
+    {
+      hint: 'cháo lòng quận 5',
+    },
+    mockedGeminiDependencies(
+      geminiValidationResult({
+        status: 'corrected',
+        confidence: 0.85,
+        correctedEntities: {
+          dishNames: ['cháo'],
+          locationHints: ['quan 5'],
+        },
+        rejectedEntities: [
+          {
+            field: 'placeName',
+            value: 'cháo lòng quận 5',
+            reason: 'dish and district phrase without a distinctive name',
+          },
+        ],
+        canResolveLocation: false,
+        recommendedNextAction: 'ask_for_hint',
+      }),
+    ),
+  )
+  assert.equal(dishDistrictRejected.entities.placeName.value, null)
+  assert.ok(
+    dishDistrictRejected.entities.dishNames.some(
+      (item) => normalizeForAssert(item.value) === 'chao',
+    ),
+  )
+  assert.ok(
+    dishDistrictRejected.entities.locationHints.some(
+      (item) => normalizeForAssert(item.value) === 'quan 5',
+    ),
+  )
+  assert.equal(dishDistrictRejected.locationQuery.canResolveLocation, false)
+  assert.equal(dishDistrictRejected.nextAction.type, 'ask_for_hint')
+  console.log('PASS: Gemini validator keeps dish/location but rejects fake place name')
+
+  const namedPlaceValidated = await analyzeFoodMapSocialDiscovery(
+    {
+      hint: 'Quán cháo lòng Cô Ba Quận 5',
+    },
+    mockedGeminiDependencies(
+      geminiValidationResult({
+        status: 'corrected',
+        confidence: 0.92,
+        correctedEntities: {
+          placeName: 'Quán cháo lòng Cô Ba',
+          dishNames: ['cháo'],
+          locationHints: ['quan 5'],
+        },
+        canResolveLocation: true,
+        recommendedNextAction: 'none',
+      }),
+    ),
+  )
+  assert.match(namedPlaceValidated.entities.placeName.value, /Cô Ba/i)
+  assert.equal(namedPlaceValidated.entities.placeName.source, 'hint')
+  assert.equal(namedPlaceValidated.locationQuery.canResolveLocation, true)
+  assert.equal(namedPlaceValidated.nextAction.type, 'none')
+  console.log('PASS: Gemini validator preserves evidence-backed named place')
+
+  const clearAddressValidated = await analyzeFoodMapSocialDiscovery(
+    {
+      hint: '65 Đường Láng, Đống Đa, Hà Nội',
+    },
+    mockedGeminiDependencies(
+      geminiValidationResult({
+        status: 'validated',
+        confidence: 0.94,
+        correctedEntities: {
+          address: '65 Đường Láng, Đống Đa, Hà Nội',
+          locationHints: ['ha noi'],
+        },
+        canResolveLocation: true,
+        recommendedNextAction: 'none',
+      }),
+    ),
+  )
+  assert.match(clearAddressValidated.entities.address.value, /Đường Láng/i)
+  assert.equal(clearAddressValidated.locationQuery.canResolveLocation, true)
+  assert.equal(clearAddressValidated.locationQuery.strategy, 'address')
+  console.log('PASS: Gemini validator preserves clear evidence-backed address')
+
+  const clearAddressProviderFailure = await analyzeFoodMapSocialDiscovery(
+    {
+      hint: '65 Đường Láng, Đống Đa, Hà Nội',
+    },
+    rulePipelineDependencies({
+      evidenceValidatorMode: 'gemini',
+      geminiEvidenceValidationOptions: {
+        apiKey: 'mock-gemini-key',
+        model: 'mock-gemini-model',
+        invokeGemini: async () => {
+          const error = new Error('mocked provider failure')
+          error.code = 'api_fetch_failed'
+          throw error
+        },
+      },
+    }),
+  )
+  assert.match(
+    clearAddressProviderFailure.entities.address.value,
+    /Đường Láng/i,
+  )
+  assert.equal(
+    clearAddressProviderFailure.locationQuery.canResolveLocation,
+    true,
+  )
+  assert.equal(
+    clearAddressProviderFailure.debug.evidenceValidation.warnings.includes(
+      'evidence_validation_failed_closed',
+    ),
+    false,
+  )
+  console.log('PASS: Gemini failure does not suppress a clear address hint')
+
+  const uploadedOcrProviderFailure =
+    await analyzeFoodMapSocialDiscovery(
+      {
+        image: {
+          buffer: tinyPng,
+          size: tinyPng.length,
+          mimetype: 'image/png',
+          originalname: 'mock-upload.png',
+        },
+      },
+      rulePipelineDependencies({
+        extractOcrSignals: mockOcrSuccess,
+        evidenceValidatorMode: 'gemini',
+        geminiEvidenceValidationOptions: {
+          apiKey: 'mock-gemini-key',
+          model: 'mock-gemini-model',
+          invokeGemini: async () => {
+            const error = new Error('mocked provider failure')
+            error.code = 'api_fetch_failed'
+            throw error
+          },
+        },
+      }),
+    )
+  assert.match(
+    uploadedOcrProviderFailure.entities.address.value,
+    /123 Le Loi/i,
+  )
+  assert.equal(
+    uploadedOcrProviderFailure.locationQuery.canResolveLocation,
+    true,
+  )
+  assert.equal(
+    uploadedOcrProviderFailure.debug.evidenceValidation.warnings.includes(
+      'evidence_validation_failed_closed',
+    ),
+    false,
+  )
+  console.log('PASS: Gemini failure does not suppress strong uploaded OCR')
+
+  let lowRiskGeminiCalls = 0
+  const clearAddressRuleEntities = extractFoodMapEntities({
+    inputSignals: {
+      hint: '65 Đường Láng, Đống Đa, Hà Nội',
+    },
+    textSources: [
+      {
+        type: 'user_hint',
+        text: '65 Đường Láng, Đống Đa, Hà Nội',
+        confidence: 0.95,
+        source: 'user_hint',
+      },
+    ],
+  })
+  const lowRiskHybrid = await runFoodMapEvidenceValidation(
+    {
+      inputType: 'youtube_url',
+      platform: 'youtube',
+      urlEvidence: {},
+      textSources: [],
+      ocrEvidence: {},
+      ruleEntities: clearAddressRuleEntities,
+      draftLocationQuery: buildFoodMapLocationQuery({
+        entities: clearAddressRuleEntities,
+      }),
+    },
+    {
+      mode: 'hybrid',
+      geminiOptions: {
+        apiKey: 'mock-gemini-key',
+        model: 'mock-gemini-model',
+        invokeGemini: async () => {
+          lowRiskGeminiCalls += 1
+          return geminiValidationResult()
+        },
+      },
+    },
+  )
+  assert.equal(lowRiskGeminiCalls, 0)
+  assert.equal(lowRiskHybrid.status, 'skipped_low_risk')
+  console.log('PASS: hybrid validator skips clear address evidence')
+
+  const riskyRuleEntities = {
+    ...descriptiveRuleEntities,
+    placeName: {
+      value: 'Quán 7 ngày',
+      confidence: 0.65,
+      source: 'title',
+      evidence: [descriptiveReviewTitle],
+    },
+    locationHints: [
+      {
+        value: 'quan 7',
+        type: 'district',
+        confidence: 0.7,
+        source: 'title',
+        evidence: descriptiveReviewTitle,
+      },
+    ],
+  }
+  const riskyValidationInput = {
+    inputType: 'youtube_url',
+    platform: 'youtube',
+    urlEvidence: descriptiveResolvedInput.debug.urlEvidence,
+    textSources: descriptiveResolvedInput.textSources,
+    ocrEvidence: descriptiveResolvedInput.mediaOcrEvidence,
+    ruleEntities: riskyRuleEntities,
+    draftLocationQuery: buildFoodMapLocationQuery({
+      entities: riskyRuleEntities,
+    }),
+  }
+  const geminiRequestBodies = []
+  const compatibilityValidation =
+    await validateFoodMapEvidenceWithGemini(riskyValidationInput, {
+      apiKey: 'mock-gemini-key',
+      model: 'mock-gemini-model',
+      fetchImpl: async (_url, options) => {
+        geminiRequestBodies.push(JSON.parse(options.body))
+        if (geminiRequestBodies.length === 1) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                code: 400,
+                status: 'INVALID_ARGUMENT',
+                message:
+                  'Invalid value at generation_config.response_format.text.mime_type',
+              },
+            }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          )
+        }
+        return new Response(
+          JSON.stringify({
+            candidates: [
+              {
+                content: {
+                  parts: [
+                    {
+                      text: JSON.stringify(
+                        geminiValidationResult({
+                          status: 'insufficient_evidence',
+                        }),
+                      ),
+                    },
+                  ],
+                },
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        )
+      },
+    })
+  assert.equal(compatibilityValidation.ok, true)
+  assert.equal(geminiRequestBodies.length, 2)
+  assert.ok(
+    geminiRequestBodies[0].generationConfig.responseFormat,
+  )
+  assert.equal(
+    geminiRequestBodies[1].generationConfig.responseMimeType,
+    'application/json',
+  )
+  const geminiSystemInstruction =
+    geminiRequestBodies[0].systemInstruction.parts[0].text
+  for (const category of [
+    'cadence_count_phrase',
+    'first_person_review_language',
+    'social_content_metadata',
+    'no_distinctive_proper_noun',
+  ]) {
+    assert.match(geminiSystemInstruction, new RegExp(category))
+  }
+  assert.doesNotMatch(
+    geminiSystemInstruction,
+    /Cô Ba|Phở Mộc|Quán 7 ngày|Đường Láng|Behavior examples/u,
+  )
+  assert.ok(
+    compatibilityValidation.result.warnings.includes(
+      'gemini_structured_output_compatibility_fallback',
+    ),
+  )
+  console.log('PASS: Gemini structured output retries with compatible fields')
+
+  const invalidGeminiJson = await runFoodMapEvidenceValidation(
+    riskyValidationInput,
+    {
+      mode: 'gemini',
+      geminiOptions: {
+        apiKey: 'mock-gemini-key',
+        model: 'mock-gemini-model',
+        invokeGemini: async () => 'not-json',
+      },
+    },
+  )
+  assert.equal(invalidGeminiJson.applied, false)
+  assert.equal(invalidGeminiJson.status, 'fallback')
+  assert.ok(
+    invalidGeminiJson.warnings.includes(
+      'gemini_json_parse_failed',
+    ),
+  )
+  assert.ok(
+    invalidGeminiJson.warnings.includes(
+      'evidence_validation_failed_closed',
+    ),
+  )
+  assert.equal(invalidGeminiJson.canResolveLocation, false)
+  assert.equal(invalidGeminiJson.recommendedNextAction, 'ask_for_hint')
+  assert.equal(invalidGeminiJson.entities.placeName.value, null)
+  assert.equal(
+    invalidGeminiJson.entities.locationHints.some(
+      (item) => normalizeForAssert(item.value) === 'quan 7',
+    ),
+    false,
+  )
+  const invalidGeminiPipeline = await analyzeFoodMapSocialDiscovery(
+    {
+      url: 'https://www.youtube.com/shorts/test-video',
+    },
+    rulePipelineDependencies({
+      resolveSocialInput: async () => descriptiveResolvedInput,
+      evidenceValidatorMode: 'gemini',
+      geminiEvidenceValidationOptions: {
+        apiKey: 'mock-gemini-key',
+        model: 'mock-gemini-model',
+        invokeGemini: async () => 'not-json',
+      },
+    }),
+  )
+  assert.equal(invalidGeminiPipeline.status, 'unclear')
+  assert.equal(invalidGeminiPipeline.entities.placeName.value, null)
+  assert.equal(
+    invalidGeminiPipeline.entities.locationHints.some(
+      (item) => normalizeForAssert(item.value) === 'quan 7',
+    ),
+    false,
+  )
+  assert.equal(
+    invalidGeminiPipeline.locationQuery.canResolveLocation,
+    false,
+  )
+  assert.equal(invalidGeminiPipeline.nextAction.type, 'ask_for_hint')
+  assert.ok(
+    invalidGeminiPipeline.entities.warnings.includes(
+      'cadence_count_phrase',
+    ),
+  )
+
+  const geminiTimeoutError = new Error('timeout')
+  geminiTimeoutError.name = 'AbortError'
+  const timedOutGemini = await runFoodMapEvidenceValidation(
+    riskyValidationInput,
+    {
+      mode: 'gemini',
+      geminiOptions: {
+        apiKey: 'mock-gemini-key',
+        model: 'mock-gemini-model',
+        invokeGemini: async () => {
+          throw geminiTimeoutError
+        },
+      },
+    },
+  )
+  assert.equal(timedOutGemini.applied, false)
+  assert.ok(
+    timedOutGemini.warnings.includes('gemini_api_timeout'),
+  )
+  assert.ok(
+    timedOutGemini.warnings.includes(
+      'evidence_validation_failed_closed',
+    ),
+  )
+  assert.equal(timedOutGemini.entities.placeName.value, null)
+  assert.equal(timedOutGemini.canResolveLocation, false)
+
+  const missingGeminiKey = await runFoodMapEvidenceValidation(
+    riskyValidationInput,
+    {
+      mode: 'gemini',
+      geminiOptions: {
+        apiKey: '',
+        model: 'mock-gemini-model',
+      },
+    },
+  )
+  assert.equal(missingGeminiKey.applied, false)
+  assert.ok(missingGeminiKey.warnings.includes('gemini_api_key_missing'))
+  assert.equal(missingGeminiKey.canResolveLocation, false)
+
+  const missingGeminiModel = await runFoodMapEvidenceValidation(
+    riskyValidationInput,
+    {
+      mode: 'gemini',
+      geminiOptions: {
+        apiKey: 'mock-gemini-key',
+        model: '',
+      },
+    },
+  )
+  assert.ok(missingGeminiModel.warnings.includes('gemini_model_missing'))
+  assert.equal(missingGeminiModel.modelConfigured, false)
+
+  for (const [code, warning, status] of [
+    ['api_key_invalid', 'gemini_api_key_invalid', 401],
+    ['model_not_found', 'gemini_model_not_found', 404],
+    ['api_forbidden', 'gemini_api_forbidden', 403],
+    ['quota_exceeded', 'gemini_quota_exceeded', 429],
+    ['api_fetch_failed', 'gemini_api_fetch_failed', null],
+    ['api_invalid_response', 'gemini_api_invalid_response', 502],
+    [
+      'schema_validation_failed',
+      'gemini_schema_validation_failed',
+      null,
+    ],
+  ]) {
+    const categorizedFailure = await runFoodMapEvidenceValidation(
+      riskyValidationInput,
+      {
+        mode: 'gemini',
+        geminiOptions: {
+          apiKey: 'mock-gemini-key',
+          model: 'mock-gemini-model',
+          invokeGemini: async () => {
+            const error = new Error('mocked categorized failure')
+            error.code = code
+            error.status = status
+            throw error
+          },
+        },
+      },
+    )
+    assert.ok(categorizedFailure.warnings.includes(warning))
+    assert.equal(categorizedFailure.httpStatus, status)
+    assert.equal(categorizedFailure.entities.placeName.value, null)
+  }
+  console.log('PASS: Gemini provider failures use bounded warning categories')
+
+  const inventedGeminiEntity = await runFoodMapEvidenceValidation(
+    riskyValidationInput,
+    {
+      mode: 'gemini',
+      geminiOptions: {
+        apiKey: 'mock-gemini-key',
+        model: 'mock-gemini-model',
+        invokeGemini: async () =>
+          geminiValidationResult({
+            status: 'corrected',
+            correctedEntities: {
+              placeName: 'Invented Palace',
+              locationHints: ['District 99'],
+            },
+            canResolveLocation: true,
+            recommendedNextAction: 'none',
+          }),
+      },
+    },
+  )
+  assert.equal(inventedGeminiEntity.entities.placeName.value, null)
+  assert.deepEqual(inventedGeminiEntity.entities.locationHints, [])
+  console.log('PASS: unsupported Gemini corrections cannot create entities')
+
+  const geminiSecret = ['mock', 'gemini', 'secret'].join('-')
+  const secretSafeGemini = await runFoodMapEvidenceValidation(
+    riskyValidationInput,
+    {
+      mode: 'gemini',
+      geminiOptions: {
+        apiKey: geminiSecret,
+        model: 'mock-gemini-model',
+        invokeGemini: async ({ apiKey }) => {
+          assert.equal(apiKey, geminiSecret)
+          throw new Error(`provider rejected ${apiKey}`)
+        },
+      },
+    },
+  )
+  assert.doesNotMatch(
+    JSON.stringify(secretSafeGemini),
+    new RegExp(geminiSecret),
+  )
+  assert.ok(
+    secretSafeGemini.warnings.includes('gemini_api_fetch_failed'),
+  )
+  assert.ok(
+    secretSafeGemini.warnings.includes(
+      'evidence_validation_failed_closed',
+    ),
+  )
+  assert.equal(secretSafeGemini.entities.placeName.value, null)
+  assert.equal(secretSafeGemini.keyConfigured, true)
+  assert.equal(secretSafeGemini.modelConfigured, true)
+  console.log('PASS: Gemini provider failures fail closed without key leakage')
+
+  let blockedMediaDownloads = 0
+  const blockedSocial = await analyzeFoodMapSocialDiscovery(
+    {
+      url: 'https://www.instagram.com/reel/blocked-public-example',
+    },
+    rulePipelineDependencies({
+      resolveSocialInput: (input) =>
+        resolveSocialInput(input, {
+          extractUrlSignals: async ({ url }) =>
+            metadataSignals({
+              finalUrl: url,
+              platform: 'instagram',
+              extractionStatus: 'blocked',
+              warnings: ['Public metadata was blocked.'],
+            }),
+          downloadMedia: async () => {
+            blockedMediaDownloads += 1
+            throw new Error('No media should be available')
+          },
+          metadataOcrEnabled: true,
+        }),
+    }),
+  )
+  assert.equal(blockedMediaDownloads, 0)
+  assert.equal(blockedSocial.status, 'needs_screenshot_or_hint')
+  assert.equal(blockedSocial.nextAction.type, 'ask_for_hint')
+  assert.ok(
+    blockedSocial.debug.warnings.includes('metadata_blocked_or_empty'),
+  )
+  assert.equal(
+    blockedSocial.debug.urlEvidence.thumbnailOcrStatus,
+    'not_available',
+  )
+  console.log('PASS: blocked social metadata is explainable and asks for a hint')
 
   assert.equal(isPrivateIpAddress('10.0.0.4'), true)
   assert.equal(isPrivateIpAddress('172.31.4.5'), true)
@@ -479,11 +1936,22 @@ async function run() {
   assert.equal(redirectFetchCalls, 1)
   console.log('PASS: redirect targets receive the same SSRF validation')
 
-  const timeoutResponse = await analyzerWith(async () => {
-    const error = new Error('timed out')
-    error.name = 'AbortError'
-    throw error
-  })({ url: 'https://www.youtube.com/watch?v=timeout' })
+  const timeoutResponse = await analyzerWith(
+    async () => {
+      const error = new Error('timed out')
+      error.name = 'AbortError'
+      throw error
+    },
+    {},
+    {
+      socialProviderOptions: {
+        apiKey: '',
+        fetchOEmbed: async () => {
+          throw new Error('mocked oEmbed unavailable')
+        },
+      },
+    },
+  )({ url: 'https://www.youtube.com/watch?v=timeout' })
   assert.equal(timeoutResponse.status, 'needs_screenshot_or_hint')
   assert.equal(timeoutResponse.confidence, 0)
   assert.equal(timeoutResponse.debug.urlExtraction.status, 'timeout')
@@ -567,6 +2035,256 @@ async function run() {
   assert.equal(phoneEntities.phones[0].normalized, '0964050030')
   assert.deepEqual(phoneEntities.priceHints, [])
   console.log('PASS: Phase 4 extracts Vietnamese phone numbers without price noise')
+
+  const compactDistrictAddressEntities = extractFoodMapEntities({
+    ocrEvidence: {
+      text: '43 TTĐ, Q1',
+      usable: true,
+      confidence: 0.82,
+      lines: [
+        {
+          text: '43 TTĐ, Q1',
+          confidence: 0.82,
+          type: 'sign',
+        },
+      ],
+    },
+  })
+  assert.equal(compactDistrictAddressEntities.status, 'address_found')
+  assert.equal(compactDistrictAddressEntities.address.value, '43 TTĐ, Q1')
+  assert.ok(
+    compactDistrictAddressEntities.locationHints.some(
+      (location) =>
+        location.type === 'district' &&
+        normalizeForAssert(location.value) === 'q1',
+    ),
+  )
+
+  const streetWithoutAdminEntities = extractFoodMapEntities({
+    ocrEvidence: {
+      text: '65 Đường Láng',
+      usable: true,
+      confidence: 0.82,
+      lines: [
+        {
+          text: '65 Đường Láng',
+          confidence: 0.82,
+          type: 'sign',
+        },
+      ],
+    },
+  })
+  assert.equal(streetWithoutAdminEntities.status, 'address_found')
+  assert.equal(streetWithoutAdminEntities.address.value, '65 Đường Láng')
+  assert.deepEqual(
+    streetWithoutAdminEntities.address.evidence,
+    ['65 Đường Láng'],
+  )
+
+  const abbreviatedStreetEntities = extractFoodMapEntities({
+    ocrEvidence: {
+      text: '12 Đ. Hoa Mai, Q.2',
+      usable: true,
+      confidence: 0.8,
+      lines: [
+        {
+          text: '12 Đ. Hoa Mai, Q.2',
+          confidence: 0.8,
+          type: 'address',
+        },
+      ],
+    },
+  })
+  assert.equal(abbreviatedStreetEntities.status, 'address_found')
+  assert.equal(abbreviatedStreetEntities.address.value, '12 Đ. Hoa Mai, Q.2')
+  console.log('PASS: generalized Vietnamese street and district forms are extracted')
+
+  const mixedDishAddressEntities = extractFoodMapEntities({
+    ocrEvidence: {
+      text: 'Bun Bo Hue 65 Duong Lang',
+      usable: true,
+      confidence: 0.84,
+      lines: [
+        {
+          text: 'Bun Bo Hue 65 Duong Lang',
+          confidence: 0.84,
+          type: 'sign',
+        },
+      ],
+    },
+  })
+  assert.equal(mixedDishAddressEntities.status, 'address_found')
+  assert.equal(mixedDishAddressEntities.address.value, '65 Duong Lang')
+  assert.equal(mixedDishAddressEntities.placeName.value, null)
+  assert.ok(
+    mixedDishAddressEntities.dishNames.some(
+      (dish) => normalizeForAssert(dish.value) === 'bun bo',
+    ),
+  )
+  assert.equal(
+    mixedDishAddressEntities.dishNames[0].evidence,
+    'Bun Bo Hue 65 Duong Lang',
+  )
+
+  const mixedPlaceAddressEntities = extractFoodMapEntities({
+    ocrEvidence: {
+      text: 'Quán Ăn Hương Việt - 27 Đường Số 5, Q.3',
+      usable: true,
+      confidence: 0.84,
+      lines: [
+        {
+          text: 'Quán Ăn Hương Việt - 27 Đường Số 5, Q.3',
+          confidence: 0.84,
+          type: 'address',
+        },
+      ],
+    },
+  })
+  assert.equal(mixedPlaceAddressEntities.status, 'address_found')
+  assert.equal(
+    mixedPlaceAddressEntities.address.value,
+    '27 Đường Số 5, Q.3',
+  )
+  assert.equal(
+    mixedPlaceAddressEntities.placeName.value,
+    'Quán Ăn Hương Việt',
+  )
+  assert.deepEqual(
+    mixedPlaceAddressEntities.placeName.evidence,
+    ['Quán Ăn Hương Việt - 27 Đường Số 5, Q.3'],
+  )
+  console.log('PASS: mixed food, place, and address lines split into evidence-backed entities')
+
+  for (const venueLabel of ['Quán', 'Tiệm', 'Nhà hàng', 'Cửa hàng', 'Quầy']) {
+    const venueNumberEntities = extractFoodMapEntities({
+      inputSignals: {
+        title: `${venueLabel} 17`,
+      },
+    })
+    assert.equal(
+      venueNumberEntities.locationHints.some(
+        (item) => item.type === 'district',
+      ),
+      false,
+    )
+    assert.ok(
+      venueNumberEntities.warnings.includes(
+        'venue_number_not_district',
+      ),
+    )
+  }
+  console.log('PASS: venue words followed by bare numbers never imply districts')
+
+  const ambiguousQuanEntities = extractFoodMapEntities({
+    inputSignals: {
+      title: 'Quan 17',
+    },
+  })
+  assert.deepEqual(ambiguousQuanEntities.locationHints, [])
+  assert.ok(
+    ambiguousQuanEntities.warnings.includes('ambiguous_quan_token'),
+  )
+  console.log('PASS: unaccented quan plus a number remains ambiguous')
+
+  for (const districtText of ['Quận 7', 'Q.7', 'quận Bình Thạnh']) {
+    const explicitDistrictEntities = extractFoodMapEntities({
+      inputSignals: {
+        hint: districtText,
+      },
+    })
+    assert.ok(
+      explicitDistrictEntities.locationHints.some(
+        (item) => item.type === 'district',
+      ),
+    )
+  }
+  console.log('PASS: explicit numeric and named district forms remain location evidence')
+
+  const numberedVenueWithAddressEntities = extractFoodMapEntities({
+    ocrEvidence: {
+      text: 'Quán 79\n12 Đường Hoa Mai, Q.2',
+      usable: true,
+      confidence: 0.88,
+      lines: [
+        {
+          text: 'Quán 79',
+          confidence: 0.9,
+          type: 'sign',
+        },
+        {
+          text: '12 Đường Hoa Mai, Q.2',
+          confidence: 0.86,
+          type: 'address',
+        },
+      ],
+    },
+  })
+  assert.equal(numberedVenueWithAddressEntities.placeName.value, 'Quán 79')
+  assert.equal(
+    numberedVenueWithAddressEntities.address.value,
+    '12 Đường Hoa Mai, Q.2',
+  )
+  assert.equal(
+    numberedVenueWithAddressEntities.locationHints.some(
+      (item) => normalizeForAssert(item.value) === 'quan 79',
+    ),
+    false,
+  )
+  assert.ok(
+    numberedVenueWithAddressEntities.locationHints.some(
+      (item) => normalizeForAssert(item.value) === 'q 2',
+    ),
+  )
+  assert.ok(
+    numberedVenueWithAddressEntities.warnings.includes(
+      'venue_number_not_district',
+    ),
+  )
+  assert.equal(
+    buildFoodMapLocationQuery(numberedVenueWithAddressEntities)
+      .canResolveLocation,
+    true,
+  )
+  console.log('PASS: a numbered venue and a separate address retain distinct roles')
+
+  const legacyLandlineEntities = extractFoodMapEntities({
+    ocrEvidence: {
+      text: 'ĐT: (08) 38 369 145',
+      usable: true,
+      confidence: 0.84,
+      lines: [
+        {
+          text: 'ĐT: (08) 38 369 145',
+          confidence: 0.84,
+          type: 'phone',
+        },
+      ],
+    },
+  })
+  assert.equal(legacyLandlineEntities.phones[0].value, '(08) 38 369 145')
+  assert.equal(legacyLandlineEntities.phones[0].normalized, '0838369145')
+  assert.equal(
+    legacyLandlineEntities.phones[0].evidence,
+    'ĐT: (08) 38 369 145',
+  )
+
+  const unsupportedNumericEntities = extractFoodMapEntities({
+    ocrEvidence: {
+      text: '0901234567',
+      usable: true,
+      confidence: 0.92,
+      lines: [
+        {
+          text: '0901234567',
+          confidence: 0.92,
+          type: 'phone',
+        },
+      ],
+    },
+  })
+  assert.deepEqual(unsupportedNumericEntities.phones, [])
+  assert.equal(unsupportedNumericEntities.status, 'unclear')
+  console.log('PASS: phone formats require reusable contact or place context')
 
   const placeEntities = extractFoodMapEntities({
     ocrEvidence: {
@@ -709,6 +2427,21 @@ async function run() {
   assertLocationQueryContract(addressLocationQuery)
   console.log('PASS: address plus district forms a safe location query')
 
+  const phoneOnlyLocationQuery = buildFoodMapLocationQuery(phoneEntities)
+  assert.equal(phoneOnlyLocationQuery.canResolveLocation, false)
+  assert.equal(phoneOnlyLocationQuery.query, null)
+  assert.ok(phoneOnlyLocationQuery.score < 10)
+  assert.equal(phoneOnlyLocationQuery.reason, 'phone_only_needs_context')
+  assert.equal(phoneOnlyLocationQuery.strategy, 'insufficient_evidence')
+  assert.ok(
+    phoneOnlyLocationQuery.warnings.some((warning) =>
+      /phone evidence needs place, address, or strong location context/i.test(
+        warning,
+      ),
+    ),
+  )
+  console.log('PASS: phone-only OCR evidence requires additional context')
+
   const phoneLocationQuery = buildFoodMapLocationQuery({
     ...phoneEntities,
     locationHints: [
@@ -722,9 +2455,34 @@ async function run() {
     ],
   })
   assert.equal(phoneLocationQuery.canResolveLocation, true)
+  assert.equal(phoneLocationQuery.reason, 'phone_location_supported')
   assert.match(phoneLocationQuery.query, /^0964050030/)
   assert.match(phoneLocationQuery.query, /Ho Chi Minh City/i)
   console.log('PASS: normalized Vietnamese phone plus city forms a safe query')
+
+  const phonePlaceQuery = buildFoodMapLocationQuery({
+    ...phoneEntities,
+    placeName: {
+      value: 'Hoa Sen Kitchen',
+      confidence: 0.82,
+      source: 'ocr',
+      evidence: ['Hoa Sen Kitchen'],
+    },
+  })
+  assert.equal(phonePlaceQuery.canResolveLocation, true)
+  assert.equal(phonePlaceQuery.reason, 'place_phone_supported')
+  assert.match(phonePlaceQuery.query, /Hoa Sen Kitchen/i)
+  assert.match(phonePlaceQuery.query, /0964050030/)
+  console.log('PASS: clean place name plus phone forms a safe query')
+
+  const addressPhoneQuery = buildFoodMapLocationQuery({
+    ...addressEntities,
+    phones: phoneEntities.phones,
+  })
+  assert.equal(addressPhoneQuery.canResolveLocation, true)
+  assert.equal(addressPhoneQuery.reason, 'address_phone_supported')
+  assert.ok(addressPhoneQuery.score >= 18)
+  console.log('PASS: address plus phone remains strong location evidence')
 
   const locationLabelAddressQuery = buildFoodMapLocationQuery({
     ...phoneEntities,
@@ -747,7 +2505,7 @@ async function run() {
   assert.equal(locationLabelAddressQuery.canResolveLocation, true)
   assert.match(locationLabelAddressQuery.query, /^0964050030/)
   assert.doesNotMatch(locationLabelAddressQuery.query, /^9 Da Lat/i)
-  assert.match(locationLabelAddressQuery.reason, /phone number/i)
+  assert.match(locationLabelAddressQuery.reason, /phone/i)
   console.log('PASS: number plus city-only text is not treated as a street address')
 
   const placeLocationQuery = buildFoodMapLocationQuery(placeEntities)
@@ -826,6 +2584,8 @@ async function run() {
     ],
   })
   assert.equal(categoryPlaceQuery.canResolveLocation, true)
+  assert.equal(categoryPlaceQuery.strategy, 'place_dish_location_hint')
+  assert.ok(categoryPlaceQuery.score >= 10)
   assert.ok(categoryPlaceQuery.confidence <= 0.74)
   console.log('PASS: place plus dish and location is capped at medium confidence')
 
@@ -1104,6 +2864,29 @@ async function run() {
   assert.doesNotMatch(randomNumericEvidence.text || '', /3422724840/)
   console.log('PASS: numeric noise without contact context is rejected')
 
+  const validLookingNumericNoiseEvidence = await extractLocalOcrSignals(
+    {
+      image: {
+        buffer: tinyPng,
+        size: tinyPng.length,
+        mimetype: 'image/png',
+        originalname: 'valid-looking-numeric-noise.png',
+      },
+    },
+    {
+      recognizeImage: async () => ({
+        data: {
+          text: '0901234567',
+          confidence: 96,
+        },
+      }),
+      maxPasses: 1,
+    },
+  )
+  assert.equal(validLookingNumericNoiseEvidence.strongLines.length, 0)
+  assert.equal(validLookingNumericNoiseEvidence.usable, false)
+  console.log('PASS: valid-looking standalone digits are not treated as contact evidence')
+
   const addressWithGarbageEvidence = await extractLocalOcrSignals(
     {
       image: {
@@ -1280,7 +3063,7 @@ async function run() {
             'COM TAM THANH TU',
             'COM TAM THANH TU',
             '123 Le Loi, District 1',
-            '0909 000 111',
+            'ĐT: 0909 000 111',
           ].join('\n'),
           confidence: 87,
         },
@@ -1357,7 +3140,7 @@ async function run() {
   assert.equal(imageResult.ocrEvidence.lines[1].type, 'address')
   assert.match(imageResult.entities.address.value, /123 Le Loi/i)
   assert.equal(imageResult.locationQuery.canResolveLocation, true)
-  assert.match(imageResult.locationQuery.query, /^123 Le Loi/i)
+  assert.match(imageResult.locationQuery.query, /123 Le Loi/i)
   assert.ok(imageResult.debug.steps.includes('entity_extraction_completed'))
   assert.equal(
     imageResult.textSources.some((source) => source.type === 'ocr'),

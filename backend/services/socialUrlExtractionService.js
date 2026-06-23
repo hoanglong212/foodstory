@@ -7,6 +7,9 @@ const DEFAULT_TIMEOUT_MS = 5_000
 const DEFAULT_MAX_RESPONSE_BYTES = 1024 * 1024
 const DEFAULT_MAX_REDIRECTS = 3
 const RAW_TEXT_SNIPPET_LENGTH = 500
+const MAX_JSON_LD_SCRIPTS = 12
+const MAX_JSON_LD_SCRIPT_LENGTH = 80_000
+const MAX_JSON_LD_BUSINESSES = 5
 const SAFE_USER_AGENT =
   'FoodStory-Metadata-Extractor/1.0 (+public metadata only)'
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308])
@@ -37,6 +40,7 @@ function emptyExtraction(url) {
     canonicalUrl: null,
     siteName: null,
     rawTextSnippet: null,
+    jsonLdBusinesses: [],
     extractionStatus: 'invalid_url',
     warnings: [],
   }
@@ -360,6 +364,89 @@ function requestWithPinnedAddress(
   })
 }
 
+function requestBufferWithPinnedAddress(
+  parsed,
+  {
+    address,
+    family,
+    timeoutMs,
+    maxResponseBytes,
+    userAgent,
+  },
+) {
+  return new Promise((resolve, reject) => {
+    const transport = parsed.protocol === 'https:' ? https : http
+    const request = transport.request(
+      parsed,
+      {
+        method: 'GET',
+        family,
+        autoSelectFamily: false,
+        headers: {
+          Accept: 'image/jpeg,image/png,image/webp,image/gif;q=0.8',
+          'Accept-Encoding': 'identity',
+          'User-Agent': userAgent,
+          Connection: 'close',
+        },
+        lookup(_hostname, _options, callback) {
+          callback(null, address, family)
+        },
+      },
+      (response) => {
+        const status = Number(response.statusCode || 0)
+        const headers = response.headers
+
+        if (REDIRECT_STATUSES.has(status)) {
+          response.destroy()
+          resolve({ status, headers, buffer: Buffer.alloc(0) })
+          return
+        }
+
+        const declaredLength = Number(headers['content-length'])
+        if (
+          Number.isFinite(declaredLength) &&
+          declaredLength > maxResponseBytes
+        ) {
+          const error = new Error('Response exceeds the image size limit.')
+          error.code = 'RESPONSE_TOO_LARGE'
+          response.destroy(error)
+          reject(error)
+          return
+        }
+
+        const chunks = []
+        let receivedBytes = 0
+        response.on('data', (chunk) => {
+          receivedBytes += chunk.length
+          if (receivedBytes > maxResponseBytes) {
+            const error = new Error('Response exceeds the image size limit.')
+            error.code = 'RESPONSE_TOO_LARGE'
+            response.destroy(error)
+            return
+          }
+          chunks.push(chunk)
+        })
+        response.on('end', () => {
+          resolve({
+            status,
+            headers,
+            buffer: Buffer.concat(chunks),
+          })
+        })
+        response.on('error', reject)
+      },
+    )
+
+    request.setTimeout(timeoutMs, () => {
+      const error = new Error('Public image request timed out.')
+      error.code = 'ETIMEDOUT'
+      request.destroy(error)
+    })
+    request.on('error', reject)
+    request.end()
+  })
+}
+
 function headerValue(headers, name) {
   if (!headers) return ''
   if (typeof headers.get === 'function') return headers.get(name) || ''
@@ -432,6 +519,76 @@ async function requestWithInjectedFetch(
       body: REDIRECT_STATUSES.has(response.status)
         ? ''
         : await readFetchBody(response, maxResponseBytes),
+    }
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+async function readFetchBuffer(response, maxResponseBytes) {
+  const declaredLength = Number(headerValue(response.headers, 'content-length'))
+  if (
+    Number.isFinite(declaredLength) &&
+    declaredLength > maxResponseBytes
+  ) {
+    const error = new Error('Response exceeds the image size limit.')
+    error.code = 'RESPONSE_TOO_LARGE'
+    throw error
+  }
+
+  if (!response.body || typeof response.body.getReader !== 'function') {
+    const buffer = Buffer.from(await response.arrayBuffer())
+    if (buffer.length > maxResponseBytes) {
+      const error = new Error('Response exceeds the image size limit.')
+      error.code = 'RESPONSE_TOO_LARGE'
+      throw error
+    }
+    return buffer
+  }
+
+  const reader = response.body.getReader()
+  const chunks = []
+  let receivedBytes = 0
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    receivedBytes += value.byteLength
+    if (receivedBytes > maxResponseBytes) {
+      await reader.cancel()
+      const error = new Error('Response exceeds the image size limit.')
+      error.code = 'RESPONSE_TOO_LARGE'
+      throw error
+    }
+    chunks.push(Buffer.from(value))
+  }
+  return Buffer.concat(chunks)
+}
+
+async function requestBufferWithInjectedFetch(
+  fetchImpl,
+  parsed,
+  { timeoutMs, maxResponseBytes, userAgent },
+) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    const response = await fetchImpl(parsed.href, {
+      method: 'GET',
+      redirect: 'manual',
+      signal: controller.signal,
+      headers: {
+        Accept: 'image/jpeg,image/png,image/webp,image/gif;q=0.8',
+        'Accept-Encoding': 'identity',
+        'User-Agent': userAgent,
+      },
+    })
+    return {
+      status: response.status,
+      headers: response.headers,
+      buffer: REDIRECT_STATUSES.has(response.status)
+        ? Buffer.alloc(0)
+        : await readFetchBuffer(response, maxResponseBytes),
     }
   } finally {
     clearTimeout(timeout)
@@ -540,6 +697,98 @@ function extractVisibleText(html) {
   return cleanMetadataText(text, RAW_TEXT_SNIPPET_LENGTH)
 }
 
+function jsonLdTypes(value) {
+  const types = Array.isArray(value) ? value : [value]
+  return types
+    .map((type) => String(type || '').trim().toLowerCase())
+    .filter(Boolean)
+}
+
+function isFoodBusinessJsonLd(value) {
+  const supportedTypes = new Set([
+    'restaurant',
+    'localbusiness',
+    'foodestablishment',
+    'cafeorcoffeeshop',
+    'bakery',
+    'barorpub',
+    'fastfoodrestaurant',
+  ])
+  return jsonLdTypes(value?.['@type']).some((type) =>
+    supportedTypes.has(type),
+  )
+}
+
+function jsonLdAddress(value) {
+  if (typeof value === 'string') return cleanMetadataText(value, 500)
+  if (!value || typeof value !== 'object') return null
+  return cleanMetadataText(
+    [
+      value.streetAddress,
+      value.addressLocality,
+      value.addressRegion,
+      value.postalCode,
+      typeof value.addressCountry === 'string'
+        ? value.addressCountry
+        : value.addressCountry?.name,
+    ]
+      .filter(Boolean)
+      .join(', '),
+    500,
+  )
+}
+
+function collectJsonLdNodes(value, nodes, depth = 0) {
+  if (depth > 5 || nodes.length >= 100 || value === null) return
+  if (Array.isArray(value)) {
+    for (const item of value) collectJsonLdNodes(item, nodes, depth + 1)
+    return
+  }
+  if (typeof value !== 'object') return
+  nodes.push(value)
+  if (value['@graph']) collectJsonLdNodes(value['@graph'], nodes, depth + 1)
+}
+
+function extractJsonLdBusinesses(html) {
+  const businesses = []
+  let scriptCount = 0
+  for (const match of html.matchAll(
+    /<script\b[^>]*type\s*=\s*(?:"application\/ld\+json"|'application\/ld\+json'|application\/ld\+json)[^>]*>([\s\S]*?)<\/script>/gi,
+  )) {
+    scriptCount += 1
+    if (scriptCount > MAX_JSON_LD_SCRIPTS) break
+    const source = String(match[1] || '').trim()
+    if (!source || source.length > MAX_JSON_LD_SCRIPT_LENGTH) continue
+
+    try {
+      const parsed = JSON.parse(decodeHtmlEntities(source))
+      const nodes = []
+      collectJsonLdNodes(parsed, nodes)
+      for (const node of nodes) {
+        if (!isFoodBusinessJsonLd(node)) continue
+        const business = {
+          name: cleanMetadataText(node.name, 300),
+          address: jsonLdAddress(node.address),
+          telephone: cleanMetadataText(node.telephone, 80),
+          servesCuisine: cleanMetadataText(
+            Array.isArray(node.servesCuisine)
+              ? node.servesCuisine.join(', ')
+              : node.servesCuisine,
+            200,
+          ),
+          priceRange: cleanMetadataText(node.priceRange, 80),
+        }
+        if (!Object.values(business).some(Boolean)) continue
+        businesses.push(business)
+        if (businesses.length >= MAX_JSON_LD_BUSINESSES) return businesses
+      }
+    } catch {
+      // Invalid or non-JSON script blocks are ignored as untrusted evidence.
+    }
+  }
+  return businesses
+}
+
 function parseMetadata(html, finalUrl) {
   const meta = extractMetaValues(html)
   const titleMatch = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)
@@ -562,11 +811,14 @@ function parseMetadata(html, finalUrl) {
     ),
     siteName: cleanMetadataText(meta.get('og:site_name'), 300),
     rawTextSnippet: extractVisibleText(html),
+    jsonLdBusinesses: extractJsonLdBusinesses(html),
   }
 }
 
 function hasExtractedMetadata(metadata) {
-  return Object.values(metadata).some(Boolean)
+  return Object.values(metadata).some((value) =>
+    Array.isArray(value) ? value.length > 0 : Boolean(value),
+  )
 }
 
 function classifyRequestError(error) {
@@ -718,6 +970,162 @@ export async function extractSocialUrlSignals(
   result.extractionStatus = 'fetch_failed'
   result.warnings.push('The URL metadata request could not be completed.')
   return result
+}
+
+export async function fetchPublicImageBuffer(
+  { url } = {},
+  {
+    fetchImpl = null,
+    resolveHostname = defaultResolveHostname,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    maxResponseBytes = 3_000_000,
+    maxRedirects = DEFAULT_MAX_REDIRECTS,
+    userAgent = SAFE_USER_AGENT,
+    allowedContentTypes = new Set([
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+    ]),
+  } = {},
+) {
+  let currentUrl = String(url || '').trim()
+  const warnings = []
+
+  for (let redirectCount = 0; redirectCount <= maxRedirects; redirectCount += 1) {
+    const validation = parsePublicUrl(currentUrl)
+    if (!validation.parsed) {
+      return {
+        status: validation.status,
+        finalUrl: null,
+        buffer: null,
+        contentType: null,
+        warnings: [validation.warning],
+      }
+    }
+
+    const resolved = await resolvePublicAddress(
+      validation.parsed,
+      resolveHostname,
+    )
+    if (!resolved.address) {
+      return {
+        status: resolved.status,
+        finalUrl: null,
+        buffer: null,
+        contentType: null,
+        warnings: [
+          resolved.warning ||
+            'The image URL points to a local, private, or unsafe destination.',
+        ],
+      }
+    }
+
+    let response
+    try {
+      response = fetchImpl
+        ? await requestBufferWithInjectedFetch(
+            fetchImpl,
+            validation.parsed,
+            {
+              timeoutMs,
+              maxResponseBytes,
+              userAgent,
+            },
+          )
+        : await requestBufferWithPinnedAddress(validation.parsed, {
+            ...resolved,
+            timeoutMs,
+            maxResponseBytes,
+            userAgent,
+          })
+    } catch (error) {
+      const classified = classifyRequestError(error)
+      return {
+        status: classified.extractionStatus,
+        finalUrl: null,
+        buffer: null,
+        contentType: null,
+        warnings: [classified.warning],
+      }
+    }
+
+    if (REDIRECT_STATUSES.has(response.status)) {
+      const location = headerValue(response.headers, 'location')
+      if (!location || redirectCount === maxRedirects) {
+        return {
+          status: 'blocked',
+          finalUrl: null,
+          buffer: null,
+          contentType: null,
+          warnings: ['The image URL exceeded the safe redirect limit.'],
+        }
+      }
+      try {
+        currentUrl = new URL(location, validation.parsed).href
+      } catch {
+        return {
+          status: 'fetch_failed',
+          finalUrl: null,
+          buffer: null,
+          contentType: null,
+          warnings: ['The image URL returned an invalid redirect location.'],
+        }
+      }
+      continue
+    }
+
+    if (response.status < 200 || response.status >= 300) {
+      return {
+        status: BLOCKED_STATUSES.has(response.status)
+          ? 'blocked'
+          : 'fetch_failed',
+        finalUrl: validation.parsed.href,
+        buffer: null,
+        contentType: null,
+        warnings: [`The image URL returned HTTP ${response.status}.`],
+      }
+    }
+
+    const contentType = headerValue(response.headers, 'content-type')
+      .split(';')[0]
+      .trim()
+      .toLowerCase()
+    if (!allowedContentTypes.has(contentType)) {
+      return {
+        status: 'unsupported_content_type',
+        finalUrl: validation.parsed.href,
+        buffer: null,
+        contentType,
+        warnings: ['The URL did not return a supported image type.'],
+      }
+    }
+    if (!response.buffer?.length) {
+      return {
+        status: 'empty',
+        finalUrl: validation.parsed.href,
+        buffer: null,
+        contentType,
+        warnings: ['The image response was empty.'],
+      }
+    }
+
+    return {
+      status: 'success',
+      finalUrl: validation.parsed.href,
+      buffer: response.buffer,
+      contentType,
+      warnings,
+    }
+  }
+
+  return {
+    status: 'fetch_failed',
+    finalUrl: null,
+    buffer: null,
+    contentType: null,
+    warnings: ['The image URL could not be downloaded safely.'],
+  }
 }
 
 export const SOCIAL_URL_EXTRACTION_LIMITS = Object.freeze({

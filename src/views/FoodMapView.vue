@@ -150,6 +150,8 @@ const discoveryFile = ref(null);
 const discoveryPreviewUrl = ref("");
 const discoveryHint = ref("");
 const discoveryResult = ref(null);
+const discoveryDraft = ref(null);
+const discoveryCandidates = ref([]);
 const discoveryError = ref("");
 const discoveryPanelOpen = ref(false);
 const discoveryLoading = ref(false);
@@ -217,7 +219,16 @@ const discoveryStatusLabel = computed(() => {
 const discoveryOcrEvidence = computed(() => {
   const result = discoveryResult.value;
   if (!result) return null;
-  if (result.ocrEvidence) return result.ocrEvidence;
+  if (result.ocrEvidence) {
+    return {
+      ...result.ocrEvidence,
+      text:
+        result.ocrEvidence.finalText ||
+        result.ocrEvidence.text ||
+        result.ocrEvidence.debug?.finalSelection?.finalText ||
+        null,
+    };
+  }
 
   const visual = result.visualUnderstanding;
   if (!visual || (!visual.ocrText && visual.ocrUsable !== false)) return null;
@@ -239,6 +250,67 @@ const shouldShowDiscoveryOcr = computed(() => {
       (evidence.reason && evidence.reason !== "not_provided"),
   );
 });
+const discoveryNextAction = computed(
+  () => discoveryResult.value?.nextAction || null,
+);
+const discoveryMatchedPlace = computed(
+  () =>
+    discoveryNextAction.value?.payload?.matchedPlace ||
+    discoveryResult.value?.place?.matchedFoodMapPlace ||
+    discoveryResult.value?.foodMapMatch ||
+    null,
+);
+const discoveryEntities = computed(
+  () => discoveryResult.value?.entities || null,
+);
+const discoveryEntityPhones = computed(() =>
+  (discoveryEntities.value?.phones || [])
+    .map((phone) => phone?.value || phone?.normalized)
+    .filter(Boolean),
+);
+const discoveryDishNames = computed(() => {
+  const values = [
+    ...(discoveryEntities.value?.dishNames || []),
+    ...(discoveryNextAction.value?.payload?.dishNames || []),
+    discoveryResult.value?.visualUnderstanding?.dishName,
+  ]
+    .map((dish) => (typeof dish === "string" ? dish : dish?.value))
+    .filter(Boolean);
+
+  return [...new Set(values)];
+});
+const discoveryDraftSummary = computed(() => {
+  const draft = discoveryDraft.value;
+  if (!draft) return null;
+
+  return {
+    id: draft.id ?? null,
+    status: draft.status || "pending",
+    name:
+      draft.suggestedName ||
+      draft.name ||
+      draft.dish_name ||
+      "Địa điểm mới",
+    address:
+      draft.suggestedAddress ||
+      draft.address ||
+      draft.district ||
+      "Địa chỉ cần được kiểm tra",
+    phone: draft.suggestedPhone || null,
+    dishes: Array.isArray(draft.suggestedDishes)
+      ? draft.suggestedDishes.filter(Boolean)
+      : [draft.dish_name].filter(Boolean),
+    confidence: Number(draft.confidence),
+    provider: draft.provider || null,
+  };
+});
+const discoveryHasNewContractSummary = computed(() =>
+  Boolean(
+    discoveryEntities.value ||
+      discoveryResult.value?.locationQuery ||
+      discoveryResult.value?.locationResolution,
+  ),
+);
 const isEditing = computed(() => editingSpotId.value !== null);
 const isCommunityMode = computed(() => mapMode.value === "community");
 const spotLayerLabel = computed(() =>
@@ -1445,9 +1517,9 @@ async function focusDiscoveryFoodMapMatch(match) {
         name: match.name,
         category: match.category,
         district: match.district,
-        address: match.address,
-        latitude: match.latitude,
-        longitude: match.longitude,
+        address: match.address || match.formattedAddress,
+        latitude: match.latitude ?? match.lat,
+        longitude: match.longitude ?? match.lng,
         avg_rating: 0,
       };
     showRestaurantDetail(restaurant);
@@ -1464,14 +1536,54 @@ async function focusDiscoveryFoodMapMatch(match) {
         dish_name: match.dishName,
         category: match.category,
         district: match.district,
-        latitude: match.latitude,
-        longitude: match.longitude,
+        latitude: match.latitude ?? match.lat,
+        longitude: match.longitude ?? match.lng,
         rating: null,
       };
     showCommunityDetail(spot);
   }
 
   isResultSheetOpen.value = true;
+}
+
+async function applyFoodMapDiscoveryResponse(result) {
+  discoveryResult.value = result || null;
+  discoveryDraft.value =
+    result?.addPlaceDraft ||
+    result?.nextAction?.payload?.draftPlace ||
+    result?.suggestedDraft ||
+    null;
+  const resolvedCandidates = Array.isArray(
+    result?.locationResolution?.candidates,
+  )
+    ? result.locationResolution.candidates
+    : [];
+  const actionCandidates = Array.isArray(
+    result?.nextAction?.payload?.candidates,
+  )
+    ? result.nextAction.payload.candidates
+    : [];
+  discoveryCandidates.value = resolvedCandidates.length
+    ? resolvedCandidates
+    : actionCandidates;
+
+  const actionType = result?.nextAction?.type;
+  if (
+    actionType === "focus_existing_place" ||
+    (result?.status === "external_place_found_in_foodmap" &&
+      result?.foodMapMatch)
+  ) {
+    const match =
+      result?.nextAction?.payload?.matchedPlace ||
+      result?.place?.matchedFoodMapPlace ||
+      result?.foodMapMatch;
+    if (match) await focusDiscoveryFoodMapMatch(match);
+  }
+
+  if (actionType === "ask_for_hint") {
+    await nextTick();
+    discoveryHintInput.value?.focus();
+  }
 }
 
 function discoveryDraftPrefill(draft) {
@@ -1508,6 +1620,8 @@ function resetFoodMapDiscovery() {
   discoveryFile.value = null;
   discoveryHint.value = "";
   discoveryResult.value = null;
+  discoveryDraft.value = null;
+  discoveryCandidates.value = [];
   discoveryError.value = "";
   discoveryLoadingStep.value = 0;
 }
@@ -1516,25 +1630,26 @@ async function submitFoodMapDiscovery() {
   if (discoveryLoading.value) return;
 
   const sourceUrl = isHttpUrl(scanUrl.value) ? scanUrl.value.trim() : "";
-  if (!discoveryFile.value && !sourceUrl) {
+  const hint = discoveryHint.value.trim();
+  if (!discoveryFile.value && !sourceUrl && !hint) {
     discoveryPanelOpen.value = true;
     discoveryError.value =
-      "Upload a screenshot/photo or paste a full http(s) social/video URL.";
+      "Hãy tải ảnh, dán liên kết hoặc thêm gợi ý về quán/khu vực.";
     return;
   }
 
   discoveryPanelOpen.value = true;
   discoveryLoading.value = true;
   discoveryResult.value = null;
+  discoveryDraft.value = null;
+  discoveryCandidates.value = [];
   discoveryError.value = "";
   startDiscoveryLoading();
 
   try {
     const formData = new FormData();
     if (discoveryFile.value) formData.append("image", discoveryFile.value);
-    if (discoveryHint.value.trim()) {
-      formData.append("hint", discoveryHint.value.trim());
-    }
+    if (hint) formData.append("hint", hint);
     if (sourceUrl) formData.append("url", sourceUrl);
 
     const response = await api.post("/food-map/social-discovery", formData, {
@@ -1542,18 +1657,11 @@ async function submitFoodMapDiscovery() {
     });
     discoveryLoadingStep.value = discoveryLoadingSteps.length - 1;
     await wait(250);
-    discoveryResult.value = response.data;
-
-    if (
-      response.data.status === "external_place_found_in_foodmap" &&
-      response.data.foodMapMatch
-    ) {
-      await focusDiscoveryFoodMapMatch(response.data.foodMapMatch);
-    }
+    await applyFoodMapDiscoveryResponse(response.data);
   } catch (error) {
     const responseData = error.response?.data;
     if (responseData?.status) {
-      discoveryResult.value = responseData;
+      await applyFoodMapDiscoveryResponse(responseData);
     } else {
       discoveryError.value = getApiError(
         error,
@@ -1568,7 +1676,7 @@ async function submitFoodMapDiscovery() {
 
 async function handleScanUrl() {
   const value = scanUrl.value.trim();
-  if (!value && !discoveryFile.value) {
+  if (!value && !discoveryFile.value && !discoveryHint.value.trim()) {
     discoveryPanelOpen.value = true;
     scanInput.value?.focus();
     return;
@@ -1597,6 +1705,22 @@ function focusScanInput() {
 function focusDiscoveryHint() {
   discoveryPanelOpen.value = true;
   nextTick(() => discoveryHintInput.value?.focus());
+}
+
+function searchDiscoveryDish(dish) {
+  const value = String(dish || "").trim();
+  if (!value) return;
+
+  scanUrl.value = value;
+  restaurantFilters.search = value;
+  if (mapMode.value === "community") {
+    communitySearch.value = value;
+  } else {
+    personalSearch.value = value;
+  }
+  isResultSheetOpen.value = true;
+  discoveryPanelOpen.value = false;
+  invalidateMapAfterTransition();
 }
 
 function locateUser() {
@@ -1826,7 +1950,7 @@ onBeforeUnmount(() => {
         ref="scanInput"
         v-model="scanUrl"
         type="text"
-        maxlength="500"
+        maxlength="2000"
         placeholder="Paste a TikTok, Instagram, Facebook, or YouTube Shorts food link..."
       />
       <button
@@ -1907,7 +2031,7 @@ onBeforeUnmount(() => {
             ref="discoveryHintInput"
             v-model="discoveryHint"
             type="text"
-            maxlength="200"
+            maxlength="500"
             :disabled="discoveryLoading"
             placeholder="Dish, district, or place: Restaurant Name"
           />
@@ -1926,7 +2050,7 @@ onBeforeUnmount(() => {
           type="button"
           :disabled="
             discoveryLoading ||
-            (!discoveryFile && !isHttpUrl(scanUrl))
+            (!discoveryFile && !isHttpUrl(scanUrl) && !discoveryHint.trim())
           "
           @click="submitFoodMapDiscovery"
         >
@@ -1982,6 +2106,15 @@ onBeforeUnmount(() => {
           <p v-if="discoveryResult.visualUnderstanding?.caption">
             {{ discoveryResult.visualUnderstanding.caption }}
           </p>
+          <p
+            v-if="
+              discoveryNextAction?.message &&
+              discoveryNextAction.message !== discoveryResult.message
+            "
+            class="food-map-discovery-action-message"
+          >
+            {{ discoveryNextAction.message }}
+          </p>
         </div>
 
         <div
@@ -2001,6 +2134,64 @@ onBeforeUnmount(() => {
           <span v-if="discoveryResult.visualUnderstanding.category">
             Category: <b>{{ discoveryResult.visualUnderstanding.category }}</b>
           </span>
+        </div>
+
+        <div
+          v-if="discoveryHasNewContractSummary"
+          class="food-map-discovery-summary"
+        >
+          <span>Kết quả nhận diện</span>
+          <dl>
+            <div v-if="discoveryEntities?.placeName?.value">
+              <dt>Tên quán</dt>
+              <dd>{{ discoveryEntities.placeName.value }}</dd>
+            </div>
+            <div v-if="discoveryEntities?.address?.value">
+              <dt>Địa chỉ</dt>
+              <dd>{{ discoveryEntities.address.value }}</dd>
+            </div>
+            <div v-if="discoveryEntityPhones.length">
+              <dt>Điện thoại</dt>
+              <dd>{{ discoveryEntityPhones.join(", ") }}</dd>
+            </div>
+            <div v-if="discoveryDishNames.length">
+              <dt>Món ăn</dt>
+              <dd>{{ discoveryDishNames.join(", ") }}</dd>
+            </div>
+          </dl>
+
+          <details
+            v-if="
+              discoveryResult.locationQuery ||
+              discoveryResult.locationResolution
+            "
+          >
+            <summary>Chi tiết tìm vị trí</summary>
+            <dl>
+              <div v-if="discoveryResult.locationQuery?.query">
+                <dt>Từ khóa bản đồ</dt>
+                <dd>{{ discoveryResult.locationQuery.query }}</dd>
+              </div>
+              <div v-if="discoveryResult.locationQuery">
+                <dt>Điểm bằng chứng</dt>
+                <dd>{{ discoveryResult.locationQuery.score ?? 0 }}</dd>
+              </div>
+              <div v-if="discoveryResult.locationQuery">
+                <dt>Có thể tìm vị trí</dt>
+                <dd>
+                  {{
+                    discoveryResult.locationQuery.canResolveLocation
+                      ? "Có"
+                      : "Chưa đủ thông tin"
+                  }}
+                </dd>
+              </div>
+              <div v-if="discoveryResult.locationResolution">
+                <dt>Trạng thái bản đồ</dt>
+                <dd>{{ discoveryResult.locationResolution.status }}</dd>
+              </div>
+            </dl>
+          </details>
         </div>
 
         <div
@@ -2059,36 +2250,100 @@ onBeforeUnmount(() => {
         </div>
 
         <div
-          v-if="
-            discoveryResult.status === 'external_place_found_in_foodmap' &&
-            discoveryResult.foodMapMatch
-          "
+          v-if="discoveryMatchedPlace"
           class="food-map-discovery-match"
         >
           <div>
             <span>
-              {{ discoveryResult.foodMapMatch.sourceType === "food_spot"
+              {{ discoveryMatchedPlace.sourceType === "food_spot"
                 ? "Community food spot"
                 : "Restaurant" }}
             </span>
-            <strong>{{ discoveryResult.foodMapMatch.name }}</strong>
+            <strong>{{ discoveryMatchedPlace.name }}</strong>
             <p>
-              {{ discoveryResult.foodMapMatch.category || "FoodStory Map" }}
-              <template v-if="discoveryResult.foodMapMatch.district">
-                · {{ discoveryResult.foodMapMatch.district }}
+              {{ discoveryMatchedPlace.category || "FoodStory Map" }}
+              <template v-if="discoveryMatchedPlace.district">
+                · {{ discoveryMatchedPlace.district }}
               </template>
             </p>
           </div>
-          <b class="food-map-discovery-score">
-            {{ Math.round(discoveryResult.foodMapMatch.confidence * 100) }}%
+          <b
+            v-if="Number.isFinite(Number(discoveryMatchedPlace.confidence))"
+            class="food-map-discovery-score"
+          >
+            {{ Math.round(Number(discoveryMatchedPlace.confidence) * 100) }}%
             match score
           </b>
           <button
             type="button"
-            @click="focusDiscoveryFoodMapMatch(discoveryResult.foodMapMatch)"
+            @click="focusDiscoveryFoodMapMatch(discoveryMatchedPlace)"
           >
             Focus marker
           </button>
+        </div>
+
+        <div
+          v-if="
+            discoveryNextAction?.type === 'review_draft_place' &&
+            discoveryDraftSummary
+          "
+          class="food-map-discovery-draft food-map-discovery-pending-draft"
+        >
+          <div>
+            <span>Bản nháp đang chờ duyệt</span>
+            <strong>{{ discoveryDraftSummary.name }}</strong>
+            <p>{{ discoveryDraftSummary.address }}</p>
+            <p v-if="discoveryDraftSummary.phone">
+              Điện thoại: {{ discoveryDraftSummary.phone }}
+            </p>
+            <p v-if="discoveryDraftSummary.dishes.length">
+              Món ăn: {{ discoveryDraftSummary.dishes.join(", ") }}
+            </p>
+          </div>
+          <div class="food-map-discovery-draft-meta">
+            <b>Pending</b>
+            <small v-if="Number.isFinite(discoveryDraftSummary.confidence)">
+              Độ tin cậy
+              {{ Math.round(discoveryDraftSummary.confidence * 100) }}%
+            </small>
+            <small>
+              Chưa được thêm vào bản đồ chính. Hãy kiểm tra trước khi xác nhận.
+            </small>
+          </div>
+        </div>
+
+        <div
+          v-if="
+            discoveryNextAction?.type === 'choose_candidate' &&
+            discoveryCandidates.length
+          "
+          class="food-map-discovery-candidates"
+        >
+          <span>Các địa điểm có thể phù hợp</span>
+          <p>FoodStory chưa thể tự chọn chính xác. Vui lòng kiểm tra danh sách.</p>
+          <ul>
+            <li
+              v-for="(candidate, index) in discoveryCandidates"
+              :key="candidate.placeId || `${candidate.name}-${index}`"
+            >
+              <div>
+                <strong>{{ candidate.name || "Địa điểm chưa rõ tên" }}</strong>
+                <small>
+                  {{
+                    candidate.formattedAddress ||
+                    candidate.address ||
+                    "Chưa có địa chỉ"
+                  }}
+                </small>
+              </div>
+              <b v-if="Number.isFinite(Number(candidate.confidence))">
+                {{ Math.round(Number(candidate.confidence) * 100) }}%
+              </b>
+            </li>
+          </ul>
+          <small>
+            Chức năng xác nhận một ứng viên sẽ được bổ sung sau.
+          </small>
         </div>
 
         <div
@@ -2131,6 +2386,63 @@ onBeforeUnmount(() => {
 
         <div
           v-if="
+            discoveryNextAction?.type === 'explore_dish_nearby' &&
+            discoveryDishNames.length
+          "
+          class="food-map-discovery-dish-help"
+        >
+          <p>
+            Chưa xác định được chính xác quán, nhưng bạn có thể tìm các địa điểm
+            đang có món này trên FoodStory.
+          </p>
+          <button
+            v-for="dish in discoveryDishNames"
+            :key="dish"
+            type="button"
+            @click="searchDiscoveryDish(dish)"
+          >
+            Tìm “{{ dish }}”
+          </button>
+          <button class="secondary" type="button" @click="focusDiscoveryHint">
+            Thêm gợi ý
+          </button>
+        </div>
+
+        <div
+          v-if="discoveryNextAction?.type === 'ask_for_hint'"
+          class="food-map-discovery-fallback"
+        >
+          <p>
+            {{
+              discoveryNextAction.message ||
+              "Hãy thêm tên quán, khu vực, địa chỉ hoặc số điện thoại."
+            }}
+          </p>
+          <button type="button" @click="focusDiscoveryHint">
+            Thêm gợi ý rồi thử lại
+          </button>
+        </div>
+
+        <div
+          v-if="discoveryNextAction?.type === 'ask_for_clearer_image'"
+          class="food-map-discovery-fallback"
+        >
+          <p>
+            {{
+              discoveryNextAction.message ||
+              "Hãy tải ảnh rõ hơn, ưu tiên ảnh có biển hiệu, địa chỉ hoặc số điện thoại."
+            }}
+          </p>
+          <button type="button" @click="openDiscoveryFilePicker">
+            Tải ảnh rõ hơn
+          </button>
+          <button class="secondary" type="button" @click="focusDiscoveryHint">
+            Thêm gợi ý
+          </button>
+        </div>
+
+        <div
+          v-if="
             discoveryResult.status ===
             'external_place_not_found_dish_identified'
           "
@@ -2154,6 +2466,8 @@ onBeforeUnmount(() => {
 
         <div
           v-if="
+            (!discoveryNextAction?.type ||
+              discoveryNextAction.type === 'none') &&
             [
               'url_extraction_failed',
               'unclear',
@@ -6154,6 +6468,8 @@ onBeforeUnmount(() => {
 .food-map-discovery-result-heading > span,
 .food-map-discovery-match span,
 .food-map-discovery-draft span,
+.food-map-discovery-summary > span,
+.food-map-discovery-candidates > span,
 .food-map-discovery-ocr span,
 .food-map-discovery-external span {
   color: var(--food-orange-dark);
@@ -6385,6 +6701,11 @@ onBeforeUnmount(() => {
   line-height: 1.5;
 }
 
+.food-map-discovery-result-heading .food-map-discovery-action-message {
+  color: #7b4c2d;
+  font-weight: 700;
+}
+
 .food-map-discovery-clues {
   display: flex;
   flex-wrap: wrap;
@@ -6398,6 +6719,57 @@ onBeforeUnmount(() => {
   color: var(--food-muted);
   background: #fff5e6;
   font-size: 9px;
+}
+
+.food-map-discovery-summary,
+.food-map-discovery-candidates {
+  margin-top: 13px;
+  padding: 12px 13px;
+  border: 1px solid rgba(111, 75, 43, 0.14);
+  border-radius: 13px;
+  background: #fffaf2;
+}
+
+.food-map-discovery-summary dl {
+  display: grid;
+  gap: 7px;
+  margin: 9px 0 0;
+}
+
+.food-map-discovery-summary dl > div {
+  display: grid;
+  grid-template-columns: 105px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.food-map-discovery-summary dt,
+.food-map-discovery-summary dd {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.food-map-discovery-summary dt {
+  color: var(--food-muted);
+  font-weight: 800;
+}
+
+.food-map-discovery-summary dd {
+  color: var(--food-text);
+  overflow-wrap: anywhere;
+}
+
+.food-map-discovery-summary details {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(111, 75, 43, 0.1);
+}
+
+.food-map-discovery-summary summary {
+  cursor: pointer;
+  color: #8c5e3a;
+  font-size: 9px;
+  font-weight: 900;
 }
 
 .food-map-discovery-ocr,
@@ -6493,6 +6865,86 @@ onBeforeUnmount(() => {
   grid-template-columns: minmax(0, 1fr) auto;
   border-color: rgba(246, 120, 44, 0.22);
   background: #fff8ef;
+}
+
+.food-map-discovery-pending-draft {
+  align-items: start;
+}
+
+.food-map-discovery-draft-meta {
+  display: grid;
+  max-width: 210px;
+  justify-items: end;
+  gap: 5px;
+  text-align: right;
+}
+
+.food-map-discovery-draft-meta b {
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #9a5d19;
+  background: #ffe7bd;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.food-map-discovery-draft-meta small {
+  color: var(--food-muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.food-map-discovery-candidates > p {
+  margin: 6px 0 0;
+  color: var(--food-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.food-map-discovery-candidates ul {
+  display: grid;
+  gap: 7px;
+  margin: 10px 0 7px;
+  padding: 0;
+  list-style: none;
+}
+
+.food-map-discovery-candidates li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border: 1px solid rgba(111, 75, 43, 0.11);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.food-map-discovery-candidates li div {
+  min-width: 0;
+}
+
+.food-map-discovery-candidates strong,
+.food-map-discovery-candidates small {
+  display: block;
+}
+
+.food-map-discovery-candidates strong {
+  color: var(--food-text);
+  font-size: 11px;
+}
+
+.food-map-discovery-candidates small {
+  margin-top: 3px;
+  color: var(--food-muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.food-map-discovery-candidates li > b {
+  color: #287153;
+  font-size: 10px;
+  white-space: nowrap;
 }
 
 .food-map-discovery-fallback {

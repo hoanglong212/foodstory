@@ -113,15 +113,21 @@ async function postImage({ endpoint, filename }) {
 }
 
 function assertNoResolutionSideEffects(result) {
-  assert.equal(result.place.name, null)
-  assert.equal(result.place.address, null)
-  assert.equal(result.place.existsInFoodMap, false)
-  assert.equal(result.place.matchedFoodMapPlace, null)
+  if (result.nextAction?.type !== 'focus_existing_place') {
+    assert.equal(result.place.name, null)
+    assert.equal(result.place.address, null)
+    assert.equal(result.place.existsInFoodMap, false)
+    assert.equal(result.place.matchedFoodMapPlace, null)
+  }
   assert.equal(result.dishFallback.broadDish, null)
   assert.equal(result.dishFallback.possibleDish, null)
   assert.equal(result.dishFallback.cuisine, null)
   assert.deepEqual(result.dishFallback.topCandidates, [])
-  assert.equal(result.addPlaceDraft, null)
+  if (result.addPlaceDraft) {
+    assert.equal(result.locationResolution?.status, 'resolved')
+    assert.ok(result.locationResolution?.confidence >= 0.68)
+    assert.equal(result.nextAction?.type, 'review_draft_place')
+  }
   assert.equal(result.matchedPlace, undefined)
   assert.equal(result.placeId, undefined)
   assert.equal(result.coordinates, undefined)
@@ -133,8 +139,11 @@ function assertResponseContract(result) {
   assert.ok(result.ocrEvidence)
   assert.ok(result.entities)
   assert.ok(result.locationQuery)
+  assert.ok(result.locationResolution)
+  assert.ok(result.nextAction)
   assert.equal(result.ocrEvidence.debug?.implemented, true)
   assert.equal(result.ocrEvidence.debug?.engine, 'tesseract.js')
+  assert.equal(typeof result.ocrEvidence.debug?.providerUsed, 'string')
   assert.notEqual(result.ocrEvidence.reason, 'timeout')
   assert.ok(Array.isArray(result.ocrEvidence.lines))
   assert.ok(Array.isArray(result.ocrEvidence.strongLines))
@@ -146,7 +155,11 @@ function assertResponseContract(result) {
   assert.equal(typeof result.ocrEvidence.usable, 'boolean')
   assert.equal(typeof result.locationQuery.canResolveLocation, 'boolean')
   assert.equal(typeof result.locationQuery.confidence, 'number')
+  assert.equal(typeof result.locationQuery.score, 'number')
+  assert.equal(typeof result.locationQuery.strategy, 'string')
+  assert.ok(Array.isArray(result.locationQuery.evidence))
   assert.ok(Array.isArray(result.locationQuery.warnings))
+  assert.equal(typeof result.nextAction.type, 'string')
   assert.deepEqual(Object.keys(result.locationQuery.components), [
     'address',
     'placeName',
@@ -175,6 +188,10 @@ function assertLocationQueryInvariant(result) {
     )
   } else {
     assert.equal(locationQuery.query, null)
+    assert.equal(
+      result.locationResolution.reason,
+      'location_query_not_ready',
+    )
   }
 }
 
@@ -183,6 +200,7 @@ function summarize({ filename, httpStatus, body }) {
     filename,
     httpStatus,
     status: body.status,
+    providerUsed: body.ocrEvidence?.debug?.providerUsed || null,
     ocr: {
       usable: body.ocrEvidence?.usable === true,
       confidence: body.ocrEvidence?.confidence || 0,
@@ -230,6 +248,8 @@ function summarize({ filename, httpStatus, body }) {
       priceHints: body.entities?.priceHints?.map((price) => price.value) || [],
     },
     locationQuery: body.locationQuery,
+    locationResolution: body.locationResolution,
+    nextAction: body.nextAction,
     scopeClean:
       body.place?.name === null &&
       body.place?.matchedFoodMapPlace === null &&

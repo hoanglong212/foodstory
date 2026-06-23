@@ -58,3 +58,12 @@ package-lock.json
 backend/package-lock.json
 backend/db.js
 backend/.env.example
+
+# Google credentials
+backend/secrets/
+*.service-account.json
+*service-account*.json
+google-vision-service-account.json
+
+# Manual Vision Auto frame OCR diagnostics
+backend/tmp/vision-frame-debug/

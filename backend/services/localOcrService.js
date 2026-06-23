@@ -237,13 +237,40 @@ function phoneLike(value) {
 }
 
 function normalizedVietnamesePhone(value) {
-  const match = String(value || '').match(
-    /(?:\+?84|0)(?:[\s.()/-]*\d){8,10}\b/u,
+  const source = String(value || '')
+  const parenthesized = source.match(
+    /(?<!\d)\(\s*0?\d{2,3}\s*\)(?:[\s./-]*\d){7,8}(?![\s./-]*\d)/u,
   )
+  const match =
+    parenthesized ||
+    source.match(
+      /(?<!\d)(?:\+?84|0)(?:[\s.()/-]*\d){8,10}(?![\s.()/-]*\d)/u,
+    )
   if (!match) return null
   const digits = match[0].replace(/\D/g, '')
   const local = digits.startsWith('84') ? `0${digits.slice(2)}` : digits
-  if (/^0[35789]\d{8}$/.test(local) || /^02\d{8,9}$/.test(local)) {
+  const address = addressEvidenceParts(source)
+  const normalized = normalizeLineKey(source)
+  const hasPlaceContext =
+    foodSignalCount(source) > 0 ||
+    /\b(?:quan|tiem|cafe|coffee|nha hang|restaurant|bep|bakery)\b/.test(
+      normalized,
+    )
+  const legacyLandline =
+    Boolean(parenthesized) && digits.length >= 9 && digits.length <= 11
+  const supported =
+    hasPhoneContext(source) ||
+    address.hasAddressKeyword ||
+    address.hasAdminToken ||
+    hasPlaceContext
+  if (
+    supported &&
+    (
+      /^0[35789]\d{8}$/.test(local) ||
+      /^02\d{8,9}$/.test(local) ||
+      legacyLandline
+    )
+  ) {
     return local
   }
   return null
@@ -1997,6 +2024,94 @@ function publicEvidence(assessment, { warnings, debug, assessments = [] }) {
     },
     implemented: true,
   }
+}
+
+export function buildLocalOcrEvidenceFromProviderResult(
+  providerResult = {},
+) {
+  const provider = providerResult?.provider || 'unknown'
+  const providerLines = Array.isArray(providerResult?.lines)
+    ? providerResult.lines
+    : []
+  const assessmentsByPass = new Map()
+
+  for (const line of providerLines) {
+    const text = cleanLine(line?.text)
+    if (!text) continue
+    const sourcePass = capString(line?.sourcePass || provider, 80)
+    if (!assessmentsByPass.has(sourcePass)) {
+      assessmentsByPass.set(sourcePass, {
+        candidateLines: [],
+        debug: {
+          pass: sourcePass,
+          variant: provider,
+          boundedCrop: /(?:crop|top|sign|menu)/i.test(sourcePass),
+        },
+      })
+    }
+    assessmentsByPass.get(sourcePass).candidateLines.push({
+      text,
+      confidence: normalizedConfidence(line?.confidence),
+      type: LINE_TYPES.has(line?.type) ? line.type : lineType(text),
+    })
+  }
+
+  const assessments = [...assessmentsByPass.values()]
+  const rawText = normalizeMultilineText(
+    providerResult?.rawText ||
+      providerLines.map((line) => line?.text || '').join('\n'),
+  )
+  const providerStatus =
+    providerResult?.debug?.providerStatus ||
+    (providerLines.length ? 'success' : 'empty')
+  const unavailable = [
+    'provider_unavailable',
+    'missing_credentials',
+    'timeout',
+    'error',
+  ].includes(providerStatus)
+
+  if (!assessments.length) {
+    return failureEvidence(
+      unavailable ? providerStatus : rawText ? 'low_confidence' : 'no_text',
+      {
+        warnings: Array.isArray(providerResult?.warnings)
+          ? providerResult.warnings
+          : [],
+        debug: {
+          engine: provider,
+          provider,
+          providerStatus,
+          durationMs: Number(providerResult?.debug?.durationMs || 0),
+          rawText: capString(rawText, MAX_DEBUG_TEXT_LENGTH),
+        },
+      },
+    )
+  }
+
+  const assessment = {
+    reason: rawText ? 'low_confidence' : 'no_text',
+    warnings: [],
+  }
+  return publicEvidence(assessment, {
+    warnings: Array.isArray(providerResult?.warnings)
+      ? providerResult.warnings
+      : [],
+    assessments,
+    debug: {
+      implemented: true,
+      engine: provider,
+      provider,
+      providerStatus,
+      durationMs: Number(providerResult?.debug?.durationMs || 0),
+      passes: assessments.map((item) => ({
+        label: item.debug.pass,
+        variant: item.debug.variant,
+        lineCount: item.candidateLines.length,
+      })),
+      rawText: capString(rawText, MAX_DEBUG_TEXT_LENGTH),
+    },
+  })
 }
 
 export async function extractLocalOcrSignals(

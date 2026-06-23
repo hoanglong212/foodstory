@@ -19,6 +19,8 @@ import aiRoutes from './routes/aiRoutes.js'
 import visionRoutes from './routes/vision.js'
 import foodMapDiscoveryRoutes from './routes/foodMapDiscoveryRoutes.js'
 import foodMapSocialDiscoveryRoutes from './routes/foodMapSocialDiscoveryRoutes.js'
+import visionAutoRoutes from './routes/visionAutoRoutes.js'
+import { visionAutoRouteEnabled } from './services/visionAuto/visionAutoConfig.js'
 
 import { initWebSocketServer } from './websocket/wsServer.js'
 
@@ -93,6 +95,9 @@ app.use('/api/ai', aiRoutes)
 app.use('/api/vision', visionRoutes)
 app.use('/api/food-map', foodMapDiscoveryRoutes)
 app.use('/api/food-map', foodMapSocialDiscoveryRoutes)
+if (visionAutoRouteEnabled()) {
+  app.use('/api/food-map', visionAutoRoutes)
+}
 app.use('/api/chatbot', foodStoryChatbotRoutes)
 
 app.use((req, res) => {
