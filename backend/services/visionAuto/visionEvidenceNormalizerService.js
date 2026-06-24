@@ -144,6 +144,35 @@ function normalizedTextKey(value) {
     .trim()
 }
 
+function metadataCandidateLocationHints(items = []) {
+  const result = []
+  const seen = new Set()
+
+  for (const item of Array.isArray(items) ? items : []) {
+    const type = capText(item?.type, 40).toLowerCase()
+    if (type !== 'youtube_title' && type !== 'title') continue
+
+    const text = capText(item?.text, 500)
+    for (const match of text.matchAll(/\b(?:Quận|Quan|Q\.?)\s*0?(\d{1,2})\b/giu)) {
+      const districtNumber = Number(match[1])
+      if (!Number.isInteger(districtNumber) || districtNumber < 1) continue
+
+      const value = `Quận ${districtNumber}`
+      const key = value.toLowerCase()
+      if (seen.has(key)) continue
+
+      seen.add(key)
+      result.push({
+        value,
+        source: type,
+        evidence: text,
+      })
+    }
+  }
+
+  return result.slice(0, 4)
+}
+
 function strongerLineType(left, right) {
   const priority = {
     address: 4,
@@ -271,6 +300,9 @@ function normalizedFrameEvidence(collection = {}) {
 }
 
 export function normalizeVisionEvidence(collection = {}) {
+  const candidateLocationHints = metadataCandidateLocationHints(
+    collection.metadata,
+  )
   const metadata = uniqueSources(collection.metadata).filter(
     (source) => !unsafeWeakSocialTextSource(source),
   )
@@ -324,6 +356,7 @@ export function normalizeVisionEvidence(collection = {}) {
     frameEvidence,
     frameTexts,
     audioTexts,
+    candidateLocationHints,
     warnings: uniqueText(collection.warnings, 16),
     debug: {
       metadataCount: metadata.length,

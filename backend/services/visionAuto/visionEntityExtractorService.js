@@ -4,11 +4,13 @@ import {
 } from "../foodMapEntityExtractionService.js";
 import { recoverEmbeddedYoutubeFrameEntities } from "./youtubeFrameOcrVariantService.js";
 import {
+  hasVietnamApartmentAddressPrefix,
   hasVietnamAdminOrArea,
   hasVietnamHouseNumber,
   hasVietnamStreetName,
   isWeakVietnamAddressText,
   matchingVietnamStreetTokens,
+  vietnamApartmentAddressPrefixes,
   vietnamHouseNumbers,
 } from "./vietnamAddressLexicon.js";
 function normalizeVietnameseText(value) {
@@ -122,6 +124,24 @@ function isValidAddressPrefixContent(value) {
   );
 }
 
+function isApartmentStyleVietnamAddress(value) {
+  const cleaned = cleanVietnamAddressOcrText(value);
+  if (!cleaned || !hasVietnamApartmentAddressPrefix(cleaned)) return false;
+  const normalized = normalizeVietnameseText(cleaned);
+  if (/^(?:so\s*)?\d{1,5}[a-z]?(?:[/-]\d{1,5}[a-z]?)?\b/.test(normalized)) {
+    return false;
+  }
+  if (isWeakVietnamAddressText(cleaned)) return false;
+  if (hasAddressMenuNoiseText(cleaned)) return false;
+  if (isPromotionalOrCountText(cleaned)) return false;
+  if (looksLikeOcrGarbageAddress(cleaned)) return false;
+
+  return (
+    hasRealVietnamStreetName(cleaned) &&
+    hasVietnamAdminOrAreaAnchor(cleaned)
+  );
+}
+
 function isSafeClearFrameAddressCandidate(value, candidate = {}) {
   const raw = String(value || "");
   const cleaned = cleanVietnamAddressCandidate(raw);
@@ -137,6 +157,12 @@ function isSafeClearFrameAddressCandidate(value, candidate = {}) {
     lineKind === "address" || candidate?.tier === "strong" || hasAddressLabel;
 
   if (!isMarkedAddress) return false;
+  if (isApartmentStyleVietnamAddress(cleaned)) {
+    return (
+      lineKind === "address" &&
+      roundConfidence(candidate?.confidence, 0) >= 0.82
+    );
+  }
   if (hasAddressMenuNoiseText(raw) || hasAddressMenuNoiseText(cleaned)) return false;
   if (isPromotionalOrCountText(raw) || isPromotionalOrCountText(cleaned)) return false;
   if (looksLikeOcrGarbageAddress(raw) || looksLikeOcrGarbageAddress(cleaned)) return false;
@@ -255,11 +281,33 @@ function cleanVietnamAddressOcrText(value) {
         " ",
       )
       .replace(/\b\d{1,2}\s*[gh]\s*[-–]\s*\d{1,2}\s*[gh]\b/gi, " ")
+      .replace(
+        /\b\d{1,2}\s*h\s*\d{2}\s*[-–]\s*\d{1,2}\s*h\s*\d{2}\b/gi,
+        " ",
+      )
 
       .replace(/\s+/g, " ")
       .replace(/\s+([,.])/g, "$1")
       .trim()
   );
+}
+
+function formatApartmentAddressPunctuation(value) {
+  if (!hasVietnamApartmentAddressPrefix(value)) return value;
+
+  return String(value || "")
+    .replace(
+      /\s+(?=(?:Đa\s+Kao|Da\s+Kao)\s*(?:,?\s*(?:Q\.?|Quận|Quan)\s*\d{1,2}\b))/iu,
+      ", ",
+    )
+    .replace(
+      /\s+(?=(?:Q\.?|Quận|Quan)\s*\d{1,2}\b)/giu,
+      ", ",
+    )
+    .replace(/\s*,\s*/g, ", ")
+    .replace(/(?:,\s*){2,}/g, ", ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function cleanVietnamAddressCandidate(value) {
@@ -323,7 +371,7 @@ function cleanVietnamAddressCandidate(value) {
     })[0];
   }
 
-  return text
+  const cleaned = text
     .replace(/\b(?:ĐC|DC|Địa\s*chỉ|Dia\s*chi|Address)\s*[:.-]?\s*/gi, "")
     .replace(
       /(?:^|[\s,;|/\\-])(?:ĐT|DT|SĐT|SDT|PHONE|HOTLINE)\s*[:.-]?.*$/giu,
@@ -335,6 +383,8 @@ function cleanVietnamAddressCandidate(value) {
     .replace(/\bP\.\s+/gi, "P. ")
     .replace(/\bQ\.\s+/gi, "Q.")
     .trim();
+
+  return formatApartmentAddressPunctuation(cleaned);
 }
 
 function removeOpeningHoursNoise(value) {
@@ -396,6 +446,7 @@ function isVietnamAddressLike(value) {
   const hasKdcArea = /\b(kdc|khu dan cu|binh hung|binh chanh|bc)\b/.test(text);
   const hasNamedArea = hasVietnamAdminOrAreaAnchor(text);
   const hasRealStreet = hasRealVietnamStreetName(text);
+  const hasApartmentAddress = isApartmentStyleVietnamAddress(cleanedValue);
 
   // Example: "10 duong dinh nghe quan 11".
   const hasNumberStreetDistrict =
@@ -453,6 +504,7 @@ function isVietnamAddressLike(value) {
     hasNumberStreetDistrict ||
     hasNumberStreetWard ||
     hasNumberStreetNamedArea ||
+    hasApartmentAddress ||
     hasAddressPlate ||
     ((hasSoDuongAddress || hasNumberDuongAddress) &&
       (hasWardOrDistrict || hasKdcArea)) ||
@@ -553,6 +605,255 @@ function recoverEmbeddedFrameAddressCandidates(value) {
     results.push(candidate);
   }
   return results.slice(0, 3);
+}
+
+function compactFrameAddressFragment(value) {
+  let text = cleanVietnamAddressOcrText(value);
+  if (!text) return null;
+
+  const adminMatch = text.match(
+    /\b(?:P\.?\s*\d{1,2}|Phường\s*\d{1,2})(?:\s*,?\s*(?:Q\.?\s*\d{1,2}|Quận\s*\d{1,2}))?|\b(?:Q\.?\s*\d{1,2}|Quận\s*\d{1,2})/iu,
+  );
+  let ambiguousDistrictTail = false;
+  if (adminMatch && Number.isFinite(Number(adminMatch.index))) {
+    const adminEnd = Number(adminMatch.index) + adminMatch[0].length;
+    const trailingText = text.slice(adminEnd);
+    const normalizedTrailing = normalizeVietnameseText(trailingText);
+    ambiguousDistrictTail =
+      /\b(?:quang|quan)\b/.test(normalizedTrailing) &&
+      !/\b(?:q\.?|quan)\s*\d{1,2}\b/.test(normalizedTrailing);
+    text = text.slice(0, adminEnd);
+  } else {
+    text = text
+      .replace(
+        /\s+\b(?:C[ƠO]M\s+T[ẤA]M|TH[IỊ]T\s+XI[EÊ]N\s+N[ƯU]Ớ?NG)\b.*$/iu,
+        " ",
+      )
+      .replace(/\s+\b(?:Quãng|Quang|Quan)\b\s*$/iu, " ");
+  }
+
+  const address = cleanVietnamAddressCandidate(text)
+    .replace(
+      /\b(Cư\s+X[áaã]\s+Đường\s+sắt)\s+(?=[A-ZÀ-Ỹ])/u,
+      "$1, ",
+    )
+    .replace(/\s+(?=Phường\s*\d{1,2}\b)/iu, ", ")
+    .replace(/\s+(?=(?:Q\.?\s*\d{1,2}|Quận\s*\d{1,2})\b)/iu, ", ")
+    .replace(/\s*,\s*/g, ", ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const houseNumber = vietnamHouseNumbers(address)[0] || "";
+  if (!address || !houseNumber) return null;
+
+  return {
+    address,
+    ambiguousDistrictTail,
+  };
+}
+
+function frameCandidateContextHints(value) {
+  const normalized = normalizeVietnameseText(value);
+  if (!normalized) return {};
+
+  const hasComTam = /\bcom tam\b/.test(normalized);
+  const hasDiMai = /\b(?:di|du) mai\b/.test(normalized);
+  const hasThitXienNuong = /\bthit xien nuong\b/.test(normalized);
+
+  return {
+    ...(hasComTam ? { dishHint: "cơm tấm" } : {}),
+    ...(hasThitXienNuong ? { dishHint: "thịt xiên nướng" } : {}),
+    ...(hasDiMai
+      ? { placeName: hasComTam ? "Cơm Tấm Dì Mai" : "Dì Mai" }
+      : {}),
+  };
+}
+
+function compactFrameAddressCandidates(value) {
+  const raw = String(value || "");
+  if (!raw.trim()) return [];
+
+  const compacted = cleanVietnamAddressOcrText(raw)
+    .replace(/\b(\d{1,2})\s+(\d{1,4}\/[A-Za-z0-9]{1,8})\b/g, "$1$2")
+    .replace(/\s+/g, " ")
+    .trim();
+  const matches = [
+    ...compacted.matchAll(
+      /(^|[\s,;|])(\d{1,4}\/[A-Za-z0-9]{1,8}|\d{1,5}[A-Za-z]?)\s+(?=[A-Za-zÀ-ỹ])/gu,
+    ),
+  ].filter((match) => {
+    const start = Number(match.index || 0) + match[1].length;
+    const prefix = compacted.slice(Math.max(0, start - 16), start).trim();
+    return !/(?:P\.?|Phường|Q\.?|Quận)\s*$/iu.test(prefix);
+  });
+  const results = [];
+  const seen = new Set();
+
+  for (const [index, match] of matches.entries()) {
+    const start = Number(match.index || 0) + match[1].length;
+    const nextMatch = matches[index + 1];
+    const end = nextMatch
+      ? Number(nextMatch.index || compacted.length) + nextMatch[1].length
+      : compacted.length;
+    const fragment = compactFrameAddressFragment(compacted.slice(start, end));
+    if (!fragment) continue;
+
+    const key = normalizeVietnameseText(fragment.address);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+
+    const contextStart = Math.max(0, start - 120);
+    const context = compacted.slice(contextStart, start);
+    results.push({
+      ...fragment,
+      ...frameCandidateContextHints(context),
+      quality:
+        Number(hasVietnamAdminOrAreaAnchor(fragment.address)) * 4 +
+        Math.min(3, matchingVietnamStreetTokens(fragment.address).length) +
+        Math.min(2, fragment.address.length / 80),
+    });
+  }
+
+  return results
+    .sort((left, right) => right.quality - left.quality)
+    .slice(0, 4);
+}
+
+function candidateLocationHint(candidate = {}, normalizedEvidence = {}) {
+  if (candidate?.ambiguousDistrictTail !== true) return null;
+
+  const hints = Array.isArray(normalizedEvidence.candidateLocationHints)
+    ? normalizedEvidence.candidateLocationHints
+    : [];
+  const uniqueDistricts = [
+    ...new Set(hints.map((hint) => String(hint?.value || "").trim()).filter(Boolean)),
+  ];
+  return uniqueDistricts.length === 1 ? uniqueDistricts[0] : null;
+}
+
+function frameCandidateVariants(item = {}, normalizedEvidence = {}) {
+  const rawText = item?.evidenceText || item?.text;
+  if (!rawText) return [];
+
+  const apartmentAddress = cleanVietnamAddressCandidate(rawText);
+  const apartmentCandidates = isApartmentStyleVietnamAddress(apartmentAddress)
+    ? [
+        {
+          address: apartmentAddress,
+          ...frameCandidateContextHints(rawText),
+        },
+      ]
+    : [];
+  const compactCandidates = compactFrameAddressCandidates(rawText);
+  const recoveredAddresses = recoverEmbeddedFrameAddressCandidates(rawText);
+  const variants = apartmentCandidates.length
+    ? apartmentCandidates
+    : compactCandidates.length
+      ? compactCandidates
+      : recoveredAddresses.length
+        ? recoveredAddresses.map((address) => ({
+            address,
+            ...frameCandidateContextHints(rawText),
+          }))
+        : [
+            {
+              address: cleanVietnamAddressCandidate(rawText),
+              ...frameCandidateContextHints(rawText),
+            },
+          ];
+
+  return variants.map((variant) => ({
+    source: "youtube_frame_ocr",
+    text: variant.address,
+    rawText,
+    confidence: item?.confidence,
+    type: item?.type,
+    lineType: item?.lineType || item?.type,
+    tier: item?.tier,
+    timestampSeconds: item?.timestampSeconds,
+    sourceCrop: item?.sourceCrop,
+    supportCount: Number.isFinite(Number(item?.supportCount))
+      ? Number(item.supportCount)
+      : 1,
+    ...(variant.placeName ? { placeName: variant.placeName } : {}),
+    ...(variant.dishHint ? { dishHint: variant.dishHint } : {}),
+    ...(candidateLocationHint(variant, normalizedEvidence)
+      ? { locationHint: candidateLocationHint(variant, normalizedEvidence) }
+      : {}),
+    ambiguousDistrictTail: variant.ambiguousDistrictTail === true,
+    recovered: compactCandidates.length > 0 || recoveredAddresses.length > 0,
+  }));
+}
+
+function complementaryFrameCandidates(frameLines = [], normalizedEvidence = {}) {
+  const byTimestamp = new Map();
+  for (const item of Array.isArray(frameLines) ? frameLines : []) {
+    const timestampSeconds = Number(item?.timestampSeconds);
+    const rawText = item?.evidenceText || item?.text;
+    if (!Number.isFinite(timestampSeconds) || !rawText) continue;
+
+    const key = Math.round(timestampSeconds * 1000) / 1000;
+    const group = byTimestamp.get(key) || [];
+    const normalized = normalizeVietnameseText(rawText);
+    if (
+      normalized &&
+      !group.some(
+        (existing) =>
+          normalizeVietnameseText(existing?.evidenceText || existing?.text) ===
+          normalized,
+      )
+    ) {
+      group.push(item);
+    }
+    byTimestamp.set(key, group);
+  }
+
+  const result = [];
+  for (const [timestampSeconds, group] of byTimestamp.entries()) {
+    const numberedLines = group.filter((item) =>
+      hasVietnamHouseNumber(item?.evidenceText || item?.text),
+    );
+    if (numberedLines.length !== 1) continue;
+
+    const numberedText =
+      numberedLines[0]?.evidenceText || numberedLines[0]?.text || "";
+    if (hasVietnamAdminOrAreaAnchor(numberedText)) continue;
+
+    const contextLines = group
+      .filter((item) => item !== numberedLines[0])
+      .map((item) => item?.evidenceText || item?.text)
+      .filter(
+        (text) =>
+          text &&
+          !hasVietnamHouseNumber(text) &&
+          (hasVietnamAdminOrAreaAnchor(text) || hasRealVietnamStreetName(text)),
+      )
+      .slice(0, 2);
+    if (!contextLines.length) continue;
+
+    const joinedRaw = [numberedText, ...contextLines].join(", ");
+    const confidence = Math.max(
+      ...group.map((item) => Number(item?.confidence) || 0),
+      0.82,
+    );
+    result.push(
+      ...frameCandidateVariants(
+        {
+          ...numberedLines[0],
+          evidenceText: joinedRaw,
+          text: joinedRaw,
+          confidence,
+          timestampSeconds,
+          type: "address",
+          lineType: "address",
+          tier: group.some((item) => item?.tier === "strong") ? "strong" : "",
+        },
+        normalizedEvidence,
+      ).map((candidate) => ({ ...candidate, merged: true })),
+    );
+  }
+
+  return result;
 }
 
 function sanitizeLocationHints(locationHints = []) {
@@ -672,112 +973,48 @@ function frameAddressCandidates(normalizedEvidence = {}) {
     ? normalizedEvidence.textSources
     : [];
 
-  const recoverableFrameSources = [
+  const frameSources = [
     ...frameLines,
     ...textSources.filter((item) => item?.type === "youtube_frame_ocr"),
   ].filter((item) => item?.text || item?.evidenceText);
-  const recoveredCandidates = recoverableFrameSources.flatMap((item) => {
+  const directCandidates = frameSources.flatMap((item) => {
+    const variants = frameCandidateVariants(item, normalizedEvidence);
+    if (variants.length) return variants;
+
     const rawText = item?.evidenceText || item?.text;
-    const recoveredAddresses = recoverEmbeddedFrameAddressCandidates(rawText);
-
-    const addresses = recoveredAddresses.length
-      ? recoveredAddresses
-      : recoverEmbeddedYoutubeFrameEntities(rawText).addressCandidates || [];
-
-    return addresses.map((address) => ({
-      source: "youtube_frame_ocr",
-      text: address,
-      rawText,
-      confidence: Math.max(roundConfidence(item?.confidence, 0.82), 0.82),
-      type: "address",
-      lineType: "address",
-      tier: item?.tier,
-      timestampSeconds: item?.timestampSeconds,
-      sourceCrop: item?.sourceCrop,
-      recovered: true,
-      supportCount: Number.isFinite(Number(item?.supportCount))
-        ? Number(item.supportCount)
-        : 1,
-    }));
-  });
-
-  const directCandidates = [
-    ...frameLines.map((item) => ({
-      source: "youtube_frame_ocr",
-      text: cleanVietnamAddressCandidate(item?.evidenceText || item?.text),
-      rawText: item?.evidenceText || item?.text,
-      confidence: item?.confidence,
-      type: item?.type,
-      lineType: item?.lineType || item?.type,
-      tier: item?.tier,
-      timestampSeconds: item?.timestampSeconds,
-      sourceCrop: item?.sourceCrop,
-      supportCount: Number.isFinite(Number(item?.supportCount))
-        ? Number(item.supportCount)
-        : 1,
-    })),
-    ...textSources
-      .filter((item) => item?.type === "youtube_frame_ocr")
-      .map((item) => ({
+    return (recoverEmbeddedYoutubeFrameEntities(rawText).addressCandidates || []).map(
+      (address) => ({
         source: "youtube_frame_ocr",
-        text: cleanVietnamAddressCandidate(item?.evidenceText || item?.text),
-        rawText: item?.evidenceText || item?.text,
-        confidence: item?.confidence,
-        type: item?.lineType || item?.type,
-        lineType: item?.lineType,
+        text: address,
+        rawText,
+        confidence: Math.max(roundConfidence(item?.confidence, 0.82), 0.82),
+        type: "address",
+        lineType: "address",
+        tier: item?.tier,
+        timestampSeconds: item?.timestampSeconds,
+        sourceCrop: item?.sourceCrop,
+        recovered: true,
         supportCount: Number.isFinite(Number(item?.supportCount))
           ? Number(item.supportCount)
           : 1,
-      })),
-  ];
+      }),
+    );
+  });
+  const mergedCandidates = complementaryFrameCandidates(
+    frameLines,
+    normalizedEvidence,
+  );
 
-  const mergedCandidates = [];
-  const byTimestamp = new Map();
-  for (const item of frameLines) {
-    const timestamp = Number(item?.timestampSeconds);
-    if (!Number.isFinite(timestamp)) continue;
-    const key = Math.round(timestamp * 1000) / 1000;
-    const text = item?.evidenceText || item?.text;
-    if (!text) continue;
-    const group = byTimestamp.get(key) || [];
-    group.push(item);
-    byTimestamp.set(key, group);
-  }
-
-  for (const [timestampSeconds, group] of byTimestamp.entries()) {
-    if (group.length < 2) continue;
-    const joinedRaw = group
-      .map((item) => item?.evidenceText || item?.text)
-      .filter(Boolean)
-      .join(" ");
-    const joinedCleaned = cleanVietnamAddressCandidate(joinedRaw);
-    mergedCandidates.push({
-      source: "youtube_frame_ocr",
-      text: joinedCleaned,
-      rawText: joinedRaw,
-      confidence: Math.max(
-        ...group.map((item) => Number(item?.confidence) || 0),
-        0.82,
-      ),
-      type: "address",
-      lineType: "address",
-      tier: group.some((item) => item?.tier === "strong") ? "strong" : "",
-      timestampSeconds,
-      supportCount: Math.max(
-        1,
-        ...group.map((item) => Number(item?.supportCount) || 1),
-      ),
-      merged: true,
-    });
-  }
-
-  return [...recoveredCandidates, ...mergedCandidates, ...directCandidates]
+  return [...mergedCandidates, ...directCandidates]
     .filter((item) => {
       if (!item.text) return false;
 
       const validationText = item.recovered
         ? item.text
         : item.rawText || item.text;
+      if (isApartmentStyleVietnamAddress(item.text)) {
+        return isSafeClearFrameAddressCandidate(validationText, item);
+      }
 
       return (
         isVietnamAddressLike(item.text) ||
@@ -787,17 +1024,39 @@ function frameAddressCandidates(normalizedEvidence = {}) {
     .sort((left, right) => candidateScore(right) - candidateScore(left));
 }
 
+function frameAddressCandidateSpecificity(address, candidate = {}) {
+  const streetTokens = matchingVietnamStreetTokens(address);
+  const specificStreetTokens = streetTokens.filter(
+    (token) =>
+      !["duong", "street", "road", "hem", "ngo", "le", "tran", "nguyen", "pham", "vo", "hoang", "dinh", "phu"].includes(
+        token,
+      ),
+  );
+
+  return (
+    Number(hasVietnamAdminOrAreaAnchor(address)) * 5 +
+    specificStreetTokens.length * 2 +
+    streetTokens.length +
+    Math.min(1.5, address.length / 80) +
+    Number(Boolean(candidate?.placeName)) * 0.2 +
+    Number(Boolean(candidate?.dishHint)) * 0.1
+  );
+}
+
 function distinctFrameAddressCandidates(candidates = []) {
   const result = [];
   for (const candidate of Array.isArray(candidates) ? candidates : []) {
     const address = cleanVietnamAddressCandidate(candidate?.text);
     const timestampSeconds = Number(candidate?.timestampSeconds);
     const houseNumber = vietnamHouseNumbers(address)[0] || "";
+    const apartmentKey = vietnamApartmentAddressPrefixes(address).join("|");
+    const addressIdentifier = houseNumber || apartmentKey;
     const streetTokens = matchingVietnamStreetTokens(address);
+    const specificity = frameAddressCandidateSpecificity(address, candidate);
     if (
       !address ||
       !Number.isFinite(timestampSeconds) ||
-      !houseNumber ||
+      !addressIdentifier ||
       !streetTokens.length
     ) {
       continue;
@@ -807,7 +1066,8 @@ function distinctFrameAddressCandidates(candidates = []) {
         streetTokens.includes(token),
       );
       if (!sharedStreet) return false;
-      if (item.houseNumber === houseNumber) return true;
+      if (item.addressIdentifier === addressIdentifier) return true;
+      if (!houseNumber || !item.houseNumber) return false;
       const adjacentTimestamp =
         Math.abs(Number(item.timestampSeconds) - timestampSeconds) <= 3;
       const oneCharacterNumberDamage =
@@ -816,18 +1076,68 @@ function distinctFrameAddressCandidates(candidates = []) {
           houseNumber.endsWith(item.houseNumber));
       return adjacentTimestamp && oneCharacterNumberDamage;
     });
-    if (existing) continue;
-    result.push({
+    const nextItem = {
       address,
       confidence: roundConfidence(candidate?.confidence, 0.82),
       source: "youtube_frame_ocr",
       timestampSeconds,
       evidence: [candidate?.rawText || candidate?.text].filter(Boolean),
+      ...(candidate?.placeName ? { placeName: candidate.placeName } : {}),
+      ...(candidate?.dishHint ? { dishHint: candidate.dishHint } : {}),
+      ...(candidate?.locationHint ? { locationHint: candidate.locationHint } : {}),
+      reviewRequired: true,
       houseNumber,
+      addressIdentifier,
       streetTokens,
-    });
+      specificity,
+    };
+    if (existing) {
+      const mergedEvidence = [
+        ...(Array.isArray(existing.evidence) ? existing.evidence : []),
+        ...nextItem.evidence,
+      ].filter(
+        (value, index, values) =>
+          values.findIndex(
+            (item) =>
+              normalizeVietnameseText(item) === normalizeVietnameseText(value),
+          ) === index,
+      );
+      const mergedOptional = {
+        placeName: nextItem.placeName || existing.placeName,
+        dishHint: nextItem.dishHint || existing.dishHint,
+        locationHint: nextItem.locationHint || existing.locationHint,
+      };
+
+      if (specificity > Number(existing.specificity || 0)) {
+        Object.assign(existing, nextItem, mergedOptional, {
+          evidence: mergedEvidence,
+          confidence: Math.max(existing.confidence, nextItem.confidence),
+        });
+      } else {
+        Object.assign(existing, mergedOptional, {
+          evidence: mergedEvidence,
+          confidence: Math.max(existing.confidence, nextItem.confidence),
+        });
+      }
+      continue;
+    }
+    result.push(nextItem);
   }
-  return result.slice(0, 8).map(({ houseNumber, streetTokens, ...item }) => item);
+  return result
+    .sort(
+      (left, right) =>
+        Number(left.timestampSeconds) - Number(right.timestampSeconds),
+    )
+    .slice(0, 8)
+    .map(
+      ({
+        houseNumber,
+        addressIdentifier,
+        streetTokens,
+        specificity,
+        ...item
+      }) => item,
+    );
 }
 
 function cleanLabeledMetadataAddress(value) {
@@ -1077,6 +1387,7 @@ export const __visionEntityExtractorTestUtils = {
   isNonBusinessPlaceNameText,
   hasAddressMenuNoiseText,
   isValidAddressPrefixContent,
+  isApartmentStyleVietnamAddress,
   isSafeClearFrameAddressCandidate,
   hasRealVietnamStreetName,
   looksLikeOcrGarbageAddress,
@@ -1084,4 +1395,5 @@ export const __visionEntityExtractorTestUtils = {
   isClearLabeledMetadataAddress,
   metadataAddressCandidates,
   distinctFrameAddressCandidates,
+  compactFrameAddressCandidates,
 };

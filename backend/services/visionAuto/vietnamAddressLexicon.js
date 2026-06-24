@@ -22,6 +22,9 @@ const STREET_TOKENS = Object.freeze([
   'ta uyen',
   'lanh binh thang',
   'thai phien',
+  'le quy don',
+  'ly thai to',
+  'nguyen thien thuat',
   'duong quang ham',
   'duong dinh nghe',
   'tran phu',
@@ -61,6 +64,7 @@ const ADMIN_TOKENS = Object.freeze([
   'go vap',
   'ngo quyen',
   'nguyen thai binh',
+  'da kao',
   'quan',
   'district',
   'phuong',
@@ -68,6 +72,13 @@ const ADMIN_TOKENS = Object.freeze([
   'thanh pho',
   'city',
   'tinh',
+])
+
+const APARTMENT_ADDRESS_PREFIX_PATTERNS = Object.freeze([
+  /(?:^|\s)(lo(?:\s+(?:[a-z]\d+[a-z]?|\d+[a-z]?|[a-z]))?)(?=\s|$)/g,
+  /(?:^|\s)(block(?:\s+(?:[a-z]\d*[a-z]?|\d+[a-z]?))?)(?=\s|$)/g,
+  /(?:^|\s)(chung cu(?:\s+(?:[a-z]\d+[a-z]?|\d+[a-z]?))?)(?=\s|$)/g,
+  /(?:^|\s)(cu xa)(?=\s|$)/g,
 ])
 
 function tokenPattern(token) {
@@ -119,6 +130,20 @@ export function hasVietnamAddressLabel(value) {
   return /(?:^|\s)(?:dc|dia chi|address)(?=\s|$)/.test(text)
 }
 
+export function vietnamApartmentAddressPrefixes(value) {
+  const text = normalizeVietnameseAddressText(value)
+  if (!text) return []
+
+  const prefixes = APARTMENT_ADDRESS_PREFIX_PATTERNS.flatMap((pattern) =>
+    [...text.matchAll(pattern)].map((match) => match[1]).filter(Boolean),
+  )
+  return [...new Set(prefixes)]
+}
+
+export function hasVietnamApartmentAddressPrefix(value) {
+  return vietnamApartmentAddressPrefixes(value).length > 0
+}
+
 export function vietnamHouseNumbers(value) {
   const text = normalizeVietnameseAddressText(value)
   const numbers = []
@@ -157,7 +182,11 @@ export function isVietnamAddressEvidence(
   { requireArea = true, allowAddressLabel = true } = {},
 ) {
   if (isWeakVietnamAddressText(value)) return false
-  if (!hasVietnamHouseNumber(value) || !hasVietnamStreetName(value)) return false
+  const hasTraditionalAddress =
+    hasVietnamHouseNumber(value) && hasVietnamStreetName(value)
+  const hasApartmentAddress =
+    hasVietnamApartmentAddressPrefix(value) && hasVietnamStreetName(value)
+  if (!hasTraditionalAddress && !hasApartmentAddress) return false
   if (!requireArea) return true
   return (
     hasVietnamAdminOrArea(value) ||
@@ -174,4 +203,4 @@ export function hasLikelyDamagedAddressPrefix(value) {
   )
 }
 
-export { ADMIN_TOKENS, STREET_TOKENS }
+export { ADMIN_TOKENS, APARTMENT_ADDRESS_PREFIX_PATTERNS, STREET_TOKENS }

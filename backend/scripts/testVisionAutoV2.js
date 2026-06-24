@@ -2115,6 +2115,180 @@ async function main() {
   )
   console.log('PASS 26e: distinct timestamped addresses return multi_candidate')
 
+  const apartmentFrameAddress = await analyzeFrameScenario({
+    frameScanner: async () => mockExtractedFrames([42]),
+    frameVariantBuilder: async ({ frame }) => [
+      { label: 'full', buffer: frame.buffer, mimetype: 'image/jpeg' },
+    ],
+    extractOcr: async () =>
+      ocrEvidence([
+        {
+          text:
+            'Lô G1 Chung Cư 18B Nguyễn Đình Chiểu Đa Kao Quận 1',
+          type: 'address',
+          confidence: 0.95,
+        },
+      ]),
+  })
+  assert.equal(apartmentFrameAddress.status, 'draft_candidate')
+  assert.equal(
+    apartmentFrameAddress.entities.address.value,
+    'Lô G1 Chung Cư 18B Nguyễn Đình Chiểu, Đa Kao, Quận 1',
+  )
+  assert.equal(
+    apartmentFrameAddress.addPlaceDraft.address,
+    'Lô G1 Chung Cư 18B Nguyễn Đình Chiểu, Đa Kao, Quận 1',
+  )
+  assert.equal(
+    apartmentFrameAddress.entities.address.source,
+    'youtube_frame_ocr',
+  )
+  assert.equal(apartmentFrameAddress.entities.address.reviewRequired, true)
+  assert.equal(apartmentFrameAddress.addPlaceDraft.reviewRequired, true)
+  console.log('PASS 26e1: apartment-style frame address creates a clean draft')
+
+  for (const [rawAddress, expectedAddress] of [
+    [
+      'Block A Nguyễn Đình Chiểu Đa Kao Quận 1',
+      'Block A Nguyễn Đình Chiểu, Đa Kao, Quận 1',
+    ],
+    [
+      'Lô G1 Nguyễn Đình Chiểu Đa Kao Quận 1',
+      'Lô G1 Nguyễn Đình Chiểu, Đa Kao, Quận 1',
+    ],
+    [
+      'Chung Cư 18B Nguyễn Đình Chiểu Đa Kao Quận 1',
+      'Chung Cư 18B Nguyễn Đình Chiểu, Đa Kao, Quận 1',
+    ],
+    [
+      'Cư xá Nguyễn Đình Chiểu Đa Kao Quận 1',
+      'Cư xá Nguyễn Đình Chiểu, Đa Kao, Quận 1',
+    ],
+  ]) {
+    const prefixAddress = await analyzeFrameScenario({
+      frameScanner: async () => mockExtractedFrames([43]),
+      frameVariantBuilder: async ({ frame }) => [
+        { label: 'full', buffer: frame.buffer, mimetype: 'image/jpeg' },
+      ],
+      extractOcr: async () =>
+        ocrEvidence([
+          {
+            text: rawAddress,
+            type: 'address',
+            confidence: 0.95,
+          },
+        ]),
+    })
+    assert.equal(prefixAddress.status, 'draft_candidate')
+    assert.equal(prefixAddress.entities.address.value, expectedAddress)
+    assert.equal(prefixAddress.entities.address.source, 'youtube_frame_ocr')
+  }
+  console.log('PASS 26e1b: block, lot, apartment, and cư xá prefixes are supported')
+
+  const apartmentMultiCandidate = await analyzeFrameScenario({
+    frameScanner: async () => mockExtractedFrames([42, 68]),
+    frameVariantBuilder: async ({ frame }) => [
+      { label: 'full', buffer: frame.buffer, mimetype: 'image/jpeg' },
+    ],
+    extractOcr: async ({ image }) =>
+      ocrEvidence([
+        {
+          text:
+            image.frameIndex === 1
+              ? 'Lô G1 Chung Cư 18B Nguyễn Đình Chiểu Đa Kao Quận 1'
+              : '66 Lãnh Binh Thăng, Q.11',
+          type: 'address',
+          confidence: 0.95,
+        },
+      ]),
+  })
+  assert.equal(apartmentMultiCandidate.status, 'multi_candidate')
+  assert.equal(apartmentMultiCandidate.addPlaceDraft, null)
+  assert.ok(
+    apartmentMultiCandidate.candidates.some(
+      (item) =>
+        item.address ===
+        'Lô G1 Chung Cư 18B Nguyễn Đình Chiểu, Đa Kao, Quận 1',
+    ),
+  )
+  console.log('PASS 26e2: apartment address remains available in multi-candidate output')
+
+  const noisyMultipleFrameAddresses = await analyzeFrameScenario({
+    title: 'Ăn vặt quanh Quận 3',
+    frameScanner: async () => mockExtractedFrames([56, 104, 132]),
+    frameVariantBuilder: async ({ frame }) => [
+      { label: 'full', buffer: frame.buffer, mimetype: 'image/jpeg' },
+    ],
+    extractOcr: async ({ image }) => {
+      const linesByFrame = [
+        [
+          {
+            text:
+              '20/29 Cư Xã Đường sắt COM TAM DI MAI 20/29 Cư Xã Đường sắt Lý Thái Tổ P1, 08 COM TAM DI MAI 20/29 Cư Xã Đường sắt Lý Thái Tổ P1, 08',
+            type: 'address',
+            confidence: 0.9,
+          },
+          {
+            text:
+              'COM TAM DI MAI 20/29 Cư Xã Đường sắt Lý Thái Tổ P1,08',
+            type: 'address',
+            confidence: 0.88,
+          },
+        ],
+        [
+          {
+            text: 'THỊT XIÊN NƯỚNG 9K 26 Lê Quý Đôn Phường 7 Quãng',
+            type: 'address',
+            confidence: 0.89,
+          },
+        ],
+        [
+          {
+            text: '212147 Nguyễn Thiện Thuật Phường 3 Quận',
+            type: 'address',
+            confidence: 0.92,
+          },
+        ],
+      ]
+      return ocrEvidence(linesByFrame[image.frameIndex - 1])
+    },
+  })
+  assert.equal(noisyMultipleFrameAddresses.status, 'multi_candidate')
+  assert.equal(noisyMultipleFrameAddresses.addPlaceDraft, null)
+  assert.equal(noisyMultipleFrameAddresses.reviewRequired, true)
+  assert.equal(noisyMultipleFrameAddresses.candidates.length, 2)
+
+  const firstCleanCandidate = noisyMultipleFrameAddresses.candidates.find(
+    (item) => item.timestampSeconds === 56,
+  )
+  assert.equal(
+    firstCleanCandidate.address,
+    '20/29 Cư Xã Đường sắt, Lý Thái Tổ P1',
+  )
+  assert.equal(firstCleanCandidate.placeName, 'Cơm Tấm Dì Mai')
+  assert.equal(firstCleanCandidate.dishHint, 'cơm tấm')
+  assert.equal(firstCleanCandidate.reviewRequired, true)
+
+  const secondCleanCandidate = noisyMultipleFrameAddresses.candidates.find(
+    (item) => item.timestampSeconds === 104,
+  )
+  assert.equal(secondCleanCandidate.address, '26 Lê Quý Đôn, Phường 7')
+  assert.equal(secondCleanCandidate.dishHint, 'thịt xiên nướng')
+  assert.equal(secondCleanCandidate.locationHint, 'Quận 3')
+  assert.equal(secondCleanCandidate.reviewRequired, true)
+  assert.ok(
+    noisyMultipleFrameAddresses.candidates.every(
+      (item) =>
+        !item.address.includes('COM TAM DI MAI 20/29') &&
+        !item.address.includes('212147'),
+    ),
+  )
+  assert.doesNotMatch(
+    JSON.stringify(noisyMultipleFrameAddresses.candidates),
+    /"address":"[^"]*20\/29[^"]*20\/29/i,
+  )
+  console.log('PASS 26e3: noisy frame OCR candidates are compact and review-only')
+
   for (const weakText of [
     'TỔNG HỢP TẤT TẦN TẬT QUÁN NGON',
     'một quán chuyên',
@@ -2123,6 +2297,7 @@ async function main() {
     'HOP TẤT TẦN TẬT QUÁN NGON',
     'QUẬN H',
     'GO VAP P.2',
+    '171 Cô Bắc P. Bắc Q 1 8h00-13h00 NghiT7 GH',
   ]) {
     const weakAddress = await analyzeFrameScenario({
       frameScanner: async () => mockExtractedFrames([5]),

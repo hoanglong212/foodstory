@@ -194,15 +194,26 @@ function publicDraft(draft = null) {
 
 function publicAddressCandidates(items = []) {
   return (Array.isArray(items) ? items : [])
-    .map((item) => ({
-      address: item?.address ? capText(item.address, 300) : null,
-      confidence: roundScore(item?.confidence),
-      source: item?.source ? capText(item.source, 40) : null,
-      timestampSeconds: Number.isFinite(Number(item?.timestampSeconds))
-        ? Math.round(Number(item.timestampSeconds) * 1000) / 1000
-        : null,
-      evidence: uniqueText(item?.evidence, 3, 220),
-    }))
+    .map((item) => {
+      const placeName = item?.placeName ? capText(item.placeName, 180) : null
+      const dishHint = item?.dishHint ? capText(item.dishHint, 100) : null
+      const locationHint = item?.locationHint
+        ? capText(item.locationHint, 100)
+        : null
+      return {
+        address: item?.address ? capText(item.address, 300) : null,
+        confidence: roundScore(item?.confidence),
+        source: item?.source ? capText(item.source, 40) : null,
+        timestampSeconds: Number.isFinite(Number(item?.timestampSeconds))
+          ? Math.round(Number(item.timestampSeconds) * 1000) / 1000
+          : null,
+        evidence: uniqueText(item?.evidence, 3, 220),
+        ...(placeName ? { placeName } : {}),
+        ...(dishHint ? { dishHint } : {}),
+        ...(locationHint ? { locationHint } : {}),
+        reviewRequired: true,
+      }
+    })
     .filter(
       (item) =>
         item.address &&
