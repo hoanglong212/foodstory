@@ -1,0 +1,307 @@
+{
+  "version": "youtube-shorts-track2-v1.2d",
+  "source": "tests/fixtures/youtube-shorts-address-30.json expectedTrack TRACK_2 cases",
+  "notes": "Track 2 v1.2C live audit fixture. Repository URL screening found two executable OCR_ONLY cases at or below the locked 60-second frame limit; one has a full address and one has a strong OCR-damaged partial address. No additional repository URL satisfied the single-place address-evidence requirements. The original Track 1 fixture is unchanged.",
+  "cases": [
+    {
+      "id": "track2_001",
+      "sourceCaseId": "shorts_011",
+      "url": "https://www.youtube.com/shorts/s3QtciG_lLQ",
+      "enabled": true,
+      "category": "OCR_ONLY",
+      "expected": {
+        "allowedResolutions": ["RESOLVED", "CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": false,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Enabled for v1.2D OCR coverage: live duration is 79 seconds and is within the opt-in 180-second Track 2 frame limit. Resolution still requires normal OCR verification and safety gates."
+      }
+    },
+    {
+      "id": "track2_002",
+      "sourceCaseId": "shorts_012",
+      "url": "https://www.youtube.com/shorts/o3An_wnTC1M",
+      "enabled": true,
+      "category": "MULTI_PLACE",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": true,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Reclassified in v1.2A: live duration is 75 seconds and existing safety returns MULTI_PLACE_OR_LIST_VIDEO; this case must not resolve as one place and is not OCR coverage."
+      }
+    },
+    {
+      "id": "track2_003",
+      "sourceCaseId": "shorts_013",
+      "url": "https://www.youtube.com/shorts/XC8FdZWQ40w",
+      "enabled": true,
+      "category": "OCR_ONLY",
+      "expected": {
+        "allowedResolutions": ["RESOLVED", "CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": false,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Enabled for v1.2D OCR coverage: live duration is 71 seconds and is within the opt-in 180-second Track 2 frame limit. Resolution still requires normal OCR verification and safety gates."
+      }
+    },
+    {
+      "id": "track2_004",
+      "sourceCaseId": "shorts_014",
+      "url": "https://www.youtube.com/shorts/5e3nN9TmaAo",
+      "enabled": true,
+      "category": "MULTI_PLACE",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": true,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Reclassified in v1.2A: live duration is 86 seconds and existing safety returns MULTI_PLACE_OR_LIST_VIDEO; this case must not resolve as one place and is not OCR coverage."
+      }
+    },
+    {
+      "id": "track2_005",
+      "sourceCaseId": "shorts_015",
+      "url": "https://www.youtube.com/shorts/Vo2vRItP1d8",
+      "enabled": true,
+      "category": "MULTI_PLACE",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": true,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Reclassified in v1.2A: live duration is 84 seconds and existing safety returns MULTI_PLACE_OR_LIST_VIDEO; this case must not resolve as one place and is not OCR coverage."
+      }
+    },
+    {
+      "id": "track2_006",
+      "sourceCaseId": "shorts_016",
+      "url": "https://m.youtube.com/shorts/zGrWnb9C84c",
+      "enabled": true,
+      "category": "MULTI_PLACE",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": true,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Reclassified in v1.2A: live duration is 99 seconds and existing safety returns MULTI_PLACE_OR_LIST_VIDEO; this case must not resolve as one place and is not OCR coverage."
+      }
+    },
+    {
+      "id": "track2_007",
+      "sourceCaseId": "shorts_017",
+      "url": "https://www.youtube.com/shorts/avLPlQA7w0I",
+      "enabled": true,
+      "category": "OCR_ONLY",
+      "expected": {
+        "allowedResolutions": ["RESOLVED", "CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": false,
+        "allowTrack1": false,
+        "expectedAddressSource": "ocr_frame",
+        "expectedReasonIncludes": [],
+        "notes": "Executable OCR coverage: live duration is 60 seconds; Track 1 falls back to TRACK_2; live extraction produced 8 frames and 4 OCR text blocks, including a full visible address."
+      }
+    },
+    {
+      "id": "track2_008",
+      "sourceCaseId": "shorts_018",
+      "url": "https://www.youtube.com/shorts/W8ewx2gZqU4",
+      "enabled": true,
+      "category": "OCR_ONLY",
+      "expected": {
+        "allowedResolutions": ["RESOLVED", "CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": false,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Executable OCR coverage: live duration is 60 seconds; Track 1 falls back to TRACK_2; live extraction produced 8 frames and 8 OCR text blocks with a repeated strong address fragment damaged by OCR."
+      }
+    },
+    {
+      "id": "track2_009",
+      "sourceCaseId": "shorts_019",
+      "url": "https://www.youtube.com/shorts/i-_71qo3mOE",
+      "enabled": true,
+      "category": "GENERIC_LIST",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": true,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Title says Tong hop/rat nhieu quan/quang ngon style list; must never resolve as one place."
+      }
+    },
+    {
+      "id": "track2_010",
+      "sourceCaseId": "shorts_020",
+      "url": "https://www.youtube.com/shorts/jsJ8bkSfC-c",
+      "enabled": true,
+      "category": "NO_EVIDENCE",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": false,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Area/market-like signal only, not a full explicit address or specific single-place signal."
+      }
+    },
+    {
+      "id": "track2_011",
+      "sourceCaseId": "shorts_021",
+      "url": "https://m.youtube.com/shorts/ABu9EuMbb5A",
+      "enabled": true,
+      "category": "NO_EVIDENCE",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": false,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Truncated/borderline evidence in Track 1 fixture; classified conservatively as no reliable live Track 2 expectation."
+      }
+    },
+    {
+      "id": "track2_012",
+      "sourceCaseId": "shorts_022",
+      "url": "https://www.youtube.com/shorts/WDckuulKB6g",
+      "enabled": true,
+      "category": "NO_EVIDENCE",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": false,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Street-like hint without house number in the Track 1 fixture."
+      }
+    },
+    {
+      "id": "track2_013",
+      "sourceCaseId": "shorts_023",
+      "url": "https://www.youtube.com/shorts/Gv5Kcox1gIQ",
+      "enabled": true,
+      "category": "NO_EVIDENCE",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": false,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Truncated excerpt and no confident Track 2 category."
+      }
+    },
+    {
+      "id": "track2_014",
+      "sourceCaseId": "shorts_024",
+      "url": "https://www.youtube.com/shorts/MFJYWsgZ3gA",
+      "enabled": true,
+      "category": "GENERIC_LIST",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": true,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Title says Tong hop quan ngon and Phan 1; must never resolve as one place."
+      }
+    },
+    {
+      "id": "track2_015",
+      "sourceCaseId": "shorts_025",
+      "url": "https://www.youtube.com/shorts/QdAGUbaZj0U",
+      "enabled": true,
+      "category": "GENERIC_LIST",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": true,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Title says Top mon ngon; must never resolve as one place."
+      }
+    },
+    {
+      "id": "track2_016",
+      "sourceCaseId": "shorts_026",
+      "url": "https://www.youtube.com/shorts/9BZ8f4B300E",
+      "enabled": true,
+      "category": "MULTI_PLACE",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": true,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Fixture description says addresses of places in the video; treat as multi-place safety case."
+      }
+    },
+    {
+      "id": "track2_017",
+      "sourceCaseId": "shorts_027",
+      "url": "https://www.youtube.com/shorts/qONsGB7T-Ig",
+      "enabled": true,
+      "category": "GENERIC_LIST",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": true,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Title says Top 8 quan ngon; must never resolve as one place."
+      }
+    },
+    {
+      "id": "track2_018",
+      "sourceCaseId": "shorts_028",
+      "url": "https://www.youtube.com/shorts/tTXYvs45-yk",
+      "enabled": true,
+      "category": "GENERIC_LIST",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": true,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Title says nhung quan an and description is social/contact noise; must never resolve as one place."
+      }
+    },
+    {
+      "id": "track2_019",
+      "sourceCaseId": "shorts_029",
+      "url": "https://www.youtube.com/shorts/qr_LgJ2N3Ro",
+      "enabled": true,
+      "category": "NO_EVIDENCE",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": false,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Street and district are present but no observed house number in the Track 1 fixture."
+      }
+    },
+    {
+      "id": "track2_020",
+      "sourceCaseId": "shorts_030",
+      "url": "https://www.youtube.com/shorts/eM_uLz7n0Qs",
+      "enabled": true,
+      "category": "NO_EVIDENCE",
+      "expected": {
+        "allowedResolutions": ["CANDIDATES", "UNRESOLVED", "NEEDS_REVIEW"],
+        "mustNotResolve": false,
+        "allowTrack1": false,
+        "expectedAddressSource": null,
+        "expectedReasonIncludes": [],
+        "notes": "Truncated/borderline address excerpt; classified conservatively as no reliable live Track 2 expectation."
+      }
+    }
+  ]
+}

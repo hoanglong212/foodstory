@@ -1,0 +1,1849 @@
+{
+  "version": "shorts-address-router-live-audit-v1",
+  "sourceFixtureVersion": "shorts-address-router-seed-v1",
+  "createdAt": "2026-06-29T08:22:26.171Z",
+  "providerCalls": {
+    "youtubeDataApi": true,
+    "shortsHtmlJsonld": true,
+    "gemini": false,
+    "googlePlaces": false,
+    "ocr": false,
+    "asr": false
+  },
+  "counts": {
+    "total": 30,
+    "passed": 30,
+    "failed": 0,
+    "expectedTrack1": 10,
+    "expectedTrack2": 20,
+    "promotedTrack2ToTrack1": 0,
+    "ocrDisabledReasonMismatches": 6,
+    "track2ReasonMismatches": 5
+  },
+  "failingCaseIds": [],
+  "promotedTrack2CaseIds": [],
+  "cases": [
+    {
+      "id": "shorts_001",
+      "url": "https://www.youtube.com/shorts/ZDPXxZe4uEs",
+      "expectedTrack": "TRACK_1",
+      "expectedReason": "EXPLICIT_LABEL",
+      "expectedEvidenceSource": "description",
+      "actualTrack": "TRACK_1",
+      "actualReason": "EXPLICIT_LABEL",
+      "actualEvidenceSource": "description",
+      "candidateAddress": "39 Nguyen Trai, District 1, TP. Hồ Chí Minh",
+      "normalizedAddress": "39 Nguyen Trai, District 1, TP. Hồ Chí Minh",
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/ZDPXxZe4uEs",
+        "videoId": "ZDPXxZe4uEs",
+        "title": "Banh Mi with NO Pate?! #vietnamfood #banhmi",
+        "description": "Banh Mi with NO Pate?!\n\nYup feels like it’s a thing, we saw this spot where the line was long just near the famous Banh Mi Huynh Hoa 🥖\n\nIt’s run by two lovely auntie, one preparing the banh mi toppings and the other cooking the aromaric pork meatballs.\n\n📍 Bánh Mì Thịt Nướng Ngon Saigon or also known as Bánh Mì 37 \n\nAddress: 39 Nguyen Trai, District 1, HCMC\n\nFollow @nickandhelmi for more Travel and Food Guides\n\nFor discounted Vietnam travel activities on Klook\nuse code🧑‍💻 FUNTRAVELKLOOK\n.\n.\n.\n#banhmi #vietnamfood #vietnamtravel #saigon #hochiminhcity",
+        "channelTitle": "Nick and Helmi",
+        "publishedAt": "2026-02-02T11:01:04Z",
+        "duration": "PT34S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_1",
+        "reason": "EXPLICIT_LABEL",
+        "evidenceSource": "description",
+        "candidateAddress": "39 Nguyen Trai, District 1, TP. Hồ Chí Minh",
+        "normalizedAddress": "39 Nguyen Trai, District 1, TP. Hồ Chí Minh",
+        "confidence": 0.95,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "EXACT_PREFIX",
+            "prefix": "Address:",
+            "accepted": true,
+            "reason": "EXPLICIT_LABEL"
+          },
+          {
+            "source": "description",
+            "rule": "EXPLICIT_LABEL",
+            "accepted": true,
+            "normalized": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_002",
+      "url": "https://www.youtube.com/shorts/Hmd7A_1Xb44",
+      "expectedTrack": "TRACK_1",
+      "expectedReason": "EXPLICIT_LABEL",
+      "expectedEvidenceSource": "description",
+      "actualTrack": "TRACK_1",
+      "actualReason": "EXPLICIT_LABEL",
+      "actualEvidenceSource": "description",
+      "candidateAddress": "52 Nguyen Cong Tru, Ward 19, Binh Thanh District, Ho Chi Minh city",
+      "normalizedAddress": "52 Nguyen Cong Tru, Ward 19, Binh Thanh District, Ho Chi Minh city",
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/Hmd7A_1Xb44",
+        "videoId": "Hmd7A_1Xb44",
+        "title": "#shorts Vietnamese Phở With… French Fries!!??",
+        "description": "Mama's Dung restaurant - Phở Chào ► https://www.facebook.com/phochaosaigon/\nOrder direct via foodbooking/Grab Food ► https://www.foodbooking.com/api/fb/v4_dov\n► Whatsapp: 0902701208\n► Address: 52 Nguyen Cong Tru, Ward 19, Binh Thanh District, Ho Chi Minh city\n\n►Follow me on◄\nFITNESS CHANNEL:\n👉🏻https://www.youtube.com/channel/UCxhdQpxwK1Hf7uA9TFk3JVw \nINSTAGRAM: @dustincheverier\n👉🏻 https://www.instagram.com/dustincheverier\nTikTok: @vietnammeetsdustin \n👉🏻 https://vm.tiktok.com/qNGbdN/\nLinkedin: Dustin Cheverier\n👉🏻www.linkedin.com/in/dustin-cheverier-81698088 \n►Business Inquires: dustincheverier@gmail.com\n*Based in Ho Chi Minh City, Vietnam",
+        "channelTitle": "Dustin Cheverier",
+        "publishedAt": "2022-02-23T02:00:19Z",
+        "duration": "PT1M1S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_1",
+        "reason": "EXPLICIT_LABEL",
+        "evidenceSource": "description",
+        "candidateAddress": "52 Nguyen Cong Tru, Ward 19, Binh Thanh District, Ho Chi Minh city",
+        "normalizedAddress": "52 Nguyen Cong Tru, Ward 19, Binh Thanh District, Ho Chi Minh city",
+        "confidence": 0.95,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "EXACT_PREFIX",
+            "prefix": "Address:",
+            "accepted": true,
+            "reason": "EXPLICIT_LABEL"
+          },
+          {
+            "source": "description",
+            "rule": "EXPLICIT_LABEL",
+            "accepted": true,
+            "normalized": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_003",
+      "url": "https://www.youtube.com/shorts/QL51CQ28vpg",
+      "expectedTrack": "TRACK_1",
+      "expectedReason": "EXPLICIT_LABEL",
+      "expectedEvidenceSource": "title",
+      "actualTrack": "TRACK_1",
+      "actualReason": "EXPLICIT_LABEL",
+      "actualEvidenceSource": "title",
+      "candidateAddress": "Số 9, ngõ 56 Trần Quang Diệu, phường Ô Chợ Dừa, quận Đống Đa, Hà Nội",
+      "normalizedAddress": "9, ngõ 56 Trần Quang Diệu, phường Ô Chợ Dừa, quận Đống Đa, Hà Nội",
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/QL51CQ28vpg",
+        "videoId": "QL51CQ28vpg",
+        "title": "Bún Đậu Hùng Cường📍 Địa chỉ: Số 9, ngõ 56 Trần Quang Diệu, phường Ô Chợ Dừa, quận Đống Đa, Hà Nội",
+        "description": "",
+        "channelTitle": "Tép Đi Đâu Đấy",
+        "publishedAt": "2025-06-04T06:51:18Z",
+        "duration": "PT1M39S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_1",
+        "reason": "EXPLICIT_LABEL",
+        "evidenceSource": "title",
+        "candidateAddress": "Số 9, ngõ 56 Trần Quang Diệu, phường Ô Chợ Dừa, quận Đống Đa, Hà Nội",
+        "normalizedAddress": "9, ngõ 56 Trần Quang Diệu, phường Ô Chợ Dừa, quận Đống Đa, Hà Nội",
+        "confidence": 0.95,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "title",
+            "rule": "EXACT_PREFIX",
+            "prefix": "Địa chỉ:",
+            "accepted": true,
+            "reason": "EXPLICIT_LABEL"
+          },
+          {
+            "source": "title",
+            "rule": "EXPLICIT_LABEL",
+            "accepted": true,
+            "normalized": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_004",
+      "url": "https://www.youtube.com/shorts/aWjqL1wGzUE",
+      "expectedTrack": "TRACK_1",
+      "expectedReason": "EXPLICIT_LABEL",
+      "expectedEvidenceSource": "description",
+      "actualTrack": "TRACK_1",
+      "actualReason": "EXPLICIT_LABEL",
+      "actualEvidenceSource": "description",
+      "candidateAddress": "28 đường Thảo Điền, phường An Khánh, Quận 2, TP. Hồ Chí Minh",
+      "normalizedAddress": "28 đường Thảo Điền, phường An Khánh, Quận 2, TP. Hồ Chí Minh",
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/aWjqL1wGzUE",
+        "videoId": "aWjqL1wGzUE",
+        "title": "Cà phê kem dẻo tại quán Cà Phê Cà Pháo của ca sĩ Đàm Vĩnh Hưng #shorts  #food",
+        "description": "Cà phê kem dẻo tại quán 'Cà Phê Cà Pháo' của ca sĩ Đàm Vĩnh Hưng\n#damvinhhung #leocooking #leoquocviet\n\nĐịa chỉ: \nCÀ PHÊ CÀ PHÁO\n28 đường Thảo Điền, phường An Khánh, Quận 2, TP.HCM\n\n💚 DONATE 💸: TRẦN QUỐC VIỆT / STK: 0111273339 (Đông Á Bank - TPHCM) 💚\n................................\n🔔Đăng ký kênh ngay nhé:\nLEO Cooking: https://youtube.com/c/LEOCOOKING/\nWebsite: http://leoquocviet.com/leocooking/\n................................\nTHANKS FOR WATCHING! :) LIKE, SHARE & SUBSCRIBE FOR MORE VIDEOS:  https://goo.gl/FWT2BT\n................................\n★Email: khicontraiquaybep@gmail.com \n★Đăng ký kênh Youtube:\n   LEO Media: https://goo.gl/4Xd6hn\n   LEO Cooking: https://www.youtube.com/LEOCOOKING\n★Website: http://leoquocviet.com/leocooking/\n                    http://saoshowbiz.com/\n★Facebook: https://www.facebook.com/leo.barnabe \n★TikTok: https://www.tiktok.com/@leo.cooking88?lang=vi-VN\n★Instagram: https://www.instagram.com/leo.quocviet/\n                        https://www.instagram.com/leocooking.88/\n★Blogspot: https://leocooking88.blogspot.com/\n---\n© All produced exclusively by LEO QUOC VIET. \n© 2026 by LEO Media. DO NOT REUP!",
+        "channelTitle": "LEO COOKING by Leo Quoc Viet",
+        "publishedAt": "2026-02-08T12:23:04Z",
+        "duration": "PT2M25S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_1",
+        "reason": "EXPLICIT_LABEL",
+        "evidenceSource": "description",
+        "candidateAddress": "28 đường Thảo Điền, phường An Khánh, Quận 2, TP. Hồ Chí Minh",
+        "normalizedAddress": "28 đường Thảo Điền, phường An Khánh, Quận 2, TP. Hồ Chí Minh",
+        "confidence": 0.95,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "EXACT_PREFIX",
+            "prefix": "Địa chỉ:",
+            "accepted": true,
+            "reason": "EXPLICIT_LABEL"
+          },
+          {
+            "source": "description",
+            "rule": "EXPLICIT_LABEL",
+            "accepted": true,
+            "normalized": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_005",
+      "url": "https://www.youtube.com/shorts/TIflqSNgcl8",
+      "expectedTrack": "TRACK_1",
+      "expectedReason": "EXPLICIT_LABEL",
+      "expectedEvidenceSource": "description",
+      "actualTrack": "TRACK_1",
+      "actualReason": "EXPLICIT_LABEL",
+      "actualEvidenceSource": "description",
+      "candidateAddress": "Hẻm 140 Trần Bình Trọng, Phường 2, Quận 5, TP. Hồ Chí Minh",
+      "normalizedAddress": "Hẻm 140 Trần Bình Trọng, Phường 2, Quận 5, TP. Hồ Chí Minh",
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/TIflqSNgcl8",
+        "videoId": "TIflqSNgcl8",
+        "title": "Quán cà phê Nhật Bản giữa lòng Sài Gòn | Thánh Riviu",
+        "description": "Lạc Concept\nĐịa chỉ: Hẻm 140 Trần Bình Trọng, Phường 2, Quận 5, TP. HCM\nGiá trung bình: 40k - 60k\n---------------------\nTheo dõi các địa điểm vui chơi, giải trí, trend mới, xu hướng du lịch tại cộng đồng Thánh Riviu \n👇👇👇\n- Group Thánh Riviu : https://www.facebook.com/groups/riviu...\n- Page Thánh Riviu : https://www.facebook.com/Riviu.Official\n- Tiktok : https://www.tiktok.com/@thanhriviuoff...\n- Instagram : https://www.instagram.com/thanhriviu....\n- Youtube : Thánh Riviu\n- Liên hệ Email : contact@riviu.vn\n#Thanhriviu #riviu #shorts #youtubeshorts #ramen #ramennhat #amthucnhat",
+        "channelTitle": "Thánh Riviu",
+        "publishedAt": "2022-07-11T13:00:26Z",
+        "duration": "PT37S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_1",
+        "reason": "EXPLICIT_LABEL",
+        "evidenceSource": "description",
+        "candidateAddress": "Hẻm 140 Trần Bình Trọng, Phường 2, Quận 5, TP. Hồ Chí Minh",
+        "normalizedAddress": "Hẻm 140 Trần Bình Trọng, Phường 2, Quận 5, TP. Hồ Chí Minh",
+        "confidence": 0.95,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "EXACT_PREFIX",
+            "prefix": "Địa chỉ:",
+            "accepted": true,
+            "reason": "EXPLICIT_LABEL"
+          },
+          {
+            "source": "description",
+            "rule": "EXPLICIT_LABEL",
+            "accepted": true,
+            "normalized": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_006",
+      "url": "https://www.youtube.com/shorts/5Kt2X_L-zmU",
+      "expectedTrack": "TRACK_1",
+      "expectedReason": "EXPLICIT_LABEL",
+      "expectedEvidenceSource": "description",
+      "actualTrack": "TRACK_1",
+      "actualReason": "EXPLICIT_LABEL",
+      "actualEvidenceSource": "description",
+      "candidateAddress": "92C Cao Thắng, Phường 4, Quận 3, TP. Hồ Chí Minh",
+      "normalizedAddress": "92C Cao Thắng, Phường 4, Quận 3, TP. Hồ Chí Minh",
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/5Kt2X_L-zmU",
+        "videoId": "5Kt2X_L-zmU",
+        "title": "Tiệm Chè Chang Hi drama | Thánh Riviu",
+        "description": "Chè Chang Hi\nĐịa chỉ: 92C Cao Thắng, Phường 4, Quận 3, TP. HCM\nGiá trung bình: 30k\n---------------------\nTheo dõi các địa điểm vui chơi, giải trí, trend mới, xu hướng du lịch tại cộng đồng Thánh Riviu \n👇👇👇\n- Group Thánh Riviu : https://www.facebook.com/groups/riviu...\n- Page Thánh Riviu : https://www.facebook.com/Riviu.Official\n- Tiktok : https://www.tiktok.com/@thanhriviuoff...\n- Instagram : https://www.instagram.com/thanhriviu....\n- Youtube : Thánh Riviu\n- Liên hệ Email : contact@riviu.vn\n#Thanhriviu #riviu #shorts #youtubeshorts",
+        "channelTitle": "Thánh Riviu",
+        "publishedAt": "2022-09-05T13:00:02Z",
+        "duration": "PT54S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_1",
+        "reason": "EXPLICIT_LABEL",
+        "evidenceSource": "description",
+        "candidateAddress": "92C Cao Thắng, Phường 4, Quận 3, TP. Hồ Chí Minh",
+        "normalizedAddress": "92C Cao Thắng, Phường 4, Quận 3, TP. Hồ Chí Minh",
+        "confidence": 0.95,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "EXACT_PREFIX",
+            "prefix": "Địa chỉ:",
+            "accepted": true,
+            "reason": "EXPLICIT_LABEL"
+          },
+          {
+            "source": "description",
+            "rule": "EXPLICIT_LABEL",
+            "accepted": true,
+            "normalized": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_007",
+      "url": "https://www.youtube.com/shorts/W5vVDobZ8VA",
+      "expectedTrack": "TRACK_1",
+      "expectedReason": "CLEAR_DESCRIPTION",
+      "expectedEvidenceSource": "description",
+      "actualTrack": "TRACK_1",
+      "actualReason": "CLEAR_DESCRIPTION",
+      "actualEvidenceSource": "description",
+      "candidateAddress": "284/3 Chợ Lớn (Quận 6, TP. Hồ Chí Minh)",
+      "normalizedAddress": "284/3 Chợ Lớn (Quận 6, TP. Hồ Chí Minh)",
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/W5vVDobZ8VA",
+        "videoId": "W5vVDobZ8VA",
+        "title": "Quán bún bò sườn bẹ \"size khủng\", mỗi ngày bán 200 kg ở quận 6 #shorts",
+        "description": "#ngontv #saigonbaongon #anvatsaigon\nTiệm bún bò Phú Hưng tại số 284/3 Chợ Lớn (Q.6, TP.HCM) nổi tiếng bởi món bún bò lạ miệng khi ăn kèm chủ yếu với sườn bò. Từ sườn chéo đến sườn bẹ, tất cả được hầm mềm rục, với hơn 200 kg sườn bán ra mỗi ngày.\n\n-------------\nMời bạn tham gia cộng đồng Ngon TV, cùng chia sẻ những thông tin hay về món ăn, quán ăn... với group \"Sài Gòn bao ngon\" \n ➡️➡️➡️ www.facebook.com/groups/saigonbaongon/\n-------------\nNgon TV, kênh giới thiệu món ngon, văn hóa ẩm thực, cách thức chế biến các món ngon. Ngon TV là nơi hội tụ của những người mê ăn uống. Ngon TV là kênh chính thức của Báo Thanh Niên.\nHãy truy cập: video.thanhnien.vn \nTheo dõi kênh TikTok Ngon TV: https://www.tiktok.com/@ngon.tv?lang=vi-VN\n-------------\nHãy đăng ký kênh: http://popsww.com/NgonTV\n\nTheo dõi và like Báo Thanh Niên trên Facebook: Facebook.com/thanhnien\n---------\nLiên hệ: 268 - 270 Nguyễn Đình Chiểu, Phường 6, Q.3, TP HCM \nĐT: (+84.8) 39302302 \nFax: (+84.8) 39309939 \nEmail: tnmedia@thanhnien.vn\nLiên hệ hợp tác: tnmedia@thanhnien.vn",
+        "channelTitle": "Ngon TV",
+        "publishedAt": "2023-07-27T04:15:02Z",
+        "duration": "PT48S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_1",
+        "reason": "CLEAR_DESCRIPTION",
+        "evidenceSource": "description",
+        "candidateAddress": "284/3 Chợ Lớn (Quận 6, TP. Hồ Chí Minh)",
+        "normalizedAddress": "284/3 Chợ Lớn (Quận 6, TP. Hồ Chí Minh)",
+        "confidence": 0.9,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": true,
+            "reason": "CLEAR_DESCRIPTION"
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": true,
+            "normalized": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_008",
+      "url": "https://www.youtube.com/shorts/z_nTyA64-mo",
+      "expectedTrack": "TRACK_1",
+      "expectedReason": "CLEAR_DESCRIPTION",
+      "expectedEvidenceSource": "description",
+      "actualTrack": "TRACK_1",
+      "actualReason": "CLEAR_DESCRIPTION",
+      "actualEvidenceSource": "description",
+      "candidateAddress": "213B Phan Văn Khỏe (Quận 6, TP. Hồ Chí Minh)",
+      "normalizedAddress": "213B Phan Văn Khỏe (Quận 6, TP. Hồ Chí Minh)",
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/z_nTyA64-mo",
+        "videoId": "z_nTyA64-mo",
+        "title": "Bún bò bình dân 3 tiếng bán sạch 70kg đồ ăn #shorts",
+        "description": "#ngontv #saigonbaongon #anvatsaigon\nKhông cầu kỳ bảng hiệu, hàng ăn nhỏ của bà Loan tại số 213B Phan Văn Khỏe (Q.6, TP.HCM) đông kín khách đến thưởng thức món bún bò thơm ngon, giá bình dân. Nổi tiếng với bún bò bắp hoa, bún sườn sụn, xí quách, dù mới hơn 8 giờ 30, hàng chục kg đồ ăn đã được tiệm bán sạch veo.\n-------------\nMời bạn tham gia cộng đồng Ngon TV, cùng chia sẻ những thông tin hay về món ăn, quán ăn... với group \"Sài Gòn bao ngon\" \n ➡️➡️➡️ www.facebook.com/groups/saigonbaongon/\n-------------\nNgon TV, kênh giới thiệu món ngon, văn hóa ẩm thực, cách thức chế biến các món ngon. Ngon TV là nơi hội tụ của những người mê ăn uống. Ngon TV là kênh chính thức của Báo Thanh Niên.\nHãy truy cập: video.thanhnien.vn \nTheo dõi kênh TikTok Ngon TV: https://www.tiktok.com/@ngon.tv?lang=vi-VN\n-------------\nHãy đăng ký kênh: http://popsww.com/NgonTV\n\nTheo dõi và like Báo Thanh Niên trên Facebook: Facebook.com/thanhnien\n---------\nLiên hệ: 268 - 270 Nguyễn Đình Chiểu, Phường 6, Q.3, TP HCM \nĐT: (+84.8) 39302302 \nFax: (+84.8) 39309939 \nEmail: tnmedia@thanhnien.vn\nLiên hệ hợp tác: tnmedia@thanhnien.vn",
+        "channelTitle": "Ngon TV",
+        "publishedAt": "2023-05-15T06:28:55Z",
+        "duration": "PT46S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_1",
+        "reason": "CLEAR_DESCRIPTION",
+        "evidenceSource": "description",
+        "candidateAddress": "213B Phan Văn Khỏe (Quận 6, TP. Hồ Chí Minh)",
+        "normalizedAddress": "213B Phan Văn Khỏe (Quận 6, TP. Hồ Chí Minh)",
+        "confidence": 0.9,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": true,
+            "reason": "CLEAR_DESCRIPTION"
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": true,
+            "normalized": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_009",
+      "url": "https://www.youtube.com/shorts/tYGQhyFdk6U",
+      "expectedTrack": "TRACK_1",
+      "expectedReason": "CLEAR_DESCRIPTION",
+      "expectedEvidenceSource": "description",
+      "actualTrack": "TRACK_1",
+      "actualReason": "CLEAR_DESCRIPTION",
+      "actualEvidenceSource": "description",
+      "candidateAddress": "14 Trịnh Văn Cấn, Phường Cầu Ông Lãnh, Quận 1, TP. Hồ Chí Minh",
+      "normalizedAddress": "14 Trịnh Văn Cấn, Phường Cầu Ông Lãnh, Quận 1, TP. Hồ Chí Minh",
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/tYGQhyFdk6U",
+        "videoId": "tYGQhyFdk6U",
+        "title": "[FOOD REVIEW] BẾP HÀ NỘI NHỎ | MỘT QUÁN CHUYÊN CÁC MÓN HÀ NỘI CHUẨN VỊ NGAY GIỮA LÒNG SÀI GÒN Q1",
+        "description": "#hanoinho #bephanoinho #reviewmonngohanoi  #emilyna #emilynabeauty #vlog #review\nHello các tình yêu của Emily. Chuyện là Emily với mẹ tìm được một quán ăn chuyên món Hà Nội rất ngon và chuẩn bị giữa lòng Sài Gòn lại còn nằm ngay trung tâm Quận 1 luôn nè cả nhà. Emily ăn bún thang mấy chỗ rồi mà có quán nào làm chuẩn vị ngon lắm nên không quên quay lại chiếc video nhỏ chia sẻ cùng cả nhà nè! Cùng Emily xem hết video nha!!! 🥰🥳🤩\nĐừng quên cho Emily 1 LIKE, 1 SHARE, và 1 SUBSCRIBE để theo dõi phần tiếp theo và các video mới nhất của Emily nhé!!! Mãi yêu!!! ❤️🥰🥳😍😘\n-------------------------------------------------------------------------------------------------------------\n🏠 Địa chỉ các nơi trong video:\n🍵 BẾP HÀ NỘI NHỎ:\n14 Trịnh Văn Cấn, P. Cầu Ông Lãnh, Q.1, TP. HCM\n-----------------------------------------------------------------------------------------\n📹 Videos xem thêm:\n👉 FOOD REVIEW:\nhttps://bit.ly/3KMxIov\n\n👉 Cooking:\nhttps://youtube.com/playlist?list=PLi...\n\n👉 MAKEUP:\nhttps://bit.ly/2FLD1DX\n-------------------------------------------------------------------------------------------------------------\n👇Đăng ký theo dõi:\n+ Youtube: https://bit.ly/2JSrdoB\n+ Facebook page: https://www.facebook.com/EmilynaBeauty/\n+ Instagram: https://www.instagram.com/nplyna/\n--------------------------------------------------------------------------------------------------------------\n📮Contact for work:\nEmail: npdaitrang@gmail.com\n--------------------------------------------------------------------------------------------------------------\n❌ This video was not sponsored.\n--------------------------------------------------------------------------------------------------------------\n© Bản quyền thuộc về Emilyna Beauty Official 👉 Xin vui lòng không đăng lại!\n© Copyright by Emilyna Beauty Official 👉 Please do not Reup!",
+        "channelTitle": "Emilyna Beauty Official",
+        "publishedAt": "2025-06-06T12:03:30Z",
+        "duration": "PT1M20S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_1",
+        "reason": "CLEAR_DESCRIPTION",
+        "evidenceSource": "description",
+        "candidateAddress": "14 Trịnh Văn Cấn, Phường Cầu Ông Lãnh, Quận 1, TP. Hồ Chí Minh",
+        "normalizedAddress": "14 Trịnh Văn Cấn, Phường Cầu Ông Lãnh, Quận 1, TP. Hồ Chí Minh",
+        "confidence": 0.9,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": true,
+            "reason": "CLEAR_DESCRIPTION"
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": true,
+            "normalized": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_010",
+      "url": "https://www.youtube.com/shorts/O2U5picQ9AU",
+      "expectedTrack": "TRACK_1",
+      "expectedReason": "CLEAR_DESCRIPTION",
+      "expectedEvidenceSource": "description",
+      "actualTrack": "TRACK_1",
+      "actualReason": "CLEAR_DESCRIPTION",
+      "actualEvidenceSource": "description",
+      "candidateAddress": "371/67A Hẻm 371 Trường Chinh, Phường 14, Quận Tân Bình, TP. Hồ Chí Minh",
+      "normalizedAddress": "371/67A Hẻm 371 Trường Chinh, Phường 14, Quận Tân Bình, TP. Hồ Chí Minh",
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/O2U5picQ9AU",
+        "videoId": "O2U5picQ9AU",
+        "title": "[FOOD REVIEW] QUÁN SUSU ỐC-LẨU-NƯỚNG | QUÁN ỐC BÌNH DÂN NGON-BỔ-RẺ CHO TÍN ĐỒ QUẬN TÂN BÌNH",
+        "description": "#ocsaigon  #quansusu #foodreview  #emilyna #emilynabeauty #vlog #review\nHello các tình yêu của Emily. Emily vừa mới được một chị bạn chỉ cho một quán ốc bình dân mà xịn mịn lắm nha ở khu vực Tân Bình nè mọi người. Sẵn tiện biết được một quán hay ho nên không quên quay lại một chiếc review nho nhỏ cho cả nhà tham khảo hen.\nTín đồ thích ăn ốc đâu vào xem hết chiếc food review nhanh nhanh nào! 🥰🥳🤩\nĐừng quên cho Emily 1 LIKE, 1 SHARE, và 1 SUBSCRIBE để theo dõi phần tiếp theo và các video mới nhất của Emily nhé!!! Mãi yêu!!! ❤️🥰🥳😍😘\n-------------------------------------------------------------------------------------------------------------\n🏠 Địa chỉ các nơi trong video:\n🦪: QUÁN SUSU ỐC - LẨU - NƯỚNG:\n371/67A Hẻm 371 Trường Chinh, P.14, Q. Tân Bình, TP.HCM\n-----------------------------------------------------------------------------------------\n📹 Videos xem thêm:\n👉 FOOD REVIEW:\nhttps://bit.ly/3KMxIov\n\n👉 Cooking:\nhttps://youtube.com/playlist?list=PLi...\n\n👉 MAKEUP:\nhttps://bit.ly/2FLD1DX\n-------------------------------------------------------------------------------------------------------------\n👇Đăng ký theo dõi:\n+ Youtube: https://bit.ly/2JSrdoB\n+ Facebook page: https://www.facebook.com/EmilynaBeauty/\n+ Instagram: https://www.instagram.com/nplyna/\n--------------------------------------------------------------------------------------------------------------\n📮Contact for work:\nEmail: npdaitrang@gmail.com\n--------------------------------------------------------------------------------------------------------------\n❌ This video was not sponsored.\n--------------------------------------------------------------------------------------------------------------\n© Bản quyền thuộc về Emilyna Beauty Official 👉 Xin vui lòng không đăng lại!\n© Copyright by Emilyna Beauty Official 👉 Please do not Reup!",
+        "channelTitle": "Emilyna Beauty Official",
+        "publishedAt": "2025-05-11T14:26:57Z",
+        "duration": "PT1M52S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_1",
+        "reason": "CLEAR_DESCRIPTION",
+        "evidenceSource": "description",
+        "candidateAddress": "371/67A Hẻm 371 Trường Chinh, Phường 14, Quận Tân Bình, TP. Hồ Chí Minh",
+        "normalizedAddress": "371/67A Hẻm 371 Trường Chinh, Phường 14, Quận Tân Bình, TP. Hồ Chí Minh",
+        "confidence": 0.9,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": true,
+            "reason": "CLEAR_DESCRIPTION"
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": true,
+            "normalized": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_011",
+      "url": "https://www.youtube.com/shorts/s3QtciG_lLQ",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "OCR_ONLY",
+      "expectedEvidenceSource": "ocr",
+      "actualTrack": "TRACK_2",
+      "actualReason": "NO_EXPLICIT_EVIDENCE",
+      "actualEvidenceSource": null,
+      "candidateAddress": null,
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [
+        "OCR_DISABLED_REASON_MISMATCH"
+      ],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/s3QtciG_lLQ",
+        "videoId": "s3QtciG_lLQ",
+        "title": "Quán bún bò viên ngon và giá cả hợp lý nhất ở Sài Gòn - trên đường Trần Bình Trọng, nay có mặt ở Q7",
+        "description": "nếu nói đây là quán bún bò viên ngon và chất lượng nhất ở Sài Gòn chắc cũng không quá lời, 1 tô chất lượng hoành tráng cỡ này mà giá chỉ 55 ngàn mấy bạn có tin dc ko , thịt được cắt dày, bò viên ở đây được làm thủ công hoàn toàn bằng tay, đã bán được 20 năm, ngoài ra hủ tiếu trộn khô ở đây cũng là 1 cực phẩm đó nha . bà con nào mà ăn rồi chắc sẽ nghiện như mình đó nha. hi xin chào mọi người đến với kênh Hải vi vu, các bạn đã bao giờ xếp hàng chen chúc nhau ở tiệm bún bò viên trên đường trần bình trọng quận 5 rồi đúng không ? Quán cũng có chi nhánh 2 trên đường số 7, ở quận 7, rộng rãi thoáng mát hơn, mà mình ăn còn thấy ngon và chất lượng hơn nữa đó, ở đây nổi bật với quầy đồ ăn topping tràn ngập,nồi nước lèo thì nghi ngút khói, thơm nức cái mũi luôn. hôm nay mình gọi 1 tô bún bò viên thập cẩm, 1 tô hủ tiếu nước, và 1 tô hủ tiếu trộn khô, đồng giá là 55 ngàn, thật sự mình rất là bất ngờ luôn, vì mình không nghĩ 1 tô 55 ngàn thôi mà chất lượng đến vậy luôn đó, thịt được cắt dày, mềm ăn đã lắm. Nhưng đỉnh nhất phải nói đến bò viên ở đây, được quán tự làm, nên chất lượng đảm bảo, bò viên dai, ngọt thịt, có lẫn gân bên trong, nhất là được chấm với tương sate quán tự làm, phải nói là cực kì ngon,nước lèo ở đây ngọt thanh, nhẹ nhàng, không bị béo ngấy. hủ tiếu trộn khô cũng được nêm rất vừa miệng, hủ tiếu được trụng vừa chín tới,húp cùng nước lèo phê lắm nha. mình cũng có gọi thêm 1 chén thập cẩm bò viên, thịt và bò viên được cho vào tô chén rất nhiều, nhìn chung với mức giá 55 ngàn, thật sự rất xứng đáng, 1 tô rất ngon và topping đầy đặn, xứng đáng cho các bạn trải nghiệm, địa chỉ mình có ghim ở trên màn hình",
+        "channelTitle": "HẢI VI VU ( Ước Mơ Vòng Quanh Thế Gian )",
+        "publishedAt": "2026-05-23T09:23:14Z",
+        "duration": "PT1M19S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "NO_EXPLICIT_EVIDENCE",
+        "evidenceSource": null,
+        "candidateAddress": null,
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_012",
+      "url": "https://www.youtube.com/shorts/o3An_wnTC1M",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "OCR_ONLY",
+      "expectedEvidenceSource": "ocr",
+      "actualTrack": "TRACK_2",
+      "actualReason": "NO_EXPLICIT_EVIDENCE",
+      "actualEvidenceSource": null,
+      "candidateAddress": null,
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [
+        "OCR_DISABLED_REASON_MISMATCH"
+      ],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/o3An_wnTC1M",
+        "videoId": "o3An_wnTC1M",
+        "title": "Phở Dậu - Quán phở đầu tiên ở Sài Gòn, hương vị phở Bắc,giá 90 ngàn / tô #reviewanuong",
+        "description": "Đây là quán phở được mệnh danh là có mặt đầu tiên ở Sài Gòn,với hương vị rất riêng, và cách ăn vô cùng đặc biệt khi ăn cùng hành tây trộn tương ớt . với cái giá 90 ngàn cho 1 tô ,có thể nói là cao nhất Sài Gòn, liệu có xứng đáng cho mọi người trải nghiệm . Hiii xin chào mọi người đến với kênh Hải vi vu, nói về những quán phở đầu tiên ở Sài Gòn, ngta sẽ nghĩ ngay đến phở Dậu, 1 quán phở chuẩn gốc Bắc, nằm núp trong 1 con hẻm nhỏ ở Quận 3,được mở từ những năm 1950, đến nay đã hơn 70 năm. ở đây vẫn giữ cách chế biến và cách ăn theo gốc của Nam Định xưa, khi trong tô quán đã múc sẵn bột ngọt vào, không có 1 cọng rau giá nào , và ở đây độc lạ khi ăn cùng 1 dĩa hành tây trộn cùng tương ớt Bắc, có rất nhiều người nói mới ăn sẽ thấy lạ lạ, nhưng ăn quen sẽ bị nghiện đó . Chắc có lẽ như vậy nên lượng khách đến quán lúc nào cũng đông chật kín, hôm nay mình gọi 1 tô tái nạm truyền thống, nước lèo rất rất thơm, vị ngọt rõ ràng từ xương, bánh phở rất dai, khác xa với phở trong Nam sẽ mềm hơn 1 chút, thịt được cho khá nhiều, thịt mềm, ngọt thịt, thấm kĩ nước lèo, ăn rất ngon, khi ăn cùng hành tây thật sự rất lạ miệng, Nhìn chung mình cảm nhận ai đã từng ăn quen phở Bắc sẽ thấy hương vị của phở Dậu sẽ rất ngon,với nước lèo ngon và chất lượng thịt , nhưng với mức giá 90 ngàn cho 1 tô, thật sự rất chát. mọi người ai đã ăn thì cho mình xin ý kiến nhé, địa chỉ mình có ghim ở trên màn hình",
+        "channelTitle": "HẢI VI VU ( Ước Mơ Vòng Quanh Thế Gian )",
+        "publishedAt": "2025-11-05T02:54:56Z",
+        "duration": "PT1M15S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "NO_EXPLICIT_EVIDENCE",
+        "evidenceSource": null,
+        "candidateAddress": null,
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_013",
+      "url": "https://www.youtube.com/shorts/XC8FdZWQ40w",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "OCR_ONLY",
+      "expectedEvidenceSource": "ocr",
+      "actualTrack": "TRACK_2",
+      "actualReason": "TRUNCATED_EVIDENCE",
+      "actualEvidenceSource": "description",
+      "candidateAddress": "Nói đến các món ăn trong ký ức học sinh sinh viên Sài Gòn, chắc có lẽ xe miến ở Đại Học Kiến Trúc là kỉ niệm của rất là nhiều người, nhớ ngày xưa hay đạp xe cùng lũ bạn qua đây ăn, nhớ ngày đó nghèo mà vui lắm,giờ thì vẫn nghèo nhưng mà hết vui rồi... Hi xin chào mọi người đến với kênh Hải vi vu, nói đến xe miến Đại Học Kiến Trúc, thì đã quá nổi tiếng,số lượng khách ở đây phải nói vẫn rất đông, ko chỉ là học sinh sinh viên, mà còn là những nhân viên văn phòng hay khách du lịch đến đây ăn cũng rất nhiều, 1 gánh nhỏ thôi, nhưng phải nói cái quầy đồ ăn ở đây siêu hấp dẫn luôn, để đầy các loại đồ ăn, thịt gà, hành phi và cả chậu nước mắm ớt khổng lồ, nhìn đã thật chứ, cô chủ thì múc liên tục cho khách, ở đây ngta cứ bưng trên tay để ăn, hoặc ngồi ăn trên 1 cái ghế nhựa nhỏ ven đường, bình dân vậy thôi đó, nhưng không hiểu sao ăn lại thấy ngon đến vậy, 1 tô ở đây có giá từ 30 ngàn, khá là rẻ, trong tô có lòng gà, thịt gà, hành pha và các loại rau thơm, miến được trộn đều với nước mắm ớt, ăn cực kì ngon, và đậm đà, sợi miến mềm thấm kĩ các loại gia vị, thịt gà vẫn dữ được độ dai, và ngọt thịt. lòng gà thì được cho vào tô rất nhiều, ăn cũng ngon lắm. Nhìn chung với mức giá 30 ngàn cho 1 tô chất lượng như này, thật sự mình thấy rất ngon và xứng đáng,  tuy chỗ ngồi là mấy cái ghế nhựa nhỏ, nhưng đem lại cho mình sự thoải mái và mát mẻ,các bạn nên đến ăn thử nhé , địa chỉ mình có ghim ở trên màn hình",
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [
+        "OCR_DISABLED_REASON_MISMATCH"
+      ],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/XC8FdZWQ40w",
+        "videoId": "XC8FdZWQ40w",
+        "title": "Miến trộn Đại Học Kiến Trúc - Món ăn kỉ niệm của Sinh Viên Sài Gòn,ngon rẻ, đông kín khách",
+        "description": "Nói đến các món ăn trong ký ức học sinh sinh viên Sài Gòn, chắc có lẽ xe miến ở Đại Học Kiến Trúc là kỉ niệm của rất là nhiều người, nhớ ngày xưa hay đạp xe cùng lũ bạn qua đây ăn, nhớ ngày đó nghèo mà vui lắm,giờ thì vẫn nghèo nhưng mà hết vui rồi... Hi xin chào mọi người đến với kênh Hải vi vu, nói đến xe miến Đại Học Kiến Trúc, thì đã quá nổi tiếng,số lượng khách ở đây phải nói vẫn rất đông, ko chỉ là học sinh sinh viên, mà còn là những nhân viên văn phòng hay khách du lịch đến đây ăn cũng rất nhiều, 1 gánh nhỏ thôi, nhưng phải nói cái quầy đồ ăn ở đây siêu hấp dẫn luôn, để đầy các loại đồ ăn, thịt gà, hành phi và cả chậu nước mắm ớt khổng lồ, nhìn đã thật chứ, cô chủ thì múc liên tục cho khách, ở đây ngta cứ bưng trên tay để ăn, hoặc ngồi ăn trên 1 cái ghế nhựa nhỏ ven đường, bình dân vậy thôi đó, nhưng không hiểu sao ăn lại thấy ngon đến vậy, 1 tô ở đây có giá từ 30 ngàn, khá là rẻ, trong tô có lòng gà, thịt gà, hành pha và các loại rau thơm, miến được trộn đều với nước mắm ớt, ăn cực kì ngon, và đậm đà, sợi miến mềm thấm kĩ các loại gia vị, thịt gà vẫn dữ được độ dai, và ngọt thịt. lòng gà thì được cho vào tô rất nhiều, ăn cũng ngon lắm. Nhìn chung với mức giá 30 ngàn cho 1 tô chất lượng như này, thật sự mình thấy rất ngon và xứng đáng,  tuy chỗ ngồi là mấy cái ghế nhựa nhỏ, nhưng đem lại cho mình sự thoải mái và mát mẻ,các bạn nên đến ăn thử nhé , địa chỉ mình có ghim ở trên màn hình",
+        "channelTitle": "HẢI VI VU ( Ước Mơ Vòng Quanh Thế Gian )",
+        "publishedAt": "2026-01-24T03:42:48Z",
+        "duration": "PT1M11S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "TRUNCATED_EVIDENCE",
+        "evidenceSource": "description",
+        "candidateAddress": "Nói đến các món ăn trong ký ức học sinh sinh viên Sài Gòn, chắc có lẽ xe miến ở Đại Học Kiến Trúc là kỉ niệm của rất là nhiều người, nhớ ngày xưa hay đạp xe cùng lũ bạn qua đây ăn, nhớ ngày đó nghèo mà vui lắm,giờ thì vẫn nghèo nhưng mà hết vui rồi... Hi xin chào mọi người đến với kênh Hải vi vu, nói đến xe miến Đại Học Kiến Trúc, thì đã quá nổi tiếng,số lượng khách ở đây phải nói vẫn rất đông, ko chỉ là học sinh sinh viên, mà còn là những nhân viên văn phòng hay khách du lịch đến đây ăn cũng rất nhiều, 1 gánh nhỏ thôi, nhưng phải nói cái quầy đồ ăn ở đây siêu hấp dẫn luôn, để đầy các loại đồ ăn, thịt gà, hành phi và cả chậu nước mắm ớt khổng lồ, nhìn đã thật chứ, cô chủ thì múc liên tục cho khách, ở đây ngta cứ bưng trên tay để ăn, hoặc ngồi ăn trên 1 cái ghế nhựa nhỏ ven đường, bình dân vậy thôi đó, nhưng không hiểu sao ăn lại thấy ngon đến vậy, 1 tô ở đây có giá từ 30 ngàn, khá là rẻ, trong tô có lòng gà, thịt gà, hành pha và các loại rau thơm, miến được trộn đều với nước mắm ớt, ăn cực kì ngon, và đậm đà, sợi miến mềm thấm kĩ các loại gia vị, thịt gà vẫn dữ được độ dai, và ngọt thịt. lòng gà thì được cho vào tô rất nhiều, ăn cũng ngon lắm. Nhìn chung với mức giá 30 ngàn cho 1 tô chất lượng như này, thật sự mình thấy rất ngon và xứng đáng,  tuy chỗ ngồi là mấy cái ghế nhựa nhỏ, nhưng đem lại cho mình sự thoải mái và mát mẻ,các bạn nên đến ăn thử nhé , địa chỉ mình có ghim ở trên màn hình",
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_014",
+      "url": "https://www.youtube.com/shorts/5e3nN9TmaAo",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "OCR_ONLY",
+      "expectedEvidenceSource": "ocr",
+      "actualTrack": "TRACK_2",
+      "actualReason": "TITLE_ONLY",
+      "actualEvidenceSource": "title",
+      "candidateAddress": "Tài Ký Mì Gia - Quán mì lâu đời hơn 30 năm cực kì ngon ở quận 7  #reviewanuong",
+      "normalizedAddress": "Tài Ký Mì Gia - Quán mì lâu đời hơn 30 năm cực kì ngon ở quận 7 #reviewanuong",
+      "pass": true,
+      "failures": [],
+      "classifications": [
+        "OCR_DISABLED_REASON_MISMATCH"
+      ],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/5e3nN9TmaAo",
+        "videoId": "5e3nN9TmaAo",
+        "title": "Tài Ký Mì Gia - Quán mì lâu đời hơn 30 năm cực kì ngon ở quận 7  #reviewanuong",
+        "description": "Nói không quá lời thì đây là 1 trong những quán mì người Hoa xứng đáng được viral nhất trên tiktok luôn đó, mình mới tìm được 1 quán ăn người Hoa lâu đời hơn 30 năm,được chế biến từ 1 trong những đầu bếp nổi tiếng nhất ở Sài Gòn,ở đây nổi tiếng với món mì vịt tiềm, hoành thánh,sủi cảo và nhất sợi mì ở đây nhiều màu sắc vô cùng đẹp mắt,1 tô ở đây siêu nhiều topping,hoành tráng chất lượng lắm luôn, mà có giá chỉ từ 43 ngàn, rẻ thật chứ, tui không xí gạt mọi người đâu,xem hết video này đi, bảo đảm thèm cho coi, hiiii xin chào mọi người đến với kênh Hải vi vu,mình đang có mặt tại Tài Ký mì gia,đây là 1 quán ăn người Hoa rất nổi tiếng,cực kì đông khách. nhưng mà bất ngờ hơn, đây là quán ăn của chú Đinh Văn Toan, ai mà xem tivi hồi xưa chắc không còn xa lạ gì với chú nữa,chú đã tham gia nhiều chương trình dạy nấu ăn trên tivi, cũng như là bếp trưởng của nhà hàng Dìn Ký,ở đây rất nổi tiếng với sợi mì tươi được làm tại chỗ, không chất bảo quản và phụ gia, mà còn có nhiều màu sắc như màu xanh matcha,màu đen than tre và màu vàng từ trứng, ngồi xem cho khách mà muốn mê luôn, mà công nhận 1 phần ăn ở đây chất lượng thật luôn đó nha mấy bồ, như cái tô mì vịt tiềm của mình nè, cái đùi cực kì to, được chiên giòn bên ngoài, thịt mềm ngọt bên trong, còn nước tiềm ở đây thì phải gọi là xuất sắc luôn, ở đây món này được yêu thích lắm đó, sau đó là phần mì thập cẩm đặc biệt, nổi bật nhất là sợi mì màu xanh matcha rất đẹp mắt luôn, sợi mì béo,cùng vị nước lèo đậm đà ăn siêu ngon luôn, topping thì quá trời , còn tô hủ tiếu cá cũng rất ngon luôn,cá mềm,tươi và rất nhiều, ăn sướng miệng . ngoài ra các món như mì hoành thánh,sủi cảo cũng cực kì chất lượng, mình thấy các món ở đây được chú làm bằng cả đam mê và trình độ, mình cảm thấy rất ngon, xứng đáng cho mọi người trải nghiệm,địa chỉ mình có ghim ở trên màn hình",
+        "channelTitle": "HẢI VI VU ( Ước Mơ Vòng Quanh Thế Gian )",
+        "publishedAt": "2026-06-21T05:06:49Z",
+        "duration": "PT1M26S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "TITLE_ONLY",
+        "evidenceSource": "title",
+        "candidateAddress": "Tài Ký Mì Gia - Quán mì lâu đời hơn 30 năm cực kì ngon ở quận 7  #reviewanuong",
+        "normalizedAddress": "Tài Ký Mì Gia - Quán mì lâu đời hơn 30 năm cực kì ngon ở quận 7 #reviewanuong",
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          },
+          {
+            "source": "title",
+            "rule": "TITLE_ADDRESS_WITHOUT_EXACT_PREFIX",
+            "accepted": false,
+            "reason": "TITLE_ONLY"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_015",
+      "url": "https://www.youtube.com/shorts/Vo2vRItP1d8",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "OCR_ONLY",
+      "expectedEvidenceSource": "ocr",
+      "actualTrack": "TRACK_2",
+      "actualReason": "NO_EXPLICIT_EVIDENCE",
+      "actualEvidenceSource": null,
+      "candidateAddress": null,
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [
+        "OCR_DISABLED_REASON_MISMATCH"
+      ],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/Vo2vRItP1d8",
+        "videoId": "Vo2vRItP1d8",
+        "title": "Hủ tiếu cá Thái Phiên - Ngon nhất ở Sài Gòn,giá cả bình dân, chính gốc người Hoa  #reviewanuong",
+        "description": "1 quán hủ tiếu cá ngon nhất ở Sài Gòn,quên cái tên Nam Lợi đi nha, ngon nhất trong lòng mình chắc chắn mình sẽ gọi tên quán hủ tiếu cá người Hoa ở Thái Phiên rồi , giá cả cực kì bình dân,rẻ bằng 1 nửa Nam Lợi, nhưng chất lượng thì thật sự phải gọi là đỉnh luôn, 1 tô ê hề cá, cật đầy cả tô, khách khứa đông chật kín, đủ thấy độ uy tín và hấp dẫn của quán rồi. Hiiii xin chào mọi người đến với kênh hải vi vu, Quán hủ tiếu cá nằm trong con hẻm nhỏ ở Thái Phiên, của 1 gia đình người Hoa đã bán được hơn 20 năm, ngoài hủ tiếu cá ra thì ở đây bán các món ăn người Hoa cũng thật sự rất xuất sắc. nhìn quầy đồ ăn và nồi nước lèo thơm phức là mình đã thấy thèm rồi . hôm nay gia đình mình gọi 1 tô hủ tiếu cá và cật ,cũng gọi thêm 1 tô mì giò heo kho. Thật sự mình ăn ở đây chưa bao giờ thất vọng, 1 tô rất chất lượng, cá và cật được cho rất nhiều,cá được xử lý kĩ, nên ăn không bị tanh, thấm kĩ nước lèo, ăn cực kì ngon, cật thì trụng vừa tới, nên giòn và ngọt thịt, chấm cùng tương sate của quán đúng là ngon . Còn đây là tô mì giò heo kho, các bạn xem nè, cục nào cục nấy to đùng, chất lượng lắm luôn, thịt được hầm rất mềm, húp cùng nước lèo của quán đậm đà, ngoài ra ở đây còn được cho thêm cả 1 chén tóp mỡ to đùng ăn kèm nè, nói thật là mình chưa tìm được quán nào có tóp mỡ ngon như vậy, tóp mỡ giòn rụm,ráo dầu,chấm cùng tương ăn rất ngon. 1 tô ở đây có mức giá là 57 ngàn, thật sự nhìn nhận lại được 1 phần ăn chất lượng, mình cảm thấy rẻ và hài lòng, địa chỉ mình có ghim ở trên màn hình",
+        "channelTitle": "HẢI VI VU ( Ước Mơ Vòng Quanh Thế Gian )",
+        "publishedAt": "2025-09-22T05:42:21Z",
+        "duration": "PT1M24S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "NO_EXPLICIT_EVIDENCE",
+        "evidenceSource": null,
+        "candidateAddress": null,
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_016",
+      "url": "https://m.youtube.com/shorts/zGrWnb9C84c",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "OCR_ONLY",
+      "expectedEvidenceSource": "ocr",
+      "actualTrack": "TRACK_2",
+      "actualReason": "NO_EXPLICIT_EVIDENCE",
+      "actualEvidenceSource": null,
+      "candidateAddress": null,
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [
+        "OCR_DISABLED_REASON_MISMATCH"
+      ],
+      "error": null,
+      "metadata": {
+        "url": "https://m.youtube.com/shorts/zGrWnb9C84c",
+        "videoId": "zGrWnb9C84c",
+        "title": "Anh Minh Quán - Quán ăn người hoa cực ngon,với món cơm chiên trứng phủ sốt gạch cua  #reviewanuong",
+        "description": "Quán cơm ngoài Hoa phủ trứng đang gây sốt trên mạng ,trời ta nói nhìn mê thật nha mấy bồ. Nghe đâu ở đây khai sinh ra mon cơm phủ trứng chảy sốt gạch cua đó,1 dĩa hoành tráng to đùng, đầy ắp topping như này, mà giá siêu bình dân, chỉ từ 40 ngàn cho 1 phần, đã thật chứ ,anh em nào mà chưa ăn thử, thì hơi bị tiếc đó nha. Hiii xin chào mọi người đến với kênh Hải vi vu, mình đang có mặt tại Anh Minh Quán,quán này thì đã quá nổi tiếng với các món ăn của người Hoa, nhất là những món ăn phủ trứng, quán này gây sốt với món cơm phủ trứng sốt gạch cua, ngồi nhìn anh chủ làm mấy món ăn ở đây công nhận đã mắt thật, món nào món nấy toàn đồ ăn tươi ngon,khách khứa hôm nay đông kín bàn, hôm nay mình phải ăn thử các món nổi tiếng ở đây, các bạn coi nè, phần cơm phủ trứng sốt gạch của mình thật sự nhìn đã thật, gạch của rất nhiều luôn, vị béo ngậy, thơm nức mũi, nước sốt ngập hết cả dĩa, nhà mình ăn ai cũng khen , còn món này là món mới của quán nè, cơm cá mòi phủ trứng, món này thì mùi thơm nhẹ nhàng hơn, cá mòi được cho vào dĩa rất nhiều,cá mềm,được nêm đậm đà,hương vị cũng rất hài hoà, ai mà không ăn được gạch cua vì dị ứng, thì ăn món này đúng là chuẩn luôn,ở đây có món miến hải sản phủ trứng cũng được khách gọi rất là nhiều luôn, miến được xào với các gia vị đặc trưng,thơm lừng mùi gia vị , và nhất là lớp trứng phủ bên trên cùng tôm tươi, sò điệp , nhìn rất chất lượng, hải sản ở đây phải nói là siêu tươi luôn, rất ngon và ngọt thịt, miến được xào vừa phải, nên vẫn giữ được độ dai. còn món cuối cùng mà các bạn nên thử là món bánh canh xào tôm thịt này nha, bánh canh thì mình ăn rất là nhiều rồi, nhưng đây là lần đầu tiên mình được ăn bánh canh xào theo kiểu người Hoa như này, nhìn thấy lạ, nhưng ăn lại ổn áp vô cùng nè, bánh canh được xào kĩ trên lửa lớn, cùng với tôm tươi , và quá trời thịt. Khen quá thì cũng hơi kì thật, nhưng ở đây chắc chắn là 1 trong những quán ăn người hoa ngon nhất ở Sài Gòn mà các bạn nhất định các bạn nên thử , địa chỉ mình có ghim ở trên màn hình nè",
+        "channelTitle": "HẢI VI VU ( Ước Mơ Vòng Quanh Thế Gian )",
+        "publishedAt": "2026-03-03T09:29:51Z",
+        "duration": "PT1M39S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "NO_EXPLICIT_EVIDENCE",
+        "evidenceSource": null,
+        "candidateAddress": null,
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_017",
+      "url": "https://www.youtube.com/shorts/avLPlQA7w0I",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "TITLE_ONLY",
+      "expectedEvidenceSource": "title",
+      "actualTrack": "TRACK_2",
+      "actualReason": "TITLE_ONLY",
+      "actualEvidenceSource": "title",
+      "candidateAddress": "NỘM LONG VI DUNG - 23 Hồ Hoàn Kiếm, Quận Hoàn Kiếm, Hà Nội",
+      "normalizedAddress": "NỘM LONG VI DUNG - 23 Hồ Hoàn Kiếm, Quận Hoàn Kiếm, Hà Nội",
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/avLPlQA7w0I",
+        "videoId": "avLPlQA7w0I",
+        "title": "NỘM LONG VI DUNG - 23 Hồ Hoàn Kiếm, Quận Hoàn Kiếm, Hà Nội",
+        "description": "Đừng quên follow và subscribe mình nhé!\n✰ Youtube: https://youtube.com/ninhtito\n✰ Instagram: https://instagram.com/ninheating\n✰ TikTok: https://www.tiktok.com/@ninhtito\n✰ Fanpage: https://facebook.com/ninheating\n✰ BẢN ĐỒ ĂN: https://ninhtito.com/bandoan\n✰ Podcast: http://podcast.ninhtito.com\n#ninhtito #ninhtravel #ninheating\n---------------------\n© Bản quyền thuộc về Ninh Titô\n© Copyright by Ninh Titô ☞ Do not Reup\nNếu có nhu cầu, vui lòng liên hệ tới địa chỉ contact@ninhtito.com để được tư vấn và hỗ trợ.\n---\nClip này không có quảng cáo.",
+        "channelTitle": "Ninh Titô",
+        "publishedAt": "2023-02-02T05:10:46Z",
+        "duration": "PT1M",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "TITLE_ONLY",
+        "evidenceSource": "title",
+        "candidateAddress": "NỘM LONG VI DUNG - 23 Hồ Hoàn Kiếm, Quận Hoàn Kiếm, Hà Nội",
+        "normalizedAddress": "NỘM LONG VI DUNG - 23 Hồ Hoàn Kiếm, Quận Hoàn Kiếm, Hà Nội",
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          },
+          {
+            "source": "title",
+            "rule": "TITLE_ADDRESS_WITHOUT_EXACT_PREFIX",
+            "accepted": false,
+            "reason": "TITLE_ONLY"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_018",
+      "url": "https://www.youtube.com/shorts/W8ewx2gZqU4",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "NO_EXPLICIT_EVIDENCE",
+      "expectedEvidenceSource": null,
+      "actualTrack": "TRACK_2",
+      "actualReason": "NO_EXPLICIT_EVIDENCE",
+      "actualEvidenceSource": null,
+      "candidateAddress": null,
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/W8ewx2gZqU4",
+        "videoId": "W8ewx2gZqU4",
+        "title": "BÁNH MÌ CHẢ NÓNG DŨNG HẠNH // Hơn 30 năm kinh doanh bánh mì",
+        "description": "Để có được chỗ đứng 29 năm trong nghề, Dũng Hạnh sở luôn đầu tư từ dịch vụ đến chất lượng sản phẩm. Được biết, ban đầu quán chỉ là một xe đẩy nhỏ bán ven đường, sau phát triển thêm mặt bằng để đáp ứng nhu cầu thực khách ăn tại chỗ lẫn mua về. Không những thế, quán còn phục vụ đa dạng loại giò chả, định hình menu phong phú, đưa ra nhiều sự lựa chọn cho khách hàng. Theo đó, chất lượng chả gia truyền, được hấp theo miếng to, khi mua sẽ được nhân viên cắt nhỏ để bán. Chỉ tiệm cũng từng chia sẻ làm vậy để chả luôn mọng nước, ngon miệng, không gây cảm giác khô ran khó chịu.\n\nHiện nay, Bánh mì Dũng Hạnh chỉ có một cơ sở chính hãng duy nhất tại số 20 Lê Đại Hành, Quận Hai Bà Trưng, Thành phố Hà Nội.\n\nGiờ phục vụ: 06:00 – 20:00 mỗi ngày.\n---\nĐừng quên follow và subscribe mình nhé!\n✰ Youtube: https://youtube.com/ninhtito\n✰ Instagram: https://instagram.com/ninheating\n✰ TikTok: https://www.tiktok.com/@ninhtito\n✰ Fanpage: https://facebook.com/ninheating\n✰ BẢN ĐỒ ĂN: https://ninhtito.com/bandoan\n✰ Podcast: http://podcast.ninhtito.com\n#ninhtito #ninhtravel #ninheating #shorts #tiktok\n---------------------\n© Bản quyền thuộc về Ninh Titô\n© Copyright by Ninh Titô ☞ Do not Reup\nNếu có nhu cầu, vui lòng liên hệ tới địa chỉ contact@ninhtito.com để được tư vấn và hỗ trợ.\n---\nClip này không có quảng cáo.",
+        "channelTitle": "Ninh Titô",
+        "publishedAt": "2023-02-15T04:45:01Z",
+        "duration": "PT1M",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "NO_EXPLICIT_EVIDENCE",
+        "evidenceSource": null,
+        "candidateAddress": null,
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_019",
+      "url": "https://www.youtube.com/shorts/i-_71qo3mOE",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "TITLE_ONLY",
+      "expectedEvidenceSource": "title",
+      "actualTrack": "TRACK_2",
+      "actualReason": "TITLE_ONLY",
+      "actualEvidenceSource": "title",
+      "candidateAddress": "Tổng hợp quán ăn ngon Quận 8 rất nhiều quán ngon đón chờ #tieusanhdaily #foodreview #anngon #amthuc",
+      "normalizedAddress": "Tổng hợp quán ăn ngon Quận 8 rất nhiều quán ngon đón chờ #tieusanhdaily #foodreview #anngon #amthuc",
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/i-_71qo3mOE",
+        "videoId": "i-_71qo3mOE",
+        "title": "Tổng hợp quán ăn ngon Quận 8 rất nhiều quán ngon đón chờ #tieusanhdaily #foodreview #anngon #amthuc",
+        "description": "",
+        "channelTitle": "Tiểu Sanh Phàm Ăn",
+        "publishedAt": "2025-08-06T05:53:42Z",
+        "duration": "PT1M",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "TITLE_ONLY",
+        "evidenceSource": "title",
+        "candidateAddress": "Tổng hợp quán ăn ngon Quận 8 rất nhiều quán ngon đón chờ #tieusanhdaily #foodreview #anngon #amthuc",
+        "normalizedAddress": "Tổng hợp quán ăn ngon Quận 8 rất nhiều quán ngon đón chờ #tieusanhdaily #foodreview #anngon #amthuc",
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          },
+          {
+            "source": "title",
+            "rule": "TITLE_ADDRESS_WITHOUT_EXACT_PREFIX",
+            "accepted": false,
+            "reason": "TITLE_ONLY"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_020",
+      "url": "https://www.youtube.com/shorts/jsJ8bkSfC-c",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "NO_EXPLICIT_EVIDENCE",
+      "expectedEvidenceSource": null,
+      "actualTrack": "TRACK_2",
+      "actualReason": "TRUNCATED_EVIDENCE",
+      "actualEvidenceSource": "description",
+      "candidateAddress": "Chợ Hàng Bè từ lâu đã trở thành một địa chỉ quen thuộc của những tín đồ ẩm thực Hà Nội. Nơi đây tập trung vô vàn món ăn ngon, từ những món ăn truyền thống đậm đà hương vị đến các món ăn hiện đại, đáp ứng mọi khẩu vị của thực khách, từ những đĩa xôi nóng hổi, bát phở thơm lừng đến các món mặn như cá kho, thịt đông, nem rán... tất cả đều được chế biến tỉ mỉ, đảm bảo mang đến cho bạn những trải nghiệm ẩm thực tuyệt vời nhất.\n#hanoi #hanoionline #nhipsonghanoi \n----\n➡ Đây là Kênh Youtube chính thức của Đài Phát thanh và Truyền hình Hà Nội.\n➡ Click Theo dõi (Subscribe) để nhận thông tin tin tức kịp thời trên kênh Youtube của Đài Phát thanh và Truyền hình Hà Nội:\nhttps://www.youtube.com/HaNoiTVGo?sub_confirmation=1\n\n👉 THÔNG TIN LIÊN HỆ: \n🔶 Đài Phát Thanh Truyền Hình Hà Nội: Số 3-5 Huỳnh Thúc Kháng, Đống Đa, Hà Nội\n📧 Email: ttnoidungso@daihanoi.vn\n☎️ Điện thoại: 0865.116.699\n\n#DaiHaNoi #HanoiOnline",
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [
+        "TRACK2_REASON_MISMATCH"
+      ],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/jsJ8bkSfC-c",
+        "videoId": "jsJ8bkSfC-c",
+        "title": "\"Thiên đường\" đồ ăn sẵn khu phố cổ Hà Nội #shorts #nhipsonghanoi #amthuc",
+        "description": "Chợ Hàng Bè từ lâu đã trở thành một địa chỉ quen thuộc của những tín đồ ẩm thực Hà Nội. Nơi đây tập trung vô vàn món ăn ngon, từ những món ăn truyền thống đậm đà hương vị đến các món ăn hiện đại, đáp ứng mọi khẩu vị của thực khách, từ những đĩa xôi nóng hổi, bát phở thơm lừng đến các món mặn như cá kho, thịt đông, nem rán... tất cả đều được chế biến tỉ mỉ, đảm bảo mang đến cho bạn những trải nghiệm ẩm thực tuyệt vời nhất.\n#hanoi #hanoionline #nhipsonghanoi \n----\n➡ Đây là Kênh Youtube chính thức của Đài Phát thanh và Truyền hình Hà Nội.\n➡ Click Theo dõi (Subscribe) để nhận thông tin tin tức kịp thời trên kênh Youtube của Đài Phát thanh và Truyền hình Hà Nội:\nhttps://www.youtube.com/HaNoiTVGo?sub_confirmation=1\n\n👉 THÔNG TIN LIÊN HỆ: \n🔶 Đài Phát Thanh Truyền Hình Hà Nội: Số 3-5 Huỳnh Thúc Kháng, Đống Đa, Hà Nội\n📧 Email: ttnoidungso@daihanoi.vn\n☎️ Điện thoại: 0865.116.699\n\n#DaiHaNoi #HanoiOnline",
+        "channelTitle": "HTV - Đài Hà Nội",
+        "publishedAt": "2024-10-16T09:16:50Z",
+        "duration": "PT59S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "TRUNCATED_EVIDENCE",
+        "evidenceSource": "description",
+        "candidateAddress": "Chợ Hàng Bè từ lâu đã trở thành một địa chỉ quen thuộc của những tín đồ ẩm thực Hà Nội. Nơi đây tập trung vô vàn món ăn ngon, từ những món ăn truyền thống đậm đà hương vị đến các món ăn hiện đại, đáp ứng mọi khẩu vị của thực khách, từ những đĩa xôi nóng hổi, bát phở thơm lừng đến các món mặn như cá kho, thịt đông, nem rán... tất cả đều được chế biến tỉ mỉ, đảm bảo mang đến cho bạn những trải nghiệm ẩm thực tuyệt vời nhất.\n#hanoi #hanoionline #nhipsonghanoi \n----\n➡ Đây là Kênh Youtube chính thức của Đài Phát thanh và Truyền hình Hà Nội.\n➡ Click Theo dõi (Subscribe) để nhận thông tin tin tức kịp thời trên kênh Youtube của Đài Phát thanh và Truyền hình Hà Nội:\nhttps://www.youtube.com/HaNoiTVGo?sub_confirmation=1\n\n👉 THÔNG TIN LIÊN HỆ: \n🔶 Đài Phát Thanh Truyền Hình Hà Nội: Số 3-5 Huỳnh Thúc Kháng, Đống Đa, Hà Nội\n📧 Email: ttnoidungso@daihanoi.vn\n☎️ Điện thoại: 0865.116.699\n\n#DaiHaNoi #HanoiOnline",
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_021",
+      "url": "https://m.youtube.com/shorts/ABu9EuMbb5A",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "TRUNCATED_EVIDENCE",
+      "expectedEvidenceSource": "description",
+      "actualTrack": "TRACK_2",
+      "actualReason": "NO_EXPLICIT_EVIDENCE",
+      "actualEvidenceSource": null,
+      "candidateAddress": null,
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [
+        "TRACK2_REASON_MISMATCH"
+      ],
+      "error": null,
+      "metadata": {
+        "url": "https://m.youtube.com/shorts/ABu9EuMbb5A",
+        "videoId": "ABu9EuMbb5A",
+        "title": "Bún đậu mắm tôm #shorts",
+        "description": "Bún đậu Gánh tại địa chỉ 216 Hoàng Ngân, Hà Nội là một trong những quán bún đậu mắm tôm được nhiều thực khách, đặc biệt là giới trẻ yêu thích. Món bún đậu mắm tôm tại đây thường bao gồm: bún lá, đậu rán giòn, chả cốm, thịt luộc. Bún đậu mắm tôm là một món ăn dân dã, có cách chế biến đơn giản nhưng lại chinh phục thực khách bởi sự hài hòa giữa các nguyên liệu. Từ những gánh hàng rong thủa xa xưa đến các quán ăn hiện đại ngày nay, bún đậu mắm tôm đã trở thành món ăn quen thuộc, mang đậm dấu ấn Hà Nội.\n#daihanoi #monngonohathanh #bundaumamtom \n► Chương trình truyền hình ẩm thực đặc sắc của Đài Phát thanh và Truyền hình Hà Nội\n\n👉 Click Theo dõi (Subscribe) ngay hôm nay để nhận thông báo về video mới nhất, cập nhật thông tin các món ăn, không bỏ lỡ thực đơn đặc sản và tham gia cộng đồng ẩm thực của người Hà Nội, cùng trao đổi, chia sẻ thông tin: \nhttps://www.youtube.com/@MonNgonoHaThanh\n\n👉 THÔNG TIN LIÊN HỆ: \n🔶 Đài Phát Thanh Truyền Hình Hà Nội: Số 3-5 Huỳnh Thúc Kháng, Đống Đa, Hà Nội\n📧 Email: ttnoidungso@daihanoi.vn\n☎️ Hotline : 0865.116.699\n📞 Liên hệ quảng cáo: 0982.02.1982",
+        "channelTitle": "Món ngon ở Hà Thành",
+        "publishedAt": "2025-05-30T01:00:20Z",
+        "duration": "PT59S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "NO_EXPLICIT_EVIDENCE",
+        "evidenceSource": null,
+        "candidateAddress": null,
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_022",
+      "url": "https://www.youtube.com/shorts/WDckuulKB6g",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "NO_EXPLICIT_EVIDENCE",
+      "expectedEvidenceSource": null,
+      "actualTrack": "TRACK_2",
+      "actualReason": "NO_EXPLICIT_EVIDENCE",
+      "actualEvidenceSource": null,
+      "candidateAddress": null,
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/WDckuulKB6g",
+        "videoId": "WDckuulKB6g",
+        "title": "Nem cua biển #shorts",
+        "description": "Có một địa chỉ trên phố Giảng Võ nổi tiếng với món nem cua biển đặc sắc, từng được CNN bình chọn là quán ăn có món nem cua biển ngon nhất. Hãy cùng Món ngon Hà Thành ngày hôm nay  tìm hiểu món nem cua biển tại đây có gì mà lại hấp dẫn thực khách đến thế.\n#monngonhathanh #monanngon #monngonhanoi #nemcuabien\n----\n➡ Đây là Kênh Youtube chính thức của Đài Phát thanh và Truyền hình Hà Nội.\n➡ Click Theo dõi (Subscribe) để nhận thông tin tin tức kịp thời trên kênh Youtube của Đài Phát thanh và Truyền hình Hà Nội:\nhttps://www.youtube.com/HaNoiTVGo?sub_confirmation=1\n\n👉 THÔNG TIN LIÊN HỆ: \n🔶 Đài Phát Thanh Truyền Hình Hà Nội: Số 3-5 Huỳnh Thúc Kháng, Đống Đa, Hà Nội\n📧 Email: ttnoidungso@daihanoi.vn\n☎️ Điện thoại: 0865.116.699\n\n#DaiHaNoi #HanoiOnline",
+        "channelTitle": "HTV - Đài Hà Nội",
+        "publishedAt": "2025-06-20T10:14:51Z",
+        "duration": "PT1M30S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "NO_EXPLICIT_EVIDENCE",
+        "evidenceSource": null,
+        "candidateAddress": null,
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_023",
+      "url": "https://www.youtube.com/shorts/Gv5Kcox1gIQ",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "TRUNCATED_EVIDENCE",
+      "expectedEvidenceSource": "description",
+      "actualTrack": "TRACK_2",
+      "actualReason": "NO_EXPLICIT_EVIDENCE",
+      "actualEvidenceSource": null,
+      "candidateAddress": null,
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [
+        "TRACK2_REASON_MISMATCH"
+      ],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/Gv5Kcox1gIQ",
+        "videoId": "Gv5Kcox1gIQ",
+        "title": "Mì vằn thắn #shorts",
+        "description": "Nằm nép mình trên con phố Đinh Liệt tấp nập giữa lòng phố cổ Hà Nội, có một quán ăn nhỏ đã phục vụ suốt hơn nửa thế kỷ qua. Không biển hiệu rực rỡ, chẳng cần quảng cáo ồn ào, nhưng ai sành ăn mỳ Hà Nội cũng đều biết: đây chính là một trong những địa chỉ mỳ vằn thắn chính hiệu và lâu đời của phố Hàng. Quán giữ nguyên tinh thần của mỳ vằn thắn – từ sợi mỳ trứng đặt riêng theo công thức gia truyền, nhân hoành thánh và sủi cảo tự tay gói mỗi sáng, đến nồi nước dùng trong veo ngọt thanh được ninh kỹ từ xương ống, sá sùng, tôm khô và nấm hương. Giữa bao đổi thay của phố phường, quán mỳ vằn thắn Đinh Liệt vẫn không thay đổi hương vị của một món ngon trên đất Hà Thành. Một địa chỉ cũ, một hương vị xưa giữa lòng phố thị ngày càng vội vã.\n#monngonhathanh #monanngon #monngonhanoi #mivanthan\n----\n➡ Đây là Kênh Youtube chính thức của Đài Phát thanh và Truyền hình Hà Nội.\n➡ Click Theo dõi (Subscribe) để nhận thông tin tin tức kịp thời trên kênh Youtube của Đài Phát thanh và Truyền hình Hà Nội:\nhttps://www.youtube.com/HaNoiTVGo?sub_confirmation=1\n\n👉 THÔNG TIN LIÊN HỆ: \n🔶 Đài Phát Thanh Truyền Hình Hà Nội: Số 3-5 Huỳnh Thúc Kháng, Đống Đa, Hà Nội\n📧 Email: ttnoidungso@daihanoi.vn\n☎️ Điện thoại: 0865.116.699\n\n#DaiHaNoi #HanoiOnline",
+        "channelTitle": "HTV - Đài Hà Nội",
+        "publishedAt": "2025-07-20T15:48:33Z",
+        "duration": "PT2M15S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "NO_EXPLICIT_EVIDENCE",
+        "evidenceSource": null,
+        "candidateAddress": null,
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_024",
+      "url": "https://www.youtube.com/shorts/MFJYWsgZ3gA",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "NO_EXPLICIT_EVIDENCE",
+      "expectedEvidenceSource": null,
+      "actualTrack": "TRACK_2",
+      "actualReason": "NO_EXPLICIT_EVIDENCE",
+      "actualEvidenceSource": null,
+      "candidateAddress": null,
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/MFJYWsgZ3gA",
+        "videoId": "MFJYWsgZ3gA",
+        "title": "Tổng hợp quán ngon Bình Tân Phần 1 #tieusanhdaily #foodreview #anngon #amthuc #foodie #fyp #xuhuong",
+        "description": "",
+        "channelTitle": "Tiểu Sanh Phàm Ăn",
+        "publishedAt": "2025-05-22T09:30:30Z",
+        "duration": "PT56S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "NO_EXPLICIT_EVIDENCE",
+        "evidenceSource": null,
+        "candidateAddress": null,
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_025",
+      "url": "https://www.youtube.com/shorts/QdAGUbaZj0U",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "TITLE_ONLY",
+      "expectedEvidenceSource": "title",
+      "actualTrack": "TRACK_2",
+      "actualReason": "TITLE_ONLY",
+      "actualEvidenceSource": "title",
+      "candidateAddress": "Top món ngon ở Quận 5 không phải ai cũng biết | Đi Đâu Sài Gòn",
+      "normalizedAddress": "Top món ngon ở Quận 5 không phải ai cũng biết | Đi Đâu Sài Gòn",
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/QdAGUbaZj0U",
+        "videoId": "QdAGUbaZj0U",
+        "title": "Top món ngon ở Quận 5 không phải ai cũng biết | Đi Đâu Sài Gòn",
+        "description": "",
+        "channelTitle": "Đi Đây Đi Đó",
+        "publishedAt": "2024-01-02T05:39:43Z",
+        "duration": "PT58S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "TITLE_ONLY",
+        "evidenceSource": "title",
+        "candidateAddress": "Top món ngon ở Quận 5 không phải ai cũng biết | Đi Đâu Sài Gòn",
+        "normalizedAddress": "Top món ngon ở Quận 5 không phải ai cũng biết | Đi Đâu Sài Gòn",
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          },
+          {
+            "source": "title",
+            "rule": "TITLE_ADDRESS_WITHOUT_EXACT_PREFIX",
+            "accepted": false,
+            "reason": "TITLE_ONLY"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_026",
+      "url": "https://www.youtube.com/shorts/9BZ8f4B300E",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "TRUNCATED_EVIDENCE",
+      "expectedEvidenceSource": "description",
+      "actualTrack": "TRACK_2",
+      "actualReason": "TRUNCATED_EVIDENCE",
+      "actualEvidenceSource": "description",
+      "candidateAddress": "#bunbothoda  #bunbothodahoado #dalatfood #emilyna #emilynabeauty #food #foodreview \nHello các tình yêu của Emily. Nhân dịp cả nhà Emily đi du lịch Đà Lạt và có trải nghiệm thú vị ở quán Bún Bò Thố Đá Hoa Dó tại đây nên Emily không quên quay lại chiếc vlog nhỏ xinh để chia sẻ với mọi người nè. Mọi người cùng gia đình Emily đi ăn bún bò nhoa!😘\nĐừng quên cho Emily 1 LIKE, 1 SHARE, và 1 SUBSCRIBE để theo dõi phần tiếp theo và các video mới nhất của Emily nhé!!! Mãi yêu!!! ❤️🥰🥳😍😘\n-------------------------------------------------------------------------------------------------------------\n🏠 Địa chỉ các nơi trong video:\n🍜🥩 BÚN BÒ THỐ ĐÁ HOA DÓ:\n15A Nguyễn Du, P. 9, TP. Đà Lạt, Lâm Đồng\n-----------------------------------------------------------------------------------------\n📹 Videos xem thêm:\n👉 FOOD REVIEW:\nhttps://bit.ly/3KMxIov\n\n👉 Cooking:\nhttps://youtube.com/playlist?list=PLi...\n\n👉 MAKEUP:\nhttps://bit.ly/2FLD1DX\n-------------------------------------------------------------------------------------------------------------\n👇Đăng ký theo dõi:\n+ Youtube: https://bit.ly/2JSrdoB\n+ Facebook page: https://www.facebook.com/EmilynaBeauty/\n+ Instagram: https://www.instagram.com/nplyna/\n--------------------------------------------------------------------------------------------------------------\n📮Contact for work:\nEmail: npdaitrang@gmail.com\n--------------------------------------------------------------------------------------------------------------\n❌ This video was not sponsored.\n--------------------------------------------------------------------------------------------------------------\n© Bản quyền thuộc về Emilyna Beauty Official 👉 Xin vui lòng không đăng lại!\n© Copyright by Emilyna Beauty Official 👉 Please do not Reup!",
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/9BZ8f4B300E",
+        "videoId": "9BZ8f4B300E",
+        "title": "[FOOD REVIEW] BÚN BÒ THỐ ĐÁ HOA DÓ ĐÀ LẠT | EMILYNA #bunbothoda #dalat",
+        "description": "#bunbothoda  #bunbothodahoado #dalatfood #emilyna #emilynabeauty #food #foodreview \nHello các tình yêu của Emily. Nhân dịp cả nhà Emily đi du lịch Đà Lạt và có trải nghiệm thú vị ở quán Bún Bò Thố Đá Hoa Dó tại đây nên Emily không quên quay lại chiếc vlog nhỏ xinh để chia sẻ với mọi người nè. Mọi người cùng gia đình Emily đi ăn bún bò nhoa!😘\nĐừng quên cho Emily 1 LIKE, 1 SHARE, và 1 SUBSCRIBE để theo dõi phần tiếp theo và các video mới nhất của Emily nhé!!! Mãi yêu!!! ❤️🥰🥳😍😘\n-------------------------------------------------------------------------------------------------------------\n🏠 Địa chỉ các nơi trong video:\n🍜🥩 BÚN BÒ THỐ ĐÁ HOA DÓ:\n15A Nguyễn Du, P. 9, TP. Đà Lạt, Lâm Đồng\n-----------------------------------------------------------------------------------------\n📹 Videos xem thêm:\n👉 FOOD REVIEW:\nhttps://bit.ly/3KMxIov\n\n👉 Cooking:\nhttps://youtube.com/playlist?list=PLi...\n\n👉 MAKEUP:\nhttps://bit.ly/2FLD1DX\n-------------------------------------------------------------------------------------------------------------\n👇Đăng ký theo dõi:\n+ Youtube: https://bit.ly/2JSrdoB\n+ Facebook page: https://www.facebook.com/EmilynaBeauty/\n+ Instagram: https://www.instagram.com/nplyna/\n--------------------------------------------------------------------------------------------------------------\n📮Contact for work:\nEmail: npdaitrang@gmail.com\n--------------------------------------------------------------------------------------------------------------\n❌ This video was not sponsored.\n--------------------------------------------------------------------------------------------------------------\n© Bản quyền thuộc về Emilyna Beauty Official 👉 Xin vui lòng không đăng lại!\n© Copyright by Emilyna Beauty Official 👉 Please do not Reup!",
+        "channelTitle": "Emilyna Beauty Official",
+        "publishedAt": "2025-02-07T13:53:53Z",
+        "duration": "PT1M46S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "TRUNCATED_EVIDENCE",
+        "evidenceSource": "description",
+        "candidateAddress": "#bunbothoda  #bunbothodahoado #dalatfood #emilyna #emilynabeauty #food #foodreview \nHello các tình yêu của Emily. Nhân dịp cả nhà Emily đi du lịch Đà Lạt và có trải nghiệm thú vị ở quán Bún Bò Thố Đá Hoa Dó tại đây nên Emily không quên quay lại chiếc vlog nhỏ xinh để chia sẻ với mọi người nè. Mọi người cùng gia đình Emily đi ăn bún bò nhoa!😘\nĐừng quên cho Emily 1 LIKE, 1 SHARE, và 1 SUBSCRIBE để theo dõi phần tiếp theo và các video mới nhất của Emily nhé!!! Mãi yêu!!! ❤️🥰🥳😍😘\n-------------------------------------------------------------------------------------------------------------\n🏠 Địa chỉ các nơi trong video:\n🍜🥩 BÚN BÒ THỐ ĐÁ HOA DÓ:\n15A Nguyễn Du, P. 9, TP. Đà Lạt, Lâm Đồng\n-----------------------------------------------------------------------------------------\n📹 Videos xem thêm:\n👉 FOOD REVIEW:\nhttps://bit.ly/3KMxIov\n\n👉 Cooking:\nhttps://youtube.com/playlist?list=PLi...\n\n👉 MAKEUP:\nhttps://bit.ly/2FLD1DX\n-------------------------------------------------------------------------------------------------------------\n👇Đăng ký theo dõi:\n+ Youtube: https://bit.ly/2JSrdoB\n+ Facebook page: https://www.facebook.com/EmilynaBeauty/\n+ Instagram: https://www.instagram.com/nplyna/\n--------------------------------------------------------------------------------------------------------------\n📮Contact for work:\nEmail: npdaitrang@gmail.com\n--------------------------------------------------------------------------------------------------------------\n❌ This video was not sponsored.\n--------------------------------------------------------------------------------------------------------------\n© Bản quyền thuộc về Emilyna Beauty Official 👉 Xin vui lòng không đăng lại!\n© Copyright by Emilyna Beauty Official 👉 Please do not Reup!",
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_027",
+      "url": "https://www.youtube.com/shorts/qONsGB7T-Ig",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "NO_EXPLICIT_EVIDENCE",
+      "expectedEvidenceSource": null,
+      "actualTrack": "TRACK_2",
+      "actualReason": "NO_EXPLICIT_EVIDENCE",
+      "actualEvidenceSource": null,
+      "candidateAddress": null,
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/qONsGB7T-Ig",
+        "videoId": "qONsGB7T-Ig",
+        "title": "Top 8 quán ngon nên thử ở Bình Thạnh | Đi Đâu Sài Gòn",
+        "description": "",
+        "channelTitle": "Đi Đây Đi Đó",
+        "publishedAt": "2024-02-28T14:07:20Z",
+        "duration": "PT55S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "NO_EXPLICIT_EVIDENCE",
+        "evidenceSource": null,
+        "candidateAddress": null,
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_028",
+      "url": "https://www.youtube.com/shorts/tTXYvs45-yk",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "NO_EXPLICIT_EVIDENCE",
+      "expectedEvidenceSource": null,
+      "actualTrack": "TRACK_2",
+      "actualReason": "NO_EXPLICIT_EVIDENCE",
+      "actualEvidenceSource": null,
+      "candidateAddress": null,
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/tTXYvs45-yk",
+        "videoId": "tTXYvs45-yk",
+        "title": "NHỮNG QUÁN ĂN BÁN GIÁ RẺ NHƯ CHO | Khải Khám Phá #khaikhampha #foodreview #review #lifestyle #fyp",
+        "description": "#shorts #khaikhampha #foodreview #review \n--------- \n▶ Follow me on:\n● Facebook: https://www.facebook.com/quang.khai.77398143/\n● Instagram: https://www.instagram.com/trinhquangkhaii/\n● TikTok: https://www.tiktok.com/@khaikhampha \n✉ E-mail: quangkhai010701@gmail.com\n----------///--------------------------\n© Bản quyền thuộc về Khải Khám Phá\n© Copyright by Khải Khám Phá ☛ Do not Reup",
+        "channelTitle": "Khải Khám Phá",
+        "publishedAt": "2023-10-29T09:00:30Z",
+        "duration": "PT36S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "NO_EXPLICIT_EVIDENCE",
+        "evidenceSource": null,
+        "candidateAddress": null,
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_029",
+      "url": "https://www.youtube.com/shorts/qr_LgJ2N3Ro",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "NO_EXPLICIT_EVIDENCE",
+      "expectedEvidenceSource": null,
+      "actualTrack": "TRACK_2",
+      "actualReason": "TRUNCATED_EVIDENCE",
+      "actualEvidenceSource": "description",
+      "candidateAddress": "#ngontv #saigonbaongon #anvatsaigon\nMột quán phở bò đặc biệt ở phố Nguyễn Du (quận Hai Bà Trưng, thành phố Hà Nội) tặng cơm nguội cho thực khách ăn kèm thu hút sự chú ý của nhiều người dân thủ đô. Lượng gạo được quán nấu mỗi ngày lên tới khoảng 30 kilogam.\n\n-------------\nMời bạn tham gia cộng đồng Ngon TV, cùng chia sẻ những thông tin hay về món ăn, quán ăn... với group \"Sài Gòn bao ngon\" \n ➡️➡️➡️ www.facebook.com/groups/saigonbaongon/\n-------------\nNgon TV, kênh giới thiệu món ngon, văn hóa ẩm thực, cách thức chế biến các món ngon. Ngon TV là nơi hội tụ của những người mê ăn uống. Ngon TV là kênh chính thức của Báo Thanh Niên.\nHãy truy cập: video.thanhnien.vn \nTheo dõi kênh TikTok Ngon TV: https://www.tiktok.com/@ngon.tv?lang=vi-VN\n-------------\nHãy đăng ký kênh: http://popsww.com/NgonTV\n\nTheo dõi và like Báo Thanh Niên trên Facebook: Facebook.com/thanhnien\n---------\nLiên hệ: 268 - 270 Nguyễn Đình Chiểu, Phường 6, Q.3, TP HCM \nĐT: (+84.8) 39302302 \nFax: (+84.8) 39309939 \nEmail: tnmedia@thanhnien.vn\nLiên hệ hợp tác: tnmedia@thanhnien.vn",
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [
+        "TRACK2_REASON_MISMATCH"
+      ],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/qr_LgJ2N3Ro",
+        "videoId": "qr_LgJ2N3Ro",
+        "title": "Món phở ăn kèm cơm nguội ở Hà Nội: Ngày nấu 30 kg gạo #shorts",
+        "description": "#ngontv #saigonbaongon #anvatsaigon\nMột quán phở bò đặc biệt ở phố Nguyễn Du (quận Hai Bà Trưng, thành phố Hà Nội) tặng cơm nguội cho thực khách ăn kèm thu hút sự chú ý của nhiều người dân thủ đô. Lượng gạo được quán nấu mỗi ngày lên tới khoảng 30 kilogam.\n\n-------------\nMời bạn tham gia cộng đồng Ngon TV, cùng chia sẻ những thông tin hay về món ăn, quán ăn... với group \"Sài Gòn bao ngon\" \n ➡️➡️➡️ www.facebook.com/groups/saigonbaongon/\n-------------\nNgon TV, kênh giới thiệu món ngon, văn hóa ẩm thực, cách thức chế biến các món ngon. Ngon TV là nơi hội tụ của những người mê ăn uống. Ngon TV là kênh chính thức của Báo Thanh Niên.\nHãy truy cập: video.thanhnien.vn \nTheo dõi kênh TikTok Ngon TV: https://www.tiktok.com/@ngon.tv?lang=vi-VN\n-------------\nHãy đăng ký kênh: http://popsww.com/NgonTV\n\nTheo dõi và like Báo Thanh Niên trên Facebook: Facebook.com/thanhnien\n---------\nLiên hệ: 268 - 270 Nguyễn Đình Chiểu, Phường 6, Q.3, TP HCM \nĐT: (+84.8) 39302302 \nFax: (+84.8) 39309939 \nEmail: tnmedia@thanhnien.vn\nLiên hệ hợp tác: tnmedia@thanhnien.vn",
+        "channelTitle": "Ngon TV",
+        "publishedAt": "2023-08-11T08:00:24Z",
+        "duration": "PT59S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "TRUNCATED_EVIDENCE",
+        "evidenceSource": "description",
+        "candidateAddress": "#ngontv #saigonbaongon #anvatsaigon\nMột quán phở bò đặc biệt ở phố Nguyễn Du (quận Hai Bà Trưng, thành phố Hà Nội) tặng cơm nguội cho thực khách ăn kèm thu hút sự chú ý của nhiều người dân thủ đô. Lượng gạo được quán nấu mỗi ngày lên tới khoảng 30 kilogam.\n\n-------------\nMời bạn tham gia cộng đồng Ngon TV, cùng chia sẻ những thông tin hay về món ăn, quán ăn... với group \"Sài Gòn bao ngon\" \n ➡️➡️➡️ www.facebook.com/groups/saigonbaongon/\n-------------\nNgon TV, kênh giới thiệu món ngon, văn hóa ẩm thực, cách thức chế biến các món ngon. Ngon TV là nơi hội tụ của những người mê ăn uống. Ngon TV là kênh chính thức của Báo Thanh Niên.\nHãy truy cập: video.thanhnien.vn \nTheo dõi kênh TikTok Ngon TV: https://www.tiktok.com/@ngon.tv?lang=vi-VN\n-------------\nHãy đăng ký kênh: http://popsww.com/NgonTV\n\nTheo dõi và like Báo Thanh Niên trên Facebook: Facebook.com/thanhnien\n---------\nLiên hệ: 268 - 270 Nguyễn Đình Chiểu, Phường 6, Q.3, TP HCM \nĐT: (+84.8) 39302302 \nFax: (+84.8) 39309939 \nEmail: tnmedia@thanhnien.vn\nLiên hệ hợp tác: tnmedia@thanhnien.vn",
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shorts_030",
+      "url": "https://www.youtube.com/shorts/eM_uLz7n0Qs",
+      "expectedTrack": "TRACK_2",
+      "expectedReason": "TRUNCATED_EVIDENCE",
+      "expectedEvidenceSource": "description",
+      "actualTrack": "TRACK_2",
+      "actualReason": "NO_EXPLICIT_EVIDENCE",
+      "actualEvidenceSource": null,
+      "candidateAddress": null,
+      "normalizedAddress": null,
+      "pass": true,
+      "failures": [],
+      "classifications": [
+        "TRACK2_REASON_MISMATCH"
+      ],
+      "error": null,
+      "metadata": {
+        "url": "https://www.youtube.com/shorts/eM_uLz7n0Qs",
+        "videoId": "eM_uLz7n0Qs",
+        "title": "CAO MINH TIẾN | Hé lộ bí quyết làm nên món bún chả Hồng tỷ 'gia truyền 36 năm' thực khách mê mệt",
+        "description": "CAO MINH TIẾN | Hé lộ bí quyết làm nên món bún chả Hồng tỷ 'gia truyền 36 năm' thực khách mê mệt\n\nBún chả từ lâu đã là món ăn quen thuộc và là niềm tự hào của ẩm thực Hà Nội. Nhưng bạn có bao giờ tự hỏi, điều gì đã làm nên một quán bún chả có thể tồn tại và giữ chân thực khách suốt 36 năm?\n\nTrong video này, chúng ta sẽ cùng ghé thăm quán bún chả Cao Minh Tiến tại địa chỉ số 1 Đông Thái, Chợ Gạo để giải mã bí mật đó. Từ cách tẩm ướp chả viên, chả miếng, nướng trên than hồng thơm lừng, cho đến công thức pha nước chấm chua ngọt đặc trưng, tất cả hòa quyện lại thành hương vị khó quên, khiến Cao Minh Tiến mê mẩn từ sinh viên vẫn quay lại \n\nHãy cùng thưởng thức và cảm nhận hương vị mềm mọng, đậm đà của món bún chả gia truyền đã làm say lòng biết bao thế hệ người Hà Nội.\n\n#food #review #buncha #hanoi \nFollow Cao Minh Tiến:  \n▶YOUTUBE: youtube.com/user/cmtdesigner\n▶FACEBOOK: https://www.facebook.com/caominhtienfd\n▶ INSTARGRAM: https://www.instagram.com/caominhtien/\n▶ FANPAGE: https://www.facebook.com/Cao-Minh-Tien-Fashion-Designer-512089422288209/\n----------------------\nCảm ơn cả nhà đã và đang ủng hộ Cao Minh Tiến . Tình yêu và sự quan tâm của các bạn sẽ là động lực cho Cao Minh Tiến làm thêm nhiều clip chia sẻ về nghề nghiệp cũng như những niềm vui hậu trường cho các bạn theo dõi.\n____________\n© Bản quyền thuộc về Cao Minh Tiến \n© Copyright by Cao Minh Tiến - Do not Reup",
+        "channelTitle": "Cao Minh Tiến Official",
+        "publishedAt": "2025-08-11T12:01:20Z",
+        "duration": "PT1M31S",
+        "privacyStatus": "public",
+        "pageMetadataText": "",
+        "serpSnippet": "",
+        "jsonldObjects": [],
+        "ocrText": "",
+        "asrText": "",
+        "metadataSource": {
+          "youtubeApi": true,
+          "shortsHtml": true
+        }
+      },
+      "result": {
+        "track": "TRACK_2",
+        "reason": "NO_EXPLICIT_EVIDENCE",
+        "evidenceSource": null,
+        "candidateAddress": null,
+        "normalizedAddress": null,
+        "confidence": null,
+        "signals": [
+          {
+            "source": "url",
+            "rule": "PARSE_SHORTS_URL",
+            "accepted": true,
+            "reason": null
+          },
+          {
+            "source": "description",
+            "rule": "CLEAR_DESCRIPTION",
+            "accepted": false,
+            "reason": "NO_CLEAR_DESCRIPTION"
+          }
+        ]
+      }
+    }
+  ]
+}

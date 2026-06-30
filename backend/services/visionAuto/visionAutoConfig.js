@@ -70,6 +70,22 @@ export function getVisionAutoConfig(env = process.env) {
       500,
       30_000,
     ),
+    geminiCandidateExtractionEnabled: booleanValue(
+      env.GEMINI_CANDIDATE_EXTRACTION_ENABLED,
+      false,
+    ),
+    geminiCandidateExtractionTimeoutMs: boundedInteger(
+      env.GEMINI_CANDIDATE_EXTRACTION_TIMEOUT_MS || env.GEMINI_TIMEOUT_MS,
+      20_000,
+      1_000,
+      60_000,
+    ),
+    geminiCandidateExtractionMaxLines: boundedInteger(
+      env.GEMINI_CANDIDATE_EXTRACTION_MAX_LINES,
+      80,
+      5,
+      160,
+    ),
     locationProvider: enumValue(
       env.LOCATION_RESOLUTION_PROVIDER,
       LOCATION_PROVIDERS,

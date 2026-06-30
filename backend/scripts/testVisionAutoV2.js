@@ -32,6 +32,9 @@ function config(overrides = {}) {
     metadataOcrMaxBytes: 3_000_000,
     metadataOcrTimeoutMs: 8_000,
     evidenceValidator: 'rule',
+    geminiCandidateExtractionEnabled: false,
+    geminiCandidateExtractionTimeoutMs: 20_000,
+    geminiCandidateExtractionMaxLines: 80,
     locationProvider: 'disabled',
     googlePlacesTimeoutMs: 8_000,
     frameScanEnabled: false,
@@ -255,6 +258,7 @@ function mockExtractedFrames(timestamps = [2]) {
 }
 
 async function analyzeFrameScenario({
+  url = 'https://www.youtube.com/shorts/dQw4w9WgXcQ',
   frameScanner,
   frameVariantBuilder,
   extractOcr = async () => ocrEvidence([], { usable: false }),
@@ -262,7 +266,6 @@ async function analyzeFrameScenario({
   configOverrides = {},
   dependencies = {},
 } = {}) {
-  const url = 'https://www.youtube.com/shorts/dQw4w9WgXcQ'
   return analyzeVisionAutoV2(
     { url },
     {
@@ -343,6 +346,13 @@ async function main() {
   )
   assert.equal(descriptive.reason, 'insufficient_strong_place_evidence')
   assertStableContract(descriptive)
+  assert.equal(descriptive.debug.geminiCandidateExtractionStatus, 'disabled')
+  assert.equal(descriptive.debug.geminiCandidateAcceptedCount, 0)
+  assert.equal(descriptive.debug.geminiCandidateRejectedCount, 0)
+  assert.equal(
+    descriptive.debug.geminiCandidateExtractionSkipReason,
+    'feature_disabled',
+  )
   console.log('PASS 1-3: descriptive YouTube title stays unresolved without fake place or district')
 
   for (const [label, title] of [
@@ -1664,6 +1674,78 @@ async function main() {
   assert.doesNotMatch(JSON.stringify(cleanupFailure), /local path/i)
   console.log('PASS 25: temp files are cleaned on success and cleanup failures are bounded')
 
+  const timedOutExtractionAttempts = []
+  const timedOutExtractionCleanupCalls = []
+  const partialTimedOutExtraction = await extractYouTubeFrames(
+    {
+      url: 'https://www.youtube.com/shorts/dQw4w9WgXcQ',
+      maxFrames: 60,
+      maxDurationSeconds: 60,
+      timeoutMs: 30_000,
+      mode: 'dense_1fps',
+    },
+    {
+      runCommand: async (command, args) => {
+        if (command === 'yt-dlp' && args.includes('--skip-download')) {
+          return { stdout: '55\n' }
+        }
+        if (command === 'ffmpeg' && args.includes('-ss')) {
+          const timestamp = Number(args[args.indexOf('-ss') + 1])
+          timedOutExtractionAttempts.push(timestamp)
+          if (timedOutExtractionAttempts.length > 18) {
+            const error = new Error('mock frame timeout with secret path')
+            error.code = 'youtube_frame_scan_timeout'
+            throw error
+          }
+          return { stdout: 'mock frame extracted' }
+        }
+        return { stdout: `${command} mock` }
+      },
+      makeDirectory: async () => {},
+      makeTempDirectory: async () => 'C:\\mock\\frame-timeout-coverage',
+      listDirectory: async () => ['video.mp4'],
+      statFile: async () => ({
+        isFile: () => true,
+        size: 1_024,
+      }),
+      readFrameFile: async () => Buffer.from('mock-jpeg'),
+      removeDirectory: async (directory) => {
+        timedOutExtractionCleanupCalls.push(directory)
+      },
+    },
+  )
+  const partialTimedOutTimestamps = partialTimedOutExtraction.frames.map(
+    (frame) => frame.timestampSeconds,
+  )
+  assert.equal(partialTimedOutExtraction.status, 'success')
+  assert.equal(partialTimedOutExtraction.frames.length, 18)
+  assert.ok(
+    partialTimedOutExtraction.warnings.includes(
+      'youtube_frame_scan_timeout',
+    ),
+  )
+  assert.deepEqual(
+    partialTimedOutTimestamps.slice(0, 10),
+    [1, 2, 3, 4, 5, 54, 53, 52, 51, 50],
+  )
+  assert.ok(partialTimedOutTimestamps.some((value) => value <= 5))
+  assert.ok(partialTimedOutTimestamps.some((value) => value >= 50))
+  assert.ok(
+    partialTimedOutTimestamps.some((value) => value >= 20 && value <= 35),
+  )
+  assert.equal(
+    partialTimedOutTimestamps.every((value, index) => value === index + 1),
+    false,
+  )
+  assert.deepEqual(timedOutExtractionCleanupCalls, [
+    'C:\\mock\\frame-timeout-coverage',
+  ])
+  assert.doesNotMatch(
+    JSON.stringify(partialTimedOutExtraction),
+    /secret path|C:\\mock/i,
+  )
+  console.log('PASS 25b: dense timeout extraction keeps broad timestamp coverage')
+
   const debugDirectories = []
   const debugFrames = []
   const emptyFrameDiagnostics = createManualFrameOcrDiagnostics({
@@ -1873,7 +1955,7 @@ async function main() {
     JSON.stringify(rawCandidateSnapshot),
     /raw provider payload|mock-center-crop/i,
   )
-  console.log('PASS 25b: manual frame OCR diagnostics are bounded, local-only, and provider-aware')
+  console.log('PASS 25c: manual frame OCR diagnostics are bounded, local-only, and provider-aware')
 
   const speechFailure = await analyzeVisionAutoV2(
     { url: 'https://www.youtube.com/shorts/speechFail1' },
@@ -1905,14 +1987,22 @@ async function main() {
   assert.ok(speechFailure.debug.warnings.includes('speech_to_text_failed'))
   console.log('PASS 26: Speech-to-Text provider failure is bounded and unresolved')
 
+  const denseShort = selectedTimestamps(55, 60, 'dense_1fps')
+  assert.equal(denseShort.length, 54)
   assert.deepEqual(
-    selectedTimestamps(48, 60, 'dense_1fps'),
-    Array.from({ length: 47 }, (_, index) => index + 1),
+    denseShort.slice(0, 18),
+    [1, 2, 3, 4, 5, 54, 53, 52, 51, 50, 10, 15, 20, 25, 30, 35, 40, 45],
   )
   assert.deepEqual(
-    selectedTimestamps(60, 60, 'dense_1fps'),
-    Array.from({ length: 59 }, (_, index) => index + 1),
+    [...denseShort].sort((left, right) => left - right),
+    Array.from({ length: 54 }, (_, index) => index + 1),
   )
+  const denseLong = selectedTimestamps(180, 60, 'dense_1fps')
+  assert.equal(denseLong.length, 60)
+  assert.deepEqual(denseLong.slice(0, 5), [1, 2, 3, 4, 5])
+  assert.ok(denseLong.slice(0, 10).some((value) => value >= 175))
+  assert.ok(denseLong.some((value) => value >= 80 && value <= 100))
+  assert.ok(denseLong.every((value) => value >= 1 && value <= 179))
   const longSample = selectedTimestamps(180, 12, 'sampled')
   assert.equal(longSample.length, 12)
   assert.deepEqual(longSample.slice(0, 4), [1, 2, 3, 4])
@@ -2214,8 +2304,9 @@ async function main() {
   console.log('PASS 26e2: apartment address remains available in multi-candidate output')
 
   const noisyMultipleFrameAddresses = await analyzeFrameScenario({
+    url: 'https://www.youtube.com/shorts/LZ_63pQ-IpQ',
     title: 'Ăn vặt quanh Quận 3',
-    frameScanner: async () => mockExtractedFrames([56, 104, 132]),
+    frameScanner: async () => mockExtractedFrames([56, 58, 104, 132]),
     frameVariantBuilder: async ({ frame }) => [
       { label: 'full', buffer: frame.buffer, mimetype: 'image/jpeg' },
     ],
@@ -2237,7 +2328,14 @@ async function main() {
         ],
         [
           {
-            text: 'THỊT XIÊN NƯỚNG 9K 26 Lê Quý Đôn Phường 7 Quãng',
+            text: '290/129 Cư Xã Đường sắt',
+            type: 'address',
+            confidence: 0.91,
+          },
+        ],
+        [
+          {
+            text: 'THỊT XIÊN NƯỚNG 9K 26 Lê Quý Dân Phường 7 Quãng',
             type: 'address',
             confidence: 0.89,
           },
@@ -2254,6 +2352,10 @@ async function main() {
     },
   })
   assert.equal(noisyMultipleFrameAddresses.status, 'multi_candidate')
+  assert.equal(
+    noisyMultipleFrameAddresses.input.url,
+    'https://www.youtube.com/shorts/LZ_63pQ-IpQ',
+  )
   assert.equal(noisyMultipleFrameAddresses.addPlaceDraft, null)
   assert.equal(noisyMultipleFrameAddresses.reviewRequired, true)
   assert.equal(noisyMultipleFrameAddresses.candidates.length, 2)
@@ -2268,6 +2370,14 @@ async function main() {
   assert.equal(firstCleanCandidate.placeName, 'Cơm Tấm Dì Mai')
   assert.equal(firstCleanCandidate.dishHint, 'cơm tấm')
   assert.equal(firstCleanCandidate.reviewRequired, true)
+  assert.ok(
+    firstCleanCandidate.evidence.some((value) =>
+      /COM TAM DI MAI/i.test(value),
+    ),
+  )
+  assert.ok(
+    firstCleanCandidate.evidence.some((value) => /290\/129/.test(value)),
+  )
 
   const secondCleanCandidate = noisyMultipleFrameAddresses.candidates.find(
     (item) => item.timestampSeconds === 104,
@@ -2280,6 +2390,7 @@ async function main() {
     noisyMultipleFrameAddresses.candidates.every(
       (item) =>
         !item.address.includes('COM TAM DI MAI 20/29') &&
+        !item.address.includes('290/129') &&
         !item.address.includes('212147'),
     ),
   )
@@ -2288,6 +2399,389 @@ async function main() {
     /"address":"[^"]*20\/29[^"]*20\/29/i,
   )
   console.log('PASS 26e3: noisy frame OCR candidates are compact and review-only')
+
+  let geminiCandidatePrompt = ''
+  const geminiExtractedMultiCandidate = await analyzeFrameScenario({
+    title: 'Top quán ăn vặt Quận 11 nên thử',
+    frameScanner: async () => mockExtractedFrames([12, 20, 28, 36]),
+    frameVariantBuilder: async ({ frame }) => [
+      { label: 'full', buffer: frame.buffer, mimetype: 'image/jpeg' },
+    ],
+    extractOcr: async ({ image }) => {
+      const linesByFrame = [
+        'Top 5 quán ăn vặt Quận 11 giá rẻ',
+        'BÚN BÒ CÔ LAN 23/5 Nguyễn Thị Nhỏ P.9 Q.11',
+        'MÌ VỊT 45/9 Lò Siêu P.16 Q.11',
+        'CƠM TẤM 10 Đường Dình Nghệ P.8 Q.11',
+      ]
+      return ocrEvidence([
+        {
+          text: linesByFrame[image.frameIndex - 1],
+          type: 'other',
+          confidence: 0.84,
+        },
+      ])
+    },
+    configOverrides: {
+      geminiOcrAddressRepairEnabled: false,
+      geminiCandidateExtractionEnabled: true,
+    },
+    dependencies: {
+      extractEntities: () => entities(),
+      geminiCandidateOptions: {
+        apiKey: 'mock-key',
+        model: 'gemini-2.5-flash',
+        invokeGemini: async ({ prompt }) => {
+          geminiCandidatePrompt = prompt
+          return JSON.stringify({
+            status: 'extracted',
+            candidates: [
+              {
+                placeName: 'Bún Bò Cô Lan',
+                dishHint: 'bún bò',
+                address: '23/5 Nguyễn Thị Nhỏ P.9 Q.11',
+                phone: null,
+                timestampSeconds: 20,
+                evidenceText:
+                  'BÚN BÒ CÔ LAN 23/5 Nguyễn Thị Nhỏ P.9 Q.11',
+                confidence: 0.78,
+                reason: 'OCR line contains place-like food text and address.',
+                reviewRequired: true,
+              },
+              {
+                placeName: 'Mì Vịt',
+                dishHint: 'mì vịt',
+                address: '45/9 Lò Siêu P.16 Q.11',
+                phone: null,
+                timestampSeconds: 28,
+                evidenceText: 'MÌ VỊT 45/9 Lò Siêu P.16 Q.11',
+                confidence: 0.74,
+                reason: 'OCR line contains a supported address.',
+                reviewRequired: true,
+              },
+            ],
+            rejected: [],
+            warnings: [],
+          })
+        },
+      },
+    },
+  })
+  assert.equal(geminiExtractedMultiCandidate.status, 'multi_candidate')
+  assert.equal(geminiExtractedMultiCandidate.addPlaceDraft, null)
+  assert.equal(geminiExtractedMultiCandidate.candidates.length, 2)
+  assert.ok(
+    geminiExtractedMultiCandidate.candidates.every(
+      (item) => item.source === 'gemini_ocr_candidate_extraction',
+    ),
+  )
+  assert.deepEqual(
+    geminiExtractedMultiCandidate.candidates.map((item) => item.timestampSeconds),
+    [20, 28],
+  )
+  assert.equal(
+    geminiExtractedMultiCandidate.debug.geminiCandidateExtractionStatus,
+    'success',
+  )
+  assert.equal(
+    geminiExtractedMultiCandidate.debug.geminiCandidateAcceptedCount,
+    2,
+  )
+  assert.equal(
+    geminiExtractedMultiCandidate.debug.geminiCandidateRejectedCount,
+    0,
+  )
+  assert.equal(
+    geminiExtractedMultiCandidate.debug.geminiCandidateExtractionSkipReason,
+    null,
+  )
+  assert.match(
+    geminiCandidatePrompt,
+    /BÚN BÒ CÔ LAN 23\/5 Nguyễn Thị Nhỏ P\.9 Q\.11/,
+  )
+  assert.doesNotMatch(
+    JSON.stringify(geminiExtractedMultiCandidate),
+    /mock-key|raw provider payload/i,
+  )
+  console.log('PASS 26e4: Gemini extracts review-only candidates from list-style frame OCR')
+
+  let groupedLocalCandidateGeminiCalls = 0
+  const duplicateLocalCandidateGate = await analyzeWithCollection(
+    { url: 'https://www.youtube.com/shorts/groupedGate1' },
+    collection({
+      frameOcrEvidence: [
+        {
+          source: 'youtube_frame_ocr',
+          timestampSeconds: 10,
+          lines: [
+            {
+              text: 'Quán A 20/29 Cư Xá Đường Sắt P.1 Q.8',
+              type: 'other',
+              confidence: 0.84,
+            },
+          ],
+          confidence: 0.84,
+        },
+        {
+          source: 'youtube_frame_ocr',
+          timestampSeconds: 18,
+          lines: [
+            {
+              text: 'Quán A 290/129 Cư Xá Đường Sắt P.1 Q.8',
+              type: 'other',
+              confidence: 0.84,
+            },
+          ],
+          confidence: 0.84,
+        },
+        {
+          source: 'youtube_frame_ocr',
+          timestampSeconds: 26,
+          lines: [
+            {
+              text: 'Quán B 45/9 Đường số 2 P.2 Q.8',
+              type: 'other',
+              confidence: 0.84,
+            },
+          ],
+          confidence: 0.84,
+        },
+      ],
+    }),
+    {
+      config: {
+        geminiOcrAddressRepairEnabled: false,
+        geminiCandidateExtractionEnabled: true,
+      },
+      extractEntities: () => entities(),
+      validateEntities: async () => ({
+        entities: entities({
+          addressCandidates: [
+            {
+              address: '20/29 Cư Xá Đường Sắt P.1 Q.8',
+              confidence: 0.82,
+              source: 'youtube_frame_ocr',
+              timestampSeconds: 10,
+              evidence: ['Quán A 20/29 Cư Xá Đường Sắt P.1 Q.8'],
+              reviewRequired: true,
+            },
+            {
+              address: '290/129 Cư Xá Đường Sắt P.1 Q.8',
+              confidence: 0.81,
+              source: 'youtube_frame_ocr',
+              timestampSeconds: 18,
+              evidence: ['Quán A 290/129 Cư Xá Đường Sắt P.1 Q.8'],
+              reviewRequired: true,
+            },
+          ],
+        }),
+        validation: {
+          status: 'rule_only',
+          requested: false,
+          applied: false,
+          warnings: [],
+          canResolveLocation: null,
+          rejectedEntities: [],
+        },
+      }),
+      geminiCandidateOptions: {
+        apiKey: 'mock-key',
+        model: 'gemini-2.5-flash',
+        invokeGemini: async () => {
+          groupedLocalCandidateGeminiCalls += 1
+          return JSON.stringify({
+            status: 'extracted',
+            candidates: [
+              {
+                placeName: 'Quán B',
+                dishHint: null,
+                address: '45/9 Đường số 2 P.2 Q.8',
+                phone: null,
+                timestampSeconds: 26,
+                evidenceText: 'Quán B 45/9 Đường số 2 P.2 Q.8',
+                confidence: 0.76,
+                reason: 'OCR line has a distinct address group.',
+                reviewRequired: true,
+              },
+            ],
+            rejected: [],
+            warnings: [],
+          })
+        },
+      },
+    },
+  )
+  assert.equal(groupedLocalCandidateGeminiCalls, 1)
+  assert.equal(
+    duplicateLocalCandidateGate.debug.geminiCandidateExtractionStatus,
+    'success',
+  )
+  assert.equal(
+    duplicateLocalCandidateGate.debug.geminiCandidateAcceptedCount,
+    1,
+  )
+  assert.equal(
+    duplicateLocalCandidateGate.debug.geminiCandidateRejectedCount,
+    0,
+  )
+  console.log('PASS 26e4b: duplicate local address groups do not block Gemini candidate extraction')
+
+  let skippedGeminiProviderCalls = 0
+  const skippedGeminiCandidateExtraction = await analyzeWithCollection(
+    { url: 'https://www.youtube.com/shorts/skipGate1' },
+    collection({
+      frameOcrEvidence: [
+        {
+          source: 'youtube_frame_ocr',
+          timestampSeconds: 20,
+          lines: [
+            {
+              text: 'BÚN BÒ CÔ LAN 23/5 Nguyễn Thị Nhỏ P.9 Q.11',
+              type: 'other',
+              confidence: 0.84,
+            },
+          ],
+          confidence: 0.84,
+        },
+      ],
+    }),
+    {
+      config: {
+        geminiOcrAddressRepairEnabled: false,
+        geminiCandidateExtractionEnabled: true,
+      },
+      extractEntities: () => entities(),
+      geminiCandidateOptions: {
+        apiKey: 'mock-key',
+        model: 'gemini-2.5-flash',
+        invokeGemini: async () => {
+          skippedGeminiProviderCalls += 1
+          return '{}'
+        },
+      },
+    },
+  )
+  assert.equal(skippedGeminiCandidateExtraction.status, 'unresolved_best_effort')
+  assert.equal(skippedGeminiProviderCalls, 0)
+  assert.equal(
+    skippedGeminiCandidateExtraction.debug.geminiCandidateExtractionStatus,
+    'skipped_gate',
+  )
+  assert.equal(
+    skippedGeminiCandidateExtraction.debug.geminiCandidateExtractionSkipReason,
+    'insufficient_frame_texts',
+  )
+  assert.equal(
+    skippedGeminiCandidateExtraction.debug.geminiCandidateAcceptedCount,
+    0,
+  )
+  assert.equal(
+    skippedGeminiCandidateExtraction.debug.geminiCandidateRejectedCount,
+    0,
+  )
+  console.log('PASS 26e5: Gemini candidate extraction is skipped without enough frame OCR signal')
+
+  const missingGeminiCandidateKey = await analyzeFrameScenario({
+    title: 'Review nhiều địa chỉ trong video',
+    frameScanner: async () => mockExtractedFrames([20, 28]),
+    frameVariantBuilder: async ({ frame }) => [
+      { label: 'full', buffer: frame.buffer, mimetype: 'image/jpeg' },
+    ],
+    extractOcr: async ({ image }) => {
+      const linesByFrame = [
+        'Quán A 23/5 Nguyễn Thị Nhỏ P.9 Q.11',
+        'Quán B 45/9 Lò Siêu P.16 Q.11',
+      ]
+      return ocrEvidence([
+        {
+          text: linesByFrame[image.frameIndex - 1],
+          type: 'other',
+          confidence: 0.84,
+        },
+      ])
+    },
+    configOverrides: {
+      geminiOcrAddressRepairEnabled: false,
+      geminiCandidateExtractionEnabled: true,
+    },
+    dependencies: {
+      extractEntities: () => entities(),
+      geminiCandidateOptions: {
+        apiKey: '',
+        model: 'gemini-2.5-flash',
+      },
+    },
+  })
+  assert.equal(
+    missingGeminiCandidateKey.debug.geminiCandidateExtractionStatus,
+    'missing_api_key',
+  )
+  assert.equal(
+    missingGeminiCandidateKey.debug.geminiCandidateExtractionSkipReason,
+    null,
+  )
+  assert.equal(missingGeminiCandidateKey.debug.geminiCandidateAcceptedCount, 0)
+  assert.equal(missingGeminiCandidateKey.debug.geminiCandidateRejectedCount, 0)
+  console.log('PASS 26e6: Gemini candidate missing API key is observable and bounded')
+
+  const noAcceptedGeminiCandidate = await analyzeFrameScenario({
+    title: 'Review nhiều địa chỉ trong video',
+    frameScanner: async () => mockExtractedFrames([20, 28]),
+    frameVariantBuilder: async ({ frame }) => [
+      { label: 'full', buffer: frame.buffer, mimetype: 'image/jpeg' },
+    ],
+    extractOcr: async ({ image }) => {
+      const linesByFrame = [
+        'Quán A 23/5 Nguyễn Thị Nhỏ P.9 Q.11',
+        'Quán B 45/9 Lò Siêu P.16 Q.11',
+      ]
+      return ocrEvidence([
+        {
+          text: linesByFrame[image.frameIndex - 1],
+          type: 'other',
+          confidence: 0.84,
+        },
+      ])
+    },
+    configOverrides: {
+      geminiOcrAddressRepairEnabled: false,
+      geminiCandidateExtractionEnabled: true,
+    },
+    dependencies: {
+      extractEntities: () => entities(),
+      geminiCandidateOptions: {
+        apiKey: 'mock-key',
+        model: 'gemini-2.5-flash',
+        invokeGemini: async () =>
+          JSON.stringify({
+            status: 'extracted',
+            candidates: [
+              {
+                placeName: 'Top quán',
+                dishHint: null,
+                address: null,
+                phone: null,
+                timestampSeconds: 20,
+                evidenceText: 'Quán A 23/5 Nguyễn Thị Nhỏ P.9 Q.11',
+                confidence: 0.4,
+                reason: 'Missing address field must be rejected.',
+                reviewRequired: true,
+              },
+            ],
+            rejected: [],
+            warnings: [],
+          }),
+      },
+    },
+  })
+  assert.equal(
+    noAcceptedGeminiCandidate.debug.geminiCandidateExtractionStatus,
+    'no_accepted_candidates',
+  )
+  assert.equal(noAcceptedGeminiCandidate.debug.geminiCandidateAcceptedCount, 0)
+  assert.equal(noAcceptedGeminiCandidate.debug.geminiCandidateRejectedCount, 1)
+  assert.equal(noAcceptedGeminiCandidate.addPlaceDraft, null)
+  console.log('PASS 26e7: Gemini candidate rejection count is observable')
 
   for (const weakText of [
     'TỔNG HỢP TẤT TẦN TẬT QUÁN NGON',

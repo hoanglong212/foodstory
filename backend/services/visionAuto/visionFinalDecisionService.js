@@ -160,8 +160,11 @@ export function decideVisionAutoResult({
     const frameAddressOrContact =
       entities.address?.source === 'youtube_frame_ocr' ||
       entities.address?.source === 'gemini_ocr_repair' ||
+      entities.address?.source === 'gemini_ocr_candidate_extraction' ||
       (entities.phones || []).some(
-        (item) => item?.source === 'youtube_frame_ocr',
+        (item) =>
+          item?.source === 'youtube_frame_ocr' ||
+          item?.source === 'gemini_ocr_candidate_extraction',
       )
     return {
       status: 'draft_candidate',

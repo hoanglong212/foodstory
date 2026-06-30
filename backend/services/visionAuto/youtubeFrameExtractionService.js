@@ -227,13 +227,6 @@ function selectedTimestamps(
     .filter((value) => Number.isFinite(value) && value > 0 && value <= lastSecond);
   if (debugValues.length) return [...new Set(debugValues)].slice(0, count);
 
-  if (
-    String(mode || '').toLowerCase() === 'dense_1fps' &&
-    count >= lastSecond
-  ) {
-    return Array.from({ length: lastSecond }, (_, index) => index + 1);
-  }
-
   const values = [];
   const seen = new Set();
   const add = (value) => {
@@ -243,20 +236,40 @@ function selectedTimestamps(
     seen.add(second);
     values.push(second);
   };
+  const targetCount = Math.min(count, lastSecond);
+  const denseMode = String(mode || '').toLowerCase() === 'dense_1fps';
+  const denseFullCoverage = denseMode && targetCount >= lastSecond;
 
   // Scan both edges before the middle. Food review videos commonly show the
   // venue card in the opening seconds or at the very end, and a global timeout
   // should not prevent the end burst from being attempted.
-  const edgeBudget = Math.min(count, Math.max(2, Math.ceil(count * 0.6)));
-  const startBurstCount = Math.ceil(edgeBudget / 2);
+  const edgeBudget = denseMode
+    ? Math.min(targetCount, 10)
+    : Math.min(targetCount, Math.max(2, Math.ceil(targetCount * 0.6)));
+  const startBurstCount = denseMode
+    ? Math.min(5, edgeBudget)
+    : Math.ceil(edgeBudget / 2);
   const endBurstCount = edgeBudget - startBurstCount;
   for (let second = 1; second <= startBurstCount; second += 1) add(second);
   for (let offset = 0; offset < endBurstCount; offset += 1) {
     add(lastSecond - offset);
   }
 
-  const remaining = count - values.length;
-  if (remaining > 0) {
+  if (denseFullCoverage) {
+    const low = Math.min(lastSecond, startBurstCount + 1);
+    const high = Math.max(1, lastSecond - endBurstCount);
+    const firstAnchor = Math.max(10, Math.ceil(low / 5) * 5);
+    for (
+      let second = firstAnchor;
+      values.length < targetCount && second <= high;
+      second += 5
+    ) {
+      add(second);
+    }
+  }
+
+  const remaining = targetCount - values.length;
+  if (!denseFullCoverage && remaining > 0) {
     const low = Math.min(lastSecond, startBurstCount + 1);
     const high = Math.max(1, lastSecond - endBurstCount);
     for (let index = 0; index < remaining && low <= high; index += 1) {
@@ -265,11 +278,15 @@ function selectedTimestamps(
     }
   }
 
-  for (let second = 1; values.length < count && second <= lastSecond; second += 1) {
+  for (
+    let second = 1;
+    values.length < targetCount && second <= lastSecond;
+    second += 1
+  ) {
     add(second);
   }
 
-  return values.slice(0, count);
+  return values.slice(0, targetCount);
 }
 
 function canonicalYouTubeUrl(videoId) {
