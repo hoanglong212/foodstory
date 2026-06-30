@@ -154,7 +154,9 @@ export async function runShortsTrack2V3CheapOcr(frameVariants = {}, config = {},
   const provider = typeof deps.track2V3OcrProvider === 'function'
     ? deps.track2V3OcrProvider
     : null
-  const legacyProvider = !provider && typeof deps.track2OcrProvider === 'function'
+  const legacyProvider = !provider &&
+    config.track2V3GoogleVisionEnabled === true &&
+    typeof deps.track2OcrProvider === 'function'
     ? deps.track2OcrProvider
     : null
 

@@ -46,6 +46,7 @@ function asBoostProviderErrors(providerErrors = []) {
 
 function shouldRunLiveOcrBoost(config = {}, deps = {}) {
   if (!config.enabled) return false
+  if (config.track2V3GoogleVisionEnabled !== true) return false
   if (Array.isArray(deps.track2V3OcrBoostBlocks)) return false
   if (typeof deps.track2V3OcrBoostProvider === 'function') return false
   return typeof deps.track2FrameExtractor === 'function' ||

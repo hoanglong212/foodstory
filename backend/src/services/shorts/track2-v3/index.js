@@ -36,6 +36,14 @@ export { decideShortsTrack2V3Result } from './shortsTrack2V3DecisionService.js'
 export { buildShortsTrack2V3Response } from './shortsTrack2V3ResponseBuilder.js'
 export { buildShortsTrack2V3DebugFrameReport } from './shortsTrack2V3DebugFrameReportService.js'
 export {
+  SMART_OVERLAY_CROP_VARIANTS,
+  buildShortsTrack2V3SmartOverlaySampleTimestamps,
+  createShortsTrack2V3SmartOverlayFrameExtractor,
+  normalizeShortsTrack2V3SmartOverlayConfig,
+  selectShortsTrack2V3SmartOverlayCrops,
+  runShortsTrack2V3SmartOverlayDryRun,
+} from './shortsTrack2V3SmartOverlaySelectorService.js'
+export {
   summarizeShortsTrack2V3AuditCase,
   buildShortsTrack2V3AuditSummary,
   assertShortsTrack2V3AuditSafe,

@@ -39,6 +39,7 @@ function normalizeContext(input = {}) {
 
 function shouldRunLiveCheapOcrAdapter(config = {}, deps = {}) {
   if (!config.enabled) return false
+  if (config.track2V3GoogleVisionEnabled !== true) return false
   if (Array.isArray(deps.track2V3OcrBlocks)) return false
   if (typeof deps.track2V3OcrProvider === 'function') return false
   return typeof deps.track2FrameExtractor === 'function' ||
