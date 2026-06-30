@@ -81,6 +81,7 @@ export async function runShortsTrack2V3Pipeline(input = {}, deps = {}) {
     startedAt,
     context,
     config,
+    intent,
     framePlan,
     frameVariants,
     ocrResult,

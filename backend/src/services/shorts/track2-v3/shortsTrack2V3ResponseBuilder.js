@@ -4,6 +4,7 @@ export function buildShortsTrack2V3Response({
   startedAt = Date.now(),
   context = {},
   config = {},
+  intent = {},
   framePlan = {},
   frameVariants = {},
   ocrResult = {},
@@ -15,7 +16,7 @@ export function buildShortsTrack2V3Response({
   providerErrors = [],
   debug = {},
 } = {}) {
-  const decision = decideShortsTrack2V3Result({ context, config, evidence, candidates })
+  const decision = decideShortsTrack2V3Result({ context, config, intent, evidence, candidates })
   const latencyMs = Math.max(0, Date.now() - startedAt)
 
   return {
@@ -35,6 +36,7 @@ export function buildShortsTrack2V3Response({
       latencyMs,
     },
     debug: {
+      intentSignals: Array.isArray(intent.signals) ? intent.signals : [],
       bestOcrSnippets: [],
       placesQueries: [],
       ...debug,

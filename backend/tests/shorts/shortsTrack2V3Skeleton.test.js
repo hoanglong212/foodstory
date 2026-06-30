@@ -28,7 +28,9 @@ describe('L3 Shorts Track 2 V3 skeleton', () => {
     assert.equal(result.track, 'TRACK_2_V3')
     assert.equal(result.resolution, 'UNRESOLVED')
     assert.equal(result.reason, 'TRACK2_V3_SKELETON_NO_VISUAL_PASS_YET')
+    assert.equal(result.intent, 'UNKNOWN')
     assert.equal(result.mustNotResolve, false)
+    assert.equal(result.intentReason, 'NO_STRONG_INTENT_SIGNAL')
     assert.equal(result.resolvedPlace, null)
     assert.ok(Array.isArray(result.candidates))
     assert.ok(Array.isArray(result.evidence))
@@ -45,8 +47,23 @@ describe('L3 Shorts Track 2 V3 skeleton', () => {
     assert.equal(result.metrics.geminiCalled, false)
     assert.equal(result.metrics.placesCalled, false)
     assert.equal(Number.isFinite(result.metrics.latencyMs), true)
+    assert.ok(Array.isArray(result.debug.intentSignals))
     assert.deepEqual(result.debug.bestOcrSnippets, [])
     assert.deepEqual(result.debug.placesQueries, [])
+  })
+
+  it('carries mustNotResolve intent locks into the skeleton response', async () => {
+    const result = await runShortsTrack2V3Pipeline({
+      title: 'Top 8 quán ngon Quận 10',
+    }, {
+      env: {},
+    })
+
+    assert.equal(result.intent, 'MULTI_PLACE_OR_LIST')
+    assert.equal(result.mustNotResolve, true)
+    assert.equal(result.intentReason, 'TITLE_TOP_LIST')
+    assert.equal(result.resolution, 'UNRESOLVED')
+    assert.ok(result.debug.intentSignals.length > 0)
   })
 
   it('keeps old Track 2 as default and routes to V3 only when enabled', async () => {
