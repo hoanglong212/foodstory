@@ -1,7 +1,7 @@
 export function decideShortsTrack2V3Escalation() {
   return {
-    status: 'SKELETON',
-    escalationLevel: 'SKELETON',
+    status: 'CHEAP_OCR_ONLY',
+    escalationLevel: 'CHEAP_OCR',
     geminiAllowed: false,
     placesAllowed: false,
   }

@@ -8,9 +8,14 @@ export { classifyShortsTrack2V3Intent } from './shortsTrack2V3IntentClassifierSe
 export { planShortsTrack2V3Frames } from './shortsTrack2V3FramePlannerService.js'
 export { buildShortsTrack2V3FrameVariants } from './shortsTrack2V3FrameVariantService.js'
 export { runShortsTrack2V3CheapOcr } from './shortsTrack2V3OcrProviderService.js'
+export { runTrack2V3CheapOcrLive } from './shortsTrack2V3LiveCheapOcrAdapter.js'
 export {
   createShortsTrack2V3EvidenceStore,
   collectShortsTrack2V3Evidence,
+  buildShortsTrack2V3EvidenceFromOcrBlocks,
+  detectShortsTrack2V3EvidenceTokens,
+  foldVietnameseText,
+  normalizeShortsTrack2V3Text,
 } from './shortsTrack2V3EvidenceStoreService.js'
 export { buildShortsTrack2V3Candidates } from './shortsTrack2V3CandidateBuilderService.js'
 export { decideShortsTrack2V3Escalation } from './shortsTrack2V3EscalationService.js'

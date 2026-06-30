@@ -27,7 +27,7 @@ describe('L3 Shorts Track 2 V3 skeleton', () => {
 
     assert.equal(result.track, 'TRACK_2_V3')
     assert.equal(result.resolution, 'UNRESOLVED')
-    assert.equal(result.reason, 'TRACK2_V3_SKELETON_NO_VISUAL_PASS_YET')
+    assert.equal(result.reason, 'TRACK2_V3_PROVIDER_UNAVAILABLE')
     assert.equal(result.intent, 'UNKNOWN')
     assert.equal(result.mustNotResolve, false)
     assert.equal(result.intentReason, 'NO_STRONG_INTENT_SIGNAL')
@@ -37,13 +37,15 @@ describe('L3 Shorts Track 2 V3 skeleton', () => {
     assert.ok(Array.isArray(result.providerErrors))
     assert.equal(result.candidates.length, 0)
     assert.equal(result.evidence.length, 0)
-    assert.equal(result.providerErrors.length, 0)
-    assert.equal(result.metrics.frameCount, 0)
-    assert.equal(result.metrics.ocrImageCount, 0)
+    assert.ok(result.providerErrors.some((error) =>
+      error.code === 'TRACK2_V3_OCR_PROVIDER_UNAVAILABLE'
+    ))
+    assert.equal(result.metrics.frameCount, 4)
+    assert.equal(result.metrics.ocrImageCount, 8)
     assert.equal(result.metrics.ocrTextBlockCount, 0)
     assert.equal(result.metrics.evidenceCount, 0)
     assert.equal(result.metrics.candidateCount, 0)
-    assert.equal(result.metrics.escalationLevel, 'SKELETON')
+    assert.equal(result.metrics.escalationLevel, 'CHEAP_OCR')
     assert.equal(result.metrics.geminiCalled, false)
     assert.equal(result.metrics.placesCalled, false)
     assert.equal(Number.isFinite(result.metrics.latencyMs), true)
