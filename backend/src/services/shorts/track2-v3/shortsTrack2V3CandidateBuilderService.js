@@ -147,6 +147,14 @@ function addCandidate(candidates, seen, candidate) {
   })
 }
 
+function forceReviewOnlyAddressEvidence(evidence = {}) {
+  return Boolean(
+    evidence.forceReviewOnly ||
+      evidence.sourceType === 'ocr_fused_nearby_frame' ||
+      evidence.source === 'track2_v3_evidence_fusion',
+  )
+}
+
 function buildPlacePlusPartialCandidates(evidenceItems, candidates, seen, mustNotResolve) {
   for (const evidence of evidenceItems) {
     const lines = splitLines(evidence.rawText || evidence.normalizedText)
@@ -207,7 +215,9 @@ function buildAddressCandidates(evidenceItems, candidates, seen, mustNotResolve)
       const strength = addressStrength(candidateText)
       if (!strength.hasAddressFragment) continue
 
-      if (strength.isFullAddress) {
+      const forceReviewOnly = forceReviewOnlyAddressEvidence(evidence)
+
+      if (strength.isFullAddress && !forceReviewOnly) {
         addCandidate(candidates, seen, {
           type: 'FULL_ADDRESS_VERBATIM',
           displayText: safeText(candidateText),
@@ -222,7 +232,9 @@ function buildAddressCandidates(evidenceItems, candidates, seen, mustNotResolve)
 
       const riskFlags = strength.noisy
         ? ['NOISY_OCR', 'REVIEW_ONLY']
-        : ['PARTIAL_ADDRESS', 'REVIEW_ONLY']
+        : strength.isPartialAddress
+          ? ['PARTIAL_ADDRESS', 'MISSING_STREET_NAME', 'REVIEW_ONLY']
+          : ['REVIEW_ONLY']
       addCandidate(candidates, seen, {
         type: 'OCR_ADDRESS_FRAGMENT',
         displayText: safeText(candidateText),
@@ -294,7 +306,6 @@ export function buildShortsTrack2V3Candidates({
 
   buildPlacePlusPartialCandidates(evidenceItems, candidates, seen, mustNotResolve)
   buildAddressCandidates(evidenceItems, candidates, seen, mustNotResolve)
-  buildPlaceNameOnlyCandidates(evidenceItems, candidates, seen)
   buildMultiPlaceReviewCandidate(evidenceItems, candidates, seen, intent)
 
   return {

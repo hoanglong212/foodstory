@@ -55,6 +55,7 @@ export function buildShortsTrack2V3Response({
     (Array.isArray(frameVariants.variants) ? frameVariants.variants.length : 0)
   const ocrTextBlockCount = ocrMetrics.ocrTextBlockCount ??
     (Array.isArray(ocrResult.textBlocks) ? ocrResult.textBlocks.length : 0)
+  const cropImageCount = ocrMetrics.cropImageCount ?? frameVariants.cropImageCount ?? 0
 
   return {
     ...decision,
@@ -64,10 +65,18 @@ export function buildShortsTrack2V3Response({
     metrics: {
       frameCount: metricNumber(frameCount),
       ocrImageCount: metricNumber(ocrImageCount),
+      cropImageCount: metricNumber(cropImageCount),
       ocrTextBlockCount: metricNumber(ocrTextBlockCount),
       evidenceCount: evidence.length,
       candidateCount: candidates.length,
+      rawCandidateCount: metricNumber(debug.rawCandidateCount, candidates.length),
+      keptCandidateCount: metricNumber(debug.keptCandidateCount, candidates.length),
+      droppedCandidateCount: metricNumber(debug.droppedCandidateCount, 0),
+      weakCandidateCount: metricNumber(debug.weakCandidateCount, 0),
+      addressAnchoredCandidateCount: metricNumber(debug.addressAnchoredCandidateCount, 0),
+      candidateQualityGateRan: Boolean(debug.candidateQualityGateRan),
       escalationLevel: escalation.escalationLevel || 'SKELETON',
+      ocrBoostRan: Boolean(ocrResult.ocrBoostRan || debug.ocrBoostRan),
       geminiCalled: Boolean(geminiResult.called),
       placesCalled: Boolean(placesResult.called),
       latencyMs,

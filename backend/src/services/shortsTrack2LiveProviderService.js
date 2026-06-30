@@ -5,6 +5,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 const DEFAULT_MAX_FRAMES = 8
+const DEFAULT_MAX_OCR_IMAGES = 16
 const DEFAULT_MAX_DURATION_SECONDS = 60
 const HARD_MAX_DURATION_SECONDS = 180
 const UNIFORM_SAMPLE_STRATEGY = 'UNIFORM'
@@ -98,6 +99,15 @@ function buildSampleTimestamps(metadata = {}, limits = {}) {
   const durationSeconds = getDurationSeconds(metadata)
   const maxDurationSeconds = boundedMaxDurationSeconds(limits.maxVideoDurationSeconds)
   const sampleStrategy = normalizedSampleStrategy(limits.sampleStrategy)
+  const explicitTimestampMax = durationSeconds > 0
+    ? Math.min(durationSeconds, maxDurationSeconds)
+    : maxDurationSeconds
+  const explicitTimestamps = (Array.isArray(limits.sampledTimestamps) ? limits.sampledTimestamps : [])
+    .map((value) => safeNumber(value, Number.NaN))
+    .filter((value) => Number.isFinite(value) && value >= 0 && value <= explicitTimestampMax)
+    .slice(0, maxFrames)
+
+  if (explicitTimestamps.length) return explicitTimestamps
 
   if (durationSeconds > 0) {
     const usableDuration = Math.min(durationSeconds, maxDurationSeconds)
@@ -801,7 +811,12 @@ export function createLiveTrack2OcrProvider(options = {}) {
       const readableFrames = []
       const diagnostics = []
 
-      for (const frame of frames.slice(0, DEFAULT_MAX_FRAMES)) {
+      const maxOcrImages = Math.floor(Math.max(1, Math.min(
+        safeNumber(context.maxOcrImages, DEFAULT_MAX_OCR_IMAGES),
+        DEFAULT_MAX_OCR_IMAGES,
+      )))
+
+      for (const frame of frames.slice(0, maxOcrImages)) {
         try {
           const bytes = await fs.readFile(frame.imagePath)
           requests.push({

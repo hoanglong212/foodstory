@@ -4,6 +4,9 @@ export const DEFAULT_SHORTS_TRACK2_V3_CONFIG = Object.freeze({
   cheapFrameCount: 4,
   maxFrames: 8,
   maxOcrImages: 16,
+  track2V3OcrBoostEnabled: true,
+  ocrBoostEnabled: true,
+  ocrBoostFrameCount: 8,
   maxGeminiImages: 2,
   maxPlacesQueries: 3,
   timeoutMs: 45000,
@@ -21,6 +24,11 @@ function integerEnv(value, fallback, { min = 0 } = {}) {
 }
 
 export function getShortsTrack2V3Config(env = process.env) {
+  const ocrBoostEnabled = booleanEnv(
+    env.TRACK2_V3_OCR_BOOST_ENABLED,
+    DEFAULT_SHORTS_TRACK2_V3_CONFIG.ocrBoostEnabled,
+  )
+
   return {
     enabled: booleanEnv(env.TRACK2_V3_ENABLED, DEFAULT_SHORTS_TRACK2_V3_CONFIG.enabled),
     maxDurationSeconds: integerEnv(
@@ -41,6 +49,13 @@ export function getShortsTrack2V3Config(env = process.env) {
     maxOcrImages: integerEnv(
       env.TRACK2_V3_MAX_OCR_IMAGES,
       DEFAULT_SHORTS_TRACK2_V3_CONFIG.maxOcrImages,
+      { min: 0 },
+    ),
+    track2V3OcrBoostEnabled: ocrBoostEnabled,
+    ocrBoostEnabled,
+    ocrBoostFrameCount: integerEnv(
+      env.TRACK2_V3_OCR_BOOST_FRAME_COUNT,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.ocrBoostFrameCount,
       { min: 0 },
     ),
     maxGeminiImages: integerEnv(
