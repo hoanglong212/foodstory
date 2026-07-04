@@ -9,6 +9,26 @@ export { planShortsTrack2V3Frames } from './shortsTrack2V3FramePlannerService.js
 export { buildShortsTrack2V3FrameVariants } from './shortsTrack2V3FrameVariantService.js'
 export { runShortsTrack2V3CheapOcr } from './shortsTrack2V3OcrProviderService.js'
 export {
+  normalizeShortsTrack2V3LocalOcrConfig,
+  runShortsTrack2V3LocalOcrProvider,
+} from './shortsTrack2V3LocalOcrProviderService.js'
+export { runShortsTrack2V3SmartOverlayOcr } from './shortsTrack2V3SmartOverlayOcrService.js'
+export {
+  buildShortsTrack2V3AdaptiveSampleTimestamps,
+  decideShortsTrack2V3AdaptiveFrameSampling,
+  runShortsTrack2V3AdaptiveFrameSampling,
+} from './shortsTrack2V3AdaptiveFrameSamplingService.js'
+export {
+  parseShortsTrack2V3GeminiCropJudgeResponse,
+  runShortsTrack2V3GeminiCropJudge,
+  validateShortsTrack2V3GeminiCropIds,
+} from './shortsTrack2V3GeminiCropJudgeService.js'
+export { generateShortsTrack2V3TesseractPreprocessVariants } from './shortsTrack2V3TesseractPreprocessService.js'
+export {
+  scoreShortsTrack2V3TesseractOutput,
+  selectBestShortsTrack2V3TesseractAttempt,
+} from './shortsTrack2V3TesseractOcrScoringService.js'
+export {
   runTrack2V3CheapOcrLive,
   runTrack2V3OcrBoostLive,
 } from './shortsTrack2V3LiveCheapOcrAdapter.js'
@@ -21,6 +41,11 @@ export {
   normalizeShortsTrack2V3Text,
 } from './shortsTrack2V3EvidenceStoreService.js'
 export { buildShortsTrack2V3Candidates } from './shortsTrack2V3CandidateBuilderService.js'
+export {
+  extractMetadataEvidence,
+  buildMetadataCandidatesFromEvidence,
+  mergeMetadataCandidatesWithExisting,
+} from './shortsTrack2V3MetadataEvidenceService.js'
 export {
   applyShortsTrack2V3CandidateQualityGate,
   evaluateShortsTrack2V3CandidateQuality,
@@ -43,6 +68,7 @@ export {
   selectShortsTrack2V3SmartOverlayCrops,
   runShortsTrack2V3SmartOverlayDryRun,
 } from './shortsTrack2V3SmartOverlaySelectorService.js'
+export { writeShortsTrack2V3SelectorDiagnostics } from './shortsTrack2V3SelectorDiagnosticsService.js'
 export {
   summarizeShortsTrack2V3AuditCase,
   buildShortsTrack2V3AuditSummary,

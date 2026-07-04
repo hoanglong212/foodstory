@@ -95,6 +95,51 @@ describe('Track 2 V3 evidence fusion', () => {
     assert.equal(candidate.canAutoResolve, false)
   })
 
+  it('passes through a place-prefixed full address as a stripped review candidate', () => {
+    const { fusion, candidates } = candidatesFromFusion([
+      evidence('QUÁN CHÁO 1K 221 Phan Văn Khe, Quận 6, TP HCM', {
+        id: 'ev:embedded-address',
+        frameIndex: 3,
+        timestampSeconds: 12,
+      }),
+    ])
+    const candidate = findCandidate(candidates, 'OCR_ADDRESS_FRAGMENT', [
+      '221 Phan Văn Khe',
+      'Quận 6',
+      'TP HCM',
+    ])
+
+    assert.equal(fusion.status, 'PASS_THROUGH')
+    assert.ok(candidate)
+    assert.equal(candidate.addressFragment, '221 Phan Văn Khe, Quận 6, TP HCM')
+    assert.ok(candidate.riskFlags.includes('OCR_PLACE_PREFIX_STRIPPED'))
+    assert.ok(candidate.riskFlags.includes('REVIEW_ONLY'))
+    assert.equal(candidate.canAutoResolve, false)
+  })
+
+  it('passes noisy named-admin OCR through fusion as a normalized review candidate', () => {
+    const { fusion, candidates } = candidatesFromFusion([
+      evidence('242 Dôc Lâp, F.Tân Thành, Q.Tân Phú 10:00-21:00 COM GÀ QUÝ DẦU', {
+        id: 'ev:noisy-named-admin',
+        frameIndex: 5,
+        timestampSeconds: 18,
+      }),
+    ])
+    const candidate = findCandidate(candidates, 'OCR_ADDRESS_FRAGMENT', [
+      '242 Dôc Lâp',
+      'Phường Tân Thành',
+      'Quận Tân Phú',
+    ])
+
+    assert.equal(fusion.status, 'PASS_THROUGH')
+    assert.ok(candidate)
+    assert.equal(candidate.addressFragment, '242 Dôc Lâp, Phường Tân Thành, Quận Tân Phú')
+    assert.ok(candidate.riskFlags.includes('OCR_NAMED_ADMIN_ADDRESS'))
+    assert.ok(candidate.riskFlags.includes('OCR_TRAILING_NOISE_STRIPPED'))
+    assert.ok(candidate.riskFlags.includes('REVIEW_ONLY'))
+    assert.equal(candidate.canAutoResolve, false)
+  })
+
   it('does not create address candidates from generic text only', () => {
     const { fusion, candidates } = candidatesFromFusion([
       evidence('Sài Gòn Về Đêm Thường sẽ thêm gì nhất?', {

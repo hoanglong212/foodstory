@@ -1,0 +1,18 @@
+[
+  {
+    "id": "visual_screen_bot_chien_a_linh",
+    "url": "https://www.youtube.com/shorts/icgyLMRjKFs",
+    "category": "visual_screen_pinned_address",
+    "expectedOutcome": "SELECTOR_MISSED_VISIBLE_ADDRESS",
+    "expectedEvidenceSource": "visual_ocr",
+    "requiresManualFrameValidation": false,
+    "expectedSafety": {
+      "mustNotResolve": true,
+      "mustNotAutoResolve": true,
+      "mustNotContainUnsupportedHouseNumber": false,
+      "unsupportedHouseNumbers": []
+    },
+    "notes": "Manual validation confirms address is visible in the video frame, but selected crops do not include it.",
+    "canAutoResolve": false
+  }
+]

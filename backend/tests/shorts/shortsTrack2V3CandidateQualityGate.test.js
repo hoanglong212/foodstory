@@ -58,6 +58,46 @@ describe('Track 2 V3 candidate quality gate', () => {
     assert.equal(decision.reason, SHORTS_TRACK2_V3_CANDIDATE_KEEP_REASONS.ADDRESS_ANCHORED)
   })
 
+  it('forces a strong address to review-only under a list safety lock', () => {
+    const rawEvidence = evidence('221 Phan Văn Khe, Quận 6, TP HCM')
+    const gateResult = applyShortsTrack2V3CandidateQualityGate({
+      candidates: [candidate({
+        type: 'FULL_ADDRESS_VERBATIM',
+        displayText: rawEvidence.rawText,
+        addressFragment: rawEvidence.rawText,
+        riskFlags: ['VERIFY_ELIGIBLE'],
+        canAutoResolve: true,
+      })],
+      evidence: [rawEvidence],
+      intent: { mustNotResolve: true, intent: 'MULTI_PLACE_OR_LIST' },
+    })
+
+    assert.equal(gateResult.keptCandidateCount, 1)
+    assert.equal(gateResult.candidates[0].canAutoResolve, false)
+    assert.ok(gateResult.candidates[0].riskFlags.includes('REVIEW_ONLY'))
+  })
+
+  it('keeps a source-validated noisy named-admin address review-only', () => {
+    const rawEvidence = evidence('242 Dộc Lập ETân Thành; @Tân Phú 1000-2100')
+    const rawCandidateResult = buildShortsTrack2V3Candidates({
+      evidence: [rawEvidence],
+      intent: { mustNotResolve: true },
+    })
+    const gateResult = applyShortsTrack2V3CandidateQualityGate({
+      candidates: rawCandidateResult.candidates,
+      evidence: [rawEvidence],
+      intent: { mustNotResolve: true, intent: 'MULTI_PLACE_OR_LIST' },
+    })
+
+    assert.equal(gateResult.keptCandidateCount, 1)
+    assert.equal(
+      gateResult.candidates[0].qualityGateReason,
+      SHORTS_TRACK2_V3_CANDIDATE_KEEP_REASONS.NOISY_NAMED_ADMIN_ADDRESS,
+    )
+    assert.equal(gateResult.candidates[0].canAutoResolve, false)
+    assert.ok(gateResult.candidates[0].riskFlags.includes('REVIEW_ONLY'))
+  })
+
   it('keeps place plus partial address candidates with review-only risk flags', () => {
     const rawEvidence = evidence('Xe xôi đêm\n1433/2 Phường 6 Quận 10')
     const rawCandidateResult = buildShortsTrack2V3Candidates({

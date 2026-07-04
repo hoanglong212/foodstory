@@ -1,0 +1,24 @@
+[
+  {
+    "id": "adhoc-singlecandidate-NXnEvUyM9NI",
+    "url": "https://www.youtube.com/shorts/NXnEvUyM9NI",
+    "category": "visual_screen_pinned_address",
+    "expectedResolution": "ANY",
+    "expectedOutcome": "SELECTOR_MISSED_VISIBLE_ADDRESS",
+    "expectedEvidenceSource": "visual_ocr",
+    "expectedCandidateMin": null,
+    "expectedAddressContains": [],
+    "expectedAddressContainsAny": [["242 Độc Lập"], ["Tân Thành"], ["Tân Phú"]],
+    "expectedSeedContainsAny": [],
+    "requiresManualFrameValidation": true,
+    "mustNotCreateFoodCandidate": false,
+    "placesAllowedOnlyIfEnabled": false,
+    "expectedSafety": {
+      "mustNotResolve": true,
+      "mustNotAutoResolve": true,
+      "mustNotContainUnsupportedHouseNumber": false,
+      "unsupportedHouseNumbers": []
+    },
+    "notes": "Ad-hoc single-candidate URL. Manual frame shows address: 242 Độc Lập, P. Tân Thành, Q. Tân Phú. Do not add to benchmark until manually validated."
+  }
+]

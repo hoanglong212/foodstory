@@ -126,4 +126,47 @@ describe('Track 2 V3 smart overlay selector', () => {
     assert.ok(result.selectedImages[0].score > 0.2)
     assert.ok(result.selectedImages[0].cropPath)
   })
+
+  it('writes inspectable selector crop diagnostics and contact sheets without changing selection', async () => {
+    const directory = await tempDir()
+    const lowPath = path.join(directory, 'diagnostic-low.jpg')
+    const highPath = path.join(directory, 'diagnostic-high.jpg')
+    await createPlainFrame(lowPath)
+    await createOverlayFrame(highPath)
+
+    const result = await selectShortsTrack2V3SmartOverlayCrops({
+      frames: [
+        frame(lowPath, 2, 0),
+        frame(highPath, 12, 1),
+      ],
+      outputDir: directory,
+      config: { maxSmartOverlaySelectedImages: 1 },
+      durationSeconds: 20,
+      videoId: 'selector-diagnostics-mock',
+      deps: {
+        selectorDiagnosticsEnabled: true,
+        keepSampledFrames: true,
+      },
+    })
+
+    assert.ok(result.selectorDiagnosticsPath)
+    assert.ok(result.contactSheetPath)
+    assert.ok(await fs.stat(result.selectorDiagnosticsPath))
+    assert.ok(await fs.stat(result.contactSheetPath))
+    assert.ok(await fs.stat(result.selectedContactSheetPath))
+    assert.ok(result.generatedCropCount >= result.selectedImageCount)
+    assert.equal(result.selectedCropIds.length, result.selectedImageCount)
+    assert.ok(Object.keys(result.cropRegionCounts).length > 0)
+
+    const diagnostics = JSON.parse(await fs.readFile(result.selectorDiagnosticsPath, 'utf8'))
+    assert.equal(diagnostics.videoId, 'selector-diagnostics-mock')
+    assert.equal(diagnostics.frameCount, 2)
+    assert.equal(diagnostics.generatedCropCount, SMART_OVERLAY_CROP_VARIANTS.length * 2)
+    assert.equal(diagnostics.selectedCropIds.length, 1)
+    assert.ok(diagnostics.crops.some((crop) => crop.selected === false))
+    assert.ok(diagnostics.crops.every((crop) => crop.scores.digitPresence === null))
+    assert.ok(diagnostics.crops.every((crop) => crop.scores.addressKeywordHint === null))
+    assert.ok(await fs.stat(path.join(directory, 'all-crops')))
+    assert.ok(await fs.stat(path.join(directory, 'unselected-crops')))
+  })
 })

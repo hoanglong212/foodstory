@@ -3,12 +3,14 @@ import {
   foldVietnameseText,
   normalizeShortsTrack2V3Text,
 } from './shortsTrack2V3EvidenceStoreService.js'
+import { parseShortsTrack2V3NamedAdminAddress } from './shortsTrack2V3NamedAdminAddressService.js'
 
 export const SHORTS_TRACK2_V3_CANDIDATE_KEEP_REASONS = Object.freeze({
   ADDRESS_ANCHORED: 'ADDRESS_ANCHORED',
   PLACE_PLUS_ADDRESS: 'PLACE_PLUS_ADDRESS',
   MULTI_PLACE_REVIEW: 'MULTI_PLACE_REVIEW',
   CLEAN_FULL_ADDRESS: 'CLEAN_FULL_ADDRESS',
+  NOISY_NAMED_ADMIN_ADDRESS: 'NOISY_NAMED_ADMIN_ADDRESS',
 })
 
 export const SHORTS_TRACK2_V3_CANDIDATE_DROP_REASONS = Object.freeze({
@@ -20,6 +22,7 @@ export const SHORTS_TRACK2_V3_CANDIDATE_DROP_REASONS = Object.freeze({
   MUST_NOT_RESOLVE_SINGLE_PLACE: 'MUST_NOT_RESOLVE_SINGLE_PLACE',
   WEAK_NO_EVIDENCE_CANDIDATE: 'WEAK_NO_EVIDENCE_CANDIDATE',
   DUPLICATE_ADDRESS_CANDIDATE: 'DUPLICATE_ADDRESS_CANDIDATE',
+  NON_FOOD_NEGATIVE: 'NON_FOOD_NEGATIVE',
 })
 
 function safeText(value, maxLength = 4000) {
@@ -64,7 +67,7 @@ function hasStreetMarker(folded = '') {
 
 function looksLikeStreetSegment(segment = '') {
   const clean = String(segment || '')
-    .replace(/\b(?:phuong|p|quan|q|ward|district|tp|hcm|tinh|huyen|xa)\b/giu, ' ')
+    .replace(/\b(?:phuong|phudng|phung|phuung|phurong|p|quan|qun|q|ward|district|tp|hcm|tinh|huyen|xa)\b/giu, ' ')
     .replace(/[^\p{L}\s'.-]/gu, ' ')
     .replace(/\s+/gu, ' ')
     .trim()
@@ -86,8 +89,8 @@ function hasStreetSegmentAfterHouse(value = '') {
   const start = firstHouseNumberIndex(folded)
   if (start < 0) return false
   const adminIndex = [
-    folded.search(/\b(?:phuong|p\.?)\s*\d+\b/iu),
-    folded.search(/\b(?:quan|q\.?)\s*\d+\b/iu),
+    folded.search(/\b(?:phuong|phudng|phung|phuung|phurong|p\.?)\s*\d+\b/iu),
+    folded.search(/\b(?:quan|qun|q\.?)\s*\d+\b/iu),
     folded.search(/\b(?:tp|thanh pho|hcm|ho chi minh|sai gon|saigon|ha noi|hanoi|tinh|huyen|xa)\b/iu),
   ].filter((index) => index >= 0)
   const end = adminIndex.length ? Math.min(...adminIndex) : folded.length
@@ -307,6 +310,22 @@ export function evaluateShortsTrack2V3CandidateQuality({
   const combinedProfile = addressProfile(combinedText)
   const category = fixtureCategory(context)
   const mustNotResolve = effectiveMustNotResolve(intent, context)
+  const namedAdminAddress = parseShortsTrack2V3NamedAdminAddress(text) ||
+    evidenceForCandidate(candidate, evidenceItems)
+      .map(evidenceText)
+      .map(parseShortsTrack2V3NamedAdminAddress)
+      .find(Boolean)
+  const validatedNamedAdminAddress = Boolean(
+    namedAdminAddress && asArray(candidate.riskFlags).includes('OCR_NAMED_ADMIN_ADDRESS'),
+  )
+
+  if (category === 'no_address_expected') {
+    return {
+      keep: false,
+      reason: SHORTS_TRACK2_V3_CANDIDATE_DROP_REASONS.NON_FOOD_NEGATIVE,
+      addressAnchored: false,
+    }
+  }
 
   if (candidate.type === 'MULTI_PLACE_REVIEW') {
     if (hasGenuineMultiPlaceReviewEvidence(candidate, evidenceItems, intent)) {
@@ -325,7 +344,22 @@ export function evaluateShortsTrack2V3CandidateQuality({
     }
   }
 
+  if (validatedNamedAdminAddress) {
+    return {
+      keep: true,
+      reason: SHORTS_TRACK2_V3_CANDIDATE_KEEP_REASONS.NOISY_NAMED_ADMIN_ADDRESS,
+      addressAnchored: true,
+    }
+  }
+
   if (mustNotResolve) {
+    if (candidateProfile.hasAddressAnchor) {
+      return {
+        keep: true,
+        reason: SHORTS_TRACK2_V3_CANDIDATE_KEEP_REASONS.ADDRESS_ANCHORED,
+        addressAnchored: true,
+      }
+    }
     return {
       keep: false,
       reason: SHORTS_TRACK2_V3_CANDIDATE_DROP_REASONS.MUST_NOT_RESOLVE_SINGLE_PLACE,
@@ -412,6 +446,7 @@ export function applyShortsTrack2V3CandidateQualityGate({
 } = {}) {
   const rawCandidates = asArray(candidates)
   const evidenceItems = asArray(evidence)
+  const mustNotResolve = effectiveMustNotResolve(intent, context)
   const initialDecisions = rawCandidates.map((candidate) => ({
     candidate,
     ...evaluateShortsTrack2V3CandidateQuality({
@@ -424,10 +459,25 @@ export function applyShortsTrack2V3CandidateQualityGate({
   const decisions = applyAddressDedupe(initialDecisions)
   const keptCandidates = decisions
     .filter((decision) => decision.keep)
-    .map((decision) => ({
-      ...decision.candidate,
-      qualityGateReason: decision.reason,
-    }))
+    .map((decision) => {
+      const candidate = {
+        ...decision.candidate,
+        qualityGateReason: decision.reason,
+      }
+      const forceReviewOnly = Boolean(
+        (mustNotResolve && decision.addressAnchored) ||
+          decision.reason === SHORTS_TRACK2_V3_CANDIDATE_KEEP_REASONS.NOISY_NAMED_ADMIN_ADDRESS,
+      )
+      if (!forceReviewOnly) return candidate
+      return {
+        ...candidate,
+        canAutoResolve: false,
+        riskFlags: [...new Set([
+          ...asArray(candidate.riskFlags),
+          'REVIEW_ONLY',
+        ])],
+      }
+    })
   const droppedDecisions = decisions.filter((decision) => !decision.keep)
 
   return {

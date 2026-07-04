@@ -1,0 +1,36 @@
+[
+  {
+    "id": "hint_nhi_su_huynh_q8",
+    "url": "https://www.youtube.com/shorts/Uyfyn44QvZA",
+    "category": "place_name_area_hint",
+    "expectedOutcome": "PLACE_HINT_REVIEW_OR_UNRESOLVED",
+    "expectedEvidenceSource": "title_or_description_hint",
+    "expectedSeedContainsAny": ["Nhị Sư Huynh", "Đào Cam Mộc", "Quận 8"],
+    "placesAllowedOnlyIfEnabled": true,
+    "expectedSafety": {
+      "mustNotResolve": true,
+      "mustNotAutoResolve": true,
+      "mustNotContainUnsupportedHouseNumber": false,
+      "unsupportedHouseNumbers": []
+    },
+    "notes": "Place name and area seed only. Places may be considered in a later explicitly enabled phase.",
+    "canAutoResolve": false
+  },
+  {
+    "id": "hint_hu_tieu_tan_hung_yersin_q1",
+    "url": "https://www.youtube.com/shorts/4JBpleyxj1E",
+    "category": "place_name_area_hint",
+    "expectedOutcome": "PLACE_HINT_REVIEW_OR_UNRESOLVED",
+    "expectedEvidenceSource": "title_or_description_hint",
+    "expectedSeedContainsAny": ["Hủ tiếu mì Tân Hưng", "Yersin", "Quận 1"],
+    "placesAllowedOnlyIfEnabled": true,
+    "expectedSafety": {
+      "mustNotResolve": true,
+      "mustNotAutoResolve": true,
+      "mustNotContainUnsupportedHouseNumber": false,
+      "unsupportedHouseNumbers": []
+    },
+    "notes": "Place name and area seed only. Places remain disabled for this fixture-cleanup phase.",
+    "canAutoResolve": false
+  }
+]

@@ -45,9 +45,77 @@ describe('Track 2 V3 provider optionality', () => {
     assert.equal(config.track2V3GoogleVisionEnabled, false)
     assert.equal(config.track2V3PlacesEnabled, false)
     assert.equal(config.track2V3GeminiVisionEnabled, false)
+    assert.equal(config.track2V3GeminiCropJudgeEnabled, false)
+    assert.equal(config.geminiCropJudgeModel, 'gemini-3.5-flash')
+    assert.equal(config.geminiCropJudgeMaxPages, 6)
+    assert.equal(config.geminiCropJudgeMaxSelectedCrops, 8)
+    assert.equal(config.geminiCropJudgeTimeoutMs, 60000)
+    assert.equal(config.geminiCropJudgeMaxRequestBytes, 12000000)
+    assert.equal(config.geminiCropJudgeMaxImageBytes, 4000000)
+    assert.equal(config.geminiCropJudgeJpegQuality, 80)
     assert.equal(config.track2V3LocalOcrEnabled, false)
+    assert.equal(config.track2V3PaddleOcrEnabled, true)
+    assert.equal(config.paddleOcrAllowModelDownload, false)
+    assert.equal(config.maxPaddleOcrImages, 6)
+    assert.equal(config.maxEasyOcrImages, 6)
+    assert.equal(config.localOcrDebugEnabled, false)
     assert.equal(config.track2V3SmartOverlayEnabled, true)
     assert.equal(config.track2V3SmartOverlayDryRun, false)
+    assert.equal(config.adaptiveFrameSamplingEnabled, false)
+    assert.equal(config.adaptiveFrameMaxAdditionalFrames, 18)
+    assert.equal(config.adaptiveFrameSampleIntervalMs, 500)
+    assert.equal(config.adaptiveFrameMaxSelectedImages, 12)
+    assert.equal(config.adaptiveFrameTimeoutMs, 45000)
+  })
+
+  it('reads bounded Gemini Crop Judge request-size controls from env', () => {
+    const config = getShortsTrack2V3Config({
+      TRACK2_V3_GEMINI_CROP_JUDGE_MAX_REQUEST_BYTES: '15000000',
+      TRACK2_V3_GEMINI_CROP_JUDGE_MAX_IMAGE_BYTES: '5000000',
+      TRACK2_V3_GEMINI_CROP_JUDGE_JPEG_QUALITY: '72',
+    })
+
+    assert.equal(config.geminiCropJudgeMaxRequestBytes, 15000000)
+    assert.equal(config.geminiCropJudgeMaxImageBytes, 5000000)
+    assert.equal(config.geminiCropJudgeJpegQuality, 72)
+  })
+
+  it('reads bounded local OCR engine caps and controls from env', () => {
+    const config = getShortsTrack2V3Config({
+      TRACK2_V3_MAX_LOCAL_OCR_IMAGES: '4',
+      TRACK2_V3_MAX_EASYOCR_IMAGES: '3',
+      TRACK2_V3_MAX_PADDLEOCR_IMAGES: '5',
+      TRACK2_V3_PADDLEOCR_ENABLED: 'false',
+      TRACK2_V3_PADDLEOCR_ALLOW_MODEL_DOWNLOAD: 'true',
+      TRACK2_V3_LOCAL_OCR_PROVIDER: 'ensemble',
+      TRACK2_V3_LOCAL_OCR_TIMEOUT_MS: '180000',
+      TRACK2_V3_LOCAL_OCR_DEBUG: 'true',
+    })
+
+    assert.equal(config.maxLocalOcrImages, 4)
+    assert.equal(config.maxEasyOcrImages, 3)
+    assert.equal(config.maxPaddleOcrImages, 5)
+    assert.equal(config.track2V3PaddleOcrEnabled, false)
+    assert.equal(config.paddleOcrAllowModelDownload, true)
+    assert.equal(config.track2V3LocalOcrProvider, 'ensemble')
+    assert.equal(config.localOcrTimeoutMs, 180000)
+    assert.equal(config.localOcrDebugEnabled, true)
+  })
+
+  it('reads bounded adaptive frame sampling controls from env', () => {
+    const config = getShortsTrack2V3Config({
+      TRACK2_V3_ADAPTIVE_FRAME_SAMPLING_ENABLED: 'true',
+      TRACK2_V3_ADAPTIVE_FRAME_MAX_ADDITIONAL_FRAMES: '9',
+      TRACK2_V3_ADAPTIVE_FRAME_SAMPLE_INTERVAL_MS: '400',
+      TRACK2_V3_ADAPTIVE_FRAME_MAX_SELECTED_IMAGES: '7',
+      TRACK2_V3_ADAPTIVE_FRAME_TIMEOUT_MS: '30000',
+    })
+
+    assert.equal(config.adaptiveFrameSamplingEnabled, true)
+    assert.equal(config.adaptiveFrameMaxAdditionalFrames, 9)
+    assert.equal(config.adaptiveFrameSampleIntervalMs, 400)
+    assert.equal(config.adaptiveFrameMaxSelectedImages, 7)
+    assert.equal(config.adaptiveFrameTimeoutMs, 30000)
   })
 
   it('does not call a legacy Google OCR provider when V3 is enabled but Google Vision is disabled', async () => {

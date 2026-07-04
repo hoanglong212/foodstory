@@ -1,0 +1,205 @@
+{
+  "version": "track2-v3-offline-audit-v1.2",
+  "notes": "Phase 3.2 case-closure audit cases for local smart-overlay OCR. Expected outcomes are coarse terminal diagnoses, not fixture-specific production rules or exact ground truth.",
+  "cases": [
+    {
+      "id": "banh-mi-d1-multi-location",
+      "url": "https://www.youtube.com/shorts/DWmWGxtagZs",
+      "category": "multi_candidate",
+      "expectedResolution": "ANY",
+      "expectedOutcome": "METADATA_NEEDED",
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": false
+      },
+      "notes": "Search snippet mentions multiple Banh Mi locations in District 1, including Phạm Ngũ Lão and 197a Nguyễn Trãi. Useful multi-location audit case."
+    },
+    {
+      "id": "cho-lon-food-story-event-q5",
+      "url": "https://www.youtube.com/shorts/O0my07TFvxI",
+      "category": "metadata_single_address",
+      "expectedResolution": "ANY",
+      "expectedOutcome": "METADATA_REVIEW_CANDIDATE",
+      "expectedEvidenceSource": "youtube_description",
+      "expectedCandidateMin": 1,
+      "expectedAddressContains": ["105", "Trần Hưng Đạo", "Quận 5"],
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": false
+      },
+      "notes": "Live metadata audit confirms the YouTube description explicitly contains the 105 Trần Hưng Đạo address. Visual OCR is not the expected evidence source."
+    },
+    {
+      "id": "banh-xeo-truong-sa-phu-nhuan",
+      "url": "https://www.youtube.com/shorts/8jyLIb30dhI",
+      "category": "overlay_full_address",
+      "expectedResolution": "ANY",
+      "expectedOutcome": "METADATA_NEEDED",
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": false
+      },
+      "notes": "Search snippet mentions 456 Trường Sa, Phường 2, Quận Phú Nhuận. Good food-address OCR case."
+    },
+    {
+      "id": "bo-quan4-partial-address",
+      "url": "https://www.youtube.com/shorts/rA7zbLJk2mU",
+      "category": "overlay_partial_address",
+      "expectedResolution": "ANY",
+      "expectedOutcome": "METADATA_NEEDED",
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": false
+      },
+      "notes": "Search snippet mentions food in Quận 4 and phường 9, Quận 4. Useful partial-address case."
+    },
+    {
+      "id": "com-tam-broken-rice-d1",
+      "url": "https://www.youtube.com/shorts/EIGw377hdKY",
+      "category": "overlay_partial_address",
+      "expectedResolution": "ANY",
+      "expectedOutcome": "METADATA_NEEDED",
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": false
+      },
+      "notes": "Search snippet mentions Broken Rice and Phường Nguyễn Cư Trinh, Quận 1. Useful partial admin-address case."
+    },
+    {
+      "id": "banh-trang-nuong-tan-binh",
+      "url": "https://www.youtube.com/shorts/wBTTNr0qeqM",
+      "category": "overlay_partial_address",
+      "expectedResolution": "ANY",
+      "expectedOutcome": "METADATA_NEEDED",
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": false
+      },
+      "notes": "Search snippet mentions Bánh tráng nướng and Phường 13, Quận Tân Bình. Useful partial-address food case."
+    },
+    {
+      "id": "nonfood-address-cap-sac-negative",
+      "url": "https://www.youtube.com/shorts/DXVlaGd2Rhg",
+      "category": "no_address_expected",
+      "expectedResolution": "UNRESOLVED",
+      "expectedOutcome": "NONFOOD_REJECTED",
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": false
+      },
+      "notes": "Non-food commercial short with address-like text. Useful negative case: food-location pipeline should not confidently resolve non-food address."
+    },
+    {
+      "id": "nonfood-multi-address-eyeglass-negative",
+      "url": "https://www.youtube.com/shorts/DKNFj-0t3hw",
+      "category": "no_address_expected",
+      "expectedResolution": "UNRESOLVED",
+      "expectedOutcome": "NONFOOD_REJECTED",
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": false
+      },
+      "notes": "Non-food eyeglass short with multiple HCM addresses in search snippet. Useful false-positive and multi-address negative case."
+    },
+    {
+      "id": "visible-full-address-overlay",
+      "url": "https://www.youtube.com/shorts/avLPlQA7w0I",
+      "category": "overlay_full_address",
+      "expectedResolution": "ANY",
+      "expectedOutcome": "SELECTOR_OR_OCR_MISSED",
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": false
+      },
+      "notes": "Prior fixture evidence indicates a full visible address; use this to audit selector, OCR, and parser coverage without requiring exact text assertions."
+    },
+    {
+      "id": "noisy-partial-address-overlay",
+      "url": "https://www.youtube.com/shorts/W8ewx2gZqU4",
+      "category": "overlay_partial_address",
+      "expectedResolution": "ANY",
+      "expectedOutcome": "SELECTOR_OR_OCR_MISSED",
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": false
+      },
+      "notes": "Prior fixture evidence indicates a repeated address fragment damaged by OCR; exact ground truth is not required in this phase."
+    },
+    {
+      "id": "generic-list-caption",
+      "url": "https://www.youtube.com/shorts/qONsGB7T-Ig",
+      "category": "generic_caption_only",
+      "expectedResolution": "UNRESOLVED",
+      "expectedOutcome": "GENERIC_REJECTED",
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": false
+      },
+      "notes": "Generic list-style caption must not become a resolved location."
+    },
+    {
+      "id": "multi-place-safety",
+      "url": "https://www.youtube.com/shorts/9BZ8f4B300E",
+      "category": "multi_candidate",
+      "expectedResolution": "ANY",
+      "expectedOutcome": "METADATA_NEEDED",
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": false
+      },
+      "notes": "Multiple places may produce review candidates but must never auto-resolve as one place."
+    },
+    {
+      "id": "no-address-expected",
+      "url": "https://www.youtube.com/shorts/jsJ8bkSfC-c",
+      "category": "no_address_expected",
+      "expectedResolution": "UNRESOLVED",
+      "expectedOutcome": "CORRECT_UNRESOLVED",
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": false
+      },
+      "notes": "Area or market-like signals are not sufficient address evidence."
+    },
+    {
+      "id": "noisy-address-regression",
+      "url": "https://www.youtube.com/shorts/JSf3Yh3094s",
+      "category": "hard_ocr",
+      "expectedResolution": "ANY",
+      "expectedOutcome": "HARD_OCR_REVIEW",
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": false
+      },
+      "notes": "Noisy Vietnamese address overlay retained as a review-only OCR regression case."
+    },
+    {
+      "id": "xoh-hard-ocr-safety",
+      "url": "https://www.youtube.com/shorts/xohEPfmd6y0",
+      "category": "hard_ocr",
+      "expectedResolution": "ANY",
+      "expectedOutcome": "HARD_OCR_REVIEW",
+      "expectedSafety": {
+        "mustNotResolve": true,
+        "mustNotAutoResolve": true,
+        "mustNotContainUnsupportedHouseNumber": true,
+        "unsupportedHouseNumbers": ["1433/2"]
+      },
+      "notes": "Visible ground truth is 1433/2 Phường 6 Quận 10, but current OCR engines only support noisy variants; production must not infer 1433/2 unless raw OCR evidence contains it."
+    }
+  ]
+}

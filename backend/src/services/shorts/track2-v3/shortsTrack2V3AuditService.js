@@ -1,11 +1,95 @@
-const DEFAULT_CATEGORIES = ['OCR_ONLY', 'MULTI_PLACE', 'GENERIC_LIST', 'NO_EVIDENCE']
+import { detectShortsTrack2V3EvidenceTokens } from './shortsTrack2V3EvidenceStoreService.js'
+
+export const TRACK2_V3_AUDIT_CATEGORIES = Object.freeze([
+  'overlay_full_address',
+  'overlay_partial_address',
+  'generic_caption_only',
+  'metadata_only',
+  'audio_only',
+  'multi_candidate',
+  'no_address_expected',
+  'hard_ocr',
+  'metadata_multi_location',
+  'metadata_single_address',
+  'visual_screen_pinned_address',
+  'place_name_area_hint',
+  'nonfood_address_like',
+])
+
+export const TRACK2_V3_AUDIT_EXPECTED_OUTCOMES = Object.freeze([
+  'REVIEW_CANDIDATE',
+  'CORRECT_UNRESOLVED',
+  'MULTI_REVIEW',
+  'METADATA_NEEDED',
+  'SELECTOR_OR_OCR_MISSED',
+  'HARD_OCR_REVIEW',
+  'GENERIC_REJECTED',
+  'NONFOOD_REJECTED',
+  'METADATA_MULTI_REVIEW',
+  'METADATA_REVIEW_CANDIDATE',
+  'VISUAL_OCR_REVIEW_CANDIDATE',
+  'SELECTOR_MISSED_VISIBLE_ADDRESS',
+  'PLACE_HINT_REVIEW_OR_UNRESOLVED',
+  'CORRECT_UNRESOLVED_NONFOOD',
+])
+
+export const TRACK2_V3_AUDIT_CLOSURE_STATUSES = Object.freeze([
+  'PASSED_EXPECTED_REVIEW_CANDIDATE',
+  'PASSED_EXPECTED_UNRESOLVED',
+  'PASSED_EXPECTED_REJECTION',
+  'FAILED_MISSING_EXPECTED_CANDIDATE',
+  'FAILED_FALSE_CANDIDATE',
+  'FAILED_UNSUPPORTED_HOUSE_NUMBER',
+  'NEEDS_METADATA_EVIDENCE',
+  'NEEDS_SELECTOR_REVIEW',
+  'NEEDS_HIGH_RES_OCR',
+  'NEEDS_PARSER_RELAXATION',
+  'NEEDS_DATE_TIME_FILTERING',
+  'UNKNOWN',
+])
+
+export const TRACK2_V3_AUDIT_FAILURE_CATEGORIES = Object.freeze([
+  'GOOD_CANDIDATE',
+  'REVIEW_ONLY_CANDIDATE',
+  'NO_CANDIDATE',
+  'SELECTOR_MISSED_TEXT',
+  'OCR_NOISY',
+  'OCR_HOUSE_NUMBER_CONFLICT',
+  'GENERIC_CAPTION_ONLY',
+  'PARSER_TOO_STRICT',
+  'PROVIDER_ERROR',
+  'UNSUPPORTED_VIDEO',
+  'NO_ADDRESS_EXPECTED',
+  'UNKNOWN',
+])
+
+const VALID_EXPECTED_RESOLUTIONS = new Set(['CANDIDATES', 'UNRESOLVED', 'ANY'])
+const VALID_EXPECTED_OUTCOMES = new Set(TRACK2_V3_AUDIT_EXPECTED_OUTCOMES)
+const REVIEW_RISK_FLAGS = new Set([
+  'REVIEW_ONLY',
+  'LOW_CONFIDENCE_OCR',
+  'NOISY_OCR',
+  'NOISY_HOUSE_NUMBER',
+  'PARTIAL_ADDRESS',
+  'MISSING_STREET_NAME',
+])
+const UNSUPPORTED_VIDEO_CODES = /(?:UNSUPPORTED|VIDEO_TOO_LONG|YTDLP|DOWNLOAD_FAILED|NO_VIDEO|FRAME_EXTRACTION_FAILED)/iu
 
 function safeString(value, maxLength = 2000) {
   if (value == null) return ''
   return String(value).trim().slice(0, maxLength)
 }
 
+function safeStringArray(value, maxItems = 20, maxLength = 500) {
+  return (Array.isArray(value) ? value : [])
+    .slice(0, maxItems)
+    .map((item) => safeString(item, maxLength))
+    .filter(Boolean)
+}
+
 function numberMetric(result = {}, key, fallback = 0) {
+  const direct = Number(result?.[key])
+  if (Number.isFinite(direct)) return direct
   const parsed = Number(result.metrics?.[key])
   return Number.isFinite(parsed) ? parsed : fallback
 }
@@ -29,13 +113,661 @@ function addReasonCounts(target = {}, source = {}) {
 }
 
 function candidateCount(result = {}) {
-  if (Number.isFinite(Number(result.metrics?.candidateCount))) return Number(result.metrics.candidateCount)
-  return Array.isArray(result.candidates) ? result.candidates.length : 0
+  const candidates = Array.isArray(result.candidates) ? result.candidates : []
+  return numberMetric(result, 'candidateCount', candidates.length)
 }
 
 function evidenceCount(result = {}) {
-  if (Number.isFinite(Number(result.metrics?.evidenceCount))) return Number(result.metrics.evidenceCount)
-  return Array.isArray(result.evidence) ? result.evidence.length : 0
+  const evidence = Array.isArray(result.evidence) ? result.evidence : []
+  return numberMetric(result, 'evidenceCount', evidence.length)
+}
+
+function providerCalled(result = {}, key) {
+  return Boolean(
+    result?.[key] ||
+    result?.providerCalls?.[key] ||
+    result?.metrics?.[key],
+  )
+}
+
+function sanitizeProviderErrors(value = []) {
+  const optionalInteger = (input) => {
+    if (input == null || input === '') return null
+    const number = Number(input)
+    return Number.isFinite(number) ? Math.max(0, Math.trunc(number)) : null
+  }
+  return (Array.isArray(value) ? value : []).slice(0, 20).map((error) => ({
+    provider: safeString(error?.provider, 120) || null,
+    code: safeString(error?.code, 160) || 'PROVIDER_ERROR',
+    message: safeString(error?.message, 500) || null,
+    httpStatus: optionalInteger(error?.httpStatus),
+    googleErrorStatus: safeString(error?.googleErrorStatus, 120) || null,
+    googleErrorCode: error?.googleErrorCode ?? null,
+    googleErrorMessage: safeString(error?.googleErrorMessage, 1000) || null,
+    fieldViolations: (Array.isArray(error?.fieldViolations)
+      ? error.fieldViolations
+      : []).slice(0, 20).map((violation) => ({
+        field: safeString(violation?.field, 300) || null,
+        description: safeString(violation?.description, 500) || null,
+      })),
+    endpointType: safeString(error?.endpointType, 40) || null,
+    model: safeString(error?.model, 120) || null,
+    pagePath: safeString(error?.pagePath, 2000) || null,
+    originalBytes: optionalInteger(error?.originalBytes),
+    sentBytes: optionalInteger(error?.sentBytes),
+    imageBytes: optionalInteger(error?.imageBytes),
+    base64Length: optionalInteger(error?.base64Length),
+    requestBodyApproxBytes: optionalInteger(error?.requestBodyApproxBytes),
+    mimeType: safeString(error?.mimeType, 80) || null,
+    transportErrorMessage: safeString(error?.transportErrorMessage, 500) || null,
+  }))
+}
+
+function summarizeCandidate(candidate = {}) {
+  return {
+    type: safeString(candidate.type, 160) || null,
+    displayText: safeString(candidate.displayText, 500) || null,
+    addressFragment: safeString(candidate.addressFragment, 500) || null,
+    placeName: safeString(candidate.placeName, 300) || null,
+    evidenceSource: safeString(candidate.evidenceSource, 120) || null,
+    evidenceSources: safeStringArray(candidate.evidenceSources, 20, 120),
+    evidenceText: safeString(candidate.evidenceText, 1000) || null,
+    evidenceTexts: safeStringArray(candidate.evidenceTexts, 20, 1000),
+    riskFlags: safeStringArray(candidate.riskFlags, 30, 120),
+    canAutoResolve: Boolean(candidate.canAutoResolve),
+    houseNumberAlternatives: safeStringArray(candidate.houseNumberAlternatives, 20, 80),
+    houseNumberConflict: Boolean(candidate.houseNumberConflict),
+    normalizationApplied: safeStringArray(candidate.normalizationApplied, 20, 120),
+    dateTimeNoiseRemoved: safeStringArray(candidate.dateTimeNoiseRemoved, 20, 120),
+  }
+}
+
+function uniqueStrings(values = [], maxItems = 50) {
+  return [...new Set(values.map((value) => safeString(value, 500)).filter(Boolean))].slice(0, maxItems)
+}
+
+function textContainsAddressLikeEvidence(value = '') {
+  const tokens = detectShortsTrack2V3EvidenceTokens(safeString(value, 2000))
+  return Boolean(tokens.hasHouseNumber && (tokens.hasStreetLike || tokens.hasWard || tokens.hasDistrict))
+}
+
+function textContainsDateTimeHouseNumber(value = '') {
+  const token = safeString(value, 200)
+  return Boolean(
+    /^(?:\d{1,2}[-/.]){2,4}\d{2,4}$/u.test(token) ||
+    /^\d{1,2}-\d{2}-\d{1,2}\/\d{2}$/u.test(token) ||
+    /^\d{1,2}(?::|h)\d{2}(?:[-–—]\d{1,2}(?::|h)\d{2})?$/iu.test(token)
+  )
+}
+
+function categoryExpectedSafety(item = {}) {
+  const legacy = item.expected || {}
+  const expectedSafety = item.expectedSafety || {}
+  return {
+    mustNotResolve: Boolean(expectedSafety.mustNotResolve ?? legacy.mustNotResolve),
+    mustNotAutoResolve: Boolean(expectedSafety.mustNotAutoResolve ?? true),
+    mustNotContainUnsupportedHouseNumber: Boolean(
+      expectedSafety.mustNotContainUnsupportedHouseNumber,
+    ),
+    unsupportedHouseNumbers: safeStringArray(expectedSafety.unsupportedHouseNumbers, 20, 80),
+  }
+}
+
+function containsUnsupportedHouseNumber(text = '', houseNumber = '') {
+  const escaped = safeString(houseNumber, 80).replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+  if (!escaped) return false
+  return new RegExp(`(?:^|[^0-9])${escaped}(?=$|[^0-9])`, 'u').test(text)
+}
+
+export function parseShortsTrack2V3AuditFixture(value) {
+  let fixture = value
+  if (typeof value === 'string') {
+    try {
+      fixture = JSON.parse(value)
+    } catch (error) {
+      throw new Error(`Invalid Track 2 V3 audit fixture JSON: ${error.message}`)
+    }
+  }
+  const fixtureCases = Array.isArray(fixture) ? fixture : fixture?.cases
+  if (!Array.isArray(fixtureCases)) {
+    throw new Error('Track 2 V3 audit fixture must be a case array or contain a cases array')
+  }
+
+  const ids = new Set()
+  const cases = fixtureCases.filter((item) => item?.enabled !== false).map((item, index) => {
+    const prefix = `Track 2 V3 audit fixture case ${index + 1}`
+    const id = safeString(item?.id, 160)
+    const url = safeString(item?.url, 2000)
+    const category = safeString(item?.category, 120)
+    const expectedResolution = safeString(item?.expectedResolution, 40) || 'ANY'
+    const expectedOutcome = safeString(item?.expectedOutcome, 80)
+    if (!id) throw new Error(`${prefix} requires id`)
+    if (ids.has(id)) throw new Error(`${prefix} has duplicate id: ${id}`)
+    if (!/^https:\/\/(?:www\.|m\.)?youtube\.com\/shorts\/[A-Za-z0-9_-]+/u.test(url)) {
+      throw new Error(`${prefix} requires a public YouTube Shorts URL`)
+    }
+    if (!TRACK2_V3_AUDIT_CATEGORIES.includes(category)) {
+      throw new Error(`${prefix} has unsupported category: ${category || '(empty)'}`)
+    }
+    if (!VALID_EXPECTED_RESOLUTIONS.has(expectedResolution)) {
+      throw new Error(`${prefix} has unsupported expectedResolution: ${expectedResolution}`)
+    }
+    if (!VALID_EXPECTED_OUTCOMES.has(expectedOutcome)) {
+      throw new Error(`${prefix} has unsupported expectedOutcome: ${expectedOutcome || '(empty)'}`)
+    }
+    ids.add(id)
+    return {
+      id,
+      url,
+      category,
+      expectedResolution,
+      expectedOutcome,
+      expectedSafety: categoryExpectedSafety(item),
+      notes: safeString(item?.notes, 2000),
+      expectedEvidenceSource: safeString(item?.expectedEvidenceSource, 120) || null,
+      expectedCandidateMin: Number.isFinite(Number(item?.expectedCandidateMin))
+        ? Math.max(0, Number(item.expectedCandidateMin))
+        : null,
+      expectedAddressContains: safeStringArray(item?.expectedAddressContains, 20, 200),
+      expectedAddressContainsAny: safeStringArray(item?.expectedAddressContainsAny, 20, 200),
+      expectedSeedContainsAny: safeStringArray(item?.expectedSeedContainsAny, 20, 200),
+      requiresManualFrameValidation: Boolean(item?.requiresManualFrameValidation),
+      mustNotCreateFoodCandidate: Boolean(item?.mustNotCreateFoodCandidate),
+      placesAllowedOnlyIfEnabled: Boolean(item?.placesAllowedOnlyIfEnabled),
+      canAutoResolve: Boolean(item?.canAutoResolve),
+    }
+  })
+
+  return {
+    version: safeString(fixture?.version, 120) || 'track2-v3-grouped-audit-v1',
+    notes: safeString(fixture?.notes, 2000),
+    cases,
+  }
+}
+
+export function classifyShortsTrack2V3AuditFailure(caseSummary = {}) {
+  const candidateTotal = Number(caseSummary.candidateCount || 0)
+  const providerErrors = Array.isArray(caseSummary.providerErrors)
+    ? caseSummary.providerErrors
+    : []
+  const providerCodes = providerErrors.map((error) => error?.code).filter(Boolean).join(' ')
+  const snippets = Array.isArray(caseSummary.localOcrBestSnippets)
+    ? caseSummary.localOcrBestSnippets
+    : []
+  const riskFlags = new Set(caseSummary.riskFlags || [])
+  const droppedReasons = caseSummary.droppedCandidateReasons || {}
+
+  if (UNSUPPORTED_VIDEO_CODES.test(providerCodes)) return 'UNSUPPORTED_VIDEO'
+  if (providerErrors.length > 0 && candidateTotal === 0) return 'PROVIDER_ERROR'
+  if (caseSummary.houseNumberConflict) return 'OCR_HOUSE_NUMBER_CONFLICT'
+
+  if (candidateTotal === 0) {
+    if (caseSummary.category === 'no_address_expected') return 'NO_ADDRESS_EXPECTED'
+    if (
+      caseSummary.category === 'generic_caption_only' ||
+      Number(droppedReasons.INTRO_OR_CAPTION_ONLY || 0) > 0
+    ) {
+      return 'GENERIC_CAPTION_ONLY'
+    }
+    if (
+      ['overlay_full_address', 'overlay_partial_address', 'hard_ocr'].includes(caseSummary.category) &&
+      Number(caseSummary.selectedImageCount || 0) === 0
+    ) {
+      return 'SELECTOR_MISSED_TEXT'
+    }
+    if (snippets.some(textContainsAddressLikeEvidence)) return 'PARSER_TOO_STRICT'
+    if (caseSummary.category === 'hard_ocr' && snippets.length > 0) return 'OCR_NOISY'
+    return 'NO_CANDIDATE'
+  }
+
+  if (
+    caseSummary.houseNumberAlternatives?.length > 1 ||
+    [...riskFlags].some((flag) => ['LOW_CONFIDENCE_OCR', 'NOISY_OCR', 'NOISY_HOUSE_NUMBER'].includes(flag))
+  ) {
+    return 'OCR_NOISY'
+  }
+  if (caseSummary.canAutoResolve && ![...riskFlags].some((flag) => REVIEW_RISK_FLAGS.has(flag))) {
+    return 'GOOD_CANDIDATE'
+  }
+  if ([...riskFlags].some((flag) => REVIEW_RISK_FLAGS.has(flag)) || !caseSummary.canAutoResolve) {
+    return 'REVIEW_ONLY_CANDIDATE'
+  }
+  return 'UNKNOWN'
+}
+
+function hasMetadataExpectation(caseSummary = {}) {
+  return [
+    'METADATA_NEEDED',
+    'METADATA_MULTI_REVIEW',
+    'METADATA_REVIEW_CANDIDATE',
+  ].includes(caseSummary.expectedOutcome) ||
+    /\b(?:search snippet|metadata)\b/iu.test(safeString(caseSummary.notes, 2000))
+}
+
+function hasVisualAddressEvidence(caseSummary = {}) {
+  return (caseSummary.localOcrBestSnippets || []).some(textContainsAddressLikeEvidence)
+}
+
+function hasMultiReviewCandidate(caseSummary = {}) {
+  return Number(caseSummary.candidateCount || 0) >= 2 ||
+    (caseSummary.candidates || []).some((candidate) => candidate.type === 'MULTI_PLACE_REVIEW')
+}
+
+function foldAuditText(value = '') {
+  return safeString(value, 5000)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/gu, '')
+    .replace(/đ/giu, 'd')
+    .toLowerCase()
+    .replace(/\s+/gu, ' ')
+}
+
+function metadataAddressExpectationSatisfied(caseSummary = {}) {
+  const candidateText = foldAuditText((caseSummary.candidates || [])
+    .flatMap((candidate) => [candidate.displayText, candidate.addressFragment, candidate.placeName])
+    .filter(Boolean)
+    .join('\n'))
+  const required = caseSummary.expectedAddressContains || []
+  const any = caseSummary.expectedAddressContainsAny || []
+  return required.every((token) => candidateText.includes(foldAuditText(token))) &&
+    (any.length === 0 || any.some((token) => candidateText.includes(foldAuditText(token))))
+}
+
+function closureActionHint(status) {
+  const hints = {
+    PASSED_EXPECTED_REVIEW_CANDIDATE: 'Keep the candidate review-only and retain its raw OCR evidence.',
+    PASSED_EXPECTED_UNRESOLVED: 'No parser change is needed for this correctly unresolved case.',
+    PASSED_EXPECTED_REJECTION: 'Keep the current negative or generic-caption rejection gate.',
+    FAILED_MISSING_EXPECTED_CANDIDATE: 'Inspect visual address anchors and candidate construction for this case class.',
+    FAILED_FALSE_CANDIDATE: 'Tighten food, caption, or negative-case gating before widening extraction.',
+    FAILED_UNSUPPORTED_HOUSE_NUMBER: 'Remove unsupported house-number inference and preserve only raw OCR alternatives.',
+    NEEDS_METADATA_EVIDENCE: 'Add a later metadata evidence adapter; do not relax the visual OCR parser for this case.',
+    NEEDS_SELECTOR_REVIEW: 'Review frame and crop selection before changing OCR parsing rules.',
+    NEEDS_HIGH_RES_OCR: 'Evaluate bounded high-resolution OCR for this visual case.',
+    NEEDS_PARSER_RELAXATION: 'Calibrate noisy Vietnamese address anchors while keeping review-only safety flags.',
+    NEEDS_DATE_TIME_FILTERING: 'Remove date and time tokens before house-number analysis.',
+    UNKNOWN: 'Inspect the case evidence and expected outcome manually.',
+  }
+  return hints[status] || hints.UNKNOWN
+}
+
+function expectedOutcomeSatisfied(caseSummary, status) {
+  if (status.startsWith('PASSED_EXPECTED_')) return true
+  if (caseSummary.expectedOutcome === 'METADATA_NEEDED' && status === 'NEEDS_METADATA_EVIDENCE') {
+    return true
+  }
+  if (
+    ['METADATA_MULTI_REVIEW', 'METADATA_REVIEW_CANDIDATE'].includes(caseSummary.expectedOutcome) &&
+    ['NEEDS_METADATA_EVIDENCE', 'PASSED_EXPECTED_REVIEW_CANDIDATE'].includes(status)
+  ) {
+    return true
+  }
+  if (
+    caseSummary.expectedOutcome === 'SELECTOR_OR_OCR_MISSED' &&
+    ['NEEDS_SELECTOR_REVIEW', 'NEEDS_HIGH_RES_OCR'].includes(status)
+  ) {
+    return true
+  }
+  if (
+    caseSummary.expectedOutcome === 'SELECTOR_MISSED_VISIBLE_ADDRESS' &&
+    ['NEEDS_SELECTOR_REVIEW', 'PASSED_EXPECTED_REVIEW_CANDIDATE'].includes(status)
+  ) {
+    return true
+  }
+  return false
+}
+
+export function classifyShortsTrack2V3AuditCaseClosure(caseSummary = {}) {
+  const candidateTotal = Number(caseSummary.candidateCount || 0)
+  const visualAddress = hasVisualAddressEvidence(caseSummary)
+  const hasSnippets = (caseSummary.localOcrBestSnippets || []).length > 0
+  const dateTimeHouseNumberBug = (caseSummary.houseNumberAlternatives || [])
+    .some(textContainsDateTimeHouseNumber)
+  let caseClosureStatus = 'UNKNOWN'
+
+  if (caseSummary.unsupportedHouseNumberFound) {
+    caseClosureStatus = 'FAILED_UNSUPPORTED_HOUSE_NUMBER'
+  } else if (dateTimeHouseNumberBug) {
+    caseClosureStatus = 'NEEDS_DATE_TIME_FILTERING'
+  } else {
+    switch (caseSummary.expectedOutcome) {
+      case 'GENERIC_REJECTED':
+      case 'NONFOOD_REJECTED':
+      case 'CORRECT_UNRESOLVED_NONFOOD':
+        caseClosureStatus = candidateTotal === 0
+          ? 'PASSED_EXPECTED_REJECTION'
+          : 'FAILED_FALSE_CANDIDATE'
+        break
+      case 'CORRECT_UNRESOLVED':
+        caseClosureStatus = candidateTotal === 0 && caseSummary.resolution === 'UNRESOLVED'
+          ? 'PASSED_EXPECTED_UNRESOLVED'
+          : 'FAILED_FALSE_CANDIDATE'
+        break
+      case 'MULTI_REVIEW':
+        if (hasMultiReviewCandidate(caseSummary)) {
+          caseClosureStatus = 'PASSED_EXPECTED_REVIEW_CANDIDATE'
+        } else if (hasMetadataExpectation(caseSummary) || !visualAddress) {
+          caseClosureStatus = 'NEEDS_METADATA_EVIDENCE'
+        } else {
+          caseClosureStatus = 'FAILED_MISSING_EXPECTED_CANDIDATE'
+        }
+        break
+      case 'METADATA_NEEDED':
+      case 'METADATA_MULTI_REVIEW':
+      case 'METADATA_REVIEW_CANDIDATE':
+        if (candidateTotal > 0) {
+          const expectedMinimum = Number(caseSummary.expectedCandidateMin || 1)
+          caseClosureStatus = candidateTotal >= expectedMinimum &&
+            metadataAddressExpectationSatisfied(caseSummary)
+            ? 'PASSED_EXPECTED_REVIEW_CANDIDATE'
+            : 'NEEDS_METADATA_EVIDENCE'
+        } else if (!visualAddress) {
+          caseClosureStatus = 'NEEDS_METADATA_EVIDENCE'
+        } else {
+          caseClosureStatus = 'NEEDS_PARSER_RELAXATION'
+        }
+        break
+      case 'SELECTOR_OR_OCR_MISSED':
+        if (candidateTotal > 0) {
+          caseClosureStatus = 'PASSED_EXPECTED_REVIEW_CANDIDATE'
+        } else if (Number(caseSummary.selectedImageCount || 0) === 0) {
+          caseClosureStatus = 'NEEDS_SELECTOR_REVIEW'
+        } else if (!visualAddress) {
+          caseClosureStatus = 'NEEDS_HIGH_RES_OCR'
+        } else {
+          caseClosureStatus = 'NEEDS_PARSER_RELAXATION'
+        }
+        break
+      case 'SELECTOR_MISSED_VISIBLE_ADDRESS':
+        caseClosureStatus = candidateTotal > 0 && !caseSummary.canAutoResolve
+          ? 'PASSED_EXPECTED_REVIEW_CANDIDATE'
+          : 'NEEDS_SELECTOR_REVIEW'
+        break
+      case 'REVIEW_CANDIDATE':
+      case 'HARD_OCR_REVIEW':
+      case 'VISUAL_OCR_REVIEW_CANDIDATE':
+        if (candidateTotal > 0 && !caseSummary.canAutoResolve) {
+          caseClosureStatus = 'PASSED_EXPECTED_REVIEW_CANDIDATE'
+        } else if (visualAddress) {
+          caseClosureStatus = 'NEEDS_PARSER_RELAXATION'
+        } else if (caseSummary.expectedOutcome === 'HARD_OCR_REVIEW' && hasSnippets) {
+          caseClosureStatus = 'NEEDS_HIGH_RES_OCR'
+        } else if (Number(caseSummary.selectedImageCount || 0) === 0) {
+          caseClosureStatus = 'NEEDS_SELECTOR_REVIEW'
+        } else {
+          caseClosureStatus = 'FAILED_MISSING_EXPECTED_CANDIDATE'
+        }
+        break
+      case 'PLACE_HINT_REVIEW_OR_UNRESOLVED':
+        caseClosureStatus = candidateTotal > 0 && !caseSummary.canAutoResolve
+          ? 'PASSED_EXPECTED_REVIEW_CANDIDATE'
+          : candidateTotal === 0 && caseSummary.resolution === 'UNRESOLVED'
+            ? 'PASSED_EXPECTED_UNRESOLVED'
+            : 'FAILED_FALSE_CANDIDATE'
+        break
+      default:
+        caseClosureStatus = 'UNKNOWN'
+    }
+  }
+
+  const hasMetadataCandidate = (caseSummary.candidates || []).some((candidate) =>
+    ['youtube_description', 'youtube_title', 'search_snippet'].includes(candidate.evidenceSource) ||
+    (candidate.evidenceSources || []).some((source) =>
+      ['youtube_description', 'youtube_title', 'search_snippet'].includes(source)
+    )
+  )
+  const evidenceSourceHint = caseClosureStatus === 'NEEDS_METADATA_EVIDENCE' || hasMetadataCandidate
+    ? 'metadata'
+    : candidateTotal > 0 || hasSnippets
+      ? 'visual_ocr'
+      : 'unknown'
+  const shouldFixNow = [
+    'FAILED_MISSING_EXPECTED_CANDIDATE',
+    'FAILED_FALSE_CANDIDATE',
+    'FAILED_UNSUPPORTED_HOUSE_NUMBER',
+    'NEEDS_PARSER_RELAXATION',
+    'NEEDS_DATE_TIME_FILTERING',
+  ].includes(caseClosureStatus)
+
+  return {
+    caseClosureStatus,
+    caseActionHint: closureActionHint(caseClosureStatus),
+    evidenceSourceHint,
+    shouldFixNow,
+    expectedOutcomeSatisfied: expectedOutcomeSatisfied(caseSummary, caseClosureStatus),
+    dateTimeHouseNumberBug,
+  }
+}
+
+export function summarizeShortsTrack2V3AuditCase(item = {}, result = {}) {
+  const expectedSafety = categoryExpectedSafety(item)
+  const candidates = (Array.isArray(result.candidates) ? result.candidates : []).map(summarizeCandidate)
+  const providerErrors = sanitizeProviderErrors(result.providerErrors)
+  const resolution = safeString(result.resolution, 120) || 'UNKNOWN'
+  const keptCandidateCount = numberMetric(result, 'keptCandidateCount', candidateCount(result))
+  const droppedCandidateCount = numberMetric(result, 'droppedCandidateCount', 0)
+  const rawCandidateCount = numberMetric(
+    result,
+    'rawCandidateCount',
+    keptCandidateCount + droppedCandidateCount,
+  )
+  const riskFlags = uniqueStrings(candidates.flatMap((candidate) => candidate.riskFlags), 50)
+  const houseNumberAlternatives = uniqueStrings(
+    candidates.flatMap((candidate) => candidate.houseNumberAlternatives),
+    30,
+  )
+  const bestCandidate = candidates[0] || null
+  const canAutoResolve = Boolean(
+    result.canAutoResolve || candidates.some((candidate) => candidate.canAutoResolve),
+  )
+  const candidateText = candidates
+    .flatMap((candidate) => [candidate.displayText, candidate.addressFragment, candidate.placeName])
+    .filter(Boolean)
+    .join('\n')
+  const unsupportedHouseNumberFound = expectedSafety.mustNotContainUnsupportedHouseNumber &&
+    expectedSafety.unsupportedHouseNumbers.some((houseNumber) =>
+      containsUnsupportedHouseNumber(candidateText, houseNumber)
+    )
+  const localOcrBestSnippets = safeStringArray(
+    result.localOcrBestSnippets || result.debug?.localOcrBestSnippets || result.debug?.bestOcrSnippets,
+    20,
+    500,
+  )
+
+  const caseSummary = {
+    id: safeString(item.id, 160),
+    url: safeString(item.url, 2000),
+    videoId: safeString(result.videoId || item.videoId, 160) || null,
+    category: safeString(item.category, 120) || 'UNKNOWN',
+    expectedResolution: safeString(item.expectedResolution, 40) || 'ANY',
+    expectedOutcome: safeString(item.expectedOutcome, 80) || null,
+    expectedEvidenceSource: safeString(item.expectedEvidenceSource, 120) || null,
+    expectedCandidateMin: item.expectedCandidateMin != null && Number.isFinite(Number(item.expectedCandidateMin))
+      ? Number(item.expectedCandidateMin)
+      : null,
+    expectedAddressContains: safeStringArray(item.expectedAddressContains, 20, 200),
+    expectedAddressContainsAny: safeStringArray(item.expectedAddressContainsAny, 20, 200),
+    expectedSeedContainsAny: safeStringArray(item.expectedSeedContainsAny, 20, 200),
+    requiresManualFrameValidation: Boolean(item.requiresManualFrameValidation),
+    mustNotCreateFoodCandidate: Boolean(item.mustNotCreateFoodCandidate),
+    placesAllowedOnlyIfEnabled: Boolean(item.placesAllowedOnlyIfEnabled),
+    expectedSafety,
+    notes: safeString(item.notes, 2000) || null,
+    track: safeString(result.track, 120) || null,
+    resolution,
+    reason: safeString(result.reason, 240) || null,
+    candidateCount: candidateCount(result),
+    rawCandidateCount,
+    keptCandidateCount,
+    droppedCandidateCount,
+    droppedCandidateReasons: safeReasonCounts(result.debug?.droppedCandidateReasons),
+    weakCandidateCount: numberMetric(result, 'weakCandidateCount', droppedCandidateCount),
+    addressAnchoredCandidateCount: numberMetric(result, 'addressAnchoredCandidateCount', keptCandidateCount),
+    evidenceCount: evidenceCount(result),
+    ocrTextBlockCount: numberMetric(result, 'ocrTextBlockCount'),
+    selectedImageCount: Array.isArray(result.selectedImages)
+      ? result.selectedImages.length
+      : numberMetric(result, 'selectedImageCount', 0),
+    ocrBoostRan: Boolean(result.metrics?.ocrBoostRan || result.debug?.ocrBoostRan),
+    bestCandidate,
+    riskFlags,
+    canAutoResolve,
+    localOcrCalled: providerCalled(result, 'localOcrCalled'),
+    localOcrProvider: safeString(result.localOcrProvider || result.debug?.localOcrProvider, 120) || null,
+    localOcrBestSnippets,
+    adaptiveFrameSamplingEnabled: Boolean(
+      result.adaptiveFrameSamplingEnabled ?? result.debug?.adaptiveFrameSamplingEnabled,
+    ),
+    adaptiveFrameSamplingRan: Boolean(
+      result.adaptiveFrameSamplingRan ?? result.debug?.adaptiveFrameSamplingRan,
+    ),
+    adaptiveFrameCount: numberMetric(result, 'adaptiveFrameCount', 0),
+    adaptiveCropCount: numberMetric(result, 'adaptiveCropCount', 0),
+    adaptiveSelectedCropIds: safeStringArray(
+      result.adaptiveSelectedCropIds || result.debug?.adaptiveSelectedCropIds,
+      100,
+      200,
+    ),
+    ocrTextBlockCountFromAdaptiveFrames: numberMetric(
+      result,
+      'ocrTextBlockCountFromAdaptiveFrames',
+      0,
+    ),
+    ocrSnippetsFromAdaptiveFrames: safeStringArray(
+      result.ocrSnippetsFromAdaptiveFrames || result.debug?.ocrSnippetsFromAdaptiveFrames,
+      20,
+      500,
+    ),
+    candidateCountFromAdaptiveFrames: numberMetric(
+      result,
+      'candidateCountFromAdaptiveFrames',
+      0,
+    ),
+    adaptiveSamplingReason: safeString(
+      result.adaptiveSamplingReason || result.debug?.adaptiveSamplingReason,
+      240,
+    ) || null,
+    providerErrors,
+    houseNumberAlternatives,
+    houseNumberConflict: candidates.some((candidate) => candidate.houseNumberConflict),
+    googleVisionCalled: providerCalled(result, 'googleVisionCalled'),
+    placesCalled: providerCalled(result, 'placesCalled'),
+    geminiCalled: providerCalled(result, 'geminiCalled'),
+    asrCalled: providerCalled(result, 'asrCalled'),
+    geminiCropJudgeEnabled: Boolean(
+      result.geminiCropJudgeEnabled ?? result.debug?.geminiCropJudgeEnabled,
+    ),
+    geminiCropJudgeCalled: Boolean(
+      result.geminiCropJudgeCalled ?? result.debug?.geminiCropJudgeCalled,
+    ),
+    geminiCropJudgeProvider: safeString(
+      result.geminiCropJudgeProvider || result.debug?.geminiCropJudgeProvider,
+      120,
+    ) || null,
+    geminiCropJudgeSelectedCropIds: safeStringArray(
+      result.geminiCropJudgeSelectedCropIds || result.debug?.geminiCropJudgeSelectedCropIds,
+      100,
+      200,
+    ),
+    geminiCropJudgeRejectedCropIds: safeStringArray(
+      result.geminiCropJudgeRejectedCropIds || result.debug?.geminiCropJudgeRejectedCropIds,
+      100,
+      200,
+    ),
+    geminiCropJudgeContactSheetPaths: safeStringArray(
+      result.geminiCropJudgeContactSheetPaths || result.debug?.geminiCropJudgeContactSheetPaths,
+      20,
+      1000,
+    ),
+    geminiCropJudgeResultPath: safeString(
+      result.geminiCropJudgeResultPath || result.debug?.geminiCropJudgeResultPath,
+      1000,
+    ) || null,
+    geminiCropJudgeErrors: sanitizeProviderErrors(
+      result.geminiCropJudgeErrors || result.debug?.geminiCropJudgeErrors,
+    ),
+    ocrTextBlockCountFromGeminiSelectedCrops: numberMetric(
+      result,
+      'ocrTextBlockCountFromGeminiSelectedCrops',
+      0,
+    ),
+    ocrSnippetsFromGeminiSelectedCrops: safeStringArray(
+      result.ocrSnippetsFromGeminiSelectedCrops ||
+        result.debug?.ocrSnippetsFromGeminiSelectedCrops,
+      20,
+      500,
+    ),
+    candidateCountFromGeminiSelectedCrops: numberMetric(
+      result,
+      'candidateCountFromGeminiSelectedCrops',
+      0,
+    ),
+    selectorDiagnosticsPath: safeString(
+      result.selectorDiagnosticsPath || result.debug?.selectorDiagnosticsPath,
+      1000,
+    ) || null,
+    contactSheetPath: safeString(
+      result.contactSheetPath || result.debug?.contactSheetPath,
+      1000,
+    ) || null,
+    generatedCropCount: numberMetric(result, 'generatedCropCount', 0),
+    selectedCropIds: safeStringArray(
+      result.selectedCropIds || result.debug?.selectedCropIds,
+      100,
+      200,
+    ),
+    cropRegionCounts: safeReasonCounts(
+      result.cropRegionCounts || result.debug?.cropRegionCounts,
+    ),
+    selectorDiagnosis: safeString(
+      result.selectorDiagnosis || result.debug?.selectorDiagnosis,
+      120,
+    ) || 'UNKNOWN',
+    unsupportedHouseNumberFound,
+    candidates,
+    falseResolved: resolution === 'RESOLVED',
+    autoResolved: resolution === 'RESOLVED' || canAutoResolve,
+  }
+  caseSummary.failureCategory = classifyShortsTrack2V3AuditFailure(caseSummary)
+  Object.assign(caseSummary, classifyShortsTrack2V3AuditCaseClosure(caseSummary))
+  caseSummary.expectedOutcomeEvaluated = !caseSummary.requiresManualFrameValidation
+  return caseSummary
+}
+
+function auditFailureResult(error) {
+  return {
+    track: 'TRACK_2_V3',
+    resolution: 'UNRESOLVED',
+    reason: 'AUDIT_CASE_FAILED',
+    candidates: [],
+    providerErrors: [{
+      provider: 'audit_runner',
+      code: 'AUDIT_CASE_FAILED',
+      message: safeString(error?.message || error, 500) || 'Audit case failed safely.',
+    }],
+    providerCalls: {
+      googleVisionCalled: false,
+      placesCalled: false,
+      geminiCalled: false,
+      localOcrCalled: false,
+      asrCalled: false,
+    },
+  }
+}
+
+export async function runShortsTrack2V3AuditCases(cases = [], runCase) {
+  if (typeof runCase !== 'function') {
+    throw new TypeError('runShortsTrack2V3AuditCases requires a runCase function')
+  }
+  const results = []
+  for (const [index, item] of (Array.isArray(cases) ? cases : []).entries()) {
+    try {
+      results.push({ case: item, result: await runCase(item, index) })
+    } catch (error) {
+      results.push({ case: item, result: auditFailureResult(error) })
+    }
+  }
+  return results
 }
 
 function emptyBreakdown(category) {
@@ -60,58 +792,59 @@ function emptyBreakdown(category) {
   }
 }
 
-function summarizeCandidate(candidate = {}) {
-  return {
-    type: safeString(candidate.type, 160) || null,
-    displayText: safeString(candidate.displayText || candidate.addressFragment || candidate.placeName, 500),
-    riskFlags: Array.isArray(candidate.riskFlags) ? candidate.riskFlags.map((flag) => safeString(flag, 120)) : [],
-    canAutoResolve: Boolean(candidate.canAutoResolve),
-  }
-}
-
-export function summarizeShortsTrack2V3AuditCase(item = {}, result = {}) {
-  const expected = item.expected || {}
-  const providerErrors = Array.isArray(result.providerErrors) ? result.providerErrors : []
-  const resolution = safeString(result.resolution, 120) || 'UNKNOWN'
-  const keptCandidateCount = numberMetric(result, 'keptCandidateCount', candidateCount(result))
-  const droppedCandidateCount = numberMetric(result, 'droppedCandidateCount', 0)
-  const rawCandidateCount = numberMetric(
-    result,
-    'rawCandidateCount',
-    keptCandidateCount + droppedCandidateCount,
-  )
-
-  return {
-    id: safeString(item.id, 160),
-    url: safeString(item.url, 2000),
-    category: safeString(item.category, 120) || 'UNKNOWN',
-    expectedMustNotResolve: Boolean(expected.mustNotResolve),
-    track: safeString(result.track, 120) || null,
-    resolution,
-    reason: safeString(result.reason, 240) || null,
-    candidateCount: candidateCount(result),
-    rawCandidateCount,
-    keptCandidateCount,
-    droppedCandidateCount,
-    droppedCandidateReasons: safeReasonCounts(result.debug?.droppedCandidateReasons),
-    weakCandidateCount: numberMetric(result, 'weakCandidateCount', droppedCandidateCount),
-    addressAnchoredCandidateCount: numberMetric(result, 'addressAnchoredCandidateCount', keptCandidateCount),
-    evidenceCount: evidenceCount(result),
-    ocrTextBlockCount: numberMetric(result, 'ocrTextBlockCount'),
-    ocrBoostRan: Boolean(result.metrics?.ocrBoostRan || result.debug?.ocrBoostRan),
-    bestOcrSnippets: Array.isArray(result.debug?.bestOcrSnippets)
-      ? result.debug.bestOcrSnippets.map((snippet) => safeString(snippet, 240))
-      : [],
-    providerErrors,
-    candidates: Array.isArray(result.candidates) ? result.candidates.map(summarizeCandidate) : [],
-    falseResolved: resolution === 'RESOLVED',
-  }
+function increment(target = {}, key = 'UNKNOWN') {
+  target[key] = (target[key] || 0) + 1
 }
 
 function addCase(summary, caseSummary) {
-  const resolution = caseSummary.resolution
+  const resolution = caseSummary.resolution || 'UNKNOWN'
   const category = caseSummary.category || 'UNKNOWN'
   if (!summary.byCategory[category]) summary.byCategory[category] = emptyBreakdown(category)
+
+  increment(summary.byResolution, resolution)
+  increment(summary.byFailureCategory, caseSummary.failureCategory || 'UNKNOWN')
+  increment(summary.byCaseClosureStatus, caseSummary.caseClosureStatus || 'UNKNOWN')
+  increment(summary.bySelectorDiagnosis, caseSummary.selectorDiagnosis || 'UNKNOWN')
+  increment(summary.byProvider, caseSummary.localOcrProvider || 'not_called')
+  summary.totalCases += 1
+  if (caseSummary.falseResolved) summary.falseResolveCount += 1
+  if (caseSummary.autoResolved) summary.autoResolveCount += 1
+  if (caseSummary.houseNumberConflict) summary.casesWithHouseNumberConflict += 1
+  if (caseSummary.candidateCount > 0) summary.casesWithCandidates += 1
+  else summary.casesWithNoCandidate += 1
+  if (caseSummary.unsupportedHouseNumberFound) summary.casesWithUnsupportedHouseNumber += 1
+  if (caseSummary.caseClosureStatus === 'NEEDS_METADATA_EVIDENCE') summary.casesNeedingMetadata += 1
+  if (caseSummary.caseClosureStatus === 'NEEDS_SELECTOR_REVIEW') summary.casesNeedingSelectorReview += 1
+  if (caseSummary.caseClosureStatus === 'NEEDS_HIGH_RES_OCR') summary.casesNeedingHighResOcr += 1
+  if (caseSummary.caseClosureStatus === 'NEEDS_PARSER_RELAXATION') summary.casesNeedingParserRelaxation += 1
+  if (caseSummary.dateTimeHouseNumberBug) summary.casesWithDateTimeHouseNumberBug += 1
+  if (caseSummary.requiresManualFrameValidation) {
+    summary.manualValidationCaseCount += 1
+  } else if (caseSummary.expectedOutcomeSatisfied) {
+    summary.expectedOutcomePassCount += 1
+  } else {
+    summary.expectedOutcomeFailCount += 1
+  }
+  if (
+    ['NONFOOD_REJECTED', 'CORRECT_UNRESOLVED', 'CORRECT_UNRESOLVED_NONFOOD'].includes(caseSummary.expectedOutcome) &&
+    ['PASSED_EXPECTED_REJECTION', 'PASSED_EXPECTED_UNRESOLVED'].includes(caseSummary.caseClosureStatus)
+  ) {
+    summary.correctedNegativeCases += 1
+  }
+  if (
+    caseSummary.expectedOutcome === 'GENERIC_REJECTED' &&
+    caseSummary.caseClosureStatus === 'PASSED_EXPECTED_REJECTION'
+  ) {
+    summary.correctlyRejectedGenericCaptions += 1
+  }
+  if (
+    caseSummary.googleVisionCalled ||
+    caseSummary.placesCalled ||
+    caseSummary.geminiCalled ||
+    caseSummary.asrCalled
+  ) {
+    summary.providerBoundaryViolationCount += 1
+  }
 
   const targets = [summary, summary.byCategory[category]]
   for (const target of targets) {
@@ -143,15 +876,90 @@ function categoryTotals(summary = {}, key) {
   )
 }
 
+function recommendationHints(summary = {}) {
+  const failures = summary.byFailureCategory || {}
+  const hints = []
+  if (Number(summary.casesNeedingMetadata || 0) > 0) {
+    hints.push('Implement metadata evidence extraction next; these cases lack sufficient visual address evidence.')
+  }
+  if (Number(summary.casesNeedingParserRelaxation || 0) > 0) {
+    hints.push('Improve parser normalization for address-like OCR that is still missing review candidates.')
+  }
+  if (Number(summary.casesNeedingHighResOcr || 0) > 0) {
+    hints.push('Evaluate bounded high-resolution OCR for cases whose selected crops contain no usable address anchors.')
+  }
+  if (Number(summary.casesWithDateTimeHouseNumberBug || 0) > 0) {
+    hints.push('Fix date and time filtering before any further house-number calibration.')
+  }
+  if ((summary.cases || []).some((item) =>
+    ['GENERIC_REJECTED', 'NONFOOD_REJECTED'].includes(item.expectedOutcome) &&
+    item.caseClosureStatus === 'FAILED_FALSE_CANDIDATE'
+  )) {
+    hints.push('Tighten food and address gating because a negative or generic-caption case produced a candidate.')
+  }
+  if (Number(failures.SELECTOR_MISSED_TEXT || 0) > 0) {
+    hints.push('Improve frame and crop selection for cases where the selector missed visible overlay text.')
+  }
+  if (Number(failures.OCR_NOISY || 0) + Number(failures.OCR_HOUSE_NUMBER_CONFLICT || 0) > 0) {
+    hints.push('Evaluate high-resolution crop enhancement for noisy OCR and house-number conflicts.')
+  }
+  if (Number(failures.GENERIC_CAPTION_ONLY || 0) > 0) {
+    hints.push('Improve generic caption filtering without turning caption text into location evidence.')
+  }
+  if (Number(failures.PARSER_TOO_STRICT || 0) > 0) {
+    hints.push('Review parser thresholds because address-like OCR snippets were present without candidates.')
+  }
+  if (Number(failures.UNSUPPORTED_VIDEO || 0) > 0) {
+    hints.push('Restore Shorts download or frame extraction support before drawing OCR conclusions from unsupported-video cases.')
+  }
+  if (Number(failures.PROVIDER_ERROR || 0) > 0) {
+    hints.push('Stabilize the failing local OCR or frame provider before changing candidate rules.')
+  }
+  if (summary.cases.some((item) => item.category === 'audio_only')) {
+    hints.push('Audio-only cases remain deferred; evaluate ASR in a later explicitly scoped phase.')
+  }
+  if (hints.length === 0) {
+    hints.push('No dominant failure pattern was detected in this audit run.')
+  }
+  return hints
+}
+
 export function buildShortsTrack2V3AuditSummary(results = []) {
   const summary = {
+    totalCases: 0,
+    byResolution: {},
+    byFailureCategory: Object.fromEntries(
+      TRACK2_V3_AUDIT_FAILURE_CATEGORIES.map((category) => [category, 0]),
+    ),
+    byProvider: {},
+    byCaseClosureStatus: Object.fromEntries(
+      TRACK2_V3_AUDIT_CLOSURE_STATUSES.map((status) => [status, 0]),
+    ),
+    bySelectorDiagnosis: {},
+    falseResolveCount: 0,
+    autoResolveCount: 0,
+    providerErrorCount: 0,
+    casesWithHouseNumberConflict: 0,
+    casesWithNoCandidate: 0,
+    casesWithCandidates: 0,
+    casesWithUnsupportedHouseNumber: 0,
+    providerBoundaryViolationCount: 0,
+    casesNeedingMetadata: 0,
+    casesNeedingSelectorReview: 0,
+    casesNeedingHighResOcr: 0,
+    casesNeedingParserRelaxation: 0,
+    casesWithDateTimeHouseNumberBug: 0,
+    correctedNegativeCases: 0,
+    correctlyRejectedGenericCaptions: 0,
+    expectedOutcomePassCount: 0,
+    expectedOutcomeFailCount: 0,
+    manualValidationCaseCount: 0,
     total: 0,
     resolvedCount: 0,
     candidatesCount: 0,
     needsReviewCount: 0,
     unresolvedCount: 0,
     falseResolvedCount: 0,
-    providerErrorCount: 0,
     ocrTextBlockTotal: 0,
     evidenceTotal: 0,
     candidateTotal: 0,
@@ -161,12 +969,10 @@ export function buildShortsTrack2V3AuditSummary(results = []) {
     weakCandidateTotal: 0,
     addressAnchoredCandidateTotal: 0,
     droppedCandidateReasons: {},
-    byCategory: Object.fromEntries(DEFAULT_CATEGORIES.map((category) => [
-      category,
-      emptyBreakdown(category),
-    ])),
+    byCategory: {},
     candidateCountByCategory: {},
     droppedCandidateCountByCategory: {},
+    recommendationHints: [],
     cases: [],
   }
 
@@ -175,26 +981,121 @@ export function buildShortsTrack2V3AuditSummary(results = []) {
       ? summarizeShortsTrack2V3AuditCase(entry.case || entry.item, entry.result)
       : entry
     if (!caseSummary || typeof caseSummary !== 'object') continue
+    if (!caseSummary.failureCategory) {
+      caseSummary.failureCategory = classifyShortsTrack2V3AuditFailure(caseSummary)
+    }
+    if (!caseSummary.caseClosureStatus) {
+      Object.assign(caseSummary, classifyShortsTrack2V3AuditCaseClosure(caseSummary))
+    }
     summary.cases.push(caseSummary)
     addCase(summary, caseSummary)
   }
 
+  summary.falseResolvedCount = summary.falseResolveCount
   summary.candidateCountByCategory = categoryTotals(summary, 'candidateTotal')
   summary.droppedCandidateCountByCategory = categoryTotals(summary, 'droppedCandidateTotal')
-
+  summary.recommendationHints = recommendationHints(summary)
   return summary
 }
 
+function csvCell(value) {
+  const text = Array.isArray(value)
+    ? value.join('|')
+    : value && typeof value === 'object'
+      ? JSON.stringify(value)
+      : String(value ?? '')
+  return `"${text.replace(/"/gu, '""')}"`
+}
+
+export function buildShortsTrack2V3AuditCsv(cases = []) {
+  const columns = [
+    'id',
+    'url',
+    'videoId',
+    'category',
+    'expectedOutcome',
+    'resolution',
+    'failureCategory',
+    'caseClosureStatus',
+    'caseActionHint',
+    'evidenceSourceHint',
+    'shouldFixNow',
+    'candidateCount',
+    'keptCandidateCount',
+    'droppedCandidateCount',
+    'bestCandidate',
+    'riskFlags',
+    'canAutoResolve',
+    'localOcrProvider',
+    'localOcrBestSnippets',
+    'adaptiveFrameSamplingEnabled',
+    'adaptiveFrameSamplingRan',
+    'adaptiveFrameCount',
+    'adaptiveCropCount',
+    'adaptiveSelectedCropIds',
+    'ocrTextBlockCountFromAdaptiveFrames',
+    'ocrSnippetsFromAdaptiveFrames',
+    'candidateCountFromAdaptiveFrames',
+    'adaptiveSamplingReason',
+    'providerErrors',
+    'houseNumberAlternatives',
+    'houseNumberConflict',
+    'googleVisionCalled',
+    'placesCalled',
+    'geminiCalled',
+    'asrCalled',
+    'geminiCropJudgeEnabled',
+    'geminiCropJudgeCalled',
+    'geminiCropJudgeProvider',
+    'geminiCropJudgeSelectedCropIds',
+    'geminiCropJudgeRejectedCropIds',
+    'geminiCropJudgeContactSheetPaths',
+    'geminiCropJudgeResultPath',
+    'geminiCropJudgeErrors',
+    'ocrTextBlockCountFromGeminiSelectedCrops',
+    'ocrSnippetsFromGeminiSelectedCrops',
+    'candidateCountFromGeminiSelectedCrops',
+    'selectorDiagnosticsPath',
+    'contactSheetPath',
+    'generatedCropCount',
+    'selectedCropIds',
+    'cropRegionCounts',
+    'selectorDiagnosis',
+  ]
+  const rows = [columns.map(csvCell).join(',')]
+  for (const item of Array.isArray(cases) ? cases : []) {
+    rows.push(columns.map((column) => csvCell(item?.[column])).join(','))
+  }
+  return `${rows.join('\n')}\n`
+}
+
 export function assertShortsTrack2V3AuditSafe(summary = {}) {
-  const falseResolvedCount = Number(summary.falseResolvedCount || 0)
-  if (falseResolvedCount > 0) {
-    throw new Error(`Track 2 V3 audit failed: falseResolvedCount=${falseResolvedCount}`)
+  const violations = []
+  if (Number(summary.falseResolveCount ?? summary.falseResolvedCount ?? 0) > 0) {
+    violations.push(`falseResolveCount=${summary.falseResolveCount ?? summary.falseResolvedCount}`)
+  }
+  if (Number(summary.autoResolveCount || 0) > 0) {
+    violations.push(`autoResolveCount=${summary.autoResolveCount}`)
+  }
+  if (Number(summary.providerBoundaryViolationCount || 0) > 0) {
+    violations.push(`providerBoundaryViolationCount=${summary.providerBoundaryViolationCount}`)
+  }
+  if (Number(summary.casesWithUnsupportedHouseNumber || 0) > 0) {
+    violations.push(`casesWithUnsupportedHouseNumber=${summary.casesWithUnsupportedHouseNumber}`)
+  }
+  if (violations.length > 0) {
+    throw new Error(`Track 2 V3 audit failed: ${violations.join(', ')}`)
   }
   return summary
 }
 
 export default {
+  parseShortsTrack2V3AuditFixture,
+  classifyShortsTrack2V3AuditFailure,
+  classifyShortsTrack2V3AuditCaseClosure,
   summarizeShortsTrack2V3AuditCase,
+  runShortsTrack2V3AuditCases,
   buildShortsTrack2V3AuditSummary,
+  buildShortsTrack2V3AuditCsv,
   assertShortsTrack2V3AuditSafe,
 }

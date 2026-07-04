@@ -3,6 +3,8 @@ import {
   foldVietnameseText,
   normalizeShortsTrack2V3Text,
 } from './shortsTrack2V3EvidenceStoreService.js'
+import { normalizeShortsTrack2V3OcrAdminText } from './shortsTrack2V3OcrHouseNumberSafetyService.js'
+import { parseShortsTrack2V3NamedAdminAddress } from './shortsTrack2V3NamedAdminAddressService.js'
 
 function safeText(value, maxLength = 1000) {
   return normalizeShortsTrack2V3Text(value).slice(0, maxLength)
@@ -26,8 +28,8 @@ function firstHouseNumberIndex(folded = '') {
 
 function adminTokenIndex(folded = '') {
   const candidates = [
-    folded.search(/\b(?:phuong|p\.?)\s*\d+\b/iu),
-    folded.search(/\b(?:quan|q\.?)\s*\d+\b/iu),
+    folded.search(/\b(?:phuong|phudng|phung|phuung|phurong|p\.?)\s*\d+\b/iu),
+    folded.search(/\b(?:quan|qun|q\.?)\s*\d+\b/iu),
     folded.search(/\b(?:tp|thanh pho|hcm|ho chi minh|sai gon|saigon|ha noi|hanoi)\b/iu),
   ].filter((index) => index >= 0)
   return candidates.length ? Math.min(...candidates) : -1
@@ -53,7 +55,7 @@ function hasMenuPriceOrPromoContext(value = '') {
 
 function looksLikeStreetSegment(segment = '') {
   const clean = String(segment || '')
-    .replace(/\b(?:phuong|p|quan|q|ward|district|tp|hcm)\b/giu, ' ')
+    .replace(/\b(?:phuong|phudng|phung|phuung|phurong|p|quan|qun|q|ward|district|tp|hcm)\b/giu, ' ')
     .replace(/[^\p{L}\s'.-]/gu, ' ')
     .replace(/\s+/gu, ' ')
     .trim()
@@ -134,6 +136,61 @@ function isPlaceNameLine(line = '') {
     .test(folded)
 }
 
+function looksLikePlacePrefix(value = '') {
+  const folded = foldVietnameseText(value)
+    .replace(/^\s*\d+\s*[.)-]\s*/u, '')
+    .trim()
+  if (!folded || /\b(?:top|list|tong hop)\b/iu.test(folded)) return false
+  return /\b(?:quan|tiem|cafe|ca phe|nha hang|bun|pho|com|banh|xoi|che|lau|nuong|oc|hu tieu|mi|tra sua)/iu
+    .test(folded)
+}
+
+function extractEmbeddedPlaceAddressLine(value = '') {
+  const text = safeText(value, 2000)
+  if (!text || text.includes('\n')) return null
+
+  const houseMatches = text.matchAll(
+    /(?:^|[\s,.:;])(?:so\s*)?\d{1,5}[a-z]?(?:\/\d{1,5}[a-z]?)?(?=$|[\s,.:;/-])/giu,
+  )
+  for (const match of houseMatches) {
+    const digitOffset = match[0].search(/\d/u)
+    const start = Number(match.index) + digitOffset
+    if (start <= 0) continue
+
+    const fromHouse = text.slice(start)
+    const houseToken = fromHouse.match(/^\d{1,5}[a-z]?(?:\/\d{1,5}[a-z]?)?/iu)?.[0] || ''
+    if (!houseToken || /^\d+k$/iu.test(houseToken)) continue
+
+    const foldedFromHouse = foldVietnameseText(fromHouse)
+    const district = foldedFromHouse.match(/\b(?:quan|qun|q\.?)\s*\d+\b/iu)
+    if (!district || district.index == null) continue
+
+    const streetSegment = fromHouse.slice(houseToken.length, district.index)
+    if (!looksLikeStreetSegment(streetSegment)) continue
+
+    const city = foldedFromHouse.match(
+      /\b(?:tp\.?\s*(?:hcm|ho chi minh)|thanh pho\s+ho chi minh|hcm|ho chi minh|sai gon|saigon)\b/iu,
+    )
+    const end = city && city.index != null && city.index > district.index
+      ? city.index + city[0].length
+      : fromHouse.length
+    const adminNormalization = normalizeShortsTrack2V3OcrAdminText(fromHouse.slice(0, end))
+    const normalizedAddress = adminNormalization.text
+    const placePrefix = text.slice(0, start).replace(/[\s,.:;|/-]+$/gu, '').trim()
+    if (!normalizedAddress) continue
+
+    return {
+      addressFragment: safeText(normalizedAddress),
+      placeName: looksLikePlacePrefix(placePrefix) ? safeText(placePrefix, 160) : null,
+      adminNormalized: adminNormalization.normalizationApplied.some((flag) =>
+        ['NORMALIZED_WARD_TEXT', 'NORMALIZED_DISTRICT_TEXT', 'NORMALIZED_ADMIN_DIGIT'].includes(flag)
+      ),
+    }
+  }
+
+  return null
+}
+
 function addCandidate(candidates, seen, candidate) {
   const key = `${candidate.type}:${foldVietnameseText(candidate.displayText || candidate.addressFragment || '')}`
   if (seen.has(key)) return
@@ -212,12 +269,54 @@ function buildAddressCandidates(evidenceItems, candidates, seen, mustNotResolve)
     const candidatesToAnalyze = [text, ...lines].filter(Boolean)
 
     for (const candidateText of candidatesToAnalyze) {
+      const namedAdminAddress = parseShortsTrack2V3NamedAdminAddress(candidateText)
+      if (namedAdminAddress) {
+        addCandidate(candidates, seen, {
+          type: 'OCR_ADDRESS_FRAGMENT',
+          displayText: namedAdminAddress.normalizedAddress,
+          addressFragment: namedAdminAddress.normalizedAddress,
+          extractionRule: namedAdminAddress.extractionRule,
+          riskFlags: [
+            'OCR_ADDRESS_FRAGMENT',
+            'OCR_NAMED_ADMIN_ADDRESS',
+            'OCR_NORMALIZED_ADMIN',
+            ...(namedAdminAddress.noisyAdminMarker ? ['OCR_NOISY_ADMIN_MARKER'] : []),
+            ...(namedAdminAddress.trailingNoiseRemoved ? ['OCR_TRAILING_NOISE_STRIPPED'] : []),
+            'REVIEW_ONLY',
+          ],
+          canAutoResolve: false,
+          qualityTier: 'TIER_D',
+          evidenceIds: [evidence.id],
+        })
+        continue
+      }
+
+      const embedded = extractEmbeddedPlaceAddressLine(candidateText)
+      if (embedded) {
+        addCandidate(candidates, seen, {
+          type: 'OCR_ADDRESS_FRAGMENT',
+          displayText: embedded.addressFragment,
+          addressFragment: embedded.addressFragment,
+          placeName: embedded.placeName,
+          riskFlags: [
+            'OCR_ADDRESS_FRAGMENT',
+            'OCR_PLACE_PREFIX_STRIPPED',
+            ...(embedded.adminNormalized ? ['OCR_NORMALIZED_ADMIN'] : []),
+            'REVIEW_ONLY',
+          ],
+          canAutoResolve: false,
+          qualityTier: 'TIER_D',
+          evidenceIds: [evidence.id],
+        })
+        continue
+      }
+
       const strength = addressStrength(candidateText)
       if (!strength.hasAddressFragment) continue
 
       const forceReviewOnly = forceReviewOnlyAddressEvidence(evidence)
 
-      if (strength.isFullAddress && !forceReviewOnly) {
+      if (strength.isFullAddress && !forceReviewOnly && !mustNotResolve) {
         addCandidate(candidates, seen, {
           type: 'FULL_ADDRESS_VERBATIM',
           displayText: safeText(candidateText),
@@ -231,10 +330,10 @@ function buildAddressCandidates(evidenceItems, candidates, seen, mustNotResolve)
       }
 
       const riskFlags = strength.noisy
-        ? ['NOISY_OCR', 'REVIEW_ONLY']
+        ? ['OCR_ADDRESS_FRAGMENT', 'NOISY_OCR', 'REVIEW_ONLY']
         : strength.isPartialAddress
-          ? ['PARTIAL_ADDRESS', 'MISSING_STREET_NAME', 'REVIEW_ONLY']
-          : ['REVIEW_ONLY']
+          ? ['OCR_ADDRESS_FRAGMENT', 'PARTIAL_ADDRESS', 'MISSING_STREET_NAME', 'REVIEW_ONLY']
+          : ['OCR_ADDRESS_FRAGMENT', 'REVIEW_ONLY']
       addCandidate(candidates, seen, {
         type: 'OCR_ADDRESS_FRAGMENT',
         displayText: safeText(candidateText),

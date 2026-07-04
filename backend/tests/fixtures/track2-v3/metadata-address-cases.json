@@ -1,0 +1,51 @@
+[
+  {
+    "id": "meta_multi_banh_mi_d1",
+    "url": "https://www.youtube.com/shorts/DWmWGxtagZs",
+    "category": "metadata_multi_location",
+    "expectedOutcome": "METADATA_MULTI_REVIEW",
+    "expectedEvidenceSource": "youtube_description",
+    "expectedCandidateMin": 2,
+    "expectedSafety": {
+      "mustNotResolve": true,
+      "mustNotAutoResolve": true,
+      "mustNotContainUnsupportedHouseNumber": false,
+      "unsupportedHouseNumbers": []
+    },
+    "notes": "Description contains Location 1 and Location 2 with addresses. Visual OCR failure must not count as an OCR parser failure.",
+    "canAutoResolve": false
+  },
+  {
+    "id": "cho-lon-food-story-event-q5",
+    "url": "https://www.youtube.com/shorts/O0my07TFvxI",
+    "category": "metadata_single_address",
+    "expectedOutcome": "METADATA_REVIEW_CANDIDATE",
+    "expectedEvidenceSource": "youtube_description",
+    "expectedCandidateMin": 1,
+    "expectedAddressContains": ["105", "Trần Hưng Đạo", "Quận 5"],
+    "expectedSafety": {
+      "mustNotResolve": true,
+      "mustNotAutoResolve": true,
+      "mustNotContainUnsupportedHouseNumber": false,
+      "unsupportedHouseNumbers": []
+    },
+    "notes": "Live metadata audit confirms the YouTube description explicitly contains the 105 Trần Hưng Đạo address. Visual OCR and adaptive OCR do not contain that address, so this group does not grade visual OCR coverage.",
+    "canAutoResolve": false
+  },
+  {
+    "id": "meta_com_tam_nguyen_van_cu_q1",
+    "url": "https://www.youtube.com/shorts/EIGw377hdKY",
+    "category": "metadata_single_address",
+    "expectedOutcome": "METADATA_REVIEW_CANDIDATE",
+    "expectedEvidenceSource": "youtube_description",
+    "expectedAddressContains": ["74", "Nguyễn Văn Cừ", "Phường Nguyễn Cư Trinh", "Quận 1"],
+    "expectedSafety": {
+      "mustNotResolve": true,
+      "mustNotAutoResolve": true,
+      "mustNotContainUnsupportedHouseNumber": false,
+      "unsupportedHouseNumbers": []
+    },
+    "notes": "Address evidence is expected from the YouTube description, not from the current visual OCR stage.",
+    "canAutoResolve": false
+  }
+]

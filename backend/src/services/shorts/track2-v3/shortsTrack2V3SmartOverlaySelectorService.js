@@ -5,6 +5,7 @@ import path from 'node:path'
 import sharp from 'sharp'
 
 import { DEFAULT_SHORTS_TRACK2_V3_CONFIG } from './shortsTrack2V3Config.js'
+import { writeShortsTrack2V3SelectorDiagnostics } from './shortsTrack2V3SelectorDiagnosticsService.js'
 
 export const SMART_OVERLAY_CROP_VARIANTS = Object.freeze([
   {
@@ -116,6 +117,8 @@ export function normalizeShortsTrack2V3SmartOverlayConfig(config = {}) {
       DEFAULT_SHORTS_TRACK2_V3_CONFIG.track2V3SmartOverlayEnabled,
     track2V3SmartOverlayDryRun: config.track2V3SmartOverlayDryRun ??
       DEFAULT_SHORTS_TRACK2_V3_CONFIG.track2V3SmartOverlayDryRun,
+    track2V3GeminiCropJudgeEnabled: config.track2V3GeminiCropJudgeEnabled ??
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.track2V3GeminiCropJudgeEnabled,
     smartOverlaySampleIntervalMs: boundedInteger(
       config.smartOverlaySampleIntervalMs,
       DEFAULT_SHORTS_TRACK2_V3_CONFIG.smartOverlaySampleIntervalMs,
@@ -711,6 +714,27 @@ async function findDownloadedVideo(workDir) {
   return null
 }
 
+async function probeVideoDurationSeconds(videoPath, ffprobeBin, timeoutMs, signal) {
+  if (!videoPath || !ffprobeBin) return null
+  const probe = await runCommand(ffprobeBin, [
+    '-v',
+    'error',
+    '-show_entries',
+    'format=duration',
+    '-of',
+    'default=noprint_wrappers=1:nokey=1',
+    videoPath,
+  ], {
+    timeoutMs,
+    signal,
+  })
+  if (!probe.ok) return null
+  const durationSeconds = finiteNumber(String(probe.stdout || '').trim(), null)
+  return durationSeconds !== null && durationSeconds > 0
+    ? Number(durationSeconds.toFixed(3))
+    : null
+}
+
 async function cleanupDirectory(directory) {
   if (!directory) return
   await fs.rm(directory, { recursive: true, force: true })
@@ -719,6 +743,7 @@ async function cleanupDirectory(directory) {
 export function createShortsTrack2V3SmartOverlayFrameExtractor(options = {}) {
   const ytDlpBin = safeString(options.ytDlpBin ?? process.env.TRACK2_YTDLP_BIN ?? 'yt-dlp', 260)
   const ffmpegBin = safeString(options.ffmpegBin ?? process.env.TRACK2_FFMPEG_BIN ?? 'ffmpeg', 260)
+  const ffprobeBin = safeString(options.ffprobeBin ?? process.env.TRACK2_FFPROBE_BIN ?? 'ffprobe', 260)
   const optionTmpRoot = options.tmpRoot || os.tmpdir()
   const registerCleanup = typeof options.registerCleanup === 'function' ? options.registerCleanup : null
   const commandTimeoutMs = boundedInteger(options.commandTimeoutMs, DEFAULT_COMMAND_TIMEOUT_MS, {
@@ -850,6 +875,11 @@ export function createShortsTrack2V3SmartOverlayFrameExtractor(options = {}) {
         }
       }
 
+      const probeBudgetMs = Math.min(5000, Math.max(500, remainingBudget(startedAt, budgetMs) - 500))
+      const durationSeconds = probeBudgetMs >= 500
+        ? await probeVideoDurationSeconds(videoPath, ffprobeBin, probeBudgetMs, signal)
+        : null
+
       const timestamps = sampledTimestamps.length
         ? sampledTimestamps
         : buildShortsTrack2V3SmartOverlaySampleTimestamps(context, {
@@ -943,6 +973,7 @@ export function createShortsTrack2V3SmartOverlayFrameExtractor(options = {}) {
         reason: 'SMART_OVERLAY_FRAMES_EXTRACTED',
         frames,
         sampledTimestamps: timestamps,
+        durationSeconds,
         diagnostics,
       }
     } catch (error) {
@@ -1066,6 +1097,7 @@ export async function selectShortsTrack2V3SmartOverlayCrops({
   outputDir = '',
   deps = {},
   durationSeconds = null,
+  videoId = null,
 } = {}) {
   const normalizedFrames = normalizeFrames(frames)
   const sampledFrames = await saveSampledFrameThumbnails(normalizedFrames, outputDir, deps)
@@ -1074,6 +1106,32 @@ export async function selectShortsTrack2V3SmartOverlayCrops({
   const selectedImages = selected.length
     ? await saveSelectedCrops(selected, outputDir, sampledFrames, deps)
     : await fallbackFullRawSelection(normalizedFrames, outputDir, sampledFrames, deps)
+  let selectorDiagnostics = null
+  if (
+    (deps.selectorDiagnosticsEnabled === true || config.track2V3GeminiCropJudgeEnabled === true) &&
+    outputDir
+  ) {
+    try {
+      selectorDiagnostics = await writeShortsTrack2V3SelectorDiagnostics({
+        videoId,
+        frames: normalizedFrames,
+        sampledFrames,
+        scoredCrops,
+        selectedImages,
+        outputDir,
+        deps,
+      })
+    } catch (error) {
+      selectorDiagnostics = {
+        selectorDiagnosticsPath: null,
+        contactSheetPath: null,
+        generatedCropCount: scoredCrops.length,
+        selectedCropIds: [],
+        cropRegionCounts: {},
+        error: safeString(error?.message || 'Selector diagnostics failed safely.', 300),
+      }
+    }
+  }
 
   return {
     status: selectedImages.length ? 'OK' : 'NO_SELECTED_IMAGES',
@@ -1081,6 +1139,13 @@ export async function selectShortsTrack2V3SmartOverlayCrops({
     selectedImageCount: selectedImages.length,
     selectedImages: selectedImages.map(selectedImageReport),
     scoredImageCount: scoredCrops.length,
+    generatedCropCount: selectorDiagnostics?.generatedCropCount ?? scoredCrops.length,
+    selectedCropIds: selectorDiagnostics?.selectedCropIds || [],
+    cropRegionCounts: selectorDiagnostics?.cropRegionCounts || {},
+    selectorDiagnosticsPath: selectorDiagnostics?.selectorDiagnosticsPath || null,
+    contactSheetPath: selectorDiagnostics?.contactSheetPath || null,
+    selectedContactSheetPath: selectorDiagnostics?.selectedContactSheetPath || null,
+    selectorDiagnostics,
     sampledFrames,
     providerCalls: providerCalls(),
     providerErrors: [],
@@ -1202,6 +1267,7 @@ export async function runShortsTrack2V3SmartOverlayDryRun(context = {}, config =
     outputDir: deps.outputDir || '',
     deps,
     durationSeconds: durationSeconds || finiteNumber(frameResult.durationSeconds, null),
+    videoId: context.videoId || context.metadata?.videoId || null,
   })
 
   return {
@@ -1214,6 +1280,13 @@ export async function runShortsTrack2V3SmartOverlayDryRun(context = {}, config =
     selectedImages: selectorResult.selectedImages,
     sampledFrames: selectorResult.sampledFrames,
     scoredImageCount: selectorResult.scoredImageCount,
+    generatedCropCount: selectorResult.generatedCropCount,
+    selectedCropIds: selectorResult.selectedCropIds,
+    cropRegionCounts: selectorResult.cropRegionCounts,
+    selectorDiagnosticsPath: selectorResult.selectorDiagnosticsPath,
+    contactSheetPath: selectorResult.contactSheetPath,
+    selectedContactSheetPath: selectorResult.selectedContactSheetPath,
+    selectorDiagnostics: selectorResult.selectorDiagnostics,
     sampledTimestamps: Array.isArray(frameResult.sampledTimestamps) ? frameResult.sampledTimestamps : [],
     configCaps: configCaps(normalized),
     providerCalls: providerCalls(),

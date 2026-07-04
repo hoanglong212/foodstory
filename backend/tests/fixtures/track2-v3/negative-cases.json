@@ -1,0 +1,50 @@
+[
+  {
+    "id": "negative_nonfood_product_address_1",
+    "url": "https://www.youtube.com/shorts/WFhtGw48qmA",
+    "category": "nonfood_address_like",
+    "expectedOutcome": "CORRECT_UNRESOLVED_NONFOOD",
+    "expectedEvidenceSource": "visual_or_metadata",
+    "mustNotCreateFoodCandidate": true,
+    "expectedSafety": {
+      "mustNotResolve": true,
+      "mustNotAutoResolve": true,
+      "mustNotContainUnsupportedHouseNumber": false,
+      "unsupportedHouseNumbers": []
+    },
+    "notes": "Non-food product content with address-like evidence must remain unresolved by the food-location pipeline.",
+    "canAutoResolve": false
+  },
+  {
+    "id": "negative_nonfood_vach_ngan",
+    "url": "https://www.youtube.com/shorts/EjLKiXSn2RU",
+    "category": "nonfood_address_like",
+    "expectedOutcome": "CORRECT_UNRESOLVED_NONFOOD",
+    "expectedEvidenceSource": "visual_or_metadata",
+    "mustNotCreateFoodCandidate": true,
+    "expectedSafety": {
+      "mustNotResolve": true,
+      "mustNotAutoResolve": true,
+      "mustNotContainUnsupportedHouseNumber": false,
+      "unsupportedHouseNumbers": []
+    },
+    "notes": "Non-food partition content must not create a food-place candidate.",
+    "canAutoResolve": false
+  },
+  {
+    "id": "negative_nonfood_san_nhua",
+    "url": "https://www.youtube.com/shorts/4DDdZsHM40g",
+    "category": "nonfood_address_like",
+    "expectedOutcome": "CORRECT_UNRESOLVED_NONFOOD",
+    "expectedEvidenceSource": "visual_or_metadata",
+    "mustNotCreateFoodCandidate": true,
+    "expectedSafety": {
+      "mustNotResolve": true,
+      "mustNotAutoResolve": true,
+      "mustNotContainUnsupportedHouseNumber": false,
+      "unsupportedHouseNumbers": []
+    },
+    "notes": "Non-food flooring content must not create a food-place candidate.",
+    "canAutoResolve": false
+  }
+]

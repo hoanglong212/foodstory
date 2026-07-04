@@ -14,6 +14,11 @@ import { fuseShortsTrack2V3Evidence } from './shortsTrack2V3EvidenceFusionServic
 import { runShortsTrack2V3OcrBoost } from './shortsTrack2V3OcrBoostService.js'
 import { applyShortsTrack2V3CandidateQualityGate } from './shortsTrack2V3CandidateQualityGateService.js'
 import { buildShortsTrack2V3Response } from './shortsTrack2V3ResponseBuilder.js'
+import {
+  buildMetadataCandidatesFromEvidence,
+  extractMetadataEvidence,
+  mergeMetadataCandidatesWithExisting,
+} from './shortsTrack2V3MetadataEvidenceService.js'
 
 function normalizeContext(input = {}) {
   if (typeof input === 'string') {
@@ -236,6 +241,11 @@ export async function runShortsTrack2V3Pipeline(input = {}, deps = {}) {
   const config = deps.track2V3Config || getShortsTrack2V3Config(deps.env || process.env)
   const context = normalizeContext(input)
   const intent = classifyShortsTrack2V3Intent(context, config)
+  const metadataEvidence = extractMetadataEvidence(context)
+  const metadataCandidates = buildMetadataCandidatesFromEvidence({
+    evidence: metadataEvidence,
+    requireFoodContext: true,
+  })
   const plannedFramePlan = planShortsTrack2V3Frames(context, config, intent)
   const plannedFrameVariants = buildShortsTrack2V3FrameVariants(plannedFramePlan, config)
   const {
@@ -255,7 +265,7 @@ export async function runShortsTrack2V3Pipeline(input = {}, deps = {}) {
   })
   const escalation = decideShortsTrack2V3Escalation({
     context,
-    candidates: candidateResult.candidates,
+    candidates: mergeMetadataCandidatesWithExisting(metadataCandidates, candidateResult.candidates),
     evidence: evidenceStore.list(),
     ocrResult,
     config,
@@ -306,7 +316,7 @@ export async function runShortsTrack2V3Pipeline(input = {}, deps = {}) {
     evidence: fusionResult.fusedEvidence || mergedEvidenceStore.list(),
     config,
   })
-  const finalCandidates = mergeCandidates(
+  const finalOcrCandidates = mergeCandidates(
     candidateResult.candidates,
     boostedCandidateResult.candidates,
   )
@@ -314,8 +324,16 @@ export async function runShortsTrack2V3Pipeline(input = {}, deps = {}) {
     context,
     intent,
     evidence: fusionResult.fusedEvidence || mergedEvidenceStore.list(),
-    candidates: finalCandidates,
+    candidates: finalOcrCandidates,
   })
+  const finalCandidates = mergeMetadataCandidatesWithExisting(
+    metadataCandidates,
+    candidateQualityGate.candidates,
+  )
+  const finalEvidence = [
+    ...metadataEvidence,
+    ...(fusionResult.fusedEvidence || mergedEvidenceStore.list()),
+  ]
   const placesResult = {
     status: 'NOT_RUN',
     reason: 'TRACK2_V3_PLACES_UPGRADE_NOT_IMPLEMENTED',
@@ -340,8 +358,8 @@ export async function runShortsTrack2V3Pipeline(input = {}, deps = {}) {
       ? ocrBoostResult.frameVariants || frameVariants
       : frameVariants,
     ocrResult: mergedOcrResult,
-    evidence: fusionResult.fusedEvidence || evidenceStore.list(),
-    candidates: candidateQualityGate.candidates,
+    evidence: finalEvidence,
+    candidates: finalCandidates,
     escalation,
     geminiResult,
     placesResult,
@@ -355,11 +373,13 @@ export async function runShortsTrack2V3Pipeline(input = {}, deps = {}) {
       candidateCountBeforeBoost: candidateResult.candidateCount,
       candidateCountAfterBoost: finalCandidates.length,
       candidateQualityGateRan: candidateQualityGate.candidateQualityGateRan,
-      rawCandidateCount: candidateQualityGate.rawCandidateCount,
-      keptCandidateCount: candidateQualityGate.keptCandidateCount,
+      rawCandidateCount: candidateQualityGate.rawCandidateCount + metadataCandidates.length,
+      keptCandidateCount: finalCandidates.length,
       droppedCandidateCount: candidateQualityGate.droppedCandidateCount,
       weakCandidateCount: candidateQualityGate.weakCandidateCount,
-      addressAnchoredCandidateCount: candidateQualityGate.addressAnchoredCandidateCount,
+      addressAnchoredCandidateCount: candidateQualityGate.addressAnchoredCandidateCount + metadataCandidates.length,
+      metadataEvidenceCount: metadataEvidence.length,
+      metadataCandidateCount: metadataCandidates.length,
       keptCandidateReasons: candidateQualityGate.keptCandidateReasons,
       droppedCandidateReasons: candidateQualityGate.droppedCandidateReasons,
       droppedCandidates: candidateQualityGate.droppedCandidates,

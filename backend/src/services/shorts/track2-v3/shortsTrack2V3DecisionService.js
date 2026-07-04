@@ -9,6 +9,15 @@ function candidateHasRisk(candidates = [], riskFlag) {
 }
 
 function candidateReason({ candidates = [], intent = {} } = {}) {
+  const metadataCandidateCount = candidates.filter((candidate) =>
+    candidate?.type === 'METADATA_ADDRESS'
+  ).length
+  if (metadataCandidateCount > 1) {
+    return 'METADATA_MULTI_LOCATION_REVIEW'
+  }
+  if (metadataCandidateCount === 1) {
+    return 'METADATA_ADDRESS_REVIEW'
+  }
   if (intent.mustNotResolve && firstCandidateType(candidates, 'MULTI_PLACE_REVIEW')) {
     return 'MULTI_PLACE_REVIEW_ONLY'
   }
@@ -39,7 +48,8 @@ export function decideShortsTrack2V3Result({
     : 'TRACK2_V3_NO_USEFUL_VISUAL_EVIDENCE'
 
   if (candidateCount > 0) {
-    resolution = mustNotResolve ? 'NEEDS_REVIEW' : 'CANDIDATES'
+    const hasMetadataCandidate = candidates.some((candidate) => candidate?.type === 'METADATA_ADDRESS')
+    resolution = hasMetadataCandidate ? 'CANDIDATES' : mustNotResolve ? 'NEEDS_REVIEW' : 'CANDIDATES'
     reason = candidateReason({ candidates, intent })
   }
 
