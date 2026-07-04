@@ -190,6 +190,7 @@ describe('shortsPipeline two-track orchestrator', () => {
     let receivedTrack1 = null
 
     const output = await runShortsPipeline(SHORTS_URL, {
+      track2V3Config: { enabled: false },
       runShortsTrack1Pipeline: async () => fallback,
       runShortsTrack2Pipeline: async (track1Result, deps) => {
         receivedTrack1 = track1Result
@@ -217,6 +218,7 @@ describe('shortsPipeline two-track orchestrator', () => {
     let metadataFetchCalls = 0
 
     const output = await runShortsPipeline(SHORTS_URL, {
+      track2V3Config: { enabled: false },
       runShortsTrack1Pipeline: async () => fallback,
       runShortsTrack2Pipeline: async (track1Result, deps) => {
         return runShortsTrack2Pipeline(track1Result, deps)

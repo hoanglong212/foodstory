@@ -87,3 +87,8 @@ backend/secrets/
 *.service-account.json
 *service-account*.json
 google-vision-service-account.json
+
+
+.agents/
+
+.codex/
