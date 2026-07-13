@@ -18,10 +18,11 @@
   }
 
   .main-nav {
-    grid-column: 1 / -1;
-    display: none;
+    position: absolute;
+    top: calc(100% - 8px);
+    right: clamp(16px, 2.4vw, 28px);
+    display: grid;
     grid-template-columns: 1fr;
-    justify-self: end;
     align-items: stretch;
     justify-content: stretch;
     gap: 8px;
@@ -31,10 +32,19 @@
     border-radius: 14px;
     background: var(--header-solid-bg);
     box-shadow: 0 16px 34px rgba(8, 10, 20, 0.18);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition:
+      opacity var(--duration-normal) var(--ease-out-quart),
+      transform var(--duration-normal) var(--ease-out-quart),
+      visibility var(--duration-normal) var(--ease-out-quart);
   }
 
   .main-nav.is-open {
-    display: grid;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
   }
 
   .main-nav a {
@@ -167,6 +177,12 @@
   }
 }
 
+@media (max-width: 900px) {
+  .recipe-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 700px) {
   main {
     padding-top: 0;
@@ -179,10 +195,6 @@
   .site-header {
     position: sticky;
     top: 0;
-    z-index: 1000;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 12px;
     min-height: auto;
     padding: 12px 14px;
   }
@@ -191,55 +203,9 @@
     position: fixed;
   }
 
-  .site-header .brand {
-    min-width: 0;
-    gap: 9px;
-  }
-
-  .site-header .brand > span:last-child {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   .main-nav {
-    grid-column: 1 / -1;
-    display: none;
-    grid-template-columns: 1fr;
-    align-items: stretch;
-    justify-content: stretch;
-    gap: 8px;
-    width: 100%;
-    padding: 8px;
-    border: 1px solid var(--header-solid-border);
-    border-radius: 14px;
-    background: var(--header-solid-bg);
-    box-shadow: 0 16px 34px rgba(8, 10, 20, 0.18);
-  }
-
-  .main-nav.is-open {
-    display: grid;
-  }
-
-  .main-nav a {
-    display: inline-flex;
-    min-width: 0;
-    min-height: 46px;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 10px;
-    padding: 10px 12px;
-    font-size: 14px;
-    text-align: left;
-  }
-
-  .main-nav a > span:not(.pending-badge) {
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
-  .pending-badge {
-    margin-left: auto;
+    right: 14px;
+    width: calc(100% - 28px);
   }
 
   .header-actions {

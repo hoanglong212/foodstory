@@ -169,12 +169,19 @@ export function decideShortsTrack2V3AdaptiveFrameSampling({
   selectorResult = {},
   localOcrResult = {},
   localOcrTextBlocks = [],
+  lateRescueSufficiency = null,
 } = {}) {
   const normalized = normalizeConfig(config)
   if (!normalized.enabled) {
     return { shouldRun: false, reason: 'ADAPTIVE_FRAME_SAMPLING_DISABLED' }
   }
-  if (Number(metadataCandidateCount || 0) > 0 || Number(normalCandidateCount || 0) > 0) {
+  const sufficiencyKnown = lateRescueSufficiency && typeof lateRescueSufficiency === 'object'
+  if (sufficiencyKnown && lateRescueSufficiency.lateRescueSufficient === true) {
+    return { shouldRun: false, reason: 'NORMAL_CANDIDATE_EXISTS' }
+  }
+  if (!sufficiencyKnown && (
+    Number(metadataCandidateCount || 0) > 0 || Number(normalCandidateCount || 0) > 0
+  )) {
     return { shouldRun: false, reason: 'NORMAL_CANDIDATE_EXISTS' }
   }
   const providerStatus = String(localOcrResult.status || '').trim().toUpperCase()
@@ -193,7 +200,7 @@ export function decideShortsTrack2V3AdaptiveFrameSampling({
     return { shouldRun: false, reason: 'NO_GENERATED_FRAMES_OR_CROPS' }
   }
   if (!Array.isArray(localOcrTextBlocks) || localOcrTextBlocks.length === 0) {
-    return { shouldRun: false, reason: 'NORMAL_OCR_RETURNED_NO_TEXT' }
+    return { shouldRun: true, reason: 'NORMAL_OCR_NO_TEXT_RESCUE' }
   }
   return {
     shouldRun: true,
@@ -268,6 +275,7 @@ export async function runShortsTrack2V3AdaptiveFrameSampling({
   selectorResult = {},
   localOcrResult = {},
   localOcrTextBlocks = [],
+  lateRescueSufficiency = null,
   deps = {},
 } = {}) {
   const normalized = normalizeConfig(config)
@@ -278,6 +286,7 @@ export async function runShortsTrack2V3AdaptiveFrameSampling({
     selectorResult,
     localOcrResult,
     localOcrTextBlocks,
+    lateRescueSufficiency,
   })
   if (!decision.shouldRun) return emptyResult(config, decision.reason)
 
@@ -343,6 +352,8 @@ export async function runShortsTrack2V3AdaptiveFrameSampling({
         budgetMs: normalized.timeoutMs,
         signal: deps.signal || controller.signal,
         tmpDir: deps.tmpDir || null,
+        mediaSession: deps.mediaSession || null,
+        mediaConsumer: 'visual_adaptive',
       })
       const frameStatus = String(frameResult?.status || 'OK').trim().toUpperCase()
       if (frameStatus !== 'OK') {

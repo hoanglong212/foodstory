@@ -7,6 +7,7 @@ import { parseShortsTrack2V3NamedAdminAddress } from './shortsTrack2V3NamedAdmin
 const CONTIGUOUS_HOUSE_NUMBER_PATTERN = /\b\d{1,5}(?:\/\d{1,5})+\b/gu
 const SPLIT_HOUSE_NUMBER_PATTERN = /\b\d{1,5}\s+\d{1,4}\/\d{1,5}\b/gu
 const PLAIN_HOUSE_NUMBER_PATTERN = /\b\d{1,5}[a-z]?\b/giu
+const JOINED_HOUSE_STREET_PATTERN = /(?:^|[\s,;])(\d{1,5})(?=\p{Lu}\p{Ll})/gu
 const DATE_TIME_PATTERNS = Object.freeze([
   /\b(?:\d{1,2}[-/.]){2,4}\d{2,4}\b/gu,
   /\b\d{1,2}(?::|h)\d{2}\s*[-â€“â€”]\s*\d{1,2}(?::|h)\d{2}\b/giu,
@@ -58,8 +59,17 @@ export function normalizeShortsTrack2V3OcrAdminText(value = '') {
       return `Quận ${normalizedDigits}`
     },
   )
+  if (/^\s*\d{1,5}\p{Lu}\p{Ll}/u.test(text)) {
+    text = replaceTracked(
+      text,
+      /(\d)(?=\p{Lu}\p{Ll})|(\p{Ll})(?=\p{Lu}\p{Ll})/gu,
+      '$& ',
+      'NORMALIZED_JOINED_OCR_WORDS',
+      normalizationApplied,
+    )
+  }
   text = text.replace(
-    /(^|[\s,;])(\d{1,5}(?:\/\d{1,5})?\s+)(?:d\.|đ\.|Ä‘\.|duong|đuong|Ä‘uong|u\.)\s+(?=\p{L}{2,})/giu,
+    /(^|[\s,;])(\d{1,5}(?:\/\d{1,5})?\s+)(?:d\.|đ\.|Ä‘\.|duong|dung|đuong|Ä‘uong|u\.)\s+(?=\p{L}{2,})/giu,
     (match, prefix, house) => {
       normalizationApplied.push('NORMALIZED_STREET_MARKER')
       return `${prefix}${house}Đ. `
@@ -134,6 +144,7 @@ function isPlainAddressNumber(text, match) {
   const end = index + match[0].length
   const before = text.slice(Math.max(0, index - 2), index)
   const afterCharacter = text.slice(end, end + 1)
+  if (/\p{L}$/u.test(before)) return false
   if (/[\d/.:h-]\s*$/iu.test(before) || /^[\d/.:h)-]/iu.test(afterCharacter)) return false
   if (/^[kKoO]\b/u.test(text.slice(end))) return false
 
@@ -149,7 +160,7 @@ function isPlainAddressNumber(text, match) {
   const adminMatch = foldedAfter.match(adminPattern)
   if (!adminMatch) return false
   const beforeAdmin = foldedAfter.slice(0, adminMatch.index)
-  const hasStreetMarker = /(?:^|[\s,;])(?:duong|d\.?|u\.)(?=$|[\s,;])/iu.test(beforeAdmin)
+  const hasStreetMarker = /(?:^|[\s,;])(?:duong|d\.|u\.)(?=$|[\s,;])/iu.test(beforeAdmin)
   const streetWords = beforeAdmin.match(/[a-z]{2,}/giu) || []
   return hasStreetMarker || streetWords.length >= 2
 }
@@ -159,6 +170,27 @@ export function extractShortsTrack2V3HouseNumberObservations(value = '') {
   if (!text) return []
   const observations = []
   const occupiedRanges = []
+
+  for (const match of text.matchAll(JOINED_HOUSE_STREET_PATTERN)) {
+    const token = match[1]
+    const digitOffset = match[0].lastIndexOf(token)
+    const index = (match.index ?? 0) + digitOffset
+    const end = index + token.length
+    const bounds = lineBounds(text, index)
+    const namedAdminAddress = parseShortsTrack2V3NamedAdminAddress(
+      text.slice(bounds.start, bounds.end),
+    )
+    if (namedAdminAddress?.houseNumber !== token) continue
+    occupiedRanges.push([index, end])
+    observations.push({
+      token,
+      index,
+      end,
+      kind: 'plain_address_number',
+      exactContiguousToken: true,
+      longDigitRun: token.length >= 5,
+    })
+  }
 
   for (const match of text.matchAll(SPLIT_HOUSE_NUMBER_PATTERN)) {
     const token = match[0].replace(/[ \t]+/gu, ' ')
@@ -232,6 +264,20 @@ function candidateEvidence(candidate = {}, evidence = []) {
   )
 }
 
+
+function candidateVisualScopeEvidence(sourceEvidence = [], evidence = [], windowSeconds = 4.5) {
+  const anchors = Array.isArray(sourceEvidence) ? sourceEvidence : []
+  if (!anchors.length) return []
+  const base = baseOcrEvidence(evidence)
+  return base.filter((item) => anchors.some((anchor) => {
+    if (anchor?.id && item?.id === anchor.id) return true
+    if (anchor?.imagePath && item?.imagePath && anchor.imagePath === item.imagePath) return true
+    const left = Number(anchor?.timestampSeconds)
+    const right = Number(item?.timestampSeconds)
+    return Number.isFinite(left) && Number.isFinite(right) && Math.abs(left - right) <= windowSeconds
+  }))
+}
+
 function observationRecords(evidence = []) {
   return baseOcrEvidence(evidence).flatMap((item) =>
     extractShortsTrack2V3HouseNumberObservations(item.rawText || item.normalizedText)
@@ -246,13 +292,16 @@ function observationRecords(evidence = []) {
 
 function exactTokenSupported(observation, evidenceItems) {
   if (!observation?.token) return false
-  return evidenceItems.some((item) =>
-    extractShortsTrack2V3HouseNumberObservations(item.rawText || item.normalizedText)
+  const escapedToken = observation.token.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+  const joinedHouseStreetPrefix = new RegExp(`^\\s*${escapedToken}(?=\\p{Lu}\\p{Ll})`, 'u')
+  return evidenceItems.some((item) => {
+    const sourceText = item.rawText || item.normalizedText || ''
+    return extractShortsTrack2V3HouseNumberObservations(sourceText)
       .some((sourceObservation) =>
         sourceObservation.token === observation.token &&
         sourceObservation.kind === observation.kind
-      )
-  )
+      ) || joinedHouseStreetPrefix.test(sourceText)
+  })
 }
 
 function cleanAdminText(value = '') {
@@ -271,11 +320,35 @@ export function analyzeShortsTrack2V3HouseNumberCandidate(candidate = {}, eviden
   )
   const normalized = normalizeShortsTrack2V3OcrAdminText(originalAddressFragment)
   const withoutDateTime = stripShortsTrack2V3DateTimeNoise(normalized.text)
+  const multiPlaceReview = candidate.type === 'MULTI_PLACE_REVIEW' ||
+    (Array.isArray(candidate.riskFlags) && candidate.riskFlags.includes('MULTI_PLACE'))
+  if (multiPlaceReview) {
+    // A list-review candidate intentionally spans multiple places. Assigning a
+    // single observed house number to the aggregate leaks one item's identity
+    // into list-level metadata and can distort later ranking/resolution.
+    return {
+      originalAddressFragment,
+      normalizedAddressFragment: withoutDateTime.text,
+      houseNumberToken: null,
+      houseNumberAlternatives: [],
+      houseNumberConflict: false,
+      normalizationApplied: unique([
+        ...normalized.normalizationApplied,
+        ...(withoutDateTime.dateTimeRemoved ? ['REMOVED_DATE_TIME_NOISE'] : []),
+      ]),
+      dateTimeNoiseRemoved: withoutDateTime.removed,
+      exactEvidenceToken: false,
+      noisyHouseNumber: false,
+      selectionAdjustment: 0,
+      contextSignature: null,
+    }
+  }
   const candidateObservation = extractShortsTrack2V3HouseNumberObservations(
     originalAddressFragment,
   )[0] || null
   const sourceEvidence = candidateEvidence(candidate, evidence)
-  const records = observationRecords(evidence)
+  const scopedEvidence = candidateVisualScopeEvidence(sourceEvidence, evidence)
+  const records = observationRecords(scopedEvidence)
   const sameContextRecords = candidateObservation?.contextSignature
     ? records.filter((record) => record.contextSignature === candidateObservation.contextSignature)
     : records

@@ -6,6 +6,8 @@ import sharp from 'sharp'
 
 import { DEFAULT_SHORTS_TRACK2_V3_CONFIG } from './shortsTrack2V3Config.js'
 import { writeShortsTrack2V3SelectorDiagnostics } from './shortsTrack2V3SelectorDiagnosticsService.js'
+import { proposeShortsTrack2V3TextRegions } from './shortsTrack2V3TextRegionProposalService.js'
+import { buildShortsTrack2V3TemporalTextEpisodes } from './shortsTrack2V3TemporalTextEpisodeService.js'
 
 export const SMART_OVERLAY_CROP_VARIANTS = Object.freeze([
   {
@@ -138,6 +140,35 @@ export function normalizeShortsTrack2V3SmartOverlayConfig(config = {}) {
       config.smartOverlayTimeoutMs,
       DEFAULT_SHORTS_TRACK2_V3_CONFIG.smartOverlayTimeoutMs,
       { min: 1000, max: 120000 },
+    ),
+    smartOverlayScoringConcurrency: boundedInteger(
+      config.smartOverlayScoringConcurrency,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.smartOverlayScoringConcurrency,
+      { min: 1, max: 16 },
+    ),
+    textRegionProposalEnabled: config.textRegionProposalEnabled === true,
+    maxDynamicTextRegionsPerFrame: boundedInteger(
+      config.maxDynamicTextRegionsPerFrame,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.maxDynamicTextRegionsPerFrame,
+      { min: 1, max: 8 },
+    ),
+    temporalEpisodeEnabled: config.temporalEpisodeEnabled === true,
+    temporalEpisodeMaxGapSeconds: Math.max(
+      0.25,
+      Math.min(8, Number(
+        config.temporalEpisodeMaxGapSeconds ??
+          DEFAULT_SHORTS_TRACK2_V3_CONFIG.temporalEpisodeMaxGapSeconds,
+      ) || DEFAULT_SHORTS_TRACK2_V3_CONFIG.temporalEpisodeMaxGapSeconds),
+    ),
+    temporalEpisodeMaxRepresentatives: boundedInteger(
+      config.temporalEpisodeMaxRepresentatives,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.temporalEpisodeMaxRepresentatives,
+      { min: 1, max: 40 },
+    ),
+    temporalEpisodeNeighborCount: boundedInteger(
+      config.temporalEpisodeNeighborCount,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.temporalEpisodeNeighborCount,
+      { min: 0, max: 4 },
     ),
     maxDurationSeconds: boundedInteger(
       config.maxDurationSeconds,
@@ -521,18 +552,47 @@ async function saveSelectedCrops(selected = [], outputDir, sampledFrames = [], d
   return saved
 }
 
+function compactEpisodeNeighbor(image = {}) {
+  return {
+    id: image.id || null,
+    timestampSeconds: finiteNumber(image.timestampSeconds, null),
+    variant: image.variant || null,
+    score: finiteNumber(image.score, 0),
+    framePath: image.framePath || null,
+    cropPath: image.cropPath || null,
+    cropBounds: image.cropBounds || null,
+    frameIndex: finiteNumber(image.frameIndex, null),
+    sourceType: image.sourceType || null,
+    episodeId: image.episodeId || null,
+    segmentId: image.segmentId || null,
+    startSeconds: finiteNumber(image.startSeconds, null),
+    endSeconds: finiteNumber(image.endSeconds, null),
+  }
+}
+
 function selectedImageReport(image = {}) {
   return {
+    id: image.id || null,
     timestampSeconds: finiteNumber(image.timestampSeconds, null),
     variant: image.variant,
     score: finiteNumber(image.score, 0),
     scoreBreakdown: image.scoreBreakdown || {},
     framePath: image.framePath || null,
     cropPath: image.cropPath || null,
+    imagePath: image.cropPath || image.imagePath || image.framePath || null,
+    cropBounds: image.cropBounds || null,
     width: finiteNumber(image.width, null),
     height: finiteNumber(image.height, null),
     frameIndex: finiteNumber(image.frameIndex, null),
     sourceType: image.sourceType || null,
+    episodeId: image.episodeId || null,
+    segmentId: image.segmentId || null,
+    startSeconds: finiteNumber(image.startSeconds, null),
+    endSeconds: finiteNumber(image.endSeconds, null),
+    episodeSupportCount: finiteNumber(image.episodeSupportCount, 1),
+    episodeNeighbors: (Array.isArray(image.episodeNeighbors) ? image.episodeNeighbors : [])
+      .map(compactEpisodeNeighbor)
+      .slice(0, 4),
   }
 }
 
@@ -754,6 +814,7 @@ export function createShortsTrack2V3SmartOverlayFrameExtractor(options = {}) {
   return async function smartOverlayFrameExtractor(context = {}) {
     const startedAt = Date.now()
     const sourceUrl = safeString(context.sourceUrl, 2000)
+    const mediaSession = context.mediaSession || options.mediaSession || null
     const limits = context.limits || {}
     const signal = context.signal
     const diagnostics = []
@@ -784,13 +845,15 @@ export function createShortsTrack2V3SmartOverlayFrameExtractor(options = {}) {
       }
     }
 
-    diagnostics.push(...await checkBinary(
-      ytDlpBin,
-      ['--version'],
-      'YTDLP_UNAVAILABLE',
-      commandTimeoutMs,
-      signal,
-    ))
+    if (!mediaSession) {
+      diagnostics.push(...await checkBinary(
+        ytDlpBin,
+        ['--version'],
+        'YTDLP_UNAVAILABLE',
+        commandTimeoutMs,
+        signal,
+      ))
+    }
     diagnostics.push(...await checkBinary(
       ffmpegBin,
       ['-version'],
@@ -812,73 +875,106 @@ export function createShortsTrack2V3SmartOverlayFrameExtractor(options = {}) {
       const tmpRoot = context.tmpDir || optionTmpRoot
       workDir = await fs.mkdtemp(path.join(tmpRoot, 'shorts-track2-v3-overlay-'))
       registerCleanup?.(workDir)
-      const downloadTimeoutMs = Math.min(
-        boundedInteger(options.downloadTimeoutMs, DEFAULT_DOWNLOAD_TIMEOUT_MS, {
-          min: 1000,
-          max: 60000,
-        }),
-        Math.max(1000, remainingBudget(startedAt, budgetMs) - 1000),
-      )
-      const outputTemplate = path.join(workDir, 'input.%(ext)s')
-      const download = await runCommand(ytDlpBin, [
-        '--no-playlist',
-        '--quiet',
-        '--no-warnings',
-        '--socket-timeout',
-        '10',
-        '--retries',
-        '1',
-        '--fragment-retries',
-        '1',
-        '-f',
-        VIDEO_FORMAT,
-        '-o',
-        outputTemplate,
-        sourceUrl,
-      ], {
-        timeoutMs: downloadTimeoutMs,
-        signal,
-      })
-
-      if (!download.ok) {
-        return {
-          status: download.aborted || download.timedOut ? 'ERROR' : 'ERROR',
-          reason: download.aborted || download.timedOut
-            ? 'FRAME_EXTRACTION_TIMEOUT'
-            : 'FRAME_PROVIDER_ERROR',
-          frames: [],
-          sampledTimestamps,
-          diagnostics: [
-            ...diagnostics,
-            diagnostic('YTDLP_DOWNLOAD_FAILED', 'yt-dlp could not download the Shorts video', {
-              exitCode: download.exitCode,
-              timedOut: download.timedOut,
-              aborted: download.aborted,
-              stderr: download.stderr,
-              errorCode: safeString(download.error?.code, 120) || null,
-            }),
-          ],
+      let videoPath
+      let durationSeconds = null
+      if (mediaSession) {
+        const mediaResult = await mediaSession.ensureVideo({
+          consumer: safeString(context.mediaConsumer, 80) || 'visual',
+        })
+        if (mediaResult?.status !== 'OK' || !mediaResult.localVideoPath) {
+          const mediaDiagnostics = mediaSession.diagnostics?.() || {}
+          return {
+            status: mediaResult?.status || 'ERROR',
+            reason: 'FRAME_MEDIA_ACQUISITION_FAILED',
+            frames: [],
+            sampledTimestamps,
+            diagnostics: [
+              ...diagnostics,
+              ...(Array.isArray(mediaDiagnostics.mediaProviderErrors)
+                ? mediaDiagnostics.mediaProviderErrors.map((error) => diagnostic(
+                    error.code || 'MEDIA_ACQUISITION_FAILED',
+                    error.message || 'Shared Track2 V3 media acquisition failed.',
+                    { strategy: error.strategy, attempt: error.attempt },
+                  ))
+                : []),
+            ],
+            usedSharedVideo: false,
+          }
         }
-      }
+        videoPath = mediaResult.localVideoPath
+        const durationResult = await mediaSession.ensureDuration()
+        durationSeconds = durationResult?.status === 'OK'
+          ? finiteNumber(durationResult.durationSeconds, null)
+          : null
+      } else {
+        const downloadTimeoutMs = Math.min(
+          boundedInteger(options.downloadTimeoutMs, DEFAULT_DOWNLOAD_TIMEOUT_MS, {
+            min: 1000,
+            max: 60000,
+          }),
+          Math.max(1000, remainingBudget(startedAt, budgetMs) - 1000),
+        )
+        const outputTemplate = path.join(workDir, 'input.%(ext)s')
+        const download = await runCommand(ytDlpBin, [
+          '--no-playlist',
+          '--quiet',
+          '--no-warnings',
+          '--socket-timeout',
+          '10',
+          '--retries',
+          '1',
+          '--fragment-retries',
+          '1',
+          '-f',
+          VIDEO_FORMAT,
+          '-o',
+          outputTemplate,
+          sourceUrl,
+        ], {
+          timeoutMs: downloadTimeoutMs,
+          signal,
+        })
 
-      const videoPath = await findDownloadedVideo(workDir)
-      if (!videoPath) {
-        return {
-          status: 'ERROR',
-          reason: 'FRAME_PROVIDER_ERROR',
-          frames: [],
-          sampledTimestamps,
-          diagnostics: [
-            ...diagnostics,
-            diagnostic('YTDLP_NO_VIDEO_FILE', 'yt-dlp completed without a readable video file'),
-          ],
+        if (!download.ok) {
+          return {
+            status: 'ERROR',
+            reason: download.aborted || download.timedOut
+              ? 'FRAME_EXTRACTION_TIMEOUT'
+              : 'FRAME_PROVIDER_ERROR',
+            frames: [],
+            sampledTimestamps,
+            diagnostics: [
+              ...diagnostics,
+              diagnostic('YTDLP_DOWNLOAD_FAILED', 'yt-dlp could not download the Shorts video', {
+                exitCode: download.exitCode,
+                timedOut: download.timedOut,
+                aborted: download.aborted,
+                stderr: download.stderr,
+                errorCode: safeString(download.error?.code, 120) || null,
+              }),
+            ],
+          }
         }
-      }
 
-      const probeBudgetMs = Math.min(5000, Math.max(500, remainingBudget(startedAt, budgetMs) - 500))
-      const durationSeconds = probeBudgetMs >= 500
-        ? await probeVideoDurationSeconds(videoPath, ffprobeBin, probeBudgetMs, signal)
-        : null
+        videoPath = await findDownloadedVideo(workDir)
+        if (!videoPath) {
+          return {
+            status: 'ERROR',
+            reason: 'FRAME_PROVIDER_ERROR',
+            frames: [],
+            sampledTimestamps,
+            diagnostics: [
+              ...diagnostics,
+              diagnostic('YTDLP_NO_VIDEO_FILE', 'yt-dlp completed without a readable video file'),
+            ],
+          }
+        }
+
+        const probeBudgetMs = Math.min(5000, Math.max(500, remainingBudget(startedAt, budgetMs) - 500))
+        durationSeconds = probeBudgetMs >= 500
+          ? await probeVideoDurationSeconds(videoPath, ffprobeBin, probeBudgetMs, signal)
+          : null
+      }
 
       const timestamps = sampledTimestamps.length
         ? sampledTimestamps
@@ -975,6 +1071,7 @@ export function createShortsTrack2V3SmartOverlayFrameExtractor(options = {}) {
         sampledTimestamps: timestamps,
         durationSeconds,
         diagnostics,
+        usedSharedVideo: Boolean(mediaSession),
       }
     } catch (error) {
       return {
@@ -1004,6 +1101,13 @@ function configCaps(config = {}) {
     maxSmartOverlayFrames: normalized.maxSmartOverlayFrames,
     maxSmartOverlaySelectedImages: normalized.maxSmartOverlaySelectedImages,
     smartOverlayTimeoutMs: normalized.smartOverlayTimeoutMs,
+    smartOverlayScoringConcurrency: normalized.smartOverlayScoringConcurrency,
+    textRegionProposalEnabled: normalized.textRegionProposalEnabled,
+    maxDynamicTextRegionsPerFrame: normalized.maxDynamicTextRegionsPerFrame,
+    temporalEpisodeEnabled: normalized.temporalEpisodeEnabled,
+    temporalEpisodeMaxGapSeconds: normalized.temporalEpisodeMaxGapSeconds,
+    temporalEpisodeMaxRepresentatives: normalized.temporalEpisodeMaxRepresentatives,
+    temporalEpisodeNeighborCount: normalized.temporalEpisodeNeighborCount,
     maxDurationSeconds: normalized.maxDurationSeconds,
   }
 }
@@ -1061,21 +1165,64 @@ function normalizeFrames(frames = []) {
     .filter((frame) => frame.imagePath)
 }
 
-async function scoreOverlayCrops(frames = [], deps = {}) {
-  const scored = []
+async function runBoundedTasks(tasks = [], concurrency = 8) {
+  const results = new Array(tasks.length)
+  let nextIndex = 0
+  const workerCount = Math.min(Math.max(1, Number(concurrency) || 1), tasks.length)
+  const workers = Array.from({ length: workerCount }, async () => {
+    while (nextIndex < tasks.length) {
+      const current = nextIndex
+      nextIndex += 1
+      results[current] = await tasks[current]()
+    }
+  })
+  await Promise.all(workers)
+  return results
+}
 
-  for (const frame of frames) {
-    for (const definition of SMART_OVERLAY_CROP_VARIANTS) {
+async function regionDefinitionsForFrame(frame = {}, config = {}, deps = {}) {
+  if (config.textRegionProposalEnabled !== true) return SMART_OVERLAY_CROP_VARIANTS
+  const proposalProvider = typeof deps.textRegionProposalProvider === 'function'
+    ? deps.textRegionProposalProvider
+    : proposeShortsTrack2V3TextRegions
+  const dynamic = await proposalProvider(frame, config, deps).catch(() => [])
+  return Array.isArray(dynamic) && dynamic.length
+    ? dynamic
+    : SMART_OVERLAY_CROP_VARIANTS
+}
+
+async function scoreOverlayCrops(frames = [], config = {}, deps = {}) {
+  const definitionGroups = await runBoundedTasks(
+    frames.map((frame) => async () => ({
+      frame,
+      definitions: await regionDefinitionsForFrame(frame, config, deps),
+    })),
+    Math.min(8, Math.max(1, Number(config.smartOverlayScoringConcurrency || 8))),
+  )
+  const tasks = definitionGroups.flatMap(({ frame, definitions }) =>
+    definitions.map((definition) => async () => {
       try {
         const descriptor = await scoreFrameCrop(frame, definition, deps)
-        if (descriptor) scored.push(descriptor)
+        if (!descriptor) return null
+        return {
+          ...descriptor,
+          proposalScore: finiteNumber(definition.proposalScore, null),
+          proposalType: definition.proposalType || (
+            definition.sourceType === 'smart_overlay_dynamic_text_region'
+              ? 'DYNAMIC_TEXT_BAND'
+              : 'FIXED_FALLBACK_BAND'
+          ),
+        }
       } catch {
-        // A single unreadable crop should not fail the dry-run report.
+        return null
       }
-    }
-  }
-
-  return scored
+    })
+  )
+  const concurrency = Math.min(16, Math.max(
+    1,
+    Number(config.smartOverlayScoringConcurrency || DEFAULT_SHORTS_TRACK2_V3_CONFIG.smartOverlayScoringConcurrency),
+  ))
+  return (await runBoundedTasks(tasks, concurrency)).filter(Boolean)
 }
 
 async function fallbackFullRawSelection(frames = [], outputDir, sampledFrames, deps = {}) {
@@ -1101,8 +1248,15 @@ export async function selectShortsTrack2V3SmartOverlayCrops({
 } = {}) {
   const normalizedFrames = normalizeFrames(frames)
   const sampledFrames = await saveSampledFrameThumbnails(normalizedFrames, outputDir, deps)
-  const scoredCrops = await scoreOverlayCrops(normalizedFrames, deps)
-  const selected = selectScoredOverlayCrops(scoredCrops, config, durationSeconds)
+  const scoredCrops = await scoreOverlayCrops(normalizedFrames, config, deps)
+  const temporalEpisodes = buildShortsTrack2V3TemporalTextEpisodes({
+    scoredCrops,
+    config,
+  })
+  const selectionPool = temporalEpisodes.enabled && temporalEpisodes.representatives.length
+    ? temporalEpisodes.representatives
+    : scoredCrops
+  const selected = selectScoredOverlayCrops(selectionPool, config, durationSeconds)
   const selectedImages = selected.length
     ? await saveSelectedCrops(selected, outputDir, sampledFrames, deps)
     : await fallbackFullRawSelection(normalizedFrames, outputDir, sampledFrames, deps)
@@ -1138,6 +1292,32 @@ export async function selectShortsTrack2V3SmartOverlayCrops({
     sampledFrameCount: normalizedFrames.length,
     selectedImageCount: selectedImages.length,
     selectedImages: selectedImages.map(selectedImageReport),
+    scoredImageCount: scoredCrops.length,
+    temporalEpisodeEnabled: temporalEpisodes.enabled,
+    temporalEpisodeCount: temporalEpisodes.episodeCount,
+    temporalUniqueRegionCount: temporalEpisodes.uniqueRegionCount,
+    temporalEpisodeReductionRatio: temporalEpisodes.reductionRatio ?? null,
+    temporalAssociationComparisonCount: temporalEpisodes.associationComparisonCount || 0,
+    temporalAcceptedAssociationCount: temporalEpisodes.acceptedAssociationCount || 0,
+    temporalRepeatedEpisodeCount: temporalEpisodes.repeatedEpisodeCount || 0,
+    temporalSingleFrameEpisodeCount: temporalEpisodes.singleFrameEpisodeCount || 0,
+    temporalMaxEpisodeSupportCount: temporalEpisodes.maxEpisodeSupportCount || 0,
+    temporalAverageEpisodeSupportCount: temporalEpisodes.averageEpisodeSupportCount || 0,
+    temporalEpisodeSupportHistogram: temporalEpisodes.episodeSupportHistogram || {
+      '1': 0,
+      '2': 0,
+      '3-4': 0,
+      '5+': 0,
+    },
+    temporalEpisodes: temporalEpisodes.episodes.map((episode) => ({
+      episodeId: episode.episodeId,
+      segmentId: episode.segmentId,
+      startSeconds: episode.startSeconds,
+      endSeconds: episode.endSeconds,
+      supportCount: episode.supportCount,
+      representativeTimestampSeconds: episode.representative?.timestampSeconds ?? null,
+      neighborCount: episode.representative?.episodeNeighbors?.length || 0,
+    })),
     scoredImageCount: scoredCrops.length,
     generatedCropCount: selectorDiagnostics?.generatedCropCount ?? scoredCrops.length,
     selectedCropIds: selectorDiagnostics?.selectedCropIds || [],
@@ -1209,6 +1389,8 @@ async function extractFramesForSmartOverlay(context = {}, config = {}, deps = {}
       budgetMs: normalized.smartOverlayTimeoutMs,
       signal: deps.signal || controller.signal,
       tmpDir: deps.tmpDir || null,
+      mediaSession: deps.mediaSession || null,
+      mediaConsumer: 'visual_normal',
     })
   } finally {
     clearTimeout(timeoutId)
@@ -1279,6 +1461,11 @@ export async function runShortsTrack2V3SmartOverlayDryRun(context = {}, config =
     selectedImageCount: selectorResult.selectedImageCount,
     selectedImages: selectorResult.selectedImages,
     sampledFrames: selectorResult.sampledFrames,
+    temporalEpisodeEnabled: selectorResult.temporalEpisodeEnabled,
+    temporalEpisodeCount: selectorResult.temporalEpisodeCount,
+    temporalUniqueRegionCount: selectorResult.temporalUniqueRegionCount,
+    temporalEpisodeReductionRatio: selectorResult.temporalEpisodeReductionRatio,
+    temporalEpisodes: selectorResult.temporalEpisodes,
     scoredImageCount: selectorResult.scoredImageCount,
     generatedCropCount: selectorResult.generatedCropCount,
     selectedCropIds: selectorResult.selectedCropIds,

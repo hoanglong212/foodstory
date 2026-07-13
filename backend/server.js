@@ -20,7 +20,7 @@ import visionRoutes from './routes/vision.js'
 import foodMapDiscoveryRoutes from './routes/foodMapDiscoveryRoutes.js'
 import foodMapSocialDiscoveryRoutes from './routes/foodMapSocialDiscoveryRoutes.js'
 import visionAutoRoutes from './routes/visionAutoRoutes.js'
-import { visionAutoRouteEnabled } from './services/visionAuto/visionAutoConfig.js'
+import { getVisionAutoRuntimeConfig, logVisionAutoRuntimeDiagnostics, visionAutoRouteEnabled } from './services/visionAuto/visionAutoConfig.js'
 
 import { initWebSocketServer } from './websocket/wsServer.js'
 
@@ -98,6 +98,7 @@ app.use('/api/food-map', foodMapSocialDiscoveryRoutes)
 if (visionAutoRouteEnabled()) {
   app.use('/api/food-map', visionAutoRoutes)
 }
+logVisionAutoRuntimeDiagnostics(getVisionAutoRuntimeConfig())
 app.use('/api/chatbot', foodStoryChatbotRoutes)
 
 app.use((req, res) => {

@@ -15,7 +15,12 @@ function trimText(text, maxChars = 700) {
     : normalizedText
 }
 
-export async function generateFoodStoryAnswer({ question, contexts }) {
+export async function generateFoodStoryAnswer({
+  question,
+  contexts,
+  responseLanguage = 'en',
+  conversationHistory = [],
+}) {
   if (!process.env.GROQ_API_KEY) {
     throw new Error('Missing GROQ_API_KEY in .env')
   }
@@ -34,6 +39,14 @@ ${trimText(item.chunkText || item.content)}
       `.trim()
     })
     .join('\n\n---\n\n')
+  const historyText = Array.isArray(conversationHistory)
+    ? conversationHistory
+        .slice(-6)
+        .map((entry) =>
+          `${entry.role === 'assistant' ? 'Assistant' : 'User'}: ${trimText(entry.content, 300)}`
+        )
+        .join('\n')
+    : ''
 
   const response = await groq.chat.completions.create({
     model: 'llama-3.1-8b-instant',
@@ -44,8 +57,9 @@ ${trimText(item.chunkText || item.content)}
         role: 'system',
         content: `
 You are FoodStory Assistant.
-Answer in English using only the provided FoodStory context.
+Answer in ${responseLanguage === 'vi' ? 'Vietnamese' : 'English'} using only the provided FoodStory context.
 Do not invent restaurants, prices, addresses, ingredients, opening hours, or app features.
+Use recent conversation only to resolve references such as "that recipe"; never treat it as a factual source.
 If there is no exact match, say so clearly and mention fallback results only as alternatives.
 Keep the answer concise.
         `.trim(),
@@ -55,6 +69,9 @@ Keep the answer concise.
         content: `
 FoodStory Context:
 ${contextText}
+
+Recent Conversation:
+${historyText || 'None'}
 
 User Question:
 ${question}

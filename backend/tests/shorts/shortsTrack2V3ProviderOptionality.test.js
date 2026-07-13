@@ -53,6 +53,10 @@ describe('Track 2 V3 provider optionality', () => {
     assert.equal(config.geminiCropJudgeMaxRequestBytes, 12000000)
     assert.equal(config.geminiCropJudgeMaxImageBytes, 4000000)
     assert.equal(config.geminiCropJudgeJpegQuality, 80)
+    assert.equal(config.geminiCropJudgeMaxConcurrency, 1)
+    assert.equal(config.geminiCropJudgeMaxAttempts, 3)
+    assert.equal(config.geminiCropJudgeRetryBaseDelayMs, 2000)
+    assert.equal(config.geminiCropJudgeRetryMaxDelayMs, 30000)
     assert.equal(config.track2V3LocalOcrEnabled, false)
     assert.equal(config.track2V3PaddleOcrEnabled, true)
     assert.equal(config.paddleOcrAllowModelDownload, false)
@@ -73,11 +77,19 @@ describe('Track 2 V3 provider optionality', () => {
       TRACK2_V3_GEMINI_CROP_JUDGE_MAX_REQUEST_BYTES: '15000000',
       TRACK2_V3_GEMINI_CROP_JUDGE_MAX_IMAGE_BYTES: '5000000',
       TRACK2_V3_GEMINI_CROP_JUDGE_JPEG_QUALITY: '72',
+      TRACK2_V3_GEMINI_CROP_JUDGE_MAX_CONCURRENCY: '2',
+      TRACK2_V3_GEMINI_CROP_JUDGE_MAX_ATTEMPTS: '4',
+      TRACK2_V3_GEMINI_CROP_JUDGE_RETRY_BASE_DELAY_MS: '750',
+      TRACK2_V3_GEMINI_CROP_JUDGE_RETRY_MAX_DELAY_MS: '12000',
     })
 
     assert.equal(config.geminiCropJudgeMaxRequestBytes, 15000000)
     assert.equal(config.geminiCropJudgeMaxImageBytes, 5000000)
     assert.equal(config.geminiCropJudgeJpegQuality, 72)
+    assert.equal(config.geminiCropJudgeMaxConcurrency, 2)
+    assert.equal(config.geminiCropJudgeMaxAttempts, 4)
+    assert.equal(config.geminiCropJudgeRetryBaseDelayMs, 750)
+    assert.equal(config.geminiCropJudgeRetryMaxDelayMs, 12000)
   })
 
   it('reads bounded local OCR engine caps and controls from env', () => {

@@ -6,6 +6,14 @@ function formatNumber(value) {
   return Number.isFinite(Number(value)) ? Number(Number(value).toFixed(2)).toString() : 'not recorded'
 }
 
+function routeIntent(routeOrIntent) {
+  return typeof routeOrIntent === 'string' ? routeOrIntent : routeOrIntent?.intent
+}
+
+function isVietnameseRoute(routeOrIntent) {
+  return routeOrIntent?.entities?.responseLanguage === 'vi'
+}
+
 export function buildRecipeSource(recipe, score = 1, matchLevel = 'exact') {
   if (!recipe) return null
   return {
@@ -62,6 +70,8 @@ export function createChatbotResponse({
   confidence = 0,
   message = '',
   sources = [],
+  results = [],
+  suggestions = [],
   groqCalled = false,
 }) {
   return {
@@ -72,30 +82,126 @@ export function createChatbotResponse({
     confidence: roundScore(confidence),
     message,
     sources: sources.filter(Boolean),
+    results,
+    suggestions,
     groqCalled,
   }
 }
 
-function noDataAnswer(result) {
-  if (result.status === 'needs_context') return result.message
-  if (result.status === 'recipe_not_found') return result.message
-  if (result.status === 'restaurant_not_found') return result.message
+function noDataAnswer(result, vietnamese = false) {
+  if (result.status === 'needs_context') {
+    return vietnamese
+      ? result.message?.toLowerCase().includes('restaurant')
+        ? 'Bạn đang hỏi nhà hàng nào?'
+        : 'Bạn đang hỏi công thức nào?'
+      : result.message
+  }
+  if (result.status === 'recipe_not_found') {
+    return vietnamese ? 'FoodStory không tìm thấy công thức phù hợp.' : result.message
+  }
+  if (result.status === 'restaurant_not_found') {
+    return vietnamese ? 'FoodStory không tìm thấy nhà hàng phù hợp.' : result.message
+  }
   if (result.status === 'ingredient_not_found') {
-    return `${result.recipe.title} does not list "${result.ingredientName}" in its stored FoodStory ingredients.`
+    const closest = result.closestIngredient
+      ? vietnamese
+        ? ` Nguyên liệu gần nhất được lưu là ${result.closestIngredient.ingredient_name} (${result.closestIngredient.quantity || 'chưa ghi định lượng'}).`
+        : ` The closest stored ingredient is ${result.closestIngredient.ingredient_name} (${result.closestIngredient.quantity || 'amount not recorded'}).`
+      : ''
+    return vietnamese
+      ? `Công thức ${result.recipe.title} trên FoodStory không có nguyên liệu “${result.ingredientName}”.${closest}`
+      : `${result.recipe.title} does not list "${result.ingredientName}" in its stored FoodStory ingredients.${closest}`
   }
   if (result.reason === 'missing_target_servings') {
-    return 'How many servings would you like to make?'
+    return vietnamese
+      ? 'Bạn muốn nấu cho bao nhiêu khẩu phần?'
+      : 'How many servings would you like to make?'
   }
   if (result.reason === 'missing_original_servings') {
-    return `FoodStory has the recipe, but its original serving count is missing, so the quantities cannot be scaled reliably.`
+    return vietnamese
+      ? 'FoodStory có công thức này nhưng thiếu số khẩu phần gốc, nên chưa thể điều chỉnh định lượng một cách đáng tin cậy.'
+      : `FoodStory has the recipe, but its original serving count is missing, so the quantities cannot be scaled reliably.`
   }
   if (result.reason === 'non_numeric_quantity') {
-    return `${result.recipe.title} includes ${result.ingredient.ingredient_name}, but the stored amount "${result.ingredient.quantity}" is not numeric enough to scale reliably.`
+    return vietnamese
+      ? `${result.recipe.title} có ${result.ingredient.ingredient_name}, nhưng định lượng “${result.ingredient.quantity}” không đủ rõ để điều chỉnh chính xác.`
+      : `${result.recipe.title} includes ${result.ingredient.ingredient_name}, but the stored amount "${result.ingredient.quantity}" is not numeric enough to scale reliably.`
   }
-  return result.message || 'FoodStory does not have enough structured data for that request.'
+  return result.message || (vietnamese
+    ? 'FoodStory chưa có đủ dữ liệu có cấu trúc cho yêu cầu này.'
+    : 'FoodStory does not have enough structured data for that request.')
 }
 
-export function buildRecipeStructuredResponse(result, intent) {
+export function buildRecipeStructuredResponse(result, routeOrIntent) {
+  const intent = routeIntent(routeOrIntent)
+  const vietnamese = isVietnameseRoute(routeOrIntent)
+
+  if (result.kind === 'ingredient_recommendation') {
+    const ranked = result.results || []
+    const sources = ranked.map((item) =>
+      buildRecipeSource(
+        item.recipe,
+        item.matchScore,
+        item.coverage === 1 ? 'exact' : 'partial'
+      )
+    )
+    if (!ranked.length) {
+      const listed = (result.requestedIngredients || []).join(', ')
+      return createChatbotResponse({
+        answer: vietnamese
+          ? `FoodStory chưa tìm thấy công thức đã lưu có nguyên liệu ${listed || 'bạn vừa nêu'}. Bạn có thể thêm nguyên liệu khác để tôi tìm lại.`
+          : `FoodStory could not find a stored recipe using ${listed || 'those ingredients'}. Add another ingredient and I can narrow the search.`,
+        mode: 'no_data',
+        intent,
+        retrievalStatus: 'no_results',
+        confidence: 0,
+        message: 'No stored recipe matched the supplied ingredients.',
+        suggestions: vietnamese
+          ? ['Tôi có thêm trứng', 'Tìm công thức dễ làm']
+          : ['I also have eggs', 'Find an easy recipe'],
+      })
+    }
+
+    const descriptions = ranked.map((item) => {
+      const matches = item.matchedIngredients
+        .map((match) => match.ingredient.ingredient_name)
+        .join(', ')
+      const missing = item.missingIngredients?.length
+        ? vietnamese
+          ? `; chưa khớp ${item.missingIngredients.join(', ')}`
+          : `; did not match ${item.missingIngredients.join(', ')}`
+        : ''
+      return `${item.recipe.title} (${matches}${missing})`
+    })
+    const best = ranked[0]
+    const corrections = (result.ingredientCorrections || [])
+      .map((item) => `${item.input} → ${item.resolved}`)
+      .join(', ')
+    const correctionPrefix = corrections
+      ? vietnamese
+        ? `Tôi hiểu ${corrections}. `
+        : `I interpreted ${corrections}. `
+      : ''
+    return createChatbotResponse({
+      answer: vietnamese
+        ? `${correctionPrefix}${best.coverage === 1 ? 'FoodStory tìm thấy công thức dùng các nguyên liệu bạn có' : 'FoodStory tìm thấy các công thức khớp một phần nguyên liệu'}: ${descriptions.join('; ')}.`
+        : `${correctionPrefix}${best.coverage === 1 ? 'FoodStory found recipes using the ingredients you have' : 'FoodStory found partial ingredient matches'}: ${descriptions.join('; ')}.`,
+      mode: 'structured',
+      intent,
+      retrievalStatus: result.status,
+      confidence: best.matchScore,
+      message: 'Ranked only from stored FoodStory recipe ingredients.',
+      sources,
+      results: ranked.map((item) => ({
+        ...item.recipe,
+        result_type: 'recipe',
+      })),
+      suggestions: vietnamese
+        ? [`Cần bao nhiêu ${result.requestedIngredients?.[0] || 'nguyên liệu'}?`]
+        : [`How much ${result.requestedIngredients?.[0] || 'of it'} is needed?`],
+    })
+  }
+
   const source = buildRecipeSource(result.recipe, result.matchScore)
   const base = {
     intent,
@@ -107,10 +213,28 @@ export function buildRecipeStructuredResponse(result, intent) {
   if (result.status !== 'matched') {
     return createChatbotResponse({
       ...base,
-      answer: noDataAnswer(result),
+      answer: noDataAnswer(result, vietnamese),
       mode: result.status === 'needs_context' ? 'fallback' : 'no_data',
       retrievalStatus: 'no_data',
       message: result.message || 'Structured recipe data was missing or incomplete.',
+    })
+  }
+
+  if (result.kind === 'ingredient_list') {
+    const ingredientLines = result.ingredients.map(
+      (ingredient) =>
+        `- ${ingredient.ingredient_name}: ${ingredient.quantity || (vietnamese ? 'chưa ghi định lượng' : 'amount not recorded')}`
+    )
+    return createChatbotResponse({
+      ...base,
+      mode: 'structured',
+      answer: vietnamese
+        ? `Nguyên liệu FoodStory đang lưu cho ${result.recipe.title}:\n${ingredientLines.join('\n')}`
+        : `Stored FoodStory ingredients for ${result.recipe.title}:\n${ingredientLines.join('\n')}`,
+      message: 'Answered from the stored recipe ingredient list.',
+      suggestions: vietnamese
+        ? ['Điều chỉnh cho 4 người', 'Món này mất bao lâu?']
+        : ['Scale this to 4 servings', 'How long does this recipe take?'],
     })
   }
 
@@ -118,15 +242,21 @@ export function buildRecipeStructuredResponse(result, intent) {
     return createChatbotResponse({
       ...base,
       mode: 'structured',
-      answer: `Yes. ${result.recipe.title} uses ${result.ingredient.ingredient_name}, recorded as ${result.ingredient.quantity || 'an unspecified amount'}.`,
+      answer: vietnamese
+        ? `Có. ${result.recipe.title} dùng ${result.ingredient.ingredient_name}, với định lượng ${result.ingredient.quantity || 'chưa được ghi rõ'}.`
+        : `Yes. ${result.recipe.title} uses ${result.ingredient.ingredient_name}, recorded as ${result.ingredient.quantity || 'an unspecified amount'}.`,
       message: 'Answered from stored recipe ingredients.',
     })
   }
 
   if (result.kind === 'ingredient_quantity') {
-    const answer = result.targetServings
-      ? `For ${result.targetServings} servings of ${result.recipe.title}, you need approximately ${result.ingredient.scaledQuantity} of ${result.ingredient.ingredient_name}. The original recipe uses ${result.ingredient.quantity} for ${result.recipe.servings} servings.`
-      : `${result.recipe.title} uses ${result.ingredient.quantity || 'an unspecified amount'} of ${result.ingredient.ingredient_name} for ${result.recipe.servings || 'its stored'} servings.`
+    const answer = vietnamese
+      ? result.targetServings
+        ? `Để làm ${result.targetServings} khẩu phần ${result.recipe.title}, bạn cần khoảng ${result.ingredient.scaledQuantity} ${result.ingredient.ingredient_name}. Công thức gốc dùng ${result.ingredient.quantity} cho ${result.recipe.servings} khẩu phần.`
+        : `${result.recipe.title} dùng ${result.ingredient.quantity || 'định lượng chưa rõ'} ${result.ingredient.ingredient_name} cho ${result.recipe.servings || 'số'} khẩu phần đã lưu.`
+      : result.targetServings
+        ? `For ${result.targetServings} servings of ${result.recipe.title}, you need approximately ${result.ingredient.scaledQuantity} of ${result.ingredient.ingredient_name}. The original recipe uses ${result.ingredient.quantity} for ${result.recipe.servings} servings.`
+        : `${result.recipe.title} uses ${result.ingredient.quantity || 'an unspecified amount'} of ${result.ingredient.ingredient_name} for ${result.recipe.servings || 'its stored'} servings.`
 
     return createChatbotResponse({
       ...base,
@@ -140,13 +270,19 @@ export function buildRecipeStructuredResponse(result, intent) {
     const ingredientLines = result.scaledIngredients.map(
       (ingredient) =>
         `- ${ingredient.ingredient_name}: ${ingredient.scaledQuantity}${
-          ingredient.scalable ? '' : ' (stored amount could not be scaled)'
+          ingredient.scalable
+            ? ''
+            : vietnamese
+              ? ' (không thể điều chỉnh định lượng đã lưu)'
+              : ' (stored amount could not be scaled)'
         }`
     )
     return createChatbotResponse({
       ...base,
       mode: 'structured',
-      answer: `For ${result.targetServings} servings of ${result.recipe.title}:\n${ingredientLines.join('\n')}`,
+      answer: vietnamese
+        ? `Nguyên liệu cho ${result.targetServings} khẩu phần ${result.recipe.title}:\n${ingredientLines.join('\n')}`
+        : `For ${result.targetServings} servings of ${result.recipe.title}:\n${ingredientLines.join('\n')}`,
       message: `Scaled from the stored ${result.recipe.servings}-serving recipe.`,
     })
   }
@@ -154,11 +290,23 @@ export function buildRecipeStructuredResponse(result, intent) {
   if (result.kind === 'nutrition') {
     const field = result.nutritionField
     const label = field === 'carbs' ? 'carbohydrates' : field
-    const answer = field
-      ? field === 'calories'
-        ? `For ${result.targetServings || result.originalServings} servings of ${result.recipe.title}, FoodStory records approximately ${formatNumber(result.nutrition[field])} calories.`
-        : `For ${result.targetServings || result.originalServings} servings of ${result.recipe.title}, FoodStory records approximately ${formatNumber(result.nutrition[field])}g of ${label}.`
-      : `For ${result.targetServings || result.originalServings} servings of ${result.recipe.title}: ${formatNumber(result.nutrition.calories)} calories, ${formatNumber(result.nutrition.protein)}g protein, ${formatNumber(result.nutrition.carbs)}g carbohydrates, and ${formatNumber(result.nutrition.fat)}g fat.`
+    const servings = result.targetServings || result.originalServings
+    const vietnameseLabels = {
+      protein: 'chất đạm',
+      carbs: 'tinh bột',
+      fat: 'chất béo',
+    }
+    const answer = vietnamese
+      ? field
+        ? field === 'calories'
+          ? `Với ${servings} khẩu phần ${result.recipe.title}, FoodStory ghi nhận khoảng ${formatNumber(result.nutrition[field])} calo.`
+          : `Với ${servings} khẩu phần ${result.recipe.title}, FoodStory ghi nhận khoảng ${formatNumber(result.nutrition[field])}g ${vietnameseLabels[field] || field}.`
+        : `Với ${servings} khẩu phần ${result.recipe.title}: ${formatNumber(result.nutrition.calories)} calo, ${formatNumber(result.nutrition.protein)}g chất đạm, ${formatNumber(result.nutrition.carbs)}g tinh bột và ${formatNumber(result.nutrition.fat)}g chất béo.`
+      : field
+        ? field === 'calories'
+          ? `For ${servings} servings of ${result.recipe.title}, FoodStory records approximately ${formatNumber(result.nutrition[field])} calories.`
+          : `For ${servings} servings of ${result.recipe.title}, FoodStory records approximately ${formatNumber(result.nutrition[field])}g of ${label}.`
+        : `For ${servings} servings of ${result.recipe.title}: ${formatNumber(result.nutrition.calories)} calories, ${formatNumber(result.nutrition.protein)}g protein, ${formatNumber(result.nutrition.carbs)}g carbohydrates, and ${formatNumber(result.nutrition.fat)}g fat.`
 
     return createChatbotResponse({
       ...base,
@@ -174,7 +322,9 @@ export function buildRecipeStructuredResponse(result, intent) {
     return createChatbotResponse({
       ...base,
       mode: 'structured',
-      answer: `${result.recipe.title} takes about ${result.totalTime} minutes total: ${result.prepTime} minutes of preparation and ${result.cookTime} minutes of cooking.`,
+      answer: vietnamese
+        ? `${result.recipe.title} mất khoảng ${result.totalTime} phút: ${result.prepTime} phút chuẩn bị và ${result.cookTime} phút nấu.`
+        : `${result.recipe.title} takes about ${result.totalTime} minutes total: ${result.prepTime} minutes of preparation and ${result.cookTime} minutes of cooking.`,
       message: 'Answered from stored recipe times.',
     })
   }
@@ -186,19 +336,27 @@ export function buildRecipeStructuredResponse(result, intent) {
         ...base,
         mode: 'no_data',
         retrievalStatus: 'no_data',
-        answer: `FoodStory has ${result.recipe.title}, but its cooking instructions are missing.`,
+        answer: vietnamese
+          ? `FoodStory có công thức ${result.recipe.title}, nhưng chưa có hướng dẫn nấu.`
+          : `FoodStory has ${result.recipe.title}, but its cooking instructions are missing.`,
         message: 'Stored recipe instructions are missing.',
       })
     }
 
     const trimmed =
       instructions.length > 1800
-        ? `${instructions.slice(0, 1800)}...\n\nOpen the recipe for the remaining stored instructions.`
+        ? `${instructions.slice(0, 1800)}...\n\n${
+            vietnamese
+              ? 'Mở trang công thức để xem phần hướng dẫn còn lại.'
+              : 'Open the recipe for the remaining stored instructions.'
+          }`
         : instructions
     return createChatbotResponse({
       ...base,
       mode: 'structured',
-      answer: `${result.recipe.title}:\n${trimmed}`,
+      answer: vietnamese
+        ? `${result.recipe.title} — hướng dẫn đang được lưu trên FoodStory:\n${trimmed}`
+        : `${result.recipe.title}:\n${trimmed}`,
       message: 'Answered from stored recipe instructions.',
     })
   }
@@ -207,7 +365,9 @@ export function buildRecipeStructuredResponse(result, intent) {
     ...base,
     mode: 'no_data',
     retrievalStatus: 'no_data',
-    answer: 'FoodStory could not build a structured recipe answer.',
+    answer: vietnamese
+      ? 'FoodStory chưa thể tạo câu trả lời có cấu trúc cho công thức này.'
+      : 'FoodStory could not build a structured recipe answer.',
   })
 }
 
@@ -237,7 +397,9 @@ function formatRequestedRestaurant(category, district) {
   return [formattedCategory, district].filter(Boolean).join(' in ')
 }
 
-export function buildRestaurantStructuredResponse(result, intent) {
+export function buildRestaurantStructuredResponse(result, routeOrIntent) {
+  const intent = routeIntent(routeOrIntent)
+  const vietnamese = isVietnameseRoute(routeOrIntent)
   if (intent === 'restaurant_search') {
     const sources = result.results.map((restaurant) =>
       buildRestaurantSource(
@@ -254,7 +416,9 @@ export function buildRestaurantStructuredResponse(result, intent) {
     if (result.status === 'no_exact_constraint_match') {
       const alternatives = result.results.map(describeRestaurant).join('; ')
       return createChatbotResponse({
-        answer: `No exact match was found for ${requested || 'that restaurant search'}. Closest available FoodStory results: ${alternatives || 'none available'}.`,
+        answer: vietnamese
+          ? `FoodStory chưa có kết quả khớp chính xác với ${requested || 'yêu cầu tìm quán này'}. Các lựa chọn gần nhất: ${alternatives || 'chưa có'}.`
+          : `No exact match was found for ${requested || 'that restaurant search'}. Closest available FoodStory results: ${alternatives || 'none available'}.`,
         mode: 'fallback',
         intent,
         retrievalStatus: 'no_exact_constraint_match',
@@ -267,7 +431,9 @@ export function buildRestaurantStructuredResponse(result, intent) {
 
     if (!result.results.length) {
       return createChatbotResponse({
-        answer: 'FoodStory does not currently have restaurants matching that request.',
+        answer: vietnamese
+          ? 'FoodStory hiện chưa có nhà hàng phù hợp với yêu cầu này.'
+          : 'FoodStory does not currently have restaurants matching that request.',
         mode: 'no_data',
         intent,
         retrievalStatus: 'no_results',
@@ -277,7 +443,9 @@ export function buildRestaurantStructuredResponse(result, intent) {
     }
 
     return createChatbotResponse({
-      answer: `FoodStory found: ${result.results.map(describeRestaurant).join('; ')}.`,
+      answer: vietnamese
+        ? `FoodStory tìm thấy: ${result.results.map(describeRestaurant).join('; ')}.`
+        : `FoodStory found: ${result.results.map(describeRestaurant).join('; ')}.`,
       mode: 'structured',
       intent,
       retrievalStatus: 'matched',
@@ -291,10 +459,16 @@ export function buildRestaurantStructuredResponse(result, intent) {
     const sources = result.results.map((spot) => buildFoodSpotSource(spot))
     return createChatbotResponse({
       answer: result.results.length
-        ? `FoodStory food map results: ${result.results
-            .map((spot) => `${spot.name}${spot.district ? ` in ${spot.district}` : ''}`)
-            .join('; ')}.`
-        : 'No matching FoodStory food spots were found.',
+        ? vietnamese
+          ? `Kết quả trên Food Map: ${result.results
+              .map((spot) => `${spot.name}${spot.district ? ` tại ${spot.district}` : ''}`)
+              .join('; ')}.`
+          : `FoodStory food map results: ${result.results
+              .map((spot) => `${spot.name}${spot.district ? ` in ${spot.district}` : ''}`)
+              .join('; ')}.`
+        : vietnamese
+          ? 'Không tìm thấy địa điểm phù hợp trên Food Map.'
+          : 'No matching FoodStory food spots were found.',
       mode: result.results.length ? 'structured' : 'no_data',
       intent,
       retrievalStatus: result.results.length ? 'matched' : 'no_results',
@@ -309,7 +483,7 @@ export function buildRestaurantStructuredResponse(result, intent) {
   const source = buildRestaurantSource(result.restaurant, result.matchScore)
   if (result.status !== 'matched') {
     return createChatbotResponse({
-      answer: noDataAnswer(result),
+      answer: noDataAnswer(result, vietnamese),
       mode: result.status === 'needs_context' ? 'fallback' : 'no_data',
       intent,
       retrievalStatus: 'no_data',
@@ -322,17 +496,33 @@ export function buildRestaurantStructuredResponse(result, intent) {
   const restaurant = result.restaurant
   const answers = {
     restaurant_address: restaurant.address
-      ? `${restaurant.name} is at ${restaurant.address}, ${restaurant.district || 'district not recorded'}.`
-      : `FoodStory has ${restaurant.name}, but its address is not recorded.`,
+      ? vietnamese
+        ? `${restaurant.name} nằm tại ${restaurant.address}, ${restaurant.district || 'chưa ghi quận'}.`
+        : `${restaurant.name} is at ${restaurant.address}, ${restaurant.district || 'district not recorded'}.`
+      : vietnamese
+        ? `FoodStory có ${restaurant.name}, nhưng chưa lưu địa chỉ.`
+        : `FoodStory has ${restaurant.name}, but its address is not recorded.`,
     restaurant_location: restaurant.address
-      ? `${restaurant.name} is at ${restaurant.address}, ${restaurant.district || 'district not recorded'}.`
-      : `FoodStory has ${restaurant.name}, but its address is not recorded.`,
+      ? vietnamese
+        ? `${restaurant.name} nằm tại ${restaurant.address}, ${restaurant.district || 'chưa ghi quận'}.`
+        : `${restaurant.name} is at ${restaurant.address}, ${restaurant.district || 'district not recorded'}.`
+      : vietnamese
+        ? `FoodStory có ${restaurant.name}, nhưng chưa lưu địa chỉ.`
+        : `FoodStory has ${restaurant.name}, but its address is not recorded.`,
     restaurant_price: restaurant.price_range
-      ? `${restaurant.name} has a FoodStory price range of ${restaurant.price_range}.`
-      : `FoodStory has ${restaurant.name}, but its price range is not recorded.`,
+      ? vietnamese
+        ? `Mức giá FoodStory ghi nhận cho ${restaurant.name} là ${restaurant.price_range}.`
+        : `${restaurant.name} has a FoodStory price range of ${restaurant.price_range}.`
+      : vietnamese
+        ? `FoodStory có ${restaurant.name}, nhưng chưa có thông tin mức giá.`
+        : `FoodStory has ${restaurant.name}, but its price range is not recorded.`,
     restaurant_rating: Number.isFinite(Number(restaurant.avg_rating))
-      ? `${restaurant.name} has an average FoodStory rating of ${restaurant.avg_rating} out of 5.`
-      : `FoodStory has ${restaurant.name}, but its rating is not recorded.`,
+      ? vietnamese
+        ? `${restaurant.name} có điểm đánh giá trung bình ${restaurant.avg_rating}/5 trên FoodStory.`
+        : `${restaurant.name} has an average FoodStory rating of ${restaurant.avg_rating} out of 5.`
+      : vietnamese
+        ? `FoodStory có ${restaurant.name}, nhưng chưa có điểm đánh giá.`
+        : `FoodStory has ${restaurant.name}, but its rating is not recorded.`,
   }
 
   return createChatbotResponse({
@@ -356,12 +546,20 @@ function buildChecklistSource(checklist) {
   }
 }
 
-export function buildUserFoodDataResponse(result, intent) {
+export function buildUserFoodDataResponse(result, routeOrIntent) {
+  const intent = routeIntent(routeOrIntent)
+  const vietnamese = isVietnameseRoute(routeOrIntent)
   if (!result.items.length) {
     const emptyAnswers = {
-      user_favorites: 'You do not have any favorite recipes saved yet.',
-      user_checklists: 'You do not have any shopping checklists yet.',
-      user_food_spots: 'You do not have any saved food places yet.',
+      user_favorites: vietnamese
+        ? 'Bạn chưa lưu công thức yêu thích nào.'
+        : 'You do not have any favorite recipes saved yet.',
+      user_checklists: vietnamese
+        ? 'Bạn chưa có danh sách mua sắm nào.'
+        : 'You do not have any shopping checklists yet.',
+      user_food_spots: vietnamese
+        ? 'Bạn chưa lưu địa điểm ăn uống nào.'
+        : 'You do not have any saved food places yet.',
     }
 
     return createChatbotResponse({
@@ -379,7 +577,7 @@ export function buildUserFoodDataResponse(result, intent) {
   if (intent === 'user_favorites') {
     const sources = result.items.map((recipe) => buildRecipeSource(recipe, 1, 'private'))
     return createChatbotResponse({
-      answer: `Your favorite recipes: ${result.items
+      answer: `${vietnamese ? 'Công thức yêu thích của bạn' : 'Your favorite recipes'}: ${result.items
         .map((recipe) => recipe.title)
         .join('; ')}.`,
       mode: 'structured',
@@ -397,7 +595,7 @@ export function buildUserFoodDataResponse(result, intent) {
       ? result.items[0]
       : null
     const answer = detailedChecklist
-      ? `${detailedChecklist.recipe_title} checklist:\n${detailedChecklist.items
+      ? `${detailedChecklist.recipe_title} ${vietnamese ? '— danh sách mua sắm' : 'checklist'}:\n${detailedChecklist.items
           .map(
             (item) =>
               `- ${item.ingredient_name}: ${item.quantity || 'amount not recorded'}${
@@ -405,7 +603,7 @@ export function buildUserFoodDataResponse(result, intent) {
               }`
           )
           .join('\n')}`
-      : `Your shopping checklists: ${result.items
+      : `${vietnamese ? 'Danh sách mua sắm của bạn' : 'Your shopping checklists'}: ${result.items
           .map(
             (checklist) =>
               `${checklist.recipe_title} (${checklist.checked_items}/${checklist.total_items} checked)`
@@ -426,11 +624,11 @@ export function buildUserFoodDataResponse(result, intent) {
 
   const sources = result.items.map((spot) => buildFoodSpotSource(spot, 1, 'private'))
   return createChatbotResponse({
-    answer: `Your saved food places: ${result.items
+    answer: `${vietnamese ? 'Địa điểm đã lưu của bạn' : 'Your saved food places'}: ${result.items
       .map(
         (spot) =>
-          `${spot.name}${spot.district ? ` in ${spot.district}` : ''}${
-            spot.dish_name ? ` for ${spot.dish_name}` : ''
+          `${spot.name}${spot.district ? ` ${vietnamese ? 'tại' : 'in'} ${spot.district}` : ''}${
+            spot.dish_name ? ` ${vietnamese ? '— món' : 'for'} ${spot.dish_name}` : ''
           }`
       )
       .join('; ')}.`,
@@ -445,22 +643,76 @@ export function buildUserFoodDataResponse(result, intent) {
 }
 
 export function buildAppHelpResponse(route) {
-  const answers = {
+  const vietnamese = isVietnameseRoute(route)
+  if (route.entities.helpTopic === 'dish_clarification') {
+    const dish = route.entities.dishName || route.entities.cuisineOrCategory || 'món này'
+    return createChatbotResponse({
+      answer: vietnamese
+        ? `Bạn muốn biết điều gì về ${dish}: xem công thức, kiểm tra dinh dưỡng hay tìm quán đang phục vụ món này?`
+        : `What would you like to know about ${dish}: its recipe, nutrition, or places serving it?`,
+      mode: 'structured',
+      intent: route.intent,
+      retrievalStatus: 'not_used',
+      confidence: route.confidence,
+      message: 'Asked for the missing action instead of guessing from a dish name alone.',
+      suggestions: vietnamese
+        ? [`Công thức ${dish}`, `${dish} có bao nhiêu calo?`, `Tìm quán ${dish}`]
+        : [`Recipe for ${dish}`, `How many calories are in ${dish}?`, `Find places serving ${dish}`],
+    })
+  }
+  const englishAnswers = {
     favorites:
       'Open a recipe, then use its favorite control to save it. You must be logged in. Saved recipes are available from the Favorites page.',
     food_map:
       'Open Food Map from the main navigation. You can browse community restaurants and switch to your personal places when logged in.',
     saved_places:
       'Open Food Map and switch to the personal or saved places view. You must be logged in to see places saved to your account.',
+    greeting:
+      'Hello! I can help you find FoodStory recipes, ingredients, nutrition, restaurants, and saved food places.',
+    thanks: 'You are welcome. Ask me whenever you need help finding food or cooking.',
+    capabilities:
+      'I can search FoodStory recipes and restaurants, explain stored ingredients and nutrition, scale recipe servings, show saved account data, and open relevant Food Map results.',
+    food_safety:
+      'For allergies, poisoning, or unsafe food, do not rely on FoodBot alone. Avoid the suspected food, check ingredients with the restaurant, and seek urgent medical help for breathing difficulty, swelling, faintness, or severe symptoms.',
   }
+  const vietnameseAnswers = {
+    favorites:
+      'Mở một công thức rồi dùng nút yêu thích để lưu. Bạn cần đăng nhập; các công thức đã lưu nằm trong trang Favorites.',
+    food_map:
+      'Mở Food Map từ thanh điều hướng. Bạn có thể xem các quán cộng đồng và chuyển sang địa điểm cá nhân sau khi đăng nhập.',
+    saved_places:
+      'Mở Food Map rồi chọn khu vực địa điểm cá nhân hoặc đã lưu. Bạn cần đăng nhập để xem dữ liệu của tài khoản.',
+    greeting:
+      'Xin chào! Tôi có thể giúp bạn tìm công thức, nguyên liệu, dinh dưỡng, nhà hàng và địa điểm đã lưu trên FoodStory.',
+    thanks: 'Không có gì. Bạn cứ hỏi khi cần tìm món ăn, quán hoặc công thức nhé.',
+    capabilities:
+      'Tôi có thể tìm công thức và nhà hàng trong FoodStory, tra nguyên liệu và dinh dưỡng đã lưu, điều chỉnh khẩu phần, xem dữ liệu cá nhân và mở kết quả liên quan trên Food Map.',
+    food_safety:
+      'Với dị ứng, ngộ độc hoặc thực phẩm không an toàn, đừng chỉ dựa vào FoodBot. Hãy tránh món nghi ngờ, xác nhận nguyên liệu với quán và gọi trợ giúp y tế khẩn cấp nếu khó thở, sưng, choáng hoặc có triệu chứng nặng.',
+  }
+  englishAnswers.recipe_budget =
+    'FoodStory does not store live grocery prices, so I cannot promise that a recipe fits that exact budget. Tell me which ingredients you already have and I can find stored recipes that use them.'
+  vietnameseAnswers.recipe_budget =
+    'FoodStory không lưu giá nguyên liệu theo thời gian thực nên tôi không thể cam kết công thức nằm chính xác trong ngân sách đó. Hãy cho tôi biết những nguyên liệu bạn đang có để tôi tìm công thức phù hợp trong dữ liệu FoodStory.'
+  const answers = vietnamese ? vietnameseAnswers : englishAnswers
 
   return createChatbotResponse({
-    answer: answers[route.entities.helpTopic] || 'Use the FoodStory navigation to open recipes, favorites, and the food map.',
+    answer:
+      answers[route.entities.helpTopic] ||
+      (vietnamese
+        ? 'Dùng thanh điều hướng FoodStory để mở công thức, mục yêu thích và Food Map.'
+        : 'Use the FoodStory navigation to open recipes, favorites, and the food map.'),
     mode: 'structured',
     intent: route.intent,
     retrievalStatus: 'not_used',
     confidence: route.confidence,
     message: 'Answered from FoodStory app guidance.',
     sources: [],
+    suggestions:
+      route.entities.helpTopic === 'recipe_budget'
+        ? vietnamese
+          ? ['Tôi có trứng và sữa thì làm món gì?', 'Tôi có bánh mì thì làm được món gì?']
+          : ['What can I cook with eggs and milk?', 'I have bread. What can I make?']
+        : [],
   })
 }

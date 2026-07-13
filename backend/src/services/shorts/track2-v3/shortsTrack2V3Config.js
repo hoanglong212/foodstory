@@ -5,6 +5,7 @@ export const DEFAULT_SHORTS_TRACK2_V3_CONFIG = Object.freeze({
   maxFrames: 8,
   maxOcrImages: 16,
   track2V3OcrBoostEnabled: true,
+  track2V3CanonicalOrchestratorEnabled: true,
   ocrBoostEnabled: true,
   ocrBoostFrameCount: 8,
   track2V3GoogleVisionEnabled: false,
@@ -18,6 +19,10 @@ export const DEFAULT_SHORTS_TRACK2_V3_CONFIG = Object.freeze({
   geminiCropJudgeMaxRequestBytes: 12000000,
   geminiCropJudgeMaxImageBytes: 4000000,
   geminiCropJudgeJpegQuality: 80,
+  geminiCropJudgeMaxConcurrency: 1,
+  geminiCropJudgeMaxAttempts: 3,
+  geminiCropJudgeRetryBaseDelayMs: 2000,
+  geminiCropJudgeRetryMaxDelayMs: 30000,
   track2V3SmartOverlayEnabled: true,
   track2V3SmartOverlayDryRun: false,
   track2V3LocalOcrEnabled: false,
@@ -30,18 +35,42 @@ export const DEFAULT_SHORTS_TRACK2_V3_CONFIG = Object.freeze({
   maxLocalOcrImages: 24,
   maxPaddleOcrImages: 6,
   maxEasyOcrImages: 6,
+  maxTesseractDeepPassImages: 3,
+  localOcrDevice: 'auto',
+  easyOcrBatchSize: 4,
+  easyOcrWorkers: 0,
   localOcrLanguages: 'vi,en',
   localOcrDebugEnabled: false,
   smartOverlaySampleIntervalMs: 750,
   maxSmartOverlayFrames: 60,
   maxSmartOverlaySelectedImages: 24,
   smartOverlayTimeoutMs: 60000,
+  smartOverlayScoringConcurrency: 8,
+  textRegionProposalEnabled: true,
+  maxDynamicTextRegionsPerFrame: 4,
+  temporalEpisodeEnabled: true,
+  temporalEpisodeMaxGapSeconds: 2.25,
+  temporalEpisodeMaxRepresentatives: 12,
+  temporalEpisodeNeighborCount: 2,
   smartOverlayDebugEnabled: false,
   adaptiveFrameSamplingEnabled: false,
   adaptiveFrameMaxAdditionalFrames: 18,
   adaptiveFrameSampleIntervalMs: 500,
   adaptiveFrameMaxSelectedImages: 12,
   adaptiveFrameTimeoutMs: 45000,
+  mediaAcquisitionMaxAttempts: 2,
+  mediaAcquisitionTimeoutMs: 60000,
+  asrFallbackEnabled: false,
+  asrTimeoutMs: 300000,
+  asrModel: 'small',
+  asrDevice: 'cpu',
+  asrComputeType: 'int8',
+  asrLanguage: 'vi',
+  windowedAsrEnabled: true,
+  asrFullAudioFallbackPolicy: 'strong_signal_only',
+  asrWindowPaddingSeconds: 6,
+  asrWindowMaxSeconds: 22,
+  asrWindowMaxCount: 3,
   maxGeminiImages: 2,
   maxPlacesQueries: 3,
   timeoutMs: 45000,
@@ -63,11 +92,23 @@ function boundedIntegerEnv(value, fallback, { min = 0, max = Number.MAX_SAFE_INT
   return Math.min(parsed, max)
 }
 
+function asrFullAudioFallbackPolicyEnv(value, fallback) {
+  const policy = String(value || fallback).trim().toLowerCase()
+  return ['always', 'no_visual_text', 'strong_signal_only'].includes(policy)
+    ? policy
+    : fallback
+}
+
 function localOcrProviderEnv(value, fallback) {
   const provider = String(value || fallback).trim().toLowerCase()
   return ['auto', 'paddleocr', 'easyocr', 'tesseract', 'ensemble'].includes(provider)
     ? provider
     : fallback
+}
+
+function localOcrDeviceEnv(value, fallback) {
+  const device = String(value || fallback).trim().toLowerCase()
+  return ['auto', 'cpu', 'gpu'].includes(device) ? device : fallback
 }
 
 function localOcrLanguagesEnv(value, fallback) {
@@ -84,6 +125,14 @@ function safeModelEnv(value, fallback) {
     .replace(/[^a-z0-9._-]+/giu, '')
     .slice(0, 120)
   return model || fallback
+}
+
+function safeAsrTokenEnv(value, fallback, maxLength = 40) {
+  const token = String(value || fallback)
+    .trim()
+    .replace(/[^a-z0-9._-]+/giu, '')
+    .slice(0, maxLength)
+  return token || fallback
 }
 
 export function getShortsTrack2V3Config(env = process.env) {
@@ -116,6 +165,10 @@ export function getShortsTrack2V3Config(env = process.env) {
     ),
     track2V3OcrBoostEnabled: ocrBoostEnabled,
     ocrBoostEnabled,
+    track2V3CanonicalOrchestratorEnabled: booleanEnv(
+      env.TRACK2_V3_CANONICAL_ORCHESTRATOR_ENABLED,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.track2V3CanonicalOrchestratorEnabled,
+    ),
     ocrBoostFrameCount: integerEnv(
       env.TRACK2_V3_OCR_BOOST_FRAME_COUNT,
       DEFAULT_SHORTS_TRACK2_V3_CONFIG.ocrBoostFrameCount,
@@ -171,6 +224,26 @@ export function getShortsTrack2V3Config(env = process.env) {
       DEFAULT_SHORTS_TRACK2_V3_CONFIG.geminiCropJudgeJpegQuality,
       { min: 40, max: 95 },
     ),
+    geminiCropJudgeMaxConcurrency: boundedIntegerEnv(
+      env.TRACK2_V3_GEMINI_CROP_JUDGE_MAX_CONCURRENCY,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.geminiCropJudgeMaxConcurrency,
+      { min: 1, max: 8 },
+    ),
+    geminiCropJudgeMaxAttempts: boundedIntegerEnv(
+      env.TRACK2_V3_GEMINI_CROP_JUDGE_MAX_ATTEMPTS,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.geminiCropJudgeMaxAttempts,
+      { min: 1, max: 5 },
+    ),
+    geminiCropJudgeRetryBaseDelayMs: boundedIntegerEnv(
+      env.TRACK2_V3_GEMINI_CROP_JUDGE_RETRY_BASE_DELAY_MS,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.geminiCropJudgeRetryBaseDelayMs,
+      { min: 0, max: 30000 },
+    ),
+    geminiCropJudgeRetryMaxDelayMs: boundedIntegerEnv(
+      env.TRACK2_V3_GEMINI_CROP_JUDGE_RETRY_MAX_DELAY_MS,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.geminiCropJudgeRetryMaxDelayMs,
+      { min: 0, max: 120000 },
+    ),
     track2V3SmartOverlayEnabled: booleanEnv(
       env.TRACK2_V3_SMART_OVERLAY_ENABLED,
       DEFAULT_SHORTS_TRACK2_V3_CONFIG.track2V3SmartOverlayEnabled,
@@ -223,6 +296,25 @@ export function getShortsTrack2V3Config(env = process.env) {
       DEFAULT_SHORTS_TRACK2_V3_CONFIG.maxEasyOcrImages,
       { min: 1, max: 60 },
     ),
+    maxTesseractDeepPassImages: boundedIntegerEnv(
+      env.TRACK2_V3_MAX_TESSERACT_DEEP_PASS_IMAGES,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.maxTesseractDeepPassImages,
+      { min: 0, max: 24 },
+    ),
+    localOcrDevice: localOcrDeviceEnv(
+      env.TRACK2_V3_LOCAL_OCR_DEVICE,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.localOcrDevice,
+    ),
+    easyOcrBatchSize: boundedIntegerEnv(
+      env.TRACK2_V3_EASYOCR_BATCH_SIZE,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.easyOcrBatchSize,
+      { min: 1, max: 32 },
+    ),
+    easyOcrWorkers: boundedIntegerEnv(
+      env.TRACK2_V3_EASYOCR_WORKERS,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.easyOcrWorkers,
+      { min: 0, max: 16 },
+    ),
     localOcrLanguages: localOcrLanguagesEnv(
       env.TRACK2_V3_LOCAL_OCR_LANGUAGES,
       DEFAULT_SHORTS_TRACK2_V3_CONFIG.localOcrLanguages,
@@ -251,6 +343,42 @@ export function getShortsTrack2V3Config(env = process.env) {
       DEFAULT_SHORTS_TRACK2_V3_CONFIG.smartOverlayTimeoutMs,
       { min: 1000, max: 120000 },
     ),
+    smartOverlayScoringConcurrency: boundedIntegerEnv(
+      env.TRACK2_V3_SMART_OVERLAY_SCORING_CONCURRENCY,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.smartOverlayScoringConcurrency,
+      { min: 1, max: 16 },
+    ),
+    textRegionProposalEnabled: booleanEnv(
+      env.TRACK2_V3_TEXT_REGION_PROPOSAL_ENABLED,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.textRegionProposalEnabled,
+    ),
+    maxDynamicTextRegionsPerFrame: boundedIntegerEnv(
+      env.TRACK2_V3_MAX_DYNAMIC_TEXT_REGIONS_PER_FRAME,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.maxDynamicTextRegionsPerFrame,
+      { min: 1, max: 8 },
+    ),
+    temporalEpisodeEnabled: booleanEnv(
+      env.TRACK2_V3_TEMPORAL_EPISODE_ENABLED,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.temporalEpisodeEnabled,
+    ),
+    temporalEpisodeMaxGapSeconds: Math.max(
+      0.25,
+      Math.min(
+        8,
+        Number(env.TRACK2_V3_TEMPORAL_EPISODE_MAX_GAP_SECONDS ||
+          DEFAULT_SHORTS_TRACK2_V3_CONFIG.temporalEpisodeMaxGapSeconds),
+      ),
+    ),
+    temporalEpisodeMaxRepresentatives: boundedIntegerEnv(
+      env.TRACK2_V3_TEMPORAL_EPISODE_MAX_REPRESENTATIVES,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.temporalEpisodeMaxRepresentatives,
+      { min: 1, max: 40 },
+    ),
+    temporalEpisodeNeighborCount: boundedIntegerEnv(
+      env.TRACK2_V3_TEMPORAL_EPISODE_NEIGHBOR_COUNT,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.temporalEpisodeNeighborCount,
+      { min: 0, max: 4 },
+    ),
     smartOverlayDebugEnabled: booleanEnv(
       env.TRACK2_V3_SMART_OVERLAY_DEBUG_ENABLED,
       DEFAULT_SHORTS_TRACK2_V3_CONFIG.smartOverlayDebugEnabled,
@@ -278,6 +406,65 @@ export function getShortsTrack2V3Config(env = process.env) {
       env.TRACK2_V3_ADAPTIVE_FRAME_TIMEOUT_MS,
       DEFAULT_SHORTS_TRACK2_V3_CONFIG.adaptiveFrameTimeoutMs,
       { min: 1000, max: 120000 },
+    ),
+    mediaAcquisitionMaxAttempts: boundedIntegerEnv(
+      env.TRACK2_V3_MEDIA_ACQUISITION_MAX_ATTEMPTS,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.mediaAcquisitionMaxAttempts,
+      { min: 1, max: 2 },
+    ),
+    mediaAcquisitionTimeoutMs: boundedIntegerEnv(
+      env.TRACK2_V3_MEDIA_ACQUISITION_TIMEOUT_MS,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.mediaAcquisitionTimeoutMs,
+      { min: 1000, max: 120000 },
+    ),
+    asrFallbackEnabled: booleanEnv(
+      env.TRACK2_V3_ASR_FALLBACK_ENABLED,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.asrFallbackEnabled,
+    ),
+    asrTimeoutMs: boundedIntegerEnv(
+      env.TRACK2_V3_ASR_TIMEOUT_MS,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.asrTimeoutMs,
+      { min: 1000, max: 600000 },
+    ),
+    asrModel: safeModelEnv(
+      env.TRACK2_V3_ASR_MODEL,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.asrModel,
+    ),
+    asrDevice: safeAsrTokenEnv(
+      env.TRACK2_V3_ASR_DEVICE,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.asrDevice,
+    ),
+    asrComputeType: safeAsrTokenEnv(
+      env.TRACK2_V3_ASR_COMPUTE_TYPE,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.asrComputeType,
+    ),
+    asrLanguage: safeAsrTokenEnv(
+      env.TRACK2_V3_ASR_LANGUAGE,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.asrLanguage,
+      20,
+    ),
+    windowedAsrEnabled: booleanEnv(
+      env.TRACK2_V3_WINDOWED_ASR_ENABLED,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.windowedAsrEnabled,
+    ),
+    asrFullAudioFallbackPolicy: asrFullAudioFallbackPolicyEnv(
+      env.TRACK2_V3_ASR_FULL_AUDIO_FALLBACK_POLICY,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.asrFullAudioFallbackPolicy,
+    ),
+    asrWindowPaddingSeconds: boundedIntegerEnv(
+      env.TRACK2_V3_ASR_WINDOW_PADDING_SECONDS,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.asrWindowPaddingSeconds,
+      { min: 0, max: 20 },
+    ),
+    asrWindowMaxSeconds: boundedIntegerEnv(
+      env.TRACK2_V3_ASR_WINDOW_MAX_SECONDS,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.asrWindowMaxSeconds,
+      { min: 5, max: 60 },
+    ),
+    asrWindowMaxCount: boundedIntegerEnv(
+      env.TRACK2_V3_ASR_WINDOW_MAX_COUNT,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.asrWindowMaxCount,
+      { min: 1, max: 8 },
     ),
     maxGeminiImages: integerEnv(
       env.TRACK2_V3_MAX_GEMINI_IMAGES,

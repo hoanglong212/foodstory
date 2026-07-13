@@ -108,6 +108,26 @@ describe('Track 2 V3 candidate quality integration', () => {
     assert.ok(result.candidates[0].riskFlags.includes('REVIEW_ONLY'))
   })
 
+  it('keeps a joined house, street, and named district as a review-only final candidate', async () => {
+    const result = await runShortsTrack2V3Pipeline(
+      {
+        url: 'https://example.test/offline-joined-address',
+        sourceUrl: 'https://example.test/offline-joined-address',
+        fixtureCase: { expected: { mustNotResolve: true } },
+      },
+      deps([
+        ocrBlock('Xôigà56 56TrinhDinhTrong QuânTân Phú'),
+      ]),
+    )
+
+    assert.equal(result.resolution, 'CANDIDATES')
+    assert.equal(result.candidates.length, 1)
+    assert.equal(result.candidates[0].addressFragment, '56 Trinh Dinh Trong, Quận Tân Phú')
+    assert.equal(result.candidates[0].qualityGateReason, 'NOISY_NAMED_ADMIN_ADDRESS')
+    assert.equal(result.candidates[0].canAutoResolve, false)
+    assert.ok(result.candidates[0].riskFlags.includes('REVIEW_ONLY'))
+  })
+
   it('does not create a list-context candidate from a generic caption and isolated number', async () => {
     const result = await runShortsTrack2V3Pipeline(
       {
@@ -126,4 +146,37 @@ describe('Track 2 V3 candidate quality integration', () => {
     assert.equal(result.resolution, 'UNRESOLVED')
     assert.equal(result.candidates.length, 0)
   })
+
+  it('keeps a house plus street partial for rescue and review without auto-resolving', async () => {
+    const result = await runShortsTrack2V3Pipeline(
+      {
+        url: 'https://www.youtube.com/shorts/mock-house-street-partial',
+        sourceUrl: 'https://www.youtube.com/shorts/mock-house-street-partial',
+      },
+      deps([ocrBlock('242 Độc Lap,')]),
+    )
+
+    assert.equal(result.resolution, 'CANDIDATES')
+    assert.equal(result.candidates.length, 1)
+    assert.equal(result.candidates[0].addressFragment, '242 Độc Lap,')
+    assert.equal(result.candidates[0].qualityGateReason, 'PARTIAL_HOUSE_STREET_REVIEW')
+    assert.ok(result.candidates[0].riskFlags.includes('MISSING_ADMIN_COMPONENT'))
+    assert.equal(result.candidates[0].canAutoResolve, false)
+  })
+
+  it('keeps a noisy review-only house street partial in listicle context by canonical signal class', async () => {
+    const result = await runShortsTrack2V3Pipeline(
+      {
+        url: 'https://www.youtube.com/shorts/noisy-house-street-partial',
+        sourceUrl: 'https://www.youtube.com/shorts/noisy-house-street-partial',
+        fixtureCase: { category: 'GENERIC_LIST', expected: { mustNotResolve: true } },
+      },
+      deps([ocrBlock('| 18/8 Wàn Hai Nguyên „|')]),
+    )
+
+    assert.equal(result.candidates.length, 1)
+    assert.equal(result.candidates[0].canAutoResolve, false)
+    assert.equal(result.candidates[0].qualityGateReason, 'PARTIAL_HOUSE_STREET_REVIEW')
+  })
+
 })

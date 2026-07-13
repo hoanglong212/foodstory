@@ -24,14 +24,14 @@ describe('L3 Shorts Track 2 V3 intent classifier', () => {
     assert.equal(result.reason, 'TITLE_GENERIC_LIST')
   })
 
-  it('classifies descriptions with addresses of places as multi-place', () => {
+  it('does not let a generic addresses-in-video description template force multi-place', () => {
     const result = classifyShortsTrack2V3Intent({
       description: 'Địa chỉ các nơi trong video ở phần mô tả này.',
     })
 
-    assert.equal(result.intent, 'MULTI_PLACE_OR_LIST')
-    assert.equal(result.mustNotResolve, true)
-    assert.ok(['DESCRIPTION_ADDRESSES_OF_PLACES', 'DESCRIPTION_MULTI_PLACE'].includes(result.reason))
+    assert.equal(result.intent, 'UNKNOWN')
+    assert.equal(result.mustNotResolve, false)
+    assert.equal(result.reason, 'NO_STRONG_INTENT_SIGNAL')
   })
 
   it('classifies address-on-screen metadata as OCR address likely', () => {

@@ -4,11 +4,14 @@ const METADATA_SOURCE_FIELDS = Object.freeze([
   ['search_snippet', ['searchSnippet', 'serpSnippet', 'pageMetadataText']],
 ])
 
-const LOCATION_LABEL_PATTERN = /^(location\s*\d*|địa\s*chỉ|dia\s*chi|address|cơ\s*sở\s*\d*|co\s*so\s*\d*|chi\s*nhánh\s*\d*|chi\s*nhanh\s*\d*|cn\s*\d+)\s*[:：-]\s*(.*)$/iu
-const HOUSE_NUMBER_PATTERN = /(^|[\s(])([0-9]{1,5}[a-z]?(?:\s*\/\s*[0-9]{1,5}[a-z0-9]*)?)(?=\s)/giu
+const LOCATION_LABEL_PATTERN = /^(location\s*\d*|địa\s*chỉ|dia\s*chi|address|cơ\s*sở\s*\d*|co\s*so\s*\d*|chi\s*nhánh\s*\d*|chi\s*nhanh\s*\d*|cn\s*\d+)\s*[:：\-–—]\s*(.*)$/iu
+const HOUSE_NUMBER_PATTERN = /(^|[\s(])([0-9]{1,5}[a-z]?(?:(?:\s*\/\s*[0-9]{1,5}[a-z0-9]*)+|\s*-\s*[0-9]{1,5}[a-z]?)*)(?=\s)/giu
 const PHONE_OR_CONTACT_PATTERN = /\b(?:phone|tel|hotline|zalo)\b|(?:\+?84|0)[0-9 .-]{8,13}/iu
 const PRICE_PATTERN = /\b(?:giá|gia|vnd|đồng|dong|ngàn|ngan|nghìn|nghin)\b|\b[0-9]{1,4}\s*k\b/iu
 const DATE_TIME_PATTERN = /\b(?:[0-9]{1,2}[:h][0-9]{2}|[0-9]{1,2}[/-][0-9]{1,2}[/-][0-9]{2,4})\b/iu
+const OPENING_HOUR_TOKEN_PATTERN = /\b(?:[01]?\d|2[0-3])h(?:[0-5]\d)?\b/iu
+const OPENING_HOUR_CANDIDATE_PATTERN = /^(?:[01]?\d|2[0-3])h(?:[0-5]\d)?(?:\s*[-–—]\s*(?:(?:[01]?\d|2[0-3])h(?:[0-5]\d)?|hết)|\s+(?:sáng|chiều|tối)|\s*$)/iu
+const PLACE_NAME_CTA_PATTERN = /\b(?:dung quen|like|subscribe|dang ky|chia se|share|de lai y kien|comment|chuc cac ban|xem clip|xem video|theo doi|follow)\b/iu
 
 function safeString(value, maxLength = 12000) {
   return String(value ?? '')
@@ -36,7 +39,7 @@ function foldText(value) {
 
 function stripLineMarker(value) {
   return safeString(value, 2000)
-    .replace(/^[\s\-–—•*📍🔻🔸▪◦]+/u, '')
+    .replace(/^[\s\-–—•*📍🔻🔸▪◦\p{Extended_Pictographic}\uFE0F]+/u, '')
     .trim()
 }
 
@@ -87,17 +90,48 @@ function cleanAddressFragment(value) {
     .trim()
 }
 
-function addressFromLine(value) {
+function isOpeningHourCandidate(value) {
+  return OPENING_HOUR_CANDIDATE_PATTERN.test(foldText(value).replace(/^[\s(]+/u, ''))
+}
+
+function isOpeningHoursPrefix(value) {
+  const folded = foldText(value)
+  return OPENING_HOUR_TOKEN_PATTERN.test(folded) && !hasAddressAnchor(folded)
+}
+
+function isListCountTitle(value, houseNumber = '') {
+  if (!/^\d{1,3}$/u.test(String(houseNumber || '').trim())) return false
+  const folded = foldText(value).slice(0, 220)
+  const afterCount = folded.replace(/^\s*\d{1,3}\s+/u, '')
+  return /^(?:mon(?:\s+an|\s+ngon)?|quan(?:\s+an|\s+ngon)?|dia\s+diem(?:\s+an\s+uong)?|foods?|street\s+foods?|restaurants?)\b/u.test(afterCount) ||
+    (/\bunder\b/u.test(afterCount) && /\b(?:foods?|street\s+foods?|restaurants?)\b/u.test(afterCount))
+}
+
+function addressFromLine(value, options = {}) {
   const line = stripLineMarker(value)
   if (!line) return null
 
   for (const match of line.matchAll(HOUSE_NUMBER_PATTERN)) {
     const prefixLength = match[1]?.length || 0
     const start = Number(match.index || 0) + prefixLength
-    if (start > 0 && line.slice(0, start).trimEnd().at(-1) !== '(') continue
+    const prefix = line.slice(0, start)
+    const foldedPrefix = foldText(prefix).trim()
+    const leadingNumberLabel = foldedPrefix === 'so'
+    const leadingAddressQualifier = options.explicitLabel === true && foldedPrefix === 'doi dien'
+    const openingHoursPrefix = isOpeningHoursPrefix(prefix)
+    if (
+      start > 0 && line.slice(0, start).trimEnd().at(-1) !== '(' &&
+      !leadingNumberLabel && !leadingAddressQualifier && !openingHoursPrefix
+    ) continue
     const houseNumber = safeString(match[2], 80).replace(/\s*\/\s*/gu, '/')
-    const addressFragment = cleanAddressFragment(line.slice(start))
-    if (!addressFragment || !addressFragment.startsWith(match[2])) continue
+    const addressStart = leadingNumberLabel || leadingAddressQualifier ? 0 : start
+    const addressFragment = cleanAddressFragment(line.slice(addressStart))
+    if (
+      !addressFragment ||
+      (!leadingNumberLabel && !leadingAddressQualifier && !addressFragment.startsWith(match[2]))
+    ) continue
+    if (isOpeningHourCandidate(line.slice(start))) continue
+    if (options.explicitLabel !== true && isListCountTitle(addressFragment, houseNumber)) continue
     if (!hasAddressAnchor(addressFragment) && !hasProperStreetName(addressFragment.slice(match[2].length))) {
       continue
     }
@@ -112,20 +146,39 @@ function addressFromLine(value) {
     return {
       addressFragment,
       houseNumber,
-      start,
+      start: addressStart,
     }
   }
   return null
 }
 
+function looksLikeAddressLine(value) {
+  const line = stripLineMarker(value)
+  if (!line) return false
+  const label = locationLabel(line)
+  if (label) return true
+  if (addressFromLine(line)) return true
+  const withoutOpposite = line.replace(/^(?:đối\s+diện|doi\s+dien)\s+/iu, '')
+  return withoutOpposite !== line && Boolean(addressFromLine(withoutOpposite))
+}
+
 function cleanPlaceName(value) {
-  const placeName = safeString(value, 300)
+  const rawPlaceName = safeString(value, 300)
+  if (locationLabel(rawPlaceName)) return ''
+  const placeName = rawPlaceName
     .replace(/^[\s(:-]+|[\s(:-]+$/gu, '')
     .trim()
   if (!placeName || placeName.length < 2 || placeName.length > 160) return ''
   if (!/\p{L}/u.test(placeName)) return ''
-  if (addressFromLine(placeName)) return ''
+  const folded = foldText(placeName)
+  if (/^(?:dia chi|address|location|co so|chi nhanh|cn)$/u.test(folded)) return ''
+  const numberedPlaceHeading = /^\d{1,2}[.)]\s+\p{L}/u.test(placeName)
+  if (!numberedPlaceHeading && looksLikeAddressLine(placeName)) return ''
   if (PHONE_OR_CONTACT_PATTERN.test(placeName) || PRICE_PATTERN.test(placeName)) return ''
+  if (OPENING_HOUR_TOKEN_PATTERN.test(folded) || PLACE_NAME_CTA_PATTERN.test(folded)) return ''
+  if (isListCountTitle(placeName, folded.match(/^\d{1,3}\b/u)?.[0] || '')) return ''
+  const words = placeName.match(/\p{L}+/gu) || []
+  if (words.length > 14 && /[.!?]$/u.test(placeName)) return ''
   return placeName
 }
 
@@ -147,13 +200,14 @@ function evidenceFromSource({ source, text, videoId, foodContext }) {
   const evidence = []
   let pendingPlaceName = ''
   let pendingLabelLine = ''
+  let pendingLabelIndex = -1
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]
     const label = locationLabel(line)
     const candidateLine = label ? label.remainder : stripLineMarker(line)
     const labelKind = foldText(label?.label)
-    const inlineAddress = addressFromLine(candidateLine)
+    const inlineAddress = addressFromLine(candidateLine, { explicitLabel: Boolean(label) })
     const address = label && !/^(?:dia chi|address)$/u.test(labelKind) && inlineAddress?.start !== 0
       ? null
       : inlineAddress
@@ -161,15 +215,25 @@ function evidenceFromSource({ source, text, videoId, foodContext }) {
     if (label && !address) {
       pendingPlaceName = cleanPlaceName(label.remainder)
       pendingLabelLine = line
+      pendingLabelIndex = index
       continue
     }
 
-    if (!address) continue
+    if (!address) {
+      if (pendingLabelIndex >= 0 && index > pendingLabelIndex + 1) {
+        pendingPlaceName = ''
+        pendingLabelLine = ''
+        pendingLabelIndex = -1
+      }
+      continue
+    }
 
     const prefix = cleanPlaceName(candidateLine.slice(0, address.start))
     const previousLine = index > 0 ? cleanPlaceName(stripLineMarker(lines[index - 1])) : ''
-    const placeName = prefix || pendingPlaceName || previousLine
-    const evidenceText = [pendingLabelLine, line].filter(Boolean).join('\n') || line
+    const adjacentPendingPlaceName = pendingLabelIndex === index - 1 ? pendingPlaceName : ''
+    const adjacentPendingLabelLine = pendingLabelIndex === index - 1 ? pendingLabelLine : ''
+    const placeName = prefix || adjacentPendingPlaceName || previousLine
+    const evidenceText = [adjacentPendingLabelLine, line].filter(Boolean).join('\n') || line
     evidence.push({
       type: 'METADATA_TEXT',
       source,
@@ -186,6 +250,7 @@ function evidenceFromSource({ source, text, videoId, foodContext }) {
     })
     pendingPlaceName = ''
     pendingLabelLine = ''
+    pendingLabelIndex = -1
   }
 
   return evidence

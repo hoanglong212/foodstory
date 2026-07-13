@@ -23,11 +23,54 @@ const RECIPE_SELECT = `
   LEFT JOIN categories c ON c.id = r.category_id
 `
 
+const INGREDIENT_ALIASES = new Map([
+  ['ca', 'fish'],
+  ['trung', 'egg'],
+  ['sua', 'milk'],
+  ['banh mi', 'bread'],
+  ['ga', 'chicken'],
+  ['bo', 'beef'],
+  ['thit bo', 'beef'],
+  ['heo', 'pork'],
+  ['thit heo', 'pork'],
+  ['thit lon', 'pork'],
+  ['tom', 'shrimp'],
+  ['com', 'rice'],
+  ['sua dua', 'coconut milk'],
+  ['nuoc dua', 'coconut water'],
+  ['dau hu', 'tofu'],
+  ['khoai tay', 'potato'],
+  ['ca chua', 'tomato'],
+  ['hanh tay', 'onion'],
+  ['toi', 'garlic'],
+])
+
+const INGREDIENT_CONCEPT_TERMS = new Map([
+  ['fish', ['fish', 'salmon', 'cod', 'tuna', 'tilapia', 'mackerel', 'sardine']],
+  ['beef', ['beef', 'steak', 'sirloin']],
+  ['pork', ['pork', 'ham', 'bacon']],
+  ['chicken', ['chicken']],
+  ['shrimp', ['shrimp', 'prawn']],
+])
+const DERIVED_INGREDIENT_TOKENS = new Set([
+  'sauce',
+  'paste',
+  'stock',
+  'broth',
+  'seasoning',
+  'powder',
+  'oil',
+  'extract',
+  'flavor',
+  'flavour',
+])
+
 function normalizeText(value) {
   return String(value || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
+    .replace(/\u0111/g, 'd')
     .replace(/[^a-z0-9]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -181,8 +224,34 @@ export async function getRecipeIngredients(recipeId) {
   return rows
 }
 
+function editDistance(left, right) {
+  const a = String(left || '')
+  const b = String(right || '')
+  const previous = Array.from({ length: b.length + 1 }, (_, index) => index)
+  for (let row = 1; row <= a.length; row += 1) {
+    const current = [row]
+    for (let column = 1; column <= b.length; column += 1) {
+      current[column] = Math.min(
+        current[column - 1] + 1,
+        previous[column] + 1,
+        previous[column - 1] + Number(a[row - 1] !== b[column - 1])
+      )
+    }
+    previous.splice(0, previous.length, ...current)
+  }
+  return previous[b.length]
+}
+
+function characterSimilarity(left, right) {
+  const a = normalizeText(left)
+  const b = normalizeText(right)
+  if (Math.min(a.length, b.length) < 4) return 0
+  return 1 - editDistance(a, b) / Math.max(a.length, b.length)
+}
+
 function findIngredient(ingredients, ingredientName) {
-  const normalizedName = normalizeText(ingredientName)
+  const rawNormalizedName = normalizeText(ingredientName)
+  const normalizedName = INGREDIENT_ALIASES.get(rawNormalizedName) || rawNormalizedName
   const exact = ingredients.find(
     (ingredient) => normalizeText(ingredient.ingredient_name) === normalizedName
   )
@@ -197,13 +266,174 @@ function findIngredient(ingredients, ingredientName) {
   const ranked = ingredients
     .map((ingredient) => ({
       ingredient,
-      score: tokenOverlapScore(ingredientName, ingredient.ingredient_name),
+      score: Math.max(
+        tokenOverlapScore(normalizedName, ingredient.ingredient_name),
+        characterSimilarity(normalizedName, ingredient.ingredient_name)
+      ),
     }))
     .sort((left, right) => right.score - left.score)
 
   return ranked[0]?.score >= 0.5
     ? { ingredient: ranked[0].ingredient, matchScore: ranked[0].score }
-    : { ingredient: null, matchScore: ranked[0]?.score || 0 }
+    : {
+        ingredient: null,
+        matchScore: ranked[0]?.score || 0,
+        closestIngredient: ranked[0]?.ingredient || null,
+      }
+}
+
+export function findAvailableIngredient(ingredients, ingredientName) {
+  const raw = normalizeText(ingredientName)
+  const canonical = INGREDIENT_ALIASES.get(raw) || raw
+  const queryTokens = new Set(tokenize(canonical))
+  const conceptTerms = INGREDIENT_CONCEPT_TERMS.get(canonical) || [canonical]
+  const matches = ingredients
+    .map((ingredient) => {
+      const candidate = normalizeText(ingredient.ingredient_name)
+      const candidateTokens = new Set(tokenize(candidate))
+      const conceptMatch = conceptTerms.find((term) => candidateTokens.has(term))
+      const directMatch = [...queryTokens].every((token) => candidateTokens.has(token))
+      if (!directMatch && !conceptMatch) return null
+      if (
+        [...DERIVED_INGREDIENT_TOKENS].some((token) => candidateTokens.has(token)) &&
+        ![...queryTokens].some((token) => DERIVED_INGREDIENT_TOKENS.has(token))
+      ) {
+        return null
+      }
+      const score = candidate === canonical
+        ? 1
+        : directMatch
+          ? 0.96
+          : 0.92
+      return { ingredient, matchScore: score }
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.matchScore - left.matchScore)
+
+  return matches[0] || { ingredient: null, matchScore: 0 }
+}
+
+export async function findRecipesByIngredients(availableIngredients = [], limit = 3) {
+  const requested = [...new Set(
+    availableIngredients.map(normalizeText).filter(Boolean)
+  )].slice(0, 6)
+  if (!requested.length) {
+    return { status: 'no_ingredients', kind: 'ingredient_recommendation', results: [] }
+  }
+
+  const recipes = await fetchApprovedRecipes()
+  if (!recipes.length) {
+    return { status: 'no_results', kind: 'ingredient_recommendation', results: [] }
+  }
+
+  const placeholders = recipes.map(() => '?').join(', ')
+  const [ingredientRows] = await pool.execute(
+    `SELECT id, recipe_id, ingredient_name, quantity
+     FROM recipe_ingredients
+     WHERE recipe_id IN (${placeholders})
+     ORDER BY recipe_id ASC, id ASC`,
+    recipes.map((recipe) => recipe.id)
+  )
+  const ingredientVocabulary = [
+    ...new Set(
+      ingredientRows.flatMap((ingredient) => {
+        const normalized = normalizeText(ingredient.ingredient_name)
+        return [normalized, ...normalized.split(' ')].filter(
+          (item) => item.length >= 4
+        )
+      })
+    ),
+  ]
+  const resolvedRequested = requested.map((input) => {
+    const translated = INGREDIENT_ALIASES.get(input) || input
+    if (
+      ingredientVocabulary.some(
+        (candidate) => candidate === translated || candidate.includes(translated)
+      )
+    ) {
+      return {
+        input,
+        resolved: translated,
+        corrected: translated !== input,
+      }
+    }
+    const closest = ingredientVocabulary
+      .map((candidate) => ({
+        candidate,
+        score: characterSimilarity(translated, candidate),
+      }))
+      .sort((left, right) => right.score - left.score)[0]
+    return closest?.score >= 0.75
+      ? { input, resolved: closest.candidate, corrected: true }
+      : {
+          input,
+          resolved: translated,
+          corrected: translated !== input,
+        }
+  })
+  const ingredientsByRecipe = new Map()
+  for (const ingredient of ingredientRows) {
+    const key = Number(ingredient.recipe_id)
+    const current = ingredientsByRecipe.get(key) || []
+    current.push(ingredient)
+    ingredientsByRecipe.set(key, current)
+  }
+
+  const ranked = recipes
+    .map((recipe) => {
+      const ingredients = ingredientsByRecipe.get(Number(recipe.id)) || []
+      const matchedIngredients = resolvedRequested
+        .map((requestedIngredient) => {
+          const match = findAvailableIngredient(
+            ingredients,
+            requestedIngredient.resolved
+          )
+          return match.ingredient
+            ? {
+                requested: requestedIngredient.input,
+                interpretedAs: requestedIngredient.resolved,
+                corrected: requestedIngredient.corrected,
+                ingredient: match.ingredient,
+                score: match.matchScore,
+              }
+            : null
+        })
+        .filter(Boolean)
+      const coverage = matchedIngredients.length / resolvedRequested.length
+      const averageMatch = matchedIngredients.length
+        ? matchedIngredients.reduce((sum, item) => sum + item.score, 0) /
+          matchedIngredients.length
+        : 0
+      return {
+        recipe: { ...recipe, ingredients },
+        matchedIngredients,
+        missingIngredients: requested.filter(
+          (item) => !matchedIngredients.some((match) => match.requested === item)
+        ),
+        coverage,
+        matchScore: 0.8 * coverage + 0.2 * averageMatch,
+      }
+    })
+    .filter((item) => item.matchedIngredients.length > 0)
+    .sort(
+      (left, right) =>
+        right.coverage - left.coverage ||
+        right.matchScore - left.matchScore ||
+        left.recipe.ingredients.length - right.recipe.ingredients.length
+    )
+    .slice(0, Math.max(1, Math.min(Number(limit) || 3, 5)))
+
+  return {
+    status: ranked.length
+      ? ranked[0].coverage === 1
+        ? 'matched'
+        : 'partial_match'
+      : 'no_results',
+    kind: 'ingredient_recommendation',
+    requestedIngredients: requested,
+    ingredientCorrections: resolvedRequested.filter((item) => item.corrected),
+    results: ranked,
+  }
 }
 
 function parseNumber(value) {
@@ -312,6 +542,7 @@ async function handleIngredientLookup(entities, context) {
       ...resolved,
       status: 'ingredient_not_found',
       ingredientName: entities.ingredientName,
+      closestIngredient: ingredientMatch.closestIngredient,
     }
   }
 
@@ -355,6 +586,23 @@ async function handleIngredientLookup(entities, context) {
     ingredient: scaledIngredient,
     targetServings: entities.targetServings,
     reason: scaledIngredient.scalable ? null : 'non_numeric_quantity',
+  }
+}
+
+async function handleIngredientList(entities, context) {
+  const resolved = await resolveRecipe(entities, context)
+  if (resolved.status !== 'matched') return resolved
+  if (!resolved.recipe.ingredients.length) {
+    return {
+      ...resolved,
+      status: 'ingredients_not_found',
+      message: `FoodStory has ${resolved.recipe.title}, but its ingredient list is empty.`,
+    }
+  }
+  return {
+    ...resolved,
+    kind: 'ingredient_list',
+    ingredients: resolved.recipe.ingredients,
   }
 }
 
@@ -453,6 +701,12 @@ async function handleSteps(entities, context) {
 }
 
 export async function handleRecipeStructuredQuery(route, context = {}) {
+  if (route.intent === 'recipe_by_ingredients') {
+    return findRecipesByIngredients(route.entities.availableIngredients)
+  }
+  if (route.intent === 'recipe_ingredients') {
+    return handleIngredientList(route.entities, context)
+  }
   if (
     route.intent === 'recipe_ingredient_quantity' ||
     route.intent === 'recipe_ingredient_existence'

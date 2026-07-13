@@ -21,6 +21,110 @@ const lastRecipeTitle = ref(null)
 const lastRestaurantId = ref(null)
 const imagePreviewUrls = new Set()
 const isBusy = computed(() => isLoading.value || isSearchingImage.value)
+const CHAT_HISTORY_VERSION = 2
+const MAX_STORED_MESSAGES = 40
+const MAX_CONTEXT_MESSAGES = 12
+
+function chatStorageKey() {
+  return `foodstory:foodbot:${CHAT_HISTORY_VERSION}:${authStore.user?.id || 'guest'}`
+}
+
+function greetingMessage() {
+  return {
+    role: 'bot',
+    content:
+      'Hello! I am FoodBot, a FoodStory assistant grounded in our recipe and restaurant data.',
+    type: 'greeting',
+    retrievalStatus: null,
+    confidence: 0,
+    results: [],
+    sources: [],
+    suggestions: [
+      'Where can I eat banh mi in District 1?',
+      'What can I cook with bread and milk?',
+      'Tôi có trứng và sữa thì làm món gì?',
+    ],
+  }
+}
+
+function storableMessage(message = {}) {
+  return {
+    role: message.role === 'user' ? 'user' : 'bot',
+    content: String(message.content || '').slice(0, 4000),
+    type: message.type || null,
+    intent: message.intent || null,
+    retrievalStatus: message.retrievalStatus || null,
+    systemMessage: String(message.systemMessage || '').slice(0, 500),
+    confidence: Number(message.confidence || 0),
+    sources: Array.isArray(message.sources) ? message.sources.slice(0, 3) : [],
+    results: Array.isArray(message.results) ? message.results.slice(0, 5) : [],
+    suggestions: Array.isArray(message.suggestions)
+      ? message.suggestions.slice(0, 4)
+      : [],
+  }
+}
+
+function persistConversation() {
+  try {
+    window.localStorage.setItem(
+      chatStorageKey(),
+      JSON.stringify({
+        messages: messages.value
+          .slice(-MAX_STORED_MESSAGES)
+          .map(storableMessage),
+        context: {
+          lastRecipeId: lastRecipeId.value,
+          lastRecipeTitle: lastRecipeTitle.value,
+          lastRestaurantId: lastRestaurantId.value,
+        },
+      }),
+    )
+  } catch {
+    // The chatbot remains usable when browser storage is unavailable or full.
+  }
+}
+
+function restoreConversation() {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(chatStorageKey()) || 'null')
+    if (!stored || !Array.isArray(stored.messages)) return false
+    messages.value = stored.messages
+      .filter((message) => ['user', 'bot'].includes(message?.role) && message?.content)
+      .slice(-MAX_STORED_MESSAGES)
+      .map(storableMessage)
+    lastRecipeId.value = stored.context?.lastRecipeId || null
+    lastRecipeTitle.value = stored.context?.lastRecipeTitle || null
+    lastRestaurantId.value = stored.context?.lastRestaurantId || null
+    return messages.value.length > 0
+  } catch {
+    return false
+  }
+}
+
+function conversationHistoryForApi() {
+  return messages.value
+    .slice(0, -1)
+    .filter((message) => ['user', 'bot'].includes(message.role) && message.content)
+    .slice(-MAX_CONTEXT_MESSAGES)
+    .map((message) => ({
+      role: message.role === 'bot' ? 'assistant' : 'user',
+      content: message.content,
+      intent: message.intent || null,
+      sources: message.sources || [],
+    }))
+}
+
+function startNewConversation() {
+  imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url))
+  imagePreviewUrls.clear()
+  messages.value = [greetingMessage()]
+  lastRecipeId.value = null
+  lastRecipeTitle.value = null
+  lastRestaurantId.value = null
+  hasUnread.value = false
+  persistConversation()
+  nextTick(scrollToBottom)
+}
 
 function scrollToBottom() {
   const element = messagesElement.value
@@ -152,6 +256,12 @@ function openSource(source = {}) {
 }
 
 function updateRecentContext(data = {}) {
+  if (data.conversationContext) {
+    lastRecipeId.value = data.conversationContext.lastRecipeId || null
+    lastRecipeTitle.value = data.conversationContext.lastRecipeTitle || null
+    lastRestaurantId.value = data.conversationContext.lastRestaurantId || null
+    return
+  }
   if (!['structured', 'grounded_rag'].includes(data.mode)) return
 
   const recipeSource = data.sources?.find((source) => source.sourceType === 'recipe')
@@ -206,6 +316,7 @@ async function sendMessage(text = inputText.value) {
   if (!content || isBusy.value) return
 
   messages.value.push({ role: 'user', content })
+  persistConversation()
   inputText.value = ''
   isLoading.value = true
 
@@ -218,6 +329,7 @@ async function sendMessage(text = inputText.value) {
       lastRecipeId: lastRecipeId.value,
       lastRecipeTitle: lastRecipeTitle.value,
       lastRestaurantId: lastRestaurantId.value,
+      conversationHistory: conversationHistoryForApi(),
     })
 
     const data = response.data
@@ -227,6 +339,7 @@ async function sendMessage(text = inputText.value) {
       role: 'bot',
       content: data.answer || 'FoodStory could not generate an answer.',
       type: data.mode || 'grounded_rag',
+      intent: data.intent || null,
       retrievalStatus: data.retrievalStatus || null,
       systemMessage: data.message || '',
       confidence: data.confidence || 0,
@@ -234,6 +347,7 @@ async function sendMessage(text = inputText.value) {
       results: data.results || [],
       suggestions: data.suggestions || [],
     })
+    persistConversation()
 
     if (!isOpen.value) {
       hasUnread.value = true
@@ -249,6 +363,7 @@ async function sendMessage(text = inputText.value) {
       sources: [],
       suggestions: ['Try again'],
     })
+    persistConversation()
   } finally {
     isLoading.value = false
     await nextTick()
@@ -328,22 +443,11 @@ async function handleImageUpload(event) {
 }
 
 onMounted(() => {
-  messages.value.push({
-    role: 'bot',
-    content:
-      'Hello! I am FoodBot, a FoodStory assistant grounded in our recipe and restaurant data.',
-    type: 'greeting',
-    retrievalStatus: null,
-    confidence: 0,
-    results: [],
-    sources: [],
-    suggestions: [
-      'Where can I eat banh mi in District 1?',
-      'How to cook a healthy low calorie chicken recipe?',
-      'Where can I eat Japanese food in District 1?',
-    ],
-  })
-  hasUnread.value = true
+  if (!restoreConversation()) {
+    messages.value = [greetingMessage()]
+    persistConversation()
+    hasUnread.value = true
+  }
 })
 
 onBeforeUnmount(() => {
@@ -383,7 +487,25 @@ onBeforeUnmount(() => {
             <small>FoodStory food assistant</small>
           </span>
         </span>
-        <button type="button" aria-label="Close FoodBot" @click="closeChat">×</button>
+        <span class="chat-header-actions">
+          <button
+            type="button"
+            class="new-chat-btn"
+            aria-label="Start a new FoodBot conversation"
+            title="Start new conversation"
+            @click="startNewConversation"
+          >
+            New
+          </button>
+          <button
+            type="button"
+            class="close-chat-btn"
+            aria-label="Close FoodBot"
+            @click="closeChat"
+          >
+            ×
+          </button>
+        </span>
       </header>
 
       <div ref="messagesElement" class="chat-messages" aria-live="polite">
@@ -754,21 +876,37 @@ onBeforeUnmount(() => {
   background: rgba(0, 0, 0, 0.14);
 }
 
-.chat-header > button {
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chat-header-actions > button {
   display: grid;
-  width: 34px;
-  height: 34px;
-  padding: 0 0 3px;
+  min-height: 40px;
+  padding: 0;
   place-items: center;
   border: 0;
-  border-radius: 50%;
   color: #fff;
   background: rgba(0, 0, 0, 0.12);
+}
+
+.new-chat-btn {
+  padding: 0 10px !important;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.close-chat-btn {
+  width: 40px;
+  border-radius: 50%;
   font-size: 25px;
   line-height: 1;
 }
 
-.chat-header > button:hover {
+.chat-header-actions > button:hover {
   background: rgba(0, 0, 0, 0.24);
 }
 
@@ -1086,7 +1224,7 @@ onBeforeUnmount(() => {
   margin: 0 2px;
   border-radius: 50%;
   background: #777;
-  animation: typing-bounce 1.2s infinite;
+  animation: typing-pulse 1.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
 
 .typing-indicator > span:nth-child(2) {
@@ -1183,14 +1321,15 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes typing-bounce {
+@keyframes typing-pulse {
   0%,
-  60%,
   100% {
+    opacity: 0.4;
     transform: translateY(0);
   }
-  30% {
-    transform: translateY(-7px);
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
   }
 }
 
@@ -1205,6 +1344,25 @@ onBeforeUnmount(() => {
     bottom: 82px;
     width: calc(100vw - 24px);
     height: min(520px, calc(100dvh - var(--nav-height, 88px) - 106px));
+  }
+}
+
+:global(body:has(.food-map-page)) .chat-bubble-btn {
+  bottom: 88px;
+}
+
+:global(body:has(.food-map-page)) .chat-window {
+  bottom: 90px;
+}
+
+@media (max-width: 768px) {
+  :global(body:has(.food-map-page)) .chat-bubble-btn {
+    bottom: calc(140px + env(safe-area-inset-bottom));
+  }
+
+  :global(body:has(.food-map-page)) .chat-window {
+    bottom: calc(140px + env(safe-area-inset-bottom));
+    height: min(520px, calc(100dvh - var(--nav-height, 88px) - 164px));
   }
 }
 

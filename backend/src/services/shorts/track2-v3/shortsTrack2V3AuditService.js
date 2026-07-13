@@ -87,6 +87,16 @@ function safeStringArray(value, maxItems = 20, maxLength = 500) {
     .filter(Boolean)
 }
 
+function sanitizeNumericContextClassifications(value = []) {
+  return (Array.isArray(value) ? value : []).slice(0, 100).map((item) => ({
+    rawNumberToken: safeString(item?.rawNumberToken, 80) || null,
+    contextClass: safeString(item?.contextClass, 120) || null,
+    boundedSourceText: safeString(item?.boundedSourceText, 500) || null,
+    sourceType: safeString(item?.sourceType, 120) || null,
+    sourceId: safeString(item?.sourceId, 160) || null,
+  })).filter((item) => item.rawNumberToken && item.contextClass)
+}
+
 function numberMetric(result = {}, key, fallback = 0) {
   const direct = Number(result?.[key])
   if (Number.isFinite(direct)) return direct
@@ -110,6 +120,24 @@ function addReasonCounts(target = {}, source = {}) {
   for (const [reason, count] of Object.entries(safeReasonCounts(source))) {
     target[reason] = (target[reason] || 0) + count
   }
+}
+
+function sanitizeLocalOcrEngineDiagnostics(value = {}) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return Object.fromEntries(Object.entries(value).slice(0, 8).map(([key, run]) => [
+    safeString(key, 120),
+    {
+      provider: safeString(run?.provider || key, 120) || null,
+      status: safeString(run?.status, 40) || null,
+      imageCountSent: Math.max(0, Number(run?.imageCountSent || 0)),
+      runtimeMs: Math.max(0, Number(run?.runtimeMs || 0)),
+      attemptCount: Math.max(0, Number(run?.attemptCount || 0)),
+      fastAttemptCount: Math.max(0, Number(run?.fastAttemptCount || 0)),
+      deepAttemptCount: Math.max(0, Number(run?.deepAttemptCount || 0)),
+      deepPassImageCount: Math.max(0, Number(run?.deepPassImageCount || 0)),
+      addressRankedInput: Boolean(run?.addressRankedInput),
+    },
+  ]).filter(([key]) => key))
 }
 
 function candidateCount(result = {}) {
@@ -140,6 +168,8 @@ function sanitizeProviderErrors(value = []) {
     provider: safeString(error?.provider, 120) || null,
     code: safeString(error?.code, 160) || 'PROVIDER_ERROR',
     message: safeString(error?.message, 500) || null,
+    strategy: safeString(error?.strategy, 80) || null,
+    attempt: optionalInteger(error?.attempt),
     httpStatus: optionalInteger(error?.httpStatus),
     googleErrorStatus: safeString(error?.googleErrorStatus, 120) || null,
     googleErrorCode: error?.googleErrorCode ?? null,
@@ -160,6 +190,62 @@ function sanitizeProviderErrors(value = []) {
     requestBodyApproxBytes: optionalInteger(error?.requestBodyApproxBytes),
     mimeType: safeString(error?.mimeType, 80) || null,
     transportErrorMessage: safeString(error?.transportErrorMessage, 500) || null,
+    providerErrorClass: safeString(error?.providerErrorClass, 120) || null,
+    pageIndex: optionalInteger(error?.pageIndex),
+    pageNumber: optionalInteger(error?.pageNumber),
+    attemptNumber: optionalInteger(error?.attemptNumber),
+    attemptRuntimeMs: optionalInteger(error?.attemptRuntimeMs),
+    retryAfterPresent: Boolean(error?.retryAfterPresent),
+    retryAfterRaw: safeString(error?.retryAfterRaw, 120) || null,
+    retryAfterMs: optionalInteger(error?.retryAfterMs),
+    retryAfterUsed: Boolean(error?.retryAfterUsed),
+    retryDelayMs: optionalInteger(error?.retryDelayMs),
+    finalPageStatus: safeString(error?.finalPageStatus, 80) || null,
+    queueWaitMs: optionalInteger(error?.queueWaitMs),
+    providerRuntimeMs: optionalInteger(error?.providerRuntimeMs),
+  }))
+}
+
+function sanitizeGeminiPageResults(value = []) {
+  const optionalInteger = (input) => {
+    if (input == null || input === '') return null
+    const number = Number(input)
+    return Number.isFinite(number) ? Math.max(0, Math.trunc(number)) : null
+  }
+  return (Array.isArray(value) ? value : []).slice(0, 20).map((page) => ({
+    pageIndex: optionalInteger(page?.pageIndex),
+    pageNumber: optionalInteger(page?.pageNumber),
+    pagePath: safeString(page?.pagePath, 2000) || null,
+    status: safeString(page?.status, 40) || null,
+    pageStatus: safeString(page?.pageStatus, 80) || null,
+    attemptCount: optionalInteger(page?.attemptCount) || 0,
+    selectedCropIds: safeStringArray(page?.selectedCropIds, 100, 200),
+    rejectedCropIds: safeStringArray(page?.rejectedCropIds, 100, 200),
+    providerErrorClass: safeString(page?.providerErrorClass, 120) || null,
+    httpStatus: optionalInteger(page?.httpStatus),
+    retryDelays: (Array.isArray(page?.retryDelays) ? page.retryDelays : [])
+      .slice(0, 10)
+      .map((item) => optionalInteger(item))
+      .filter((item) => item != null),
+    retryAfterUsed: Boolean(page?.retryAfterUsed),
+    queueWaitMs: optionalInteger(page?.queueWaitMs) || 0,
+    providerRuntimeMs: optionalInteger(page?.providerRuntimeMs) || 0,
+    backoffMs: optionalInteger(page?.backoffMs) || 0,
+    dedupHit: Boolean(page?.dedupHit),
+    attempts: (Array.isArray(page?.attempts) ? page.attempts : []).slice(0, 10).map((attempt) => ({
+      attemptNumber: optionalInteger(attempt?.attemptNumber),
+      status: safeString(attempt?.status, 40) || null,
+      providerErrorClass: safeString(attempt?.providerErrorClass, 120) || null,
+      httpStatus: optionalInteger(attempt?.httpStatus),
+      retryAfterPresent: Boolean(attempt?.retryAfterPresent),
+      retryAfterRaw: safeString(attempt?.retryAfterRaw, 120) || null,
+      retryAfterMs: optionalInteger(attempt?.retryAfterMs),
+      retryAfterUsed: Boolean(attempt?.retryAfterUsed),
+      retryDelayMs: optionalInteger(attempt?.retryDelayMs) || 0,
+      queueWaitMs: optionalInteger(attempt?.queueWaitMs) || 0,
+      providerRuntimeMs: optionalInteger(attempt?.providerRuntimeMs) || 0,
+      attemptRuntimeMs: optionalInteger(attempt?.attemptRuntimeMs) || 0,
+    })),
   }))
 }
 
@@ -177,8 +263,37 @@ function summarizeCandidate(candidate = {}) {
     canAutoResolve: Boolean(candidate.canAutoResolve),
     houseNumberAlternatives: safeStringArray(candidate.houseNumberAlternatives, 20, 80),
     houseNumberConflict: Boolean(candidate.houseNumberConflict),
+    evidenceType: safeString(candidate.evidenceType, 120) || null,
+    rawAsrEvidenceText: safeString(candidate.rawAsrEvidenceText, 1000) || null,
+    rawAsrSegments: (Array.isArray(candidate.rawAsrSegments) ? candidate.rawAsrSegments : [])
+      .slice(0, 3)
+      .map((segment) => ({
+        start: Number.isFinite(Number(segment?.start)) ? Number(segment.start) : null,
+        end: Number.isFinite(Number(segment?.end)) ? Number(segment.end) : null,
+        text: safeString(segment?.text, 1000),
+      }))
+      .filter((segment) => segment.text),
+    segmentStart: Number.isFinite(Number(candidate.segmentStart))
+      ? Number(candidate.segmentStart)
+      : null,
+    segmentEnd: Number.isFinite(Number(candidate.segmentEnd))
+      ? Number(candidate.segmentEnd)
+      : null,
+    asrProvider: safeString(candidate.asrProvider, 120) || null,
+    asrModel: safeString(candidate.asrModel, 120) || null,
+    directlyTranscribedNumberForms: safeStringArray(
+      candidate.directlyTranscribedNumberForms,
+      20,
+      80,
+    ),
+    numberAlternatives: safeStringArray(candidate.numberAlternatives, 20, 80),
+    spokenNumberUncertain: Boolean(candidate.spokenNumberUncertain),
+    numberConflict: Boolean(candidate.numberConflict),
     normalizationApplied: safeStringArray(candidate.normalizationApplied, 20, 120),
     dateTimeNoiseRemoved: safeStringArray(candidate.dateTimeNoiseRemoved, 20, 120),
+    numericContextClassifications: sanitizeNumericContextClassifications(
+      candidate.numericContextClassifications,
+    ),
   }
 }
 
@@ -552,8 +667,16 @@ export function summarizeShortsTrack2V3AuditCase(item = {}, result = {}) {
     keptCandidateCount + droppedCandidateCount,
   )
   const riskFlags = uniqueStrings(candidates.flatMap((candidate) => candidate.riskFlags), 50)
+  const asrNumberAlternatives = safeStringArray(
+    result.asrNumberAlternatives || result.debug?.asrNumberAlternatives,
+    30,
+    80,
+  )
   const houseNumberAlternatives = uniqueStrings(
-    candidates.flatMap((candidate) => candidate.houseNumberAlternatives),
+    [
+      ...candidates.flatMap((candidate) => candidate.houseNumberAlternatives),
+      ...asrNumberAlternatives,
+    ],
     30,
   )
   const bestCandidate = candidates[0] || null
@@ -594,6 +717,7 @@ export function summarizeShortsTrack2V3AuditCase(item = {}, result = {}) {
     expectedSafety,
     notes: safeString(item.notes, 2000) || null,
     track: safeString(result.track, 120) || null,
+    inputClass: safeString(result.inputClass || result.debug?.inputClass, 80) || null,
     resolution,
     reason: safeString(result.reason, 240) || null,
     candidateCount: candidateCount(result),
@@ -615,6 +739,19 @@ export function summarizeShortsTrack2V3AuditCase(item = {}, result = {}) {
     localOcrCalled: providerCalled(result, 'localOcrCalled'),
     localOcrProvider: safeString(result.localOcrProvider || result.debug?.localOcrProvider, 120) || null,
     localOcrBestSnippets,
+    localOcrEngineDiagnostics: sanitizeLocalOcrEngineDiagnostics(
+      result.localOcrEngineDiagnostics || result.debug?.localOcrEngineDiagnostics,
+    ),
+    temporalEpisodeEnabled: Boolean(
+      result.temporalEpisodeEnabled ?? result.debug?.temporalEpisodeEnabled,
+    ),
+    temporalEpisodeCount: numberMetric(result, 'temporalEpisodeCount', 0),
+    temporalUniqueRegionCount: numberMetric(result, 'temporalUniqueRegionCount', 0),
+    temporalEpisodeReductionRatio: Number.isFinite(Number(
+      result.temporalEpisodeReductionRatio ?? result.debug?.temporalEpisodeReductionRatio,
+    ))
+      ? Number(result.temporalEpisodeReductionRatio ?? result.debug?.temporalEpisodeReductionRatio)
+      : null,
     adaptiveFrameSamplingEnabled: Boolean(
       result.adaptiveFrameSamplingEnabled ?? result.debug?.adaptiveFrameSamplingEnabled,
     ),
@@ -647,13 +784,261 @@ export function summarizeShortsTrack2V3AuditCase(item = {}, result = {}) {
       result.adaptiveSamplingReason || result.debug?.adaptiveSamplingReason,
       240,
     ) || null,
+    tailOverlayEscalationEnabled: Boolean(
+      result.tailOverlayEscalationEnabled ?? result.debug?.tailOverlayEscalationEnabled,
+    ),
+    tailOverlayEscalationRan: Boolean(
+      result.tailOverlayEscalationRan ?? result.debug?.tailOverlayEscalationRan,
+    ),
+    tailOverlayFrameIds: safeStringArray(
+      result.tailOverlayFrameIds || result.debug?.tailOverlayFrameIds,
+      2,
+      160,
+    ),
+    tailOverlayFrameTimestamps: (
+      Array.isArray(result.tailOverlayFrameTimestamps)
+        ? result.tailOverlayFrameTimestamps
+        : Array.isArray(result.debug?.tailOverlayFrameTimestamps)
+          ? result.debug.tailOverlayFrameTimestamps
+          : []
+    ).slice(0, 2).map((value) => Number(value)).filter(Number.isFinite),
+    tailOverlayCropIds: safeStringArray(
+      result.tailOverlayCropIds || result.debug?.tailOverlayCropIds,
+      4,
+      160,
+    ),
+    tailOverlayCropCount: numberMetric(result, 'tailOverlayCropCount', 0),
+    tailOverlayOcrTextBlockCount: numberMetric(result, 'tailOverlayOcrTextBlockCount', 0),
+    tailOverlayOcrSnippets: safeStringArray(
+      result.tailOverlayOcrSnippets || result.debug?.tailOverlayOcrSnippets,
+      12,
+      500,
+    ),
+    candidateCountFromTailOverlay: numberMetric(
+      result,
+      'candidateCountFromTailOverlay',
+      0,
+    ),
+    tailOverlayEscalationReason: safeString(
+      result.tailOverlayEscalationReason || result.debug?.tailOverlayEscalationReason,
+      240,
+    ) || null,
+    tailOverlayProviderErrors: sanitizeProviderErrors(
+      result.tailOverlayProviderErrors || result.debug?.tailOverlayProviderErrors,
+    ),
     providerErrors,
     houseNumberAlternatives,
-    houseNumberConflict: candidates.some((candidate) => candidate.houseNumberConflict),
+    houseNumberConflict:
+      candidates.some((candidate) => candidate.houseNumberConflict) ||
+      Boolean(result.asrNumberConflict ?? result.debug?.asrNumberConflict),
     googleVisionCalled: providerCalled(result, 'googleVisionCalled'),
     placesCalled: providerCalled(result, 'placesCalled'),
     geminiCalled: providerCalled(result, 'geminiCalled'),
     asrCalled: providerCalled(result, 'asrCalled'),
+    asrFallbackEnabled: Boolean(
+      result.asrFallbackEnabled ?? result.debug?.asrFallbackEnabled,
+    ),
+    asrFallbackRan: Boolean(result.asrFallbackRan ?? result.debug?.asrFallbackRan),
+    asrFallbackReason: safeString(
+      result.asrFallbackReason || result.debug?.asrFallbackReason,
+      160,
+    ) || null,
+    preAsrKeptCandidateCount: numberMetric(result, 'preAsrKeptCandidateCount', 0),
+    preAsrLateRescueSufficient: Boolean(
+      result.preAsrLateRescueSufficient ?? result.debug?.preAsrLateRescueSufficient,
+    ),
+    preAsrLateRescueSufficiencyReason: safeString(
+      result.preAsrLateRescueSufficiencyReason || result.debug?.preAsrLateRescueSufficiencyReason,
+      160,
+    ) || null,
+    preAsrLateRescueBlockingCandidateCount: numberMetric(
+      result,
+      'preAsrLateRescueBlockingCandidateCount',
+      0,
+    ),
+    preAsrLateRescueNonBlockingCandidateCount: numberMetric(
+      result,
+      'preAsrLateRescueNonBlockingCandidateCount',
+      0,
+    ),
+    lateRescueSufficiencyEvaluated: Boolean(
+      result.lateRescueSufficiencyEvaluated ?? result.debug?.lateRescueSufficiencyEvaluated,
+    ),
+    lateRescueSufficient: Boolean(
+      result.lateRescueSufficient ?? result.debug?.lateRescueSufficient,
+    ),
+    lateRescueSufficiencyReason: safeString(
+      result.lateRescueSufficiencyReason || result.debug?.lateRescueSufficiencyReason,
+      160,
+    ) || null,
+    lateRescueBlockingCandidateCount: numberMetric(
+      result,
+      'lateRescueBlockingCandidateCount',
+      0,
+    ),
+    lateRescueNonBlockingCandidateCount: numberMetric(
+      result,
+      'lateRescueNonBlockingCandidateCount',
+      0,
+    ),
+    numericContextClassifications: sanitizeNumericContextClassifications(
+      result.numericContextClassifications || result.debug?.numericContextClassifications,
+    ),
+    contextNumberRejectedAsHouseNumberCount: numberMetric(
+      result,
+      'contextNumberRejectedAsHouseNumberCount',
+      0,
+    ),
+    floorNumberRejectedAsHouseNumberCount: numberMetric(
+      result,
+      'floorNumberRejectedAsHouseNumberCount',
+      0,
+    ),
+    priceNumberRejectedAsHouseNumberCount: numberMetric(
+      result,
+      'priceNumberRejectedAsHouseNumberCount',
+      0,
+    ),
+    asrProvider: safeString(result.asrProvider || result.debug?.asrProvider, 120) || null,
+    asrModel: safeString(result.asrModel || result.debug?.asrModel, 120) || null,
+    asrDevice: safeString(result.asrDevice || result.debug?.asrDevice, 80) || null,
+    asrComputeType: safeString(
+      result.asrComputeType || result.debug?.asrComputeType,
+      80,
+    ) || null,
+    asrRequestedLanguage: safeString(
+      result.asrRequestedLanguage || result.debug?.asrRequestedLanguage,
+      40,
+    ) || null,
+    asrDetectedLanguage: safeString(
+      result.asrDetectedLanguage || result.debug?.asrDetectedLanguage,
+      40,
+    ) || null,
+    asrTranscriptSegmentCount: numberMetric(result, 'asrTranscriptSegmentCount', 0),
+    asrTranscriptBestSnippets: safeStringArray(
+      result.asrTranscriptBestSnippets || result.debug?.asrTranscriptBestSnippets,
+      12,
+      1000,
+    ),
+    asrAddressEvidenceCount: numberMetric(result, 'asrAddressEvidenceCount', 0),
+    asrFullAddressEvidenceCount: numberMetric(result, 'asrFullAddressEvidenceCount', 0),
+    asrPartialAddressEvidenceCount: numberMetric(
+      result,
+      'asrPartialAddressEvidenceCount',
+      0,
+    ),
+    asrPlaceOrDistrictEvidenceCount: numberMetric(
+      result,
+      'asrPlaceOrDistrictEvidenceCount',
+      0,
+    ),
+    candidateCountFromAsr: numberMetric(result, 'candidateCountFromAsr', 0),
+    asrEvidenceBucket: safeString(
+      result.asrEvidenceBucket || result.debug?.asrEvidenceBucket,
+      120,
+    ) || null,
+    asrCorroborationType: safeString(
+      result.asrCorroborationType || result.debug?.asrCorroborationType,
+      160,
+    ) || null,
+    asrDirectlyTranscribedNumberForms: safeStringArray(
+      result.asrDirectlyTranscribedNumberForms ||
+        result.debug?.asrDirectlyTranscribedNumberForms,
+      30,
+      80,
+    ),
+    asrNumberAlternatives,
+    asrSpokenNumberUncertain: Boolean(
+      result.asrSpokenNumberUncertain ?? result.debug?.asrSpokenNumberUncertain,
+    ),
+    asrNumberConflict: Boolean(result.asrNumberConflict ?? result.debug?.asrNumberConflict),
+    asrProviderErrors: sanitizeProviderErrors(
+      result.asrProviderErrors || result.debug?.asrProviderErrors,
+    ),
+    asrRuntimeMs: numberMetric(result, 'asrRuntimeMs', 0),
+    asrWindowCountProcessed: numberMetric(result, 'asrWindowCountProcessed', 0),
+    asrWindowSecondsProcessed: numberMetric(result, 'asrWindowSecondsProcessed', 0),
+    asrFullAudioFallbackRan: Boolean(
+      result.asrFullAudioFallbackRan ?? result.debug?.asrFullAudioFallbackRan,
+    ),
+    asrAudioDurationSeconds: Number.isFinite(Number(
+      result.asrAudioDurationSeconds ?? result.debug?.asrAudioDurationSeconds,
+    ))
+      ? Number(result.asrAudioDurationSeconds ?? result.debug?.asrAudioDurationSeconds)
+      : null,
+    asrModelLoadCount: numberMetric(result, 'asrModelLoadCount', 0),
+    asrModelReused: Boolean(result.asrModelReused ?? result.debug?.asrModelReused),
+    asrUsedSharedVideo: Boolean(
+      result.asrUsedSharedVideo ?? result.debug?.asrUsedSharedVideo,
+    ),
+    asrIndependentDownloadCount: numberMetric(result, 'asrIndependentDownloadCount', 0),
+    mediaAcquisitionCalled: Boolean(
+      result.mediaAcquisitionCalled ?? result.debug?.mediaAcquisitionCalled,
+    ),
+    mediaAcquisitionStatus: safeString(
+      result.mediaAcquisitionStatus || result.debug?.mediaAcquisitionStatus,
+      80,
+    ) || null,
+    mediaAcquisitionAttemptCount: numberMetric(
+      result,
+      'mediaAcquisitionAttemptCount',
+      0,
+    ),
+    mediaAcquisitionAttempts: (
+      Array.isArray(result.mediaAcquisitionAttempts)
+        ? result.mediaAcquisitionAttempts
+        : Array.isArray(result.debug?.mediaAcquisitionAttempts)
+          ? result.debug.mediaAcquisitionAttempts
+          : []
+    ).slice(0, 2).map((attempt) => ({
+      attempt: Number(attempt?.attempt || 0),
+      strategy: safeString(attempt?.strategy, 80) || null,
+      startedAt: safeString(attempt?.startedAt, 80) || null,
+      runtimeMs: Math.max(0, Number(attempt?.runtimeMs || 0)),
+      status: safeString(attempt?.status, 40) || null,
+      errorCode: safeString(attempt?.errorCode, 120) || null,
+    })),
+    mediaAcquisitionStrategies: safeStringArray(
+      result.mediaAcquisitionStrategies || result.debug?.mediaAcquisitionStrategies,
+      2,
+      80,
+    ),
+    mediaAcquisitionSuccessfulStrategy: safeString(
+      result.mediaAcquisitionSuccessfulStrategy ||
+        result.debug?.mediaAcquisitionSuccessfulStrategy,
+      80,
+    ) || null,
+    mediaAcquisitionRuntimeMs: numberMetric(result, 'mediaAcquisitionRuntimeMs', 0),
+    mediaReuseCount: numberMetric(result, 'mediaReuseCount', 0),
+    mediaVideoAvailable: Boolean(
+      result.mediaVideoAvailable ?? result.debug?.mediaVideoAvailable,
+    ),
+    mediaDurationAvailable: Boolean(
+      result.mediaDurationAvailable ?? result.debug?.mediaDurationAvailable,
+    ),
+    mediaAudioExtractionCalled: Boolean(
+      result.mediaAudioExtractionCalled ?? result.debug?.mediaAudioExtractionCalled,
+    ),
+    mediaAudioExtractionStatus: safeString(
+      result.mediaAudioExtractionStatus || result.debug?.mediaAudioExtractionStatus,
+      80,
+    ) || null,
+    mediaProviderErrors: sanitizeProviderErrors(
+      result.mediaProviderErrors || result.debug?.mediaProviderErrors,
+    ),
+    mediaVisualUsedSharedVideo: Boolean(
+      result.mediaVisualUsedSharedVideo ?? result.debug?.mediaVisualUsedSharedVideo,
+    ),
+    mediaAsrUsedSharedVideo: Boolean(
+      result.mediaAsrUsedSharedVideo ?? result.debug?.mediaAsrUsedSharedVideo,
+    ),
+    mediaAsrIndependentDownloadCount: numberMetric(
+      result,
+      'mediaAsrIndependentDownloadCount',
+      0,
+    ),
+    mediaSecondDownloadCount: numberMetric(result, 'mediaSecondDownloadCount', 0),
+    caseRuntimeMs: numberMetric(result, 'latencyMs', 0),
     geminiCropJudgeEnabled: Boolean(
       result.geminiCropJudgeEnabled ?? result.debug?.geminiCropJudgeEnabled,
     ),
@@ -685,6 +1070,61 @@ export function summarizeShortsTrack2V3AuditCase(item = {}, result = {}) {
     ) || null,
     geminiCropJudgeErrors: sanitizeProviderErrors(
       result.geminiCropJudgeErrors || result.debug?.geminiCropJudgeErrors,
+    ),
+    geminiCropJudgeAggregateStatus: safeString(
+      result.geminiCropJudgeAggregateStatus || result.debug?.geminiCropJudgeAggregateStatus,
+      120,
+    ) || null,
+    geminiCropJudgeRequestedPageCount: numberMetric(
+      result,
+      'geminiCropJudgeRequestedPageCount',
+      0,
+    ),
+    geminiCropJudgeSuccessfulPageCount: numberMetric(
+      result,
+      'geminiCropJudgeSuccessfulPageCount',
+      0,
+    ),
+    geminiCropJudgeFailedPageCount: numberMetric(
+      result,
+      'geminiCropJudgeFailedPageCount',
+      0,
+    ),
+    geminiCropJudgePartialSuccess: Boolean(
+      result.geminiCropJudgePartialSuccess ?? result.debug?.geminiCropJudgePartialSuccess,
+    ),
+    geminiCropJudgeTotalAttemptCount: numberMetric(
+      result,
+      'geminiCropJudgeTotalAttemptCount',
+      0,
+    ),
+    geminiCropJudgeRetryCount: numberMetric(result, 'geminiCropJudgeRetryCount', 0),
+    geminiCropJudgeRateLimitCount: numberMetric(
+      result,
+      'geminiCropJudgeRateLimitCount',
+      0,
+    ),
+    geminiCropJudgeTimeoutCount: numberMetric(result, 'geminiCropJudgeTimeoutCount', 0),
+    geminiCropJudgeServerErrorCount: numberMetric(
+      result,
+      'geminiCropJudgeServerErrorCount',
+      0,
+    ),
+    geminiCropJudgeQueueWaitMs: numberMetric(result, 'geminiCropJudgeQueueWaitMs', 0),
+    geminiCropJudgeProviderRuntimeMs: numberMetric(
+      result,
+      'geminiCropJudgeProviderRuntimeMs',
+      0,
+    ),
+    geminiCropJudgeBackoffMs: numberMetric(result, 'geminiCropJudgeBackoffMs', 0),
+    geminiCropJudgeMaxObservedConcurrency: numberMetric(
+      result,
+      'geminiCropJudgeMaxObservedConcurrency',
+      0,
+    ),
+    geminiCropJudgeDedupHitCount: numberMetric(result, 'geminiCropJudgeDedupHitCount', 0),
+    geminiCropJudgePageResults: sanitizeGeminiPageResults(
+      result.geminiCropJudgePageResults || result.debug?.geminiCropJudgePageResults,
     ),
     ocrTextBlockCountFromGeminiSelectedCrops: numberMetric(
       result,
@@ -755,16 +1195,21 @@ function auditFailureResult(error) {
   }
 }
 
-export async function runShortsTrack2V3AuditCases(cases = [], runCase) {
+export async function runShortsTrack2V3AuditCases(cases = [], runCase, options = {}) {
   if (typeof runCase !== 'function') {
     throw new TypeError('runShortsTrack2V3AuditCases requires a runCase function')
   }
   const results = []
   for (const [index, item] of (Array.isArray(cases) ? cases : []).entries()) {
+    let entry
     try {
-      results.push({ case: item, result: await runCase(item, index) })
+      entry = { case: item, result: await runCase(item, index) }
     } catch (error) {
-      results.push({ case: item, result: auditFailureResult(error) })
+      entry = { case: item, result: auditFailureResult(error) }
+    }
+    results.push(entry)
+    if (typeof options.onCaseComplete === 'function') {
+      await options.onCaseComplete(entry, index)
     }
   }
   return results
@@ -810,6 +1255,53 @@ function addCase(summary, caseSummary) {
   if (caseSummary.falseResolved) summary.falseResolveCount += 1
   if (caseSummary.autoResolved) summary.autoResolveCount += 1
   if (caseSummary.houseNumberConflict) summary.casesWithHouseNumberConflict += 1
+  if (caseSummary.asrFallbackRan) summary.asrFallbackInvocationCount += 1
+  if (caseSummary.asrFallbackRan && caseSummary.preAsrLateRescueNonBlockingCandidateCount > 0) {
+    summary.urlsWhereAsrRanDespiteNonBlockingReviewEvidence += 1
+  }
+  if (caseSummary.asrFallbackReason === 'RESCUE_SUFFICIENT') {
+    summary.urlsSkippedDueRescueSufficient += 1
+  }
+  summary.lateRescueBlockingCandidateTotal += caseSummary.lateRescueBlockingCandidateCount
+  summary.lateRescueNonBlockingCandidateTotal += caseSummary.lateRescueNonBlockingCandidateCount
+  summary.contextNumberRejectedAsHouseNumberCount += caseSummary.contextNumberRejectedAsHouseNumberCount
+  summary.floorNumberRejectedAsHouseNumberCount += caseSummary.floorNumberRejectedAsHouseNumberCount
+  summary.priceNumberRejectedAsHouseNumberCount += caseSummary.priceNumberRejectedAsHouseNumberCount
+  if (caseSummary.asrTranscriptSegmentCount > 0) summary.asrSuccessfulTranscriptionCount += 1
+  if (caseSummary.asrProviderErrors.length > 0) summary.asrProviderFailureCount += 1
+  if (caseSummary.candidateCountFromAsr > 0) summary.urlsWithAsrCandidates += 1
+  if (caseSummary.asrFullAddressEvidenceCount > 0) summary.urlsWithAsrFullEvidence += 1
+  if (caseSummary.asrPartialAddressEvidenceCount > 0) summary.urlsWithAsrPartialEvidence += 1
+  if (caseSummary.asrPlaceOrDistrictEvidenceCount > 0) {
+    summary.urlsWithAsrPlaceOrDistrictEvidence += 1
+  }
+  if (caseSummary.asrEvidenceBucket === 'ASR_NO_ADDRESS_SPEECH_OBSERVED') {
+    summary.urlsWithAsrNoAddressSpeech += 1
+  }
+  if (caseSummary.asrSpokenNumberUncertain) summary.asrSpokenNumberUncertainCount += 1
+  if (caseSummary.asrNumberConflict) summary.asrNumberConflictCount += 1
+  if (caseSummary.asrFallbackRan) {
+    increment(summary.asrCorroborationCounts, caseSummary.asrCorroborationType || 'ASR_NO_CORROBORATION')
+  }
+  summary.totalAsrRuntimeMs += caseSummary.asrRuntimeMs
+  summary.totalAsrAudioDurationSeconds += Number(caseSummary.asrAudioDurationSeconds || 0)
+  summary.asrModelLoadCount = Math.max(summary.asrModelLoadCount, caseSummary.asrModelLoadCount)
+  if (caseSummary.asrModelReused) summary.asrProviderProcessReused = true
+  if (caseSummary.mediaAcquisitionCalled) summary.mediaAcquisitionCalledCount += 1
+  summary.mediaAcquisitionAttemptTotal += caseSummary.mediaAcquisitionAttemptCount
+  summary.totalMediaAcquisitionRuntimeMs += caseSummary.mediaAcquisitionRuntimeMs
+  summary.totalMediaReuseCount += caseSummary.mediaReuseCount
+  summary.mediaSecondDownloadCount += caseSummary.mediaSecondDownloadCount
+  summary.asrIndependentDownloadCount += caseSummary.mediaAsrIndependentDownloadCount
+  if (caseSummary.mediaAcquisitionAttemptCount > 1) summary.urlsRequiringMediaRetry += 1
+  if (caseSummary.mediaAcquisitionSuccessfulStrategy === 'FALLBACK_FORMAT') {
+    summary.urlsUsingFallbackFormat += 1
+  }
+  if (caseSummary.mediaVisualUsedSharedVideo && caseSummary.mediaAsrUsedSharedVideo) {
+    summary.visualToAsrMediaReuseCount += 1
+  }
+  if (caseSummary.mediaProviderErrors.length > 0) summary.urlsWithMediaProviderErrors += 1
+  if (caseSummary.caseRuntimeMs > 0) summary.caseRuntimeMsValues.push(caseSummary.caseRuntimeMs)
   if (caseSummary.candidateCount > 0) summary.casesWithCandidates += 1
   else summary.casesWithNoCandidate += 1
   if (caseSummary.unsupportedHouseNumberFound) summary.casesWithUnsupportedHouseNumber += 1
@@ -841,7 +1333,7 @@ function addCase(summary, caseSummary) {
     caseSummary.googleVisionCalled ||
     caseSummary.placesCalled ||
     caseSummary.geminiCalled ||
-    caseSummary.asrCalled
+    (caseSummary.asrCalled && !caseSummary.asrFallbackEnabled)
   ) {
     summary.providerBoundaryViolationCount += 1
   }
@@ -915,7 +1407,7 @@ function recommendationHints(summary = {}) {
   if (Number(failures.PROVIDER_ERROR || 0) > 0) {
     hints.push('Stabilize the failing local OCR or frame provider before changing candidate rules.')
   }
-  if (summary.cases.some((item) => item.category === 'audio_only')) {
+  if (summary.cases.some((item) => item.category === 'audio_only' && !item.asrFallbackEnabled)) {
     hints.push('Audio-only cases remain deferred; evaluate ASR in a later explicitly scoped phase.')
   }
   if (hints.length === 0) {
@@ -944,6 +1436,41 @@ export function buildShortsTrack2V3AuditSummary(results = []) {
     casesWithCandidates: 0,
     casesWithUnsupportedHouseNumber: 0,
     providerBoundaryViolationCount: 0,
+    asrFallbackInvocationCount: 0,
+    urlsWhereAsrRanDespiteNonBlockingReviewEvidence: 0,
+    urlsSkippedDueRescueSufficient: 0,
+    lateRescueBlockingCandidateTotal: 0,
+    lateRescueNonBlockingCandidateTotal: 0,
+    contextNumberRejectedAsHouseNumberCount: 0,
+    floorNumberRejectedAsHouseNumberCount: 0,
+    priceNumberRejectedAsHouseNumberCount: 0,
+    asrSuccessfulTranscriptionCount: 0,
+    asrProviderFailureCount: 0,
+    urlsWithAsrCandidates: 0,
+    urlsWithAsrFullEvidence: 0,
+    urlsWithAsrPartialEvidence: 0,
+    urlsWithAsrPlaceOrDistrictEvidence: 0,
+    urlsWithAsrNoAddressSpeech: 0,
+    asrCorroborationCounts: {},
+    asrSpokenNumberUncertainCount: 0,
+    asrNumberConflictCount: 0,
+    totalAsrRuntimeMs: 0,
+    totalAsrAudioDurationSeconds: 0,
+    asrModelLoadCount: 0,
+    asrProviderProcessReused: false,
+    mediaAcquisitionCalledCount: 0,
+    mediaAcquisitionAttemptTotal: 0,
+    urlsRequiringMediaRetry: 0,
+    urlsUsingFallbackFormat: 0,
+    visualToAsrMediaReuseCount: 0,
+    mediaSecondDownloadCount: 0,
+    asrIndependentDownloadCount: 0,
+    urlsWithMediaProviderErrors: 0,
+    totalMediaAcquisitionRuntimeMs: 0,
+    totalMediaReuseCount: 0,
+    medianCaseRuntimeMs: 0,
+    p90CaseRuntimeMs: 0,
+    caseRuntimeMsValues: [],
     casesNeedingMetadata: 0,
     casesNeedingSelectorReview: 0,
     casesNeedingHighResOcr: 0,
@@ -992,6 +1519,19 @@ export function buildShortsTrack2V3AuditSummary(results = []) {
   }
 
   summary.falseResolvedCount = summary.falseResolveCount
+  summary.averageAsrRuntimeMsPerTranscribedVideo = summary.asrSuccessfulTranscriptionCount > 0
+    ? summary.totalAsrRuntimeMs / summary.asrSuccessfulTranscriptionCount
+    : 0
+  const sortedCaseRuntimes = [...summary.caseRuntimeMsValues].sort((left, right) => left - right)
+  const runtimePercentile = (percentile) => {
+    if (!sortedCaseRuntimes.length) return 0
+    const index = Math.max(0, Math.ceil(percentile * sortedCaseRuntimes.length) - 1)
+    return sortedCaseRuntimes[index]
+  }
+  summary.completedUrlCount = summary.totalCases
+  summary.medianCaseRuntimeMs = runtimePercentile(0.5)
+  summary.p90CaseRuntimeMs = runtimePercentile(0.9)
+  delete summary.caseRuntimeMsValues
   summary.candidateCountByCategory = categoryTotals(summary, 'candidateTotal')
   summary.droppedCandidateCountByCategory = categoryTotals(summary, 'droppedCandidateTotal')
   summary.recommendationHints = recommendationHints(summary)
@@ -1037,6 +1577,17 @@ export function buildShortsTrack2V3AuditCsv(cases = []) {
     'ocrSnippetsFromAdaptiveFrames',
     'candidateCountFromAdaptiveFrames',
     'adaptiveSamplingReason',
+    'tailOverlayEscalationEnabled',
+    'tailOverlayEscalationRan',
+    'tailOverlayFrameIds',
+    'tailOverlayFrameTimestamps',
+    'tailOverlayCropIds',
+    'tailOverlayCropCount',
+    'tailOverlayOcrTextBlockCount',
+    'tailOverlayOcrSnippets',
+    'candidateCountFromTailOverlay',
+    'tailOverlayEscalationReason',
+    'tailOverlayProviderErrors',
     'providerErrors',
     'houseNumberAlternatives',
     'houseNumberConflict',
@@ -1044,6 +1595,67 @@ export function buildShortsTrack2V3AuditCsv(cases = []) {
     'placesCalled',
     'geminiCalled',
     'asrCalled',
+    'asrFallbackEnabled',
+    'asrFallbackRan',
+    'asrFallbackReason',
+    'preAsrKeptCandidateCount',
+    'preAsrLateRescueSufficient',
+    'preAsrLateRescueSufficiencyReason',
+    'preAsrLateRescueBlockingCandidateCount',
+    'preAsrLateRescueNonBlockingCandidateCount',
+    'lateRescueSufficiencyEvaluated',
+    'lateRescueSufficient',
+    'lateRescueSufficiencyReason',
+    'lateRescueBlockingCandidateCount',
+    'lateRescueNonBlockingCandidateCount',
+    'numericContextClassifications',
+    'contextNumberRejectedAsHouseNumberCount',
+    'floorNumberRejectedAsHouseNumberCount',
+    'priceNumberRejectedAsHouseNumberCount',
+    'asrProvider',
+    'asrModel',
+    'asrDevice',
+    'asrComputeType',
+    'asrRequestedLanguage',
+    'asrDetectedLanguage',
+    'asrTranscriptSegmentCount',
+    'asrTranscriptBestSnippets',
+    'asrAddressEvidenceCount',
+    'asrFullAddressEvidenceCount',
+    'asrPartialAddressEvidenceCount',
+    'asrPlaceOrDistrictEvidenceCount',
+    'candidateCountFromAsr',
+    'asrEvidenceBucket',
+    'asrCorroborationType',
+    'asrDirectlyTranscribedNumberForms',
+    'asrNumberAlternatives',
+    'asrSpokenNumberUncertain',
+    'asrNumberConflict',
+    'asrProviderErrors',
+    'asrRuntimeMs',
+    'asrAudioDurationSeconds',
+    'asrModelLoadCount',
+    'asrModelReused',
+    'asrUsedSharedVideo',
+    'asrIndependentDownloadCount',
+    'mediaAcquisitionCalled',
+    'mediaAcquisitionStatus',
+    'mediaAcquisitionAttemptCount',
+    'mediaAcquisitionAttempts',
+    'mediaAcquisitionStrategies',
+    'mediaAcquisitionSuccessfulStrategy',
+    'mediaAcquisitionRuntimeMs',
+    'mediaReuseCount',
+    'mediaVideoAvailable',
+    'mediaDurationAvailable',
+    'mediaAudioExtractionCalled',
+    'mediaAudioExtractionStatus',
+    'mediaProviderErrors',
+    'mediaVisualUsedSharedVideo',
+    'mediaAsrUsedSharedVideo',
+    'mediaAsrIndependentDownloadCount',
+    'mediaSecondDownloadCount',
+    'caseRuntimeMs',
     'geminiCropJudgeEnabled',
     'geminiCropJudgeCalled',
     'geminiCropJudgeProvider',
@@ -1052,6 +1664,22 @@ export function buildShortsTrack2V3AuditCsv(cases = []) {
     'geminiCropJudgeContactSheetPaths',
     'geminiCropJudgeResultPath',
     'geminiCropJudgeErrors',
+    'geminiCropJudgeAggregateStatus',
+    'geminiCropJudgeRequestedPageCount',
+    'geminiCropJudgeSuccessfulPageCount',
+    'geminiCropJudgeFailedPageCount',
+    'geminiCropJudgePartialSuccess',
+    'geminiCropJudgeTotalAttemptCount',
+    'geminiCropJudgeRetryCount',
+    'geminiCropJudgeRateLimitCount',
+    'geminiCropJudgeTimeoutCount',
+    'geminiCropJudgeServerErrorCount',
+    'geminiCropJudgeQueueWaitMs',
+    'geminiCropJudgeProviderRuntimeMs',
+    'geminiCropJudgeBackoffMs',
+    'geminiCropJudgeMaxObservedConcurrency',
+    'geminiCropJudgeDedupHitCount',
+    'geminiCropJudgePageResults',
     'ocrTextBlockCountFromGeminiSelectedCrops',
     'ocrSnippetsFromGeminiSelectedCrops',
     'candidateCountFromGeminiSelectedCrops',

@@ -119,6 +119,36 @@ function safeProviderMetadata(value) {
     metadata.attemptedPreprocessVariants = attemptedPreprocessVariants
   }
   if (attemptSummaries.length) metadata.attemptSummaries = attemptSummaries
+  for (const key of [
+    'supportCount',
+    'observationCount',
+    'rawObservationCount',
+    'addressLikelihoodScore',
+    'fastAttemptCount',
+    'deepAttemptCount',
+  ]) {
+    if (value[key] != null && value[key] !== '' && Number.isFinite(Number(value[key]))) {
+      metadata[key] = Number(value[key])
+    }
+  }
+  if (value.deepPassRan === true) metadata.deepPassRan = true
+  if (safeString(value.consensusPolicy, 80)) {
+    metadata.consensusPolicy = safeString(value.consensusPolicy, 80)
+  }
+  if (Array.isArray(value.selectedConsensusTokens)) {
+    metadata.selectedConsensusTokens = value.selectedConsensusTokens
+      .map((token) => safeString(token, 100))
+      .filter(Boolean)
+      .slice(0, 30)
+  }
+  if (value.addressLikelihoodFeatures && typeof value.addressLikelihoodFeatures === 'object') {
+    const safeFeatures = {}
+    for (const [key, featureValue] of Object.entries(value.addressLikelihoodFeatures).slice(0, 30)) {
+      if (typeof featureValue === 'boolean') safeFeatures[safeString(key, 60)] = featureValue
+      else if (Number.isFinite(Number(featureValue))) safeFeatures[safeString(key, 60)] = Number(featureValue)
+    }
+    if (Object.keys(safeFeatures).length) metadata.addressLikelihoodFeatures = safeFeatures
+  }
   return Object.keys(metadata).length ? metadata : null
 }
 
@@ -133,7 +163,7 @@ export function detectShortsTrack2V3EvidenceTokens(value = '') {
   const hasHouseNumber = /(?:^|[\s,.:;])(?:so\s*)?\d{1,5}[a-z]?(?:\/\d{1,5}[a-z]?)?(?=$|[\s,.:;/-])/iu
     .test(houseNumberText)
   const hasStreetLike = Boolean(
-    /(?:^|[\s,;])(?:duong|d\.?|street|st\.?|road|rd\.?|avenue|ave\.?|hem|ngo|ngach|alley)(?=$|[\s,;])/iu
+    /(?:^|[\s,;])(?:duong|d\.|street|st\.?|road|rd\.|avenue|ave\.?|hem|ngo|ngach|alley)(?=$|[\s,;])/iu
       .test(folded) ||
     /(?:^|[\s,;])\d{1,5}(?:\/\d{1,5})?\s+u\.\s+[a-z]{2,}/iu.test(folded)
   )
@@ -189,6 +219,22 @@ export function buildShortsTrack2V3EvidenceFromOcrBlocks(textBlocks = []) {
           ? Number(block.timestampSeconds)
           : null,
         frameIndex: Number.isFinite(Number(block.frameIndex)) ? Number(block.frameIndex) : null,
+        episodeId: safeString(block.episodeId || '', 120) || null,
+        segmentId: safeString(block.segmentId || '', 120) || null,
+        startSeconds: Number.isFinite(Number(block.startSeconds)) ? Number(block.startSeconds) : null,
+        endSeconds: Number.isFinite(Number(block.endSeconds)) ? Number(block.endSeconds) : null,
+        supportCount: Number.isFinite(Number(block.supportCount ?? block.episodeSupportCount))
+          ? Math.max(1, Number(block.supportCount ?? block.episodeSupportCount))
+          : 1,
+        rawObservations: Array.isArray(block.rawObservations)
+          ? block.rawObservations.map((value) => safeString(value, 1000)).filter(Boolean).slice(0, 20)
+          : [],
+        selectedConsensusTokens: Array.isArray(block.selectedConsensusTokens)
+          ? block.selectedConsensusTokens.map((value) => safeString(value, 100)).filter(Boolean).slice(0, 30)
+          : [],
+        evidenceIds: Array.isArray(block.evidenceIds)
+          ? block.evidenceIds.map((value) => safeString(value, 120)).filter(Boolean).slice(0, 30)
+          : [],
         rawText,
         normalizedText,
         confidence: Number.isFinite(Number(block.confidence)) ? Number(block.confidence) : 0,

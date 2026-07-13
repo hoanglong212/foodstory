@@ -12,7 +12,11 @@ import { buildShortsTrack2V3Candidates } from './shortsTrack2V3CandidateBuilderS
 import { decideShortsTrack2V3Escalation } from './shortsTrack2V3EscalationService.js'
 import { fuseShortsTrack2V3Evidence } from './shortsTrack2V3EvidenceFusionService.js'
 import { runShortsTrack2V3OcrBoost } from './shortsTrack2V3OcrBoostService.js'
-import { applyShortsTrack2V3CandidateQualityGate } from './shortsTrack2V3CandidateQualityGateService.js'
+import {
+  applyShortsTrack2V3CandidateQualityGate,
+  rankShortsTrack2V3CandidatesForReview,
+} from './shortsTrack2V3CandidateQualityGateService.js'
+import { runShortsTrack2V3SmartOverlayOcr } from './shortsTrack2V3SmartOverlayOcrService.js'
 import { buildShortsTrack2V3Response } from './shortsTrack2V3ResponseBuilder.js'
 import {
   buildMetadataCandidatesFromEvidence,
@@ -40,6 +44,23 @@ function normalizeContext(input = {}) {
     channelTitle: input.channelTitle || metadata.channelTitle || '',
     duration: input.duration || metadata.duration || null,
   }
+}
+
+
+function shouldRunCanonicalSmartOverlayPipeline(config = {}, deps = {}) {
+  if (config.track2V3CanonicalOrchestratorEnabled === false) return false
+  if (config.track2V3SmartOverlayEnabled !== true) return false
+
+  // Keep the old cheap-OCR skeleton path available for pure unit fixtures and
+  // metadata-only tests. The canonical path is the production path once local
+  // OCR or a Smart Overlay/local OCR test double is available.
+  return Boolean(
+    config.track2V3LocalOcrEnabled === true ||
+      deps.smartOverlayResult ||
+      typeof deps.smartOverlaySelector === 'function' ||
+      typeof deps.localOcrProvider === 'function' ||
+      typeof deps.track2V3LocalOcrProvider === 'function'
+  )
 }
 
 function shouldRunLiveCheapOcrAdapter(config = {}, deps = {}) {
@@ -240,6 +261,9 @@ export async function runShortsTrack2V3Pipeline(input = {}, deps = {}) {
   const startedAt = Date.now()
   const config = deps.track2V3Config || getShortsTrack2V3Config(deps.env || process.env)
   const context = normalizeContext(input)
+  if (shouldRunCanonicalSmartOverlayPipeline(config, deps)) {
+    return runShortsTrack2V3SmartOverlayOcr(context, config, deps)
+  }
   const intent = classifyShortsTrack2V3Intent(context, config)
   const metadataEvidence = extractMetadataEvidence(context)
   const metadataCandidates = buildMetadataCandidatesFromEvidence({
@@ -298,8 +322,8 @@ export async function runShortsTrack2V3Pipeline(input = {}, deps = {}) {
     collectShortsTrack2V3Evidence(mergedOcrResult),
   )
   const geminiResult = {
-    status: 'NOT_RUN',
-    reason: 'TRACK2_V3_GEMINI_VISION_NOT_IMPLEMENTED',
+    status: 'POLICY_DISABLED',
+    reason: 'TRACK2_V3_GEMINI_ADDRESS_GENERATION_FORBIDDEN',
     called: false,
     providerErrors: [],
   }
@@ -326,17 +350,19 @@ export async function runShortsTrack2V3Pipeline(input = {}, deps = {}) {
     evidence: fusionResult.fusedEvidence || mergedEvidenceStore.list(),
     candidates: finalOcrCandidates,
   })
-  const finalCandidates = mergeMetadataCandidatesWithExisting(
-    metadataCandidates,
-    candidateQualityGate.candidates,
+  const finalCandidates = rankShortsTrack2V3CandidatesForReview(
+    mergeMetadataCandidatesWithExisting(
+      metadataCandidates,
+      candidateQualityGate.candidates,
+    ),
   )
   const finalEvidence = [
     ...metadataEvidence,
     ...(fusionResult.fusedEvidence || mergedEvidenceStore.list()),
   ]
   const placesResult = {
-    status: 'NOT_RUN',
-    reason: 'TRACK2_V3_PLACES_UPGRADE_NOT_IMPLEMENTED',
+    status: 'DEPRECATED',
+    reason: 'TRACK2_V3_PLACES_RESOLUTION_MOVED_TO_VISION_AUTO_ADAPTER',
     called: false,
     queries: [],
     providerErrors: [],

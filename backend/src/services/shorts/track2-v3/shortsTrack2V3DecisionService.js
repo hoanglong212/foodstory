@@ -8,7 +8,21 @@ function candidateHasRisk(candidates = [], riskFlag) {
   )
 }
 
+function confirmedMultiPlaceIntent(intent = {}) {
+  return Boolean(
+    intent.mustNotResolve &&
+    (
+      intent.intent === 'MULTI_PLACE_OR_LIST' ||
+      intent.intent === 'GENERIC_FOOD_LIST' ||
+      intent.inputClass === 'MULTI_PLACE_LISTICLE'
+    )
+  )
+}
+
 function candidateReason({ candidates = [], intent = {} } = {}) {
+  if (confirmedMultiPlaceIntent(intent)) {
+    return 'MULTI_PLACE_REVIEW_ONLY'
+  }
   const metadataCandidateCount = candidates.filter((candidate) =>
     candidate?.type === 'METADATA_ADDRESS'
   ).length
@@ -18,17 +32,11 @@ function candidateReason({ candidates = [], intent = {} } = {}) {
   if (metadataCandidateCount === 1) {
     return 'METADATA_ADDRESS_REVIEW'
   }
-  if (intent.mustNotResolve && firstCandidateType(candidates, 'MULTI_PLACE_REVIEW')) {
-    return 'MULTI_PLACE_REVIEW_ONLY'
-  }
   if (firstCandidateType(candidates, 'OCR_PLACE_PLUS_PARTIAL_ADDRESS')) {
     return 'OCR_PLACE_PLUS_PARTIAL_ADDRESS'
   }
   if (candidateHasRisk(candidates, 'NOISY_OCR')) {
     return 'OCR_NOISY_ADDRESS_CANDIDATE'
-  }
-  if (intent.mustNotResolve) {
-    return 'MULTI_PLACE_REVIEW_ONLY'
   }
   return 'TRACK2_V3_CHEAP_OCR_CANDIDATES'
 }
@@ -40,6 +48,7 @@ export function decideShortsTrack2V3Result({
 } = {}) {
   const candidateCount = Array.isArray(candidates) ? candidates.length : 0
   const mustNotResolve = Boolean(intent.mustNotResolve)
+  const confirmedMultiPlace = confirmedMultiPlaceIntent(intent)
   const hasProviderErrors = Array.isArray(providerErrors) && providerErrors.length > 0
 
   let resolution = 'UNRESOLVED'
@@ -47,9 +56,11 @@ export function decideShortsTrack2V3Result({
     ? 'TRACK2_V3_PROVIDER_UNAVAILABLE'
     : 'TRACK2_V3_NO_USEFUL_VISUAL_EVIDENCE'
 
-  if (candidateCount > 0) {
-    const hasMetadataCandidate = candidates.some((candidate) => candidate?.type === 'METADATA_ADDRESS')
-    resolution = hasMetadataCandidate ? 'CANDIDATES' : mustNotResolve ? 'NEEDS_REVIEW' : 'CANDIDATES'
+  if (confirmedMultiPlace) {
+    resolution = 'NEEDS_REVIEW'
+    reason = 'MULTI_PLACE_REVIEW_ONLY'
+  } else if (candidateCount > 0) {
+    resolution = 'CANDIDATES'
     reason = candidateReason({ candidates, intent })
   }
 

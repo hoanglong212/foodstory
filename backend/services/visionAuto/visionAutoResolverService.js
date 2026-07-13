@@ -1,507 +1,219 @@
-import { detectSocialPlatform } from '../socialUrlExtractionService.js'
 import { emptyFoodMapEntities } from '../foodMapEntityExtractionService.js'
+import { fetchPublicImageBuffer } from '../socialUrlExtractionService.js'
 import { collectVisionEvidence } from './visionEvidenceCollectorService.js'
-import { decideVisionAutoResult } from './visionFinalDecisionService.js'
 import { extractVisionEntityCandidates } from './visionEntityExtractorService.js'
 import { normalizeVisionEvidence } from './visionEvidenceNormalizerService.js'
 import { validateVisionEntities } from './visionEvidenceValidatorService.js'
-import { getVisionAutoConfig } from './visionAutoConfig.js'
-import { resolveVisionPlaceCandidates } from './visionPlaceResolverService.js'
+import { getVisionAutoRuntimeConfig } from './visionAutoConfig.js'
+import { resolveVisionLocationHypotheses } from './visionPlaceResolverService.js'
+import { decideVisionAutoResult } from './visionFinalDecisionService.js'
 import { buildVisionAutoResponse } from './visionResponseBuilder.js'
+import { buildVisionLocationHypothesesFromEntities } from './visionLocationHypothesisService.js'
+import { canonicalVisionAutoCacheKey, getOrCreateVisionAutoResult } from './visionAutoResultCache.js'
+import { analyzeVisionAutoYoutubeWithTrack2V3, shouldUseVisionAutoTrack2V3 } from './visionAutoTrack2V3AdapterService.js'
 import {
-  extractVisionAutoCandidatesWithGemini,
-  mergeGeminiCandidatesWithLocalCandidates,
-} from './geminiCandidateExtractionService.js'
+  normalizeVisionAutoUrl,
+  VisionAutoUrlPolicyError,
+} from './visionAutoUrlPolicyService.js'
+import {
+  incrementVisionAutoMetric,
+  observeVisionAutoDuration,
+} from './visionAutoObservabilityService.js'
 
 export class VisionAutoInputError extends Error {
-  constructor(message, field = null) {
+  constructor(message, field = null, code = 'VISION_AUTO_INPUT_INVALID') {
     super(message)
     this.name = 'VisionAutoInputError'
-    this.code = 'VISION_AUTO_INPUT_INVALID'
+    this.code = code
     this.field = field
   }
 }
+export class VisionAutoDisabledError extends Error { constructor() { super('Vision Auto is disabled.'); this.name = 'VisionAutoDisabledError'; this.code = 'VISION_AUTO_DISABLED' } }
+export class VisionAutoTimeoutError extends Error { constructor() { super('Vision Auto exceeded its request deadline.'); this.name = 'VisionAutoTimeoutError'; this.code = 'VISION_AUTO_TIMEOUT' } }
 
-export class VisionAutoDisabledError extends Error {
-  constructor() {
-    super('Vision Auto v2 is disabled.')
-    this.name = 'VisionAutoDisabledError'
-    this.code = 'VISION_AUTO_DISABLED'
-  }
-}
-
-function cleanUrl(value) {
-  return String(value || '').trim().slice(0, 2_000)
-}
-
-export function resolveVisionAutoInput({ image = null, url = '' } = {}) {
-  const cleanedUrl = cleanUrl(url)
-  if (image && cleanedUrl) {
-    throw new VisionAutoInputError(
-      'Provide either one uploaded image or one URL, not both.',
-    )
-  }
-  if (!image && !cleanedUrl) {
-    throw new VisionAutoInputError(
-      'Provide one uploaded image or one public URL.',
-    )
-  }
+export function resolveVisionAutoInput({
+  image = null,
+  url = '',
+  assetTypeHint = 'unknown',
+  authMode = 'public',
+  maxDurationSec = null,
+} = {}) {
+  const cleanedUrl = String(url || '').trim()
+  if (image && cleanedUrl) throw new VisionAutoInputError('Provide either one uploaded image or one URL, not both.')
+  if (!image && !cleanedUrl) throw new VisionAutoInputError('Provide one uploaded image or one public URL.')
   if (image) {
     return {
       type: 'uploaded_image',
+      assetType: 'image',
+      assetTypeHint: 'image',
+      authMode: 'none',
       url: null,
-      platform: null,
+      platform: 'image',
+      originHost: null,
+      fingerprint: null,
+      maxDurationSec: null,
     }
   }
-
-  let parsed
   try {
-    parsed = new URL(cleanedUrl)
-  } catch {
-    throw new VisionAutoInputError(
-      'URL must be a valid HTTP or HTTPS URL.',
-      'url',
-    )
-  }
-  if (!['http:', 'https:'].includes(parsed.protocol)) {
-    throw new VisionAutoInputError(
-      'URL must be a valid HTTP or HTTPS URL.',
-      'url',
-    )
-  }
-
-  const platform = detectSocialPlatform(parsed)
-  return {
-    type:
-      platform === 'youtube'
-        ? 'youtube_url'
-        : platform === 'web'
-          ? 'blog_url'
-          : 'generic_social_url',
-    url: parsed.href,
-    platform,
-  }
-}
-
-function combinedWarnings(...values) {
-  return [
-    ...new Set(
-      values
-        .flatMap((value) => (Array.isArray(value) ? value : []))
-        .map((value) => String(value || '').slice(0, 100))
-        .filter(Boolean),
-    ),
-  ].slice(0, 16)
-}
-
-function roundScore(value) {
-  return Math.round(Math.max(0, Math.min(1, Number(value) || 0)) * 1000) / 1000
-}
-
-function emptyNamedEntity() {
-  return {
-    value: null,
-    confidence: 0,
-    source: null,
-    evidence: [],
-  }
-}
-
-function normalizePhone(value) {
-  const digits = String(value || '').replace(/\D/g, '')
-  return digits.startsWith('84') ? `0${digits.slice(2)}` : digits
-}
-
-function geminiCandidateAddressCandidates(candidates = []) {
-  return (Array.isArray(candidates) ? candidates : [])
-    .map((candidate) => ({
-      address: candidate?.address || null,
-      confidence: roundScore(candidate?.confidence),
-      source: candidate?.source || 'gemini_ocr_candidate_extraction',
-      timestampSeconds: Number.isFinite(Number(candidate?.timestampSeconds))
-        ? Number(candidate.timestampSeconds)
-        : null,
-      evidence: Array.isArray(candidate?.evidence)
-        ? candidate.evidence
-        : [candidate?.evidenceText || candidate?.address].filter(Boolean),
-      ...(candidate?.placeName ? { placeName: candidate.placeName } : {}),
-      ...(candidate?.dishHint ? { dishHint: candidate.dishHint } : {}),
-      reviewRequired: true,
-    }))
-    .filter((candidate) => candidate.address)
-}
-
-function mergeGeminiCandidateEntities(entities = {}, geminiCandidates = []) {
-  const geminiAddressCandidates =
-    geminiCandidateAddressCandidates(geminiCandidates)
-  const mergedAddressCandidates = mergeGeminiCandidatesWithLocalCandidates(
-    entities.addressCandidates || [],
-    geminiAddressCandidates,
-  ).slice(0, 8)
-  const nextEntities = {
-    ...entities,
-    addressCandidates: mergedAddressCandidates,
-    warnings: combinedWarnings(
-      entities.warnings,
-      geminiAddressCandidates.length
-        ? ['gemini_ocr_candidates_extracted']
-        : [],
-    ),
-  }
-
-  const existingPhones = new Set(
-    (Array.isArray(entities.phones) ? entities.phones : [])
-      .map((item) => normalizePhone(item?.value))
-      .filter(Boolean),
-  )
-  const geminiPhones = (Array.isArray(geminiCandidates) ? geminiCandidates : [])
-    .map((candidate) => {
-      const phone = normalizePhone(candidate?.phone)
-      if (!phone || existingPhones.has(phone)) return null
-      existingPhones.add(phone)
-      return {
-        value: phone,
-        confidence: Math.min(0.9, Math.max(0.6, roundScore(candidate?.confidence))),
-        source: candidate?.source || 'gemini_ocr_candidate_extraction',
-        evidence: Array.isArray(candidate?.evidence)
-          ? candidate.evidence.slice(0, 3)
-          : [candidate?.evidenceText].filter(Boolean),
-      }
-    })
-    .filter(Boolean)
-  if (geminiPhones.length) {
-    nextEntities.phones = [
-      ...(Array.isArray(entities.phones) ? entities.phones : []),
-      ...geminiPhones,
-    ].slice(0, 8)
-  }
-
-  if (mergedAddressCandidates.length >= 2) {
-    nextEntities.address = emptyNamedEntity()
-    nextEntities.warnings = combinedWarnings(
-      nextEntities.warnings,
-      ['multiple_gemini_ocr_candidates_detected'],
-    )
-    return nextEntities
-  }
-
-  const [singleCandidate] = mergedAddressCandidates
-  if (singleCandidate && !nextEntities.address?.value) {
-    nextEntities.address = {
-      value: singleCandidate.address,
-      confidence: Math.min(
-        0.88,
-        Math.max(0.62, roundScore(singleCandidate.confidence)),
-      ),
-      source: singleCandidate.source || 'gemini_ocr_candidate_extraction',
-      evidence: Array.isArray(singleCandidate.evidence)
-        ? singleCandidate.evidence.slice(0, 4)
-        : [],
-      timestampSeconds: Number.isFinite(Number(singleCandidate.timestampSeconds))
-        ? Number(singleCandidate.timestampSeconds)
-        : null,
-      reviewRequired: true,
-    }
-  }
-
-  return nextEntities
-}
-
-function geminiCandidateExtractionInput({
-  input,
-  normalizedEvidence,
-  entities,
-  decision,
-} = {}) {
-  const candidates = Array.isArray(decision?.candidates)
-    ? decision.candidates
-    : []
-  const localCandidates = Array.isArray(entities?.addressCandidates)
-    ? entities.addressCandidates
-    : []
-  return {
-    input,
-    inputType: input?.type,
-    platform: input?.platform,
-    url: input?.url,
-    decisionStatus: decision?.status,
-    currentCandidateCount: Math.max(candidates.length, localCandidates.length),
-    metadata: normalizedEvidence?.metadata || [],
-    frameEvidence: normalizedEvidence?.frameEvidence || [],
-    frameTexts: normalizedEvidence?.frameTexts || [],
-    localCandidates,
-    candidates,
-    ruleEntities: entities,
-  }
-}
-
-async function maybeExtractGeminiCandidates({
-  dependencies,
-  input,
-  normalizedEvidence,
-  entities,
-  decision,
-  config,
-} = {}) {
-  const request = geminiCandidateExtractionInput({
-    input,
-    normalizedEvidence,
-    entities,
-    decision,
-  })
-  request.enabled = config.geminiCandidateExtractionEnabled
-  request.maxLines = config.geminiCandidateExtractionMaxLines
-
-  try {
-    return await (
-      dependencies.extractGeminiCandidates ||
-      extractVisionAutoCandidatesWithGemini
-    )(
-      request,
-      {
-        timeoutMs: config.geminiCandidateExtractionTimeoutMs,
-        ...(dependencies.geminiCandidateOptions || {}),
-      },
-    )
-  } catch {
     return {
-      provider: 'gemini',
-      requested: true,
-      applied: false,
-      status: 'provider_error',
-      reason: 'provider_error',
-      skipReason: null,
-      candidates: [],
-      rejected: [],
-      warnings: ['gemini_candidate_api_fetch_failed'],
-      debug: {
-        geminiCandidateAcceptedCount: 0,
-        geminiCandidateRejectedCount: 0,
-      },
+      ...normalizeVisionAutoUrl(cleanedUrl, { assetTypeHint, authMode }),
+      maxDurationSec: Number.isFinite(Number(maxDurationSec))
+        ? Math.max(1, Math.min(600, Math.round(Number(maxDurationSec))))
+        : null,
     }
+  } catch (error) {
+    if (error instanceof VisionAutoUrlPolicyError) {
+      throw new VisionAutoInputError(error.message, error.field || 'url', error.code)
+    }
+    throw error
   }
 }
 
-export async function analyzeVisionAutoV2(
-  {
-    image = null,
-    url = '',
-  } = {},
-  dependencies = {},
-) {
-  const config = dependencies.config || getVisionAutoConfig()
-  if (!config.enabled) throw new VisionAutoDisabledError()
+function deadlineSignal(parent, deadlineMs) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(new VisionAutoTimeoutError()), deadlineMs)
+  timer.unref?.()
+  const forward = () => controller.abort(parent?.reason)
+  parent?.addEventListener('abort', forward, { once: true })
+  return { signal: controller.signal, dispose: () => { clearTimeout(timer); parent?.removeEventListener('abort', forward) } }
+}
 
-  const input = resolveVisionAutoInput({ image, url })
-  const steps = ['vision_auto_input_resolved']
-  let normalizedEvidence = {
-    metadata: [],
-    ocrLines: [],
-    frameEvidence: [],
-    frameTexts: [],
-    audioTexts: [],
-    warnings: [],
-    textSources: [],
-    uploadedOcrEvidence: null,
+function raceAbort(promise, signal) {
+  if (!signal) return promise
+  if (signal.aborted) return Promise.reject(signal.reason || new VisionAutoTimeoutError())
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => signal.addEventListener('abort', () => reject(signal.reason || new VisionAutoTimeoutError()), { once: true })),
+  ])
+}
+
+function isRecipeOnly(entities = {}) {
+  const warnings = Array.isArray(entities?.warnings) ? entities.warnings.join(' ') : ''
+  const combined = `${entities?.address?.value || ''} ${entities?.placeName?.value || ''} ${warnings}`.toLowerCase()
+  return /\b(?:\d+(?:[.,]\d+)?\s*(?:g|gr|kg|ml|muong|muỗng|phut|phút|do|độ)|hat nem|hạt nêm|nuoc mam|nước mắm|nguyen lieu|nguyên liệu|cach lam|cách làm)\b/u.test(combined)
+}
+
+async function materializeRemoteImage({ input, config, signal, dependencies }) {
+  const download = dependencies.downloadRemoteImage || fetchPublicImageBuffer
+  const downloaded = await download(
+    { url: input.url },
+    {
+      maxResponseBytes: config.remoteImageMaxBytes,
+      timeoutMs: config.remoteImageTimeoutMs,
+      maxRedirects: config.remoteImageMaxRedirects,
+      signal,
+      ...(dependencies.remoteImageFetchOptions || {}),
+    },
+  )
+  if (downloaded?.status !== 'success' || !Buffer.isBuffer(downloaded.buffer)) {
+    const error = new Error('The remote image could not be downloaded safely.')
+    error.code = ['unsafe_url', 'unsupported_content_type', 'content_type_mismatch'].includes(downloaded?.status)
+      ? 'source_rejected'
+      : 'source_unavailable'
+    throw error
+  }
+  return {
+    input: {
+      ...input,
+      type: 'uploaded_image',
+      platform: 'image',
+      remoteImageSource: true,
+    },
+    image: {
+      buffer: downloaded.buffer,
+      mimetype: downloaded.contentType,
+      originalname: 'vision-auto-remote-image',
+    },
+  }
+}
+
+async function runPipeline({ input, image, config, signal, dependencies }) {
+  if (shouldUseVisionAutoTrack2V3({ input, config, env: dependencies.env || process.env })) {
+    return analyzeVisionAutoYoutubeWithTrack2V3({ input, config, dependencies: { ...dependencies, signal } })
+  }
+
+  let collectionInput = input
+  let collectionImage = image
+  if (input?.type === 'remote_image_url') {
+    const materialized = await materializeRemoteImage({ input, config, signal, dependencies })
+    collectionInput = materialized.input
+    collectionImage = materialized.image
+  }
+
+  const collect = dependencies.collectEvidence || collectVisionEvidence
+  const normalize = dependencies.normalizeEvidence || normalizeVisionEvidence
+  const extract = dependencies.extractEntities || extractVisionEntityCandidates
+  const validate = dependencies.validateEntities || validateVisionEntities
+  const resolve = dependencies.resolvePlaces || resolveVisionLocationHypotheses
+  const collection = await collect({ input: collectionInput, image: collectionImage, config, signal }, dependencies.collectorOptions || {})
+  const normalizedEvidence = normalize(collection)
+  const candidateEntities = extract(normalizedEvidence, dependencies.extractorOptions || {})
+  const validated = await validate({ input: collectionInput, normalizedEvidence, candidateEntities, config, signal }, dependencies.validatorOptions || {})
+  const entities = validated.entities || emptyFoodMapEntities()
+  if (isRecipeOnly(entities) || validated?.validation?.canResolveLocation === false) {
+    return buildVisionAutoResponse({ status: 'not_found', reason: 'insufficient_evidence', input })
+  }
+  const hypotheses = buildVisionLocationHypothesesFromEntities(entities, { sourceMayContainMultiplePlaces: false })
+  const resolution = await resolve({ hypotheses, config, signal }, dependencies.placeResolverOptions || {})
+  const decision = decideVisionAutoResult({ placeCandidates: resolution.placeCandidates, resolution: resolution.resolution, sourceContext: { isMultiPlace: false } })
+  return buildVisionAutoResponse({ ...decision, input })
+}
+
+export async function analyzeVisionAutoV2({
+  image = null,
+  url = '',
+  assetTypeHint = 'unknown',
+  authMode = 'public',
+  maxDurationSec = null,
+  signal = null,
+} = {}, dependencies = {}) {
+  const config = dependencies.config || getVisionAutoRuntimeConfig(dependencies.env || process.env)
+  if (!(config.visionAutoEnabled ?? config.enabled)) throw new VisionAutoDisabledError()
+  const input = resolveVisionAutoInput({ image, url, assetTypeHint, authMode, maxDurationSec })
+  const imageBuffer = image?.buffer || null
+  const key = canonicalVisionAutoCacheKey({ ...input, imageBuffer }, config.pipelineVersion)
+  const startedAt = Date.now()
+  incrementVisionAutoMetric('requests_started', { input_type: input.type })
+
+  const execute = async () => {
+    const deadline = deadlineSignal(signal, config.requestDeadlineMs)
+    try {
+      return await raceAbort(runPipeline({ input, image, config, signal: deadline.signal, dependencies }), deadline.signal)
+    } catch (error) {
+      if (deadline.signal.aborted && !signal?.aborted) return buildVisionAutoResponse({ status: 'not_found', reason: 'analysis_timeout', input })
+      if (error?.name === 'AbortError') throw error
+      const reason = error?.code === 'source_unavailable'
+        ? 'source_unavailable'
+        : error?.code === 'source_rejected'
+          ? 'source_rejected'
+          : 'service_failure'
+      return buildVisionAutoResponse({ status: 'error', reason, input })
+    } finally {
+      deadline.dispose()
+    }
   }
 
   try {
-    const collection = await (
-      dependencies.collectEvidence || collectVisionEvidence
-    )(
-      { input, image, config },
-      dependencies.collectorOptions || {},
-    )
-    steps.push('vision_evidence_collected')
-
-    normalizedEvidence = (
-      dependencies.normalizeEvidence || normalizeVisionEvidence
-    )(collection)
-    steps.push('vision_evidence_normalized')
-
-    const candidateEntities = (
-      dependencies.extractEntities || extractVisionEntityCandidates
-    )(
-      normalizedEvidence,
-      dependencies.extractorOptions || {},
-    )
-    steps.push('vision_entity_candidates_extracted')
-
-    const validated = await (
-      dependencies.validateEntities || validateVisionEntities
-    )(
-      {
-        input,
-        normalizedEvidence,
-        candidateEntities,
-        config,
-      },
-      dependencies.validatorOptions || {},
-    )
-    steps.push(
-      validated.validation?.applied
-        ? 'vision_evidence_validation_applied'
-        : `vision_evidence_validation_${validated.validation?.status || 'not_requested'}`,
-    )
-
-    let finalEntities = validated.entities
-    let placeResolution = await (
-      dependencies.resolvePlaces || resolveVisionPlaceCandidates
-    )(
-      {
-        entities: finalEntities,
-        validation: validated.validation,
-        config,
-      },
-      dependencies.placeResolverOptions || {},
-    )
-    steps.push(
-      `vision_place_resolution_${placeResolution.resolution?.status || 'not_requested'}`,
-    )
-
-    let decision = (
-      dependencies.decideResult || decideVisionAutoResult
-    )({
-      input,
-      entities: finalEntities,
-      resolution: placeResolution.resolution,
-      placeCandidates: placeResolution.placeCandidates,
-    })
-    const geminiCandidateExtraction = await maybeExtractGeminiCandidates({
-      dependencies,
-      input,
-      normalizedEvidence,
-      entities: finalEntities,
-      decision,
-      config,
-    })
-    if (geminiCandidateExtraction?.requested === true) {
-      steps.push(
-        `vision_gemini_candidate_extraction_${geminiCandidateExtraction.status || 'provider_error'}`,
-      )
+    if (!key) {
+      const result = await execute()
+      incrementVisionAutoMetric('requests_completed', { status: result?.status || 'unknown', cache: 'none' })
+      return result
     }
-
-    if (
-      Array.isArray(geminiCandidateExtraction?.candidates) &&
-      geminiCandidateExtraction.candidates.length
-    ) {
-      finalEntities = mergeGeminiCandidateEntities(
-        finalEntities,
-        geminiCandidateExtraction.candidates,
-      )
-      placeResolution = await (
-        dependencies.resolvePlaces || resolveVisionPlaceCandidates
-      )(
-        {
-          entities: finalEntities,
-          validation: validated.validation,
-          config,
-        },
-        dependencies.placeResolverOptions || {},
-      )
-      steps.push(
-        `vision_place_resolution_${placeResolution.resolution?.status || 'not_requested'}`,
-      )
-      decision = (
-        dependencies.decideResult || decideVisionAutoResult
-      )({
-        input,
-        entities: finalEntities,
-        resolution: placeResolution.resolution,
-        placeCandidates: placeResolution.placeCandidates,
-      })
-    }
-    steps.push(`vision_final_${decision.status}`)
-
-    const warnings = combinedWarnings(
-      collection.warnings,
-      normalizedEvidence.warnings,
-      candidateEntities.warnings,
-      finalEntities.warnings,
-      validated.validation.warnings,
-      geminiCandidateExtraction?.warnings,
-      placeResolution.warnings,
-    )
-
-    return (
-      dependencies.buildResponse || buildVisionAutoResponse
-    )({
-      ...decision,
-      input,
-      normalizedEvidence,
-      entities: finalEntities,
-      placeCandidates: placeResolution.placeCandidates,
-      steps,
-      warnings,
-      debugLevel: config.debugLevel,
-      debug: {
-        ...(collection?.debug || {}),
-        geminiOcrRepairStatus:
-          validated.validation?.geminiOcrRepairStatus || 'not_requested',
-        ...(geminiCandidateExtraction
-          ? {
-              geminiCandidateExtractionStatus:
-                geminiCandidateExtraction.status || 'provider_error',
-              geminiCandidateAcceptedCount: Number.isFinite(
-                Number(geminiCandidateExtraction.debug?.geminiCandidateAcceptedCount),
-              )
-                ? Number(geminiCandidateExtraction.debug.geminiCandidateAcceptedCount)
-                : Array.isArray(geminiCandidateExtraction.candidates)
-                  ? geminiCandidateExtraction.candidates.length
-                  : 0,
-              geminiCandidateRejectedCount: Number.isFinite(
-                Number(geminiCandidateExtraction.debug?.geminiCandidateRejectedCount),
-              )
-                ? Number(geminiCandidateExtraction.debug.geminiCandidateRejectedCount)
-                : Array.isArray(geminiCandidateExtraction.rejected)
-                  ? geminiCandidateExtraction.rejected.length
-                  : 0,
-              geminiCandidateExtractionSkipReason:
-                geminiCandidateExtraction.skipReason || null,
-            }
-          : {}),
-      },
+    const cached = await getOrCreateVisionAutoResult({
+      key,
+      cacheEnabled: config.cacheEnabled,
+      ttlMs: config.cacheTtlMs,
+      notFoundTtlMs: config.notFoundCacheTtlMs,
+      maxEntries: config.cacheMaxEntries,
+      run: execute,
     })
-  } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      throw error
-    }
-
-    steps.push('vision_auto_failed_closed')
-    return (
-      dependencies.buildResponse || buildVisionAutoResponse
-    )({
-      status: 'unresolved_best_effort',
-      confidence: 0,
-      input,
-      normalizedEvidence,
-      entities: emptyFoodMapEntities(),
-      placeCandidates: [],
-      bestResult: null,
-      addPlaceDraft: null,
-      reason: 'vision_auto_pipeline_error',
-      steps,
-      warnings: combinedWarnings(
-        normalizedEvidence.warnings,
-        ['vision_auto_internal_error'],
-      ),
-      debugLevel: config.debugLevel,
-      debug: {
-        geminiCandidateExtractionStatus:
-          config.geminiCandidateExtractionEnabled === true
-            ? 'skipped_gate'
-            : 'disabled',
-        geminiCandidateAcceptedCount: 0,
-        geminiCandidateRejectedCount: 0,
-        geminiCandidateExtractionSkipReason:
-          config.geminiCandidateExtractionEnabled === true
-            ? 'pipeline_failed_before_candidate_extraction'
-            : 'feature_disabled',
-        errorName: String(error?.name || 'Error').slice(0, 80),
-        errorCode: String(error?.code || '').slice(0, 80) || null,
-        errorMessage: String(error?.message || '').slice(0, 300),
-      },
+    incrementVisionAutoMetric('requests_completed', {
+      status: cached.result?.status || 'unknown',
+      cache: cached.cacheHit ? 'hit' : cached.sharedInFlight ? 'shared' : 'miss',
     })
+    return cached.result
+  } finally {
+    observeVisionAutoDuration('request_duration_ms', Date.now() - startedAt, { input_type: input.type })
   }
 }
 

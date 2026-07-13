@@ -29,6 +29,8 @@ ai-service/.venv/
 # Build output
 dist/
 dist-ssr/
+artifacts/
+backend/artifacts/
 
 # Logs
 logs/
@@ -46,6 +48,11 @@ tmp/
 temp/
 backend/tmp/
 backend/_patch_backups/
+backend/.track2v3-backup-*/
+*_tmp.mjs
+*.backup
+*.backup.*
+*.zip
 *.local
 
 # Generated project tree reports

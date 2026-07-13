@@ -6,6 +6,7 @@ import {
   getShortsTrack2V3Config,
 } from '../../src/services/shorts/track2-v3/shortsTrack2V3Config.js'
 import { runShortsTrack2V3Pipeline } from '../../src/services/shorts/track2-v3/shortsTrack2V3PipelineService.js'
+import { decideShortsTrack2V3Result } from '../../src/services/shorts/track2-v3/shortsTrack2V3DecisionService.js'
 
 describe('L3 Shorts Track 2 V3 skeleton', () => {
   it('loads safe config defaults without required env keys', () => {
@@ -64,8 +65,26 @@ describe('L3 Shorts Track 2 V3 skeleton', () => {
     assert.equal(result.intent, 'MULTI_PLACE_OR_LIST')
     assert.equal(result.mustNotResolve, true)
     assert.equal(result.intentReason, 'TITLE_TOP_LIST')
-    assert.equal(result.resolution, 'UNRESOLVED')
+    assert.equal(result.resolution, 'NEEDS_REVIEW')
+    assert.equal(result.reason, 'MULTI_PLACE_REVIEW_ONLY')
     assert.ok(result.debug.intentSignals.length > 0)
+  })
+
+  it('does not treat an arbitrary mustNotResolve seam as a confirmed listicle', () => {
+    const result = decideShortsTrack2V3Result({
+      intent: {
+        intent: 'UNKNOWN',
+        inputClass: 'UNSUPPORTED',
+        mustNotResolve: true,
+        reason: 'INJECTED_SAFETY_SEAM',
+      },
+      candidates: [],
+      providerErrors: [{ code: 'INJECTED_PROVIDER_ERROR' }],
+    })
+
+    assert.equal(result.mustNotResolve, true)
+    assert.equal(result.resolution, 'UNRESOLVED')
+    assert.equal(result.reason, 'TRACK2_V3_PROVIDER_UNAVAILABLE')
   })
 
   it('keeps old Track 2 as default and routes to V3 only when enabled', async () => {

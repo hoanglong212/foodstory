@@ -59,6 +59,7 @@ export function buildShortsTrack2V3Response({
 
   return {
     ...decision,
+    inputClass: intent.inputClass || 'UNSUPPORTED',
     candidates,
     evidence,
     providerErrors,
@@ -82,6 +83,7 @@ export function buildShortsTrack2V3Response({
       latencyMs,
     },
     debug: {
+      inputClass: intent.inputClass || 'UNSUPPORTED',
       intentSignals: Array.isArray(intent.signals) ? intent.signals : [],
       bestOcrSnippets: bestOcrSnippets(evidence),
       placesQueries: Array.isArray(placesResult.queries) ? placesResult.queries : [],

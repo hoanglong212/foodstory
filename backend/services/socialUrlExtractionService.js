@@ -16,6 +16,22 @@ const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308])
 const BLOCKED_STATUSES = new Set([401, 403, 407, 429])
 const HTML_OR_TEXT_CONTENT_TYPE =
   /^(?:text\/(?:html|plain)|application\/xhtml\+xml)\b/i
+
+const GENERIC_BINARY_CONTENT_TYPES = new Set([
+  '',
+  'application/octet-stream',
+  'binary/octet-stream',
+])
+
+export function sniffImageContentType(buffer) {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 12) return null
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'image/jpeg'
+  if (buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png'
+  const prefix = buffer.subarray(0, 6).toString('ascii')
+  if (prefix === 'GIF87a' || prefix === 'GIF89a') return 'image/gif'
+  if (buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP') return 'image/webp'
+  return null
+}
 const SOCIAL_HOSTS = [
   ['tiktok.com', 'tiktok'],
   ['instagram.com', 'instagram'],
@@ -281,6 +297,21 @@ async function resolvePublicAddress(parsed, resolveHostname) {
   return records[0]
 }
 
+function timeoutController(parentSignal, timeoutMs) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), Math.max(1, Number(timeoutMs) || DEFAULT_TIMEOUT_MS))
+  const forwardAbort = () => controller.abort(parentSignal?.reason)
+  if (parentSignal?.aborted) controller.abort(parentSignal.reason)
+  else parentSignal?.addEventListener?.('abort', forwardAbort, { once: true })
+  return {
+    signal: controller.signal,
+    dispose() {
+      clearTimeout(timeout)
+      parentSignal?.removeEventListener?.('abort', forwardAbort)
+    },
+  }
+}
+
 function requestWithPinnedAddress(
   parsed,
   {
@@ -289,6 +320,7 @@ function requestWithPinnedAddress(
     timeoutMs,
     maxResponseBytes,
     userAgent,
+    signal,
   },
 ) {
   return new Promise((resolve, reject) => {
@@ -299,6 +331,7 @@ function requestWithPinnedAddress(
         method: 'GET',
         family,
         autoSelectFamily: false,
+        signal,
         headers: {
           Accept: 'text/html,application/xhtml+xml,text/plain;q=0.8',
           'Accept-Encoding': 'identity',
@@ -372,6 +405,7 @@ function requestBufferWithPinnedAddress(
     timeoutMs,
     maxResponseBytes,
     userAgent,
+    signal,
   },
 ) {
   return new Promise((resolve, reject) => {
@@ -382,6 +416,7 @@ function requestBufferWithPinnedAddress(
         method: 'GET',
         family,
         autoSelectFamily: false,
+        signal,
         headers: {
           Accept: 'image/jpeg,image/png,image/webp,image/gif;q=0.8',
           'Accept-Encoding': 'identity',
@@ -497,16 +532,15 @@ async function readFetchBody(response, maxResponseBytes) {
 async function requestWithInjectedFetch(
   fetchImpl,
   parsed,
-  { timeoutMs, maxResponseBytes, userAgent },
+  { timeoutMs, maxResponseBytes, userAgent, signal },
 ) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  const bounded = timeoutController(signal, timeoutMs)
 
   try {
     const response = await fetchImpl(parsed.href, {
       method: 'GET',
       redirect: 'manual',
-      signal: controller.signal,
+      signal: bounded.signal,
       headers: {
         Accept: 'text/html,application/xhtml+xml,text/plain;q=0.8',
         'Accept-Encoding': 'identity',
@@ -521,7 +555,7 @@ async function requestWithInjectedFetch(
         : await readFetchBody(response, maxResponseBytes),
     }
   } finally {
-    clearTimeout(timeout)
+    bounded.dispose()
   }
 }
 
@@ -567,16 +601,15 @@ async function readFetchBuffer(response, maxResponseBytes) {
 async function requestBufferWithInjectedFetch(
   fetchImpl,
   parsed,
-  { timeoutMs, maxResponseBytes, userAgent },
+  { timeoutMs, maxResponseBytes, userAgent, signal },
 ) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  const bounded = timeoutController(signal, timeoutMs)
 
   try {
     const response = await fetchImpl(parsed.href, {
       method: 'GET',
       redirect: 'manual',
-      signal: controller.signal,
+      signal: bounded.signal,
       headers: {
         Accept: 'image/jpeg,image/png,image/webp,image/gif;q=0.8',
         'Accept-Encoding': 'identity',
@@ -591,7 +624,7 @@ async function requestBufferWithInjectedFetch(
         : await readFetchBuffer(response, maxResponseBytes),
     }
   } finally {
-    clearTimeout(timeout)
+    bounded.dispose()
   }
 }
 
@@ -851,6 +884,7 @@ export async function extractSocialUrlSignals(
     maxResponseBytes = DEFAULT_MAX_RESPONSE_BYTES,
     maxRedirects = DEFAULT_MAX_REDIRECTS,
     userAgent = SAFE_USER_AGENT,
+    signal = null,
   } = {},
 ) {
   const result = emptyExtraction(url)
@@ -884,12 +918,14 @@ export async function extractSocialUrlSignals(
             timeoutMs,
             maxResponseBytes,
             userAgent,
+            signal,
           })
         : await requestWithPinnedAddress(validation.parsed, {
             ...resolved,
             timeoutMs,
             maxResponseBytes,
             userAgent,
+            signal,
           })
     } catch (error) {
       const classified = classifyRequestError(error)
@@ -981,6 +1017,7 @@ export async function fetchPublicImageBuffer(
     maxResponseBytes = 3_000_000,
     maxRedirects = DEFAULT_MAX_REDIRECTS,
     userAgent = SAFE_USER_AGENT,
+    signal = null,
     allowedContentTypes = new Set([
       'image/jpeg',
       'image/png',
@@ -1031,6 +1068,7 @@ export async function fetchPublicImageBuffer(
               timeoutMs,
               maxResponseBytes,
               userAgent,
+              signal,
             },
           )
         : await requestBufferWithPinnedAddress(validation.parsed, {
@@ -1038,6 +1076,7 @@ export async function fetchPublicImageBuffer(
             timeoutMs,
             maxResponseBytes,
             userAgent,
+            signal,
           })
     } catch (error) {
       const classified = classifyRequestError(error)
@@ -1087,34 +1126,66 @@ export async function fetchPublicImageBuffer(
       }
     }
 
-    const contentType = headerValue(response.headers, 'content-type')
+    const declaredContentType = headerValue(response.headers, 'content-type')
       .split(';')[0]
       .trim()
       .toLowerCase()
-    if (!allowedContentTypes.has(contentType)) {
-      return {
-        status: 'unsupported_content_type',
-        finalUrl: validation.parsed.href,
-        buffer: null,
-        contentType,
-        warnings: ['The URL did not return a supported image type.'],
-      }
-    }
     if (!response.buffer?.length) {
       return {
         status: 'empty',
         finalUrl: validation.parsed.href,
         buffer: null,
-        contentType,
+        contentType: declaredContentType || null,
         warnings: ['The image response was empty.'],
       }
+    }
+
+    const detectedContentType = sniffImageContentType(response.buffer)
+    if (!detectedContentType || !allowedContentTypes.has(detectedContentType)) {
+      return {
+        status: 'unsupported_content_type',
+        finalUrl: validation.parsed.href,
+        buffer: null,
+        contentType: declaredContentType || null,
+        warnings: ['The URL body is not a supported JPEG, PNG, WebP, or GIF image.'],
+      }
+    }
+    if (
+      allowedContentTypes.has(declaredContentType) &&
+      declaredContentType !== detectedContentType
+    ) {
+      return {
+        status: 'content_type_mismatch',
+        finalUrl: validation.parsed.href,
+        buffer: null,
+        contentType: declaredContentType,
+        detectedContentType,
+        warnings: ['The declared image type does not match the downloaded bytes.'],
+      }
+    }
+    if (
+      !allowedContentTypes.has(declaredContentType) &&
+      !GENERIC_BINARY_CONTENT_TYPES.has(declaredContentType)
+    ) {
+      return {
+        status: 'unsupported_content_type',
+        finalUrl: validation.parsed.href,
+        buffer: null,
+        contentType: declaredContentType || null,
+        detectedContentType,
+        warnings: ['The URL did not declare a supported image content type.'],
+      }
+    }
+    if (declaredContentType !== detectedContentType) {
+      warnings.push('image_content_type_sniffed')
     }
 
     return {
       status: 'success',
       finalUrl: validation.parsed.href,
       buffer: response.buffer,
-      contentType,
+      contentType: detectedContentType,
+      declaredContentType: declaredContentType || null,
       warnings,
     }
   }

@@ -3,10 +3,13 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { analyzeShortsTrack2V3AddressSignal } from './shortsTrack2V3AddressSignalService.js'
+import { track2V3TesseractCommandCandidates } from './shortsTrack2V3BinaryResolverService.js'
 import { DEFAULT_SHORTS_TRACK2_V3_CONFIG } from './shortsTrack2V3Config.js'
 import { normalizeShortsTrack2V3Text } from './shortsTrack2V3EvidenceStoreService.js'
 import { generateShortsTrack2V3TesseractPreprocessVariants } from './shortsTrack2V3TesseractPreprocessService.js'
 import {
+  scoreShortsTrack2V3AddressLikelihood,
   scoreShortsTrack2V3TesseractOutput,
   selectBestShortsTrack2V3TesseractAttempt,
 } from './shortsTrack2V3TesseractOcrScoringService.js'
@@ -91,6 +94,31 @@ function safePaddleOcrDiagnostics(value = {}, fallback = {}) {
   return diagnostics
 }
 
+function safeOcrRuntimeDetails(value = {}) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  const details = {}
+  const device = safeString(value.device, 40)
+  if (device) details.device = device
+
+  for (const [key, max] of [
+    ['batchSize', 32],
+    ['workers', 16],
+    ['batchedGroupCount', 60],
+    ['batchImageCount', 60],
+    ['individualImageCount', 60],
+  ]) {
+    if (value[key] == null) continue
+    details[key] = boundedInteger(value[key], 0, { min: 0, max })
+  }
+
+  for (const key of ['batchApiAvailable', 'batchApiUsed']) {
+    if (value[key] == null) continue
+    details[key] = Boolean(value[key])
+  }
+
+  return details
+}
+
 function providerError(code, message, provider = 'local_ocr', details = null) {
   const error = {
     code: safeString(code, 120),
@@ -169,6 +197,26 @@ export function normalizeShortsTrack2V3LocalOcrConfig(config = {}) {
       DEFAULT_SHORTS_TRACK2_V3_CONFIG.maxEasyOcrImages,
       { min: 1, max: 60 },
     ),
+    maxTesseractDeepPassImages: boundedInteger(
+      config.maxTesseractDeepPassImages,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.maxTesseractDeepPassImages,
+      { min: 0, max: 24 },
+    ),
+    localOcrDevice: ['auto', 'cpu', 'gpu'].includes(String(
+      config.localOcrDevice ?? DEFAULT_SHORTS_TRACK2_V3_CONFIG.localOcrDevice,
+    ).trim().toLowerCase())
+      ? String(config.localOcrDevice ?? DEFAULT_SHORTS_TRACK2_V3_CONFIG.localOcrDevice).trim().toLowerCase()
+      : DEFAULT_SHORTS_TRACK2_V3_CONFIG.localOcrDevice,
+    easyOcrBatchSize: boundedInteger(
+      config.easyOcrBatchSize,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.easyOcrBatchSize,
+      { min: 1, max: 32 },
+    ),
+    easyOcrWorkers: boundedInteger(
+      config.easyOcrWorkers,
+      DEFAULT_SHORTS_TRACK2_V3_CONFIG.easyOcrWorkers,
+      { min: 0, max: 16 },
+    ),
     localOcrLanguages: safeString(
       config.localOcrLanguages || DEFAULT_SHORTS_TRACK2_V3_CONFIG.localOcrLanguages,
       40,
@@ -178,22 +226,44 @@ export function normalizeShortsTrack2V3LocalOcrConfig(config = {}) {
   }
 }
 
+function normalizeEpisodeNeighbor(image = {}, index = 0) {
+  const imagePath = safeString(image?.cropPath || image?.imagePath || image?.path, 2000)
+  if (!imagePath) return null
+  return {
+    id: safeString(image.id || `episode-neighbor:${index}`, 120),
+    imagePath,
+    frameIndex: finiteNumber(image.frameIndex, null),
+    timestampSeconds: finiteNumber(image.timestampSeconds, null),
+    cropVariant: safeString(image.variant || image.cropVariant || 'smart_overlay_crop', 120),
+    preprocessingVariant: safeString(
+      image.preprocessingVariant || image.preprocessVariant,
+      120,
+    ) || null,
+    sourceType: safeString(image.sourceType || 'smart_overlay_crop', 120),
+    selectorScore: finiteNumber(image.score ?? image.selectorScore, 0),
+    selectionRank: index,
+    episodeId: safeString(image.episodeId, 120) || null,
+    segmentId: safeString(image.segmentId, 120) || null,
+    startSeconds: finiteNumber(image.startSeconds, null),
+    endSeconds: finiteNumber(image.endSeconds, null),
+    episodeSupportCount: finiteNumber(image.episodeSupportCount, 1),
+    episodeNeighbors: [],
+  }
+}
+
 function normalizeSelectedImages(selectedImages = [], maxImages = 24) {
   return (Array.isArray(selectedImages) ? selectedImages : [])
     .map((image, index) => {
-      const imagePath = safeString(image?.cropPath || image?.imagePath || image?.path, 2000)
-      if (!imagePath) return null
+      const normalized = normalizeEpisodeNeighbor(image, index)
+      if (!normalized) return null
       return {
+        ...normalized,
         id: safeString(image.id || `smart-overlay:${index}`, 120),
-        imagePath,
-        frameIndex: finiteNumber(image.frameIndex, null),
-        timestampSeconds: finiteNumber(image.timestampSeconds, null),
-        cropVariant: safeString(image.variant || image.cropVariant || 'smart_overlay_crop', 120),
-        preprocessingVariant: safeString(
-          image.preprocessingVariant || image.preprocessVariant,
-          120,
-        ) || null,
-        sourceType: safeString(image.sourceType || 'smart_overlay_crop', 120),
+        selectionRank: index,
+        episodeNeighbors: (Array.isArray(image.episodeNeighbors) ? image.episodeNeighbors : [])
+          .map(normalizeEpisodeNeighbor)
+          .filter(Boolean)
+          .slice(0, 4),
       }
     })
     .filter(Boolean)
@@ -234,6 +304,15 @@ function defaultCommandRunner({ command, args = [], input = '', timeoutMs = 3000
       } catch {
         // Best-effort timeout termination.
       }
+      // Do not wait indefinitely for close/stdio teardown after a timed-out native
+      // OCR process. Late close/error events are ignored by finish() once settled.
+      finish({
+        ok: false,
+        exitCode: null,
+        timedOut: true,
+        stdout,
+        stderr,
+      })
     }, timeoutMs)
 
     child.stdout?.on('data', (chunk) => {
@@ -331,6 +410,11 @@ function textBlockFromResult({
     imagePath: safeString(result.imagePath || image.imagePath, 2000) || null,
     frameIndex: image.frameIndex,
     timestampSeconds: finiteNumber(result.timestampSeconds, image.timestampSeconds),
+    episodeId: safeString(image.episodeId, 120) || null,
+    segmentId: safeString(image.segmentId, 120) || null,
+    startSeconds: finiteNumber(image.startSeconds, null),
+    endSeconds: finiteNumber(image.endSeconds, null),
+    episodeSupportCount: finiteNumber(image.episodeSupportCount, 1),
     imageVariant: safeString(result.cropVariant || image.cropVariant, 120) || null,
     cropVariant: safeString(result.cropVariant || image.cropVariant, 120) || null,
     preprocessingVariant: safeString(
@@ -363,14 +447,39 @@ function pythonCommands(deps = {}, engine = 'easyocr') {
 }
 
 function tesseractCommands(deps = {}) {
-  if (Array.isArray(deps.tesseractCommands) && deps.tesseractCommands.length) {
-    return deps.tesseractCommands.map((command) => safeString(command, 500)).filter(Boolean)
+  return track2V3TesseractCommandCandidates({ deps, env: process.env })
+}
+
+function parseTesseractAvailableLanguages(stdout = '') {
+  const text = String(stdout || '')
+  if (!/List of available languages/iu.test(text)) return []
+  return text
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => /^[a-z0-9_+-]{2,40}$/iu.test(line))
+}
+
+function selectTesseractLanguages(requested = '', available = []) {
+  const requestedTokens = String(requested || '')
+    .split('+')
+    .map((token) => token.trim())
+    .filter(Boolean)
+  const availableSet = new Set(Array.isArray(available) ? available : [])
+  if (!availableSet.size) {
+    return { languages: requested || 'eng', missing: [] }
   }
-  const commands = ['tesseract']
-  if (process.platform === 'win32') {
-    commands.push('C:\\Program Files\\Tesseract-OCR\\tesseract.exe')
+  const selected = requestedTokens.filter((token) => availableSet.has(token))
+  if (selected.length) {
+    return {
+      languages: selected.join('+'),
+      missing: requestedTokens.filter((token) => !availableSet.has(token)),
+    }
   }
-  return commands
+  const fallback = availableSet.has('eng') ? 'eng' : [...availableSet][0]
+  return {
+    languages: fallback || 'eng',
+    missing: requestedTokens,
+  }
 }
 
 async function runPaddleOcrAdapter(images, config, commandRunner, deps, deadline) {
@@ -426,6 +535,7 @@ async function runPaddleOcrAdapter(images, config, commandRunner, deps, deadline
       input: JSON.stringify({
         debug: config.localOcrDebugEnabled,
         allowModelDownload: config.paddleOcrAllowModelDownload,
+        device: config.localOcrDevice,
         images: paddleOcrImages.map((image) => ({
           imagePath: image.imagePath,
           timestampSeconds: image.timestampSeconds,
@@ -501,6 +611,7 @@ async function runPaddleOcrAdapter(images, config, commandRunner, deps, deadline
       textBlocks,
       imageCount: paddleOcrImages.length,
       debugDiagnostics,
+      runtimeDetails: safeOcrRuntimeDetails(payload.runtime),
       providerErrors: [],
     }
   }
@@ -575,6 +686,9 @@ async function runEasyOcrAdapter(images, config, commandRunner, deps, deadline) 
       input: JSON.stringify({
         languages,
         debug: config.localOcrDebugEnabled,
+        device: config.localOcrDevice,
+        batchSize: config.easyOcrBatchSize,
+        workers: config.easyOcrWorkers,
         images: easyOcrImages.map((image) => ({
           imagePath: image.imagePath,
           timestampSeconds: image.timestampSeconds,
@@ -650,6 +764,7 @@ async function runEasyOcrAdapter(images, config, commandRunner, deps, deadline) 
       textBlocks,
       imageCount: easyOcrImages.length,
       debugDiagnostics,
+      runtimeDetails: safeOcrRuntimeDetails(payload.runtime),
       providerErrors: [],
     }
   }
@@ -711,13 +826,326 @@ async function runTasksWithConcurrency(tasks = [], concurrency = 4) {
   return results
 }
 
+const TESSERACT_FAST_VARIANTS = Object.freeze([
+  'original',
+  'upscale_3x_gray',
+])
+const TESSERACT_FAST_PSMS = Object.freeze([11, 6])
+const TESSERACT_LINE_BAND_VARIANTS = Object.freeze([
+  'overlay_line_band_01',
+  'overlay_line_band_02',
+  'overlay_line_band_03',
+  'overlay_line_band_04',
+])
+const TESSERACT_DEEP_VARIANTS = Object.freeze([
+  'upscale_4x_gray',
+  'sharpen_contrast',
+  'tight_address_line',
+])
+const TESSERACT_DEEP_PSMS = Object.freeze([11, 6])
+const TESSERACT_LINE_BAND_PSMS = Object.freeze([7, 11])
+const TESSERACT_LINE_BAND_MAX_IMAGES = 4
+const TESSERACT_ATTEMPT_TIMEOUT_MS = 12000
+const TESSERACT_PROCESS_CONCURRENCY = 1
+const TESSERACT_IMAGE_CONCURRENCY = 2
+
+function tesseractStrongAddress(result = {}) {
+  const likelihood = result.addressLikelihood || scoreShortsTrack2V3AddressLikelihood(
+    result.best?.scoring?.bestAddressLine || result.best?.rawText || '',
+  )
+  const features = likelihood.features || {}
+  return Boolean(
+    features.isAddressLike &&
+    likelihood.score >= 80 &&
+    Number(result.best?.scoring?.score || 0) >= 65 &&
+    result.best?.scoring?.uncertainHouseNumber !== true,
+  )
+}
+
+function progressiveTesseractImageRank(result = {}) {
+  const rawText = result.best?.rawText || result.best?.scoring?.bestAddressLine || ''
+  const signal = analyzeShortsTrack2V3AddressSignal(rawText)
+  const signalBonus = {
+    STRONG_ADDRESS_ANCHOR: 320,
+    HOUSE_STREET_PARTIAL: 260,
+    HOUSE_ADMIN_PARTIAL: 240,
+    ADMIN_PARTIAL: 220,
+    HOUSE_ONLY: 20,
+  }[signal.signalClass] || 0
+  const mainOverlayBonus = result.image?.cropVariant === 'dynamic_text_region_01' ? 80 : 0
+  const likelihood = result.addressLikelihood || { score: 0, features: {} }
+  const slashNumberBonus = likelihood.features?.hasSlashNumber ? 20 : 0
+  return signalBonus + mainOverlayBonus + slashNumberBonus +
+    Number(likelihood.score || 0) + Number(result.image?.selectorScore || 0) * 20
+}
+
+function rankTesseractDeepPassResults(results = []) {
+  return [...results].sort((left, right) => {
+    const leftStrong = tesseractStrongAddress(left) ? 1 : 0
+    const rightStrong = tesseractStrongAddress(right) ? 1 : 0
+    if (leftStrong !== rightStrong) return leftStrong - rightStrong
+    const leftScore = progressiveTesseractImageRank(left)
+    const rightScore = progressiveTesseractImageRank(right)
+    return rightScore - leftScore ||
+      Number(left.image?.selectionRank || 0) - Number(right.image?.selectionRank || 0)
+  })
+}
+
+function tesseractFastAddressSignal(result = {}) {
+  return analyzeShortsTrack2V3AddressSignal(
+    result.best?.rawText || result.best?.scoring?.bestAddressLine || '',
+  )
+}
+
+function shouldRunTesseractDeepPass(result = {}) {
+  const signal = tesseractFastAddressSignal(result)
+  return Boolean(
+    signal.composableAddressSignal ||
+    signal.strongAddressAnchor ||
+    Number(result.addressLikelihood?.score || 0) >= 35
+  )
+}
+
+function selectTesseractLineBandIndexes(results = [], maxImages = TESSERACT_LINE_BAND_MAX_IMAGES) {
+  const selected = []
+  const seen = new Set()
+  const add = (result) => {
+    if (!result || selected.length >= maxImages || seen.has(result.index)) return
+    seen.add(result.index)
+    selected.push(result)
+  }
+
+  // First rescue crops where fast OCR already exposed address semantics.
+  for (const result of rankTesseractDeepPassResults(results)) {
+    const signal = tesseractFastAddressSignal(result)
+    if (signal.composableAddressSignal || signal.strongAddressAnchor) add(result)
+  }
+  // A clear main-overlay crop can expose the house number while fast OCR mangles
+  // the street/admin text badly enough to classify it as HOUSE_ONLY. Those crops
+  // are much more promising than generic early overlay regions and deserve a
+  // bounded line-band pass before selector-order fallbacks. This specifically
+  // keeps rescue evidence-directed without deep-OCRing every crop.
+  for (const result of rankTesseractDeepPassResults(results)) {
+    const signal = tesseractFastAddressSignal(result)
+    if (
+      signal.signalClass === 'HOUSE_ONLY' &&
+      result.image?.cropVariant === 'dynamic_text_region_01'
+    ) add(result)
+  }
+  // Then inspect bounded main overlay regions in selector order. This catches
+  // multi-line address cards whose fast OCR is too noisy to expose a signal.
+  for (const result of [...results].sort((left, right) =>
+    Number(left.image?.selectionRank || 0) - Number(right.image?.selectionRank || 0)
+  )) {
+    if (result.image?.cropVariant === 'dynamic_text_region_01') add(result)
+  }
+  return new Set(selected.map((result) => result.index))
+}
+
+
+function shouldInspectEpisodeNeighbors(result = {}) {
+  const likelihood = result.addressLikelihood || { score: 0, features: {} }
+  const features = likelihood.features || {}
+  return Boolean(
+    Number(likelihood.score || 0) >= 45 ||
+    (features.hasHouseNumber && (features.hasStreetLike || features.hasAdmin))
+  )
+}
+
+function episodeNeighborImagesFromFastResults(results = []) {
+  const seen = new Set()
+  const neighbors = []
+  for (const result of results) {
+    if (!shouldInspectEpisodeNeighbors(result)) continue
+    for (const neighbor of Array.isArray(result.image?.episodeNeighbors)
+      ? result.image.episodeNeighbors
+      : []) {
+      const key = safeString(neighbor.imagePath, 2000).toLowerCase()
+      if (!key || seen.has(key)) continue
+      seen.add(key)
+      neighbors.push({
+        ...neighbor,
+        selectionRank: Number(result.image?.selectionRank || 0),
+        selectorScore: Math.max(
+          finiteNumber(neighbor.selectorScore, 0),
+          finiteNumber(result.image?.selectorScore, 0),
+        ),
+      })
+    }
+  }
+  return neighbors
+}
+
+async function runTesseractImagePass({
+  image,
+  index,
+  preprocessor,
+  variantNames,
+  psmModes,
+  phase,
+  tesseractCommand,
+  languages,
+  commandRunner,
+  deadline,
+  deps,
+} = {}) {
+  let preprocessResult
+  try {
+    preprocessResult = await preprocessor(image, {
+      outputDir: deps.outputDir || '',
+      index,
+      variantNames,
+    })
+  } catch {
+    preprocessResult = {
+      variants: variantNames.includes('original')
+        ? [{ preprocessVariant: 'original', imagePath: image.imagePath }]
+        : [],
+      providerErrors: [providerError(
+        'LOCAL_TESSERACT_PREPROCESS_UNAVAILABLE',
+        'Tesseract preprocessing is unavailable; requested variants were skipped safely.',
+        'local_tesseract',
+      )],
+      cleanup: async () => {},
+    }
+  }
+
+  const allowedVariants = new Set(variantNames)
+  const variants = (Array.isArray(preprocessResult.variants) ? preprocessResult.variants : [])
+    .filter((variant) => allowedVariants.has(variant?.preprocessVariant || 'original'))
+  const tasks = variants.flatMap((variant) => {
+    const variantPsmModes = TESSERACT_LINE_BAND_VARIANTS.includes(variant.preprocessVariant)
+      ? TESSERACT_LINE_BAND_PSMS
+      : psmModes
+    return variantPsmModes.map((psm) => async () => {
+    const taskRemaining = Math.max(1, deadline - Date.now())
+    if (taskRemaining <= 1) {
+      return {
+        error: providerError(
+          'LOCAL_OCR_TIMEOUT',
+          'Tesseract exceeded the local OCR time budget.',
+          'local_tesseract',
+        ),
+      }
+    }
+    const run = await safeRunCommand(commandRunner, {
+      command: tesseractCommand,
+      args: [variant.imagePath, 'stdout', '-l', languages, '--psm', String(psm), 'tsv'],
+      timeoutMs: Math.min(taskRemaining, TESSERACT_ATTEMPT_TIMEOUT_MS),
+      cwd: backendRoot,
+    })
+    if (!run.ok) {
+      return {
+        error: providerError(
+          run.timedOut ? 'LOCAL_OCR_TIMEOUT' : 'LOCAL_TESSERACT_IMAGE_ERROR',
+          run.timedOut
+            ? 'Tesseract exceeded the local OCR time budget.'
+            : 'Tesseract failed safely for one selected crop.',
+          'local_tesseract',
+        ),
+      }
+    }
+    const parsed = parseTesseractTsv(run.stdout)
+    return {
+      ...parsed,
+      preprocessVariant: variant.preprocessVariant || 'original',
+      psm,
+      phase,
+      scoring: scoreShortsTrack2V3TesseractOutput({
+        ...parsed,
+        preprocessVariant: variant.preprocessVariant || 'original',
+        psm,
+      }),
+    }
+    })
+  })
+
+  let attemptResults = []
+  try {
+    attemptResults = await runTasksWithConcurrency(
+      tasks,
+      Math.min(TESSERACT_PROCESS_CONCURRENCY, 2),
+    )
+  } finally {
+    await preprocessResult.cleanup?.()
+  }
+  const attempts = attemptResults.filter((attempt) => attempt && !attempt.error && attempt.rawText)
+  const best = selectBestShortsTrack2V3TesseractAttempt(attempts)
+  return {
+    image,
+    index,
+    phase,
+    attempts,
+    best,
+    addressLikelihood: scoreShortsTrack2V3AddressLikelihood(
+      best?.scoring?.bestAddressLine || best?.rawText || '',
+    ),
+    providerErrors: [
+      ...(Array.isArray(preprocessResult.providerErrors) ? preprocessResult.providerErrors : []),
+      ...attemptResults.filter((attempt) => attempt?.error).map((attempt) => attempt.error),
+    ],
+    attemptedPsms: [...new Set(attempts.map((attempt) => attempt.psm))],
+    attemptedPreprocessVariants: [...new Set(variants.map((variant) =>
+      variant.preprocessVariant || 'original'
+    ))],
+  }
+}
+
+function lineBandSemanticRank(attempt = {}) {
+  if (!attempt?.rawText) return null
+  const signal = analyzeShortsTrack2V3AddressSignal(attempt.rawText)
+  const semanticBonuses = {
+    STRONG_ADDRESS_ANCHOR: 140,
+    HOUSE_STREET_PARTIAL: 110,
+    HOUSE_ADMIN_PARTIAL: 100,
+    ADMIN_PARTIAL: 90,
+  }
+  const semanticBonus = Number(semanticBonuses[signal.signalClass] || 0)
+  const likelihood = scoreShortsTrack2V3AddressLikelihood(attempt.rawText)
+  return {
+    attempt,
+    signal,
+    likelihood,
+    semanticBonus,
+    rank: semanticBonus + Number(likelihood.score || 0) + Number(attempt.selectionScore || 0) * 0.05,
+  }
+}
+
+function tesseractSupplementalLineBandAttempts(attempts = []) {
+  const selected = []
+  const seenText = new Set()
+  for (const variantName of TESSERACT_LINE_BAND_VARIANTS) {
+    const ranked = attempts
+      .filter((attempt) => attempt?.preprocessVariant === variantName)
+      .map(lineBandSemanticRank)
+      .filter(Boolean)
+      .sort((left, right) => right.rank - left.rank)
+    const winner = ranked[0]
+    if (!winner?.attempt?.rawText) continue
+    const semanticBandSignal = winner.semanticBonus > 0
+    if (!semanticBandSignal && Number(winner.likelihood.score || 0) < 25) continue
+    const normalized = normalizeShortsTrack2V3Text(winner.attempt.rawText).toLowerCase()
+    if (!normalized || seenText.has(normalized)) continue
+    seenText.add(normalized)
+    selected.push({
+      best: winner.attempt,
+      likelihood: winner.likelihood,
+      addressSignal: winner.signal,
+    })
+  }
+  return selected.slice(0, 3)
+}
+
 async function runTesseractAdapter(images, config, commandRunner, deadline, deps = {}) {
+  const startedAt = Date.now()
   let tesseractCommand = null
   for (const command of tesseractCommands(deps)) {
+    const remaining = Math.max(1, deadline - Date.now())
+    if (remaining <= 1) break
     const probe = await safeRunCommand(commandRunner, {
       command,
       args: ['--version'],
-      timeoutMs: Math.max(1, deadline - Date.now()),
+      timeoutMs: remaining,
       cwd: backendRoot,
     })
     if (probe.ok) {
@@ -731,6 +1159,11 @@ async function runTesseractAdapter(images, config, commandRunner, deadline, deps
       status: 'UNAVAILABLE',
       provider: 'local_tesseract',
       textBlocks: [],
+      imageCount: images.length,
+      attemptCount: 0,
+      fastAttemptCount: 0,
+      deepAttemptCount: 0,
+      deepPassImageCount: 0,
       providerErrors: [providerError(
         'LOCAL_TESSERACT_UNAVAILABLE',
         'Tesseract CLI is unavailable.',
@@ -739,9 +1172,27 @@ async function runTesseractAdapter(images, config, commandRunner, deadline, deps
     }
   }
 
-  const languages = tesseractLanguages(config.localOcrLanguages)
+  const requestedLanguages = tesseractLanguages(config.localOcrLanguages)
+  const languageProbe = await safeRunCommand(commandRunner, {
+    command: tesseractCommand,
+    args: ['--list-langs'],
+    timeoutMs: Math.max(1, deadline - Date.now()),
+    cwd: backendRoot,
+  })
+  const languageSelection = selectTesseractLanguages(
+    requestedLanguages,
+    languageProbe.ok ? parseTesseractAvailableLanguages(languageProbe.stdout) : [],
+  )
+  const languages = languageSelection.languages
   const textBlocks = []
   const providerErrors = []
+  if (languageSelection.missing.length) {
+    providerErrors.push(providerError(
+      'LOCAL_TESSERACT_LANGUAGE_FALLBACK',
+      `Tesseract language data is missing for ${languageSelection.missing.join(', ')}; available requested languages were used instead.`,
+      'local_tesseract',
+    ))
+  }
   const seenErrorCodes = new Set()
   const addProviderError = (error) => {
     if (!error?.code || seenErrorCodes.has(error.code) || providerErrors.length >= 10) return
@@ -751,138 +1202,230 @@ async function runTesseractAdapter(images, config, commandRunner, deadline, deps
   const preprocessor = typeof deps.tesseractPreprocessor === 'function'
     ? deps.tesseractPreprocessor
     : generateShortsTrack2V3TesseractPreprocessVariants
-  const psmModes = [11, 12, 6]
 
-  for (let index = 0; index < images.length; index += 1) {
-    const remaining = Math.max(1, deadline - Date.now())
-    if (remaining <= 1) {
-      addProviderError(providerError(
-        'LOCAL_OCR_TIMEOUT',
-        'Tesseract exceeded the local OCR time budget.',
-        'local_tesseract',
-      ))
-      break
-    }
-    const image = images[index]
-    let preprocessResult
-    try {
-      preprocessResult = await preprocessor(image, {
-        outputDir: deps.outputDir || '',
-        index,
-      })
-    } catch {
-      preprocessResult = {
-        variants: [{ preprocessVariant: 'original', imagePath: image.imagePath }],
-        providerErrors: [providerError(
-          'LOCAL_TESSERACT_PREPROCESS_UNAVAILABLE',
-          'Tesseract preprocessing is unavailable; original image retained.',
-          'local_tesseract',
-        )],
-        cleanup: async () => {},
-      }
-    }
+  const fastTasks = images.map((image, index) => async () => runTesseractImagePass({
+    image,
+    index,
+    preprocessor,
+    variantNames: TESSERACT_FAST_VARIANTS,
+    psmModes: TESSERACT_FAST_PSMS,
+    phase: 'FAST',
+    tesseractCommand,
+    languages,
+    commandRunner,
+    deadline,
+    deps,
+  }))
+  const representativeFastResults = await runTasksWithConcurrency(
+    fastTasks,
+    TESSERACT_IMAGE_CONCURRENCY,
+  )
+  for (const result of representativeFastResults) {
+    for (const error of result.providerErrors) addProviderError(error)
+  }
 
-    for (const error of Array.isArray(preprocessResult.providerErrors)
-      ? preprocessResult.providerErrors
-      : []) {
-      addProviderError(error)
-    }
+  const episodeNeighborImages = episodeNeighborImagesFromFastResults(representativeFastResults)
+  const neighborFastTasks = episodeNeighborImages.map((image, offset) => async () =>
+    runTesseractImagePass({
+      image,
+      index: images.length + offset,
+      preprocessor,
+      variantNames: TESSERACT_FAST_VARIANTS,
+      psmModes: TESSERACT_FAST_PSMS,
+      phase: 'TEMPORAL_NEIGHBOR_FAST',
+      tesseractCommand,
+      languages,
+      commandRunner,
+      deadline,
+      deps,
+    })
+  )
+  const neighborFastResults = await runTasksWithConcurrency(
+    neighborFastTasks,
+    TESSERACT_IMAGE_CONCURRENCY,
+  )
+  for (const result of neighborFastResults) {
+    for (const error of result.providerErrors) addProviderError(error)
+  }
+  const fastResults = [...representativeFastResults, ...neighborFastResults]
 
-    const variants = Array.isArray(preprocessResult.variants) && preprocessResult.variants.length
-      ? preprocessResult.variants
-      : [{ preprocessVariant: 'original', imagePath: image.imagePath }]
-    const tasks = variants.flatMap((variant) => psmModes.map((psm) => async () => {
-      const taskRemaining = Math.max(1, deadline - Date.now())
-      if (taskRemaining <= 1) {
-        return {
-          error: providerError(
-            'LOCAL_OCR_TIMEOUT',
-            'Tesseract exceeded the local OCR time budget.',
-            'local_tesseract',
-          ),
-        }
-      }
-      const run = await safeRunCommand(commandRunner, {
-        command: tesseractCommand,
-        args: [variant.imagePath, 'stdout', '-l', languages, '--psm', String(psm), 'tsv'],
-        timeoutMs: taskRemaining,
-        cwd: backendRoot,
-      })
-      if (!run.ok) {
-        return {
-          error: providerError(
-            run.timedOut ? 'LOCAL_OCR_TIMEOUT' : 'LOCAL_TESSERACT_IMAGE_ERROR',
-            run.timedOut
-              ? 'Tesseract exceeded the local OCR time budget.'
-              : 'Tesseract failed safely for one selected crop.',
-            'local_tesseract',
-          ),
-        }
-      }
-      const parsed = parseTesseractTsv(run.stdout)
-      return {
-        ...parsed,
-        preprocessVariant: variant.preprocessVariant || 'original',
-        psm,
-        scoring: scoreShortsTrack2V3TesseractOutput({
-          ...parsed,
-          preprocessVariant: variant.preprocessVariant || 'original',
-          psm,
-        }),
-      }
+  const deepPassIndexes = new Set(
+    rankTesseractDeepPassResults(fastResults)
+      .filter((result) => !tesseractStrongAddress(result))
+      .filter(shouldRunTesseractDeepPass)
+      .slice(0, config.maxTesseractDeepPassImages)
+      .map((result) => result.index),
+  )
+  const deepTasks = fastResults
+    .filter((result) => deepPassIndexes.has(result.index))
+    .map((result) => async () => runTesseractImagePass({
+      image: result.image,
+      index: result.index,
+      preprocessor,
+      variantNames: TESSERACT_DEEP_VARIANTS,
+      psmModes: TESSERACT_DEEP_PSMS,
+      phase: 'DEEP',
+      tesseractCommand,
+      languages,
+      commandRunner,
+      deadline,
+      deps,
     }))
+  const deepResults = await runTasksWithConcurrency(deepTasks, TESSERACT_IMAGE_CONCURRENCY)
+  const deepByIndex = new Map(deepResults.map((result) => [result.index, result]))
+  for (const result of deepResults) {
+    for (const error of result.providerErrors) addProviderError(error)
+  }
 
-    let attemptResults = []
-    try {
-      attemptResults = await runTasksWithConcurrency(tasks, 4)
-    } finally {
-      await preprocessResult.cleanup?.()
-    }
-    for (const attempt of attemptResults) {
-      if (attempt?.error) addProviderError(attempt.error)
-    }
-    const attempts = attemptResults.filter((attempt) => attempt && !attempt.error && attempt.rawText)
-    const best = selectBestShortsTrack2V3TesseractAttempt(attempts)
-    if (best) {
-      const block = textBlockFromResult({
+  // Line-band OCR is deliberately narrower than the general deep pass. Running three
+  // band variants × three sparse-text PSMs on every deep image made listicle OCR
+  // latency scale into minutes. Rank from the fast pass and rescue only the strongest
+  // bounded visual candidates.
+  const lineBandIndexes = selectTesseractLineBandIndexes(
+    fastResults.filter((result) => !tesseractStrongAddress(result)),
+    TESSERACT_LINE_BAND_MAX_IMAGES,
+  )
+  const lineBandTasks = fastResults
+    .filter((result) => lineBandIndexes.has(result.index))
+    .map((result) => async () => runTesseractImagePass({
+      image: result.image,
+      index: result.index,
+      preprocessor,
+      variantNames: TESSERACT_LINE_BAND_VARIANTS,
+      psmModes: TESSERACT_LINE_BAND_PSMS,
+      phase: 'LINE_BAND',
+      tesseractCommand,
+      languages,
+      commandRunner,
+      deadline,
+      deps,
+    }))
+  const lineBandResults = await runTasksWithConcurrency(
+    lineBandTasks,
+    TESSERACT_IMAGE_CONCURRENCY,
+  )
+  const lineBandByIndex = new Map(lineBandResults.map((result) => [result.index, result]))
+  for (const result of lineBandResults) {
+    for (const error of result.providerErrors) addProviderError(error)
+  }
+
+  let fastAttemptCount = 0
+  let deepAttemptCount = 0
+  let lineBandAttemptCount = 0
+  for (const fastResult of fastResults) {
+    fastAttemptCount += fastResult.attempts.length
+    const deepResult = deepByIndex.get(fastResult.index)
+    const lineBandResult = lineBandByIndex.get(fastResult.index)
+    deepAttemptCount += deepResult?.attempts.length || 0
+    lineBandAttemptCount += lineBandResult?.attempts.length || 0
+    const attempts = [
+      ...fastResult.attempts,
+      ...(deepResult?.attempts || []),
+      ...(lineBandResult?.attempts || []),
+    ]
+    const primaryAttempts = attempts.filter((attempt) =>
+      !TESSERACT_LINE_BAND_VARIANTS.includes(attempt?.preprocessVariant)
+    )
+    const best = selectBestShortsTrack2V3TesseractAttempt(
+      primaryAttempts.length ? primaryAttempts : attempts,
+    )
+    if (!best) continue
+    const addressLikelihood = scoreShortsTrack2V3AddressLikelihood(
+      best.scoring.bestAddressLine || best.rawText,
+    )
+    const block = textBlockFromResult({
+      result: {
+        ...best,
+        // Preserve the full selected OCR observation. bestAddressLine remains
+        // metadata for ranking; collapsing here used to discard ward/district
+        // lines before temporal fusion and candidate extraction.
+        rawText: best.rawText,
+      },
+      image: fastResult.image,
+      index: fastResult.index,
+      source: 'local_tesseract',
+      adapter: 'tesseract_cli_multi_psm',
+      languages: languages.split('+'),
+      providerMetadata: {
+        psm: best.psm,
+        preprocessVariant: best.preprocessVariant,
+        ocrScore: best.scoring.score,
+        addressLikelihoodScore: addressLikelihood.score,
+        addressLikelihoodFeatures: addressLikelihood.features,
+        selectionScore: best.selectionScore,
+        consensusCount: best.consensusCount,
+        bestAddressLine: best.scoring.bestAddressLine,
+        lowConfidence: best.scoring.lowConfidence,
+        uncertainHouseNumber: best.scoring.uncertainHouseNumber,
+        qualityFlags: best.scoring.qualityFlags,
+        attemptCount: attempts.length,
+        fastAttemptCount: fastResult.attempts.length,
+        deepAttemptCount: deepResult?.attempts.length || 0,
+        lineBandAttemptCount: lineBandResult?.attempts.length || 0,
+        deepPassRan: Boolean(deepResult),
+        lineBandPassRan: Boolean(lineBandResult),
+        attemptedPsms: [...new Set([
+          ...fastResult.attemptedPsms,
+          ...(deepResult?.attemptedPsms || []),
+        ])],
+        attemptedPreprocessVariants: [...new Set([
+          ...fastResult.attemptedPreprocessVariants,
+          ...(deepResult?.attemptedPreprocessVariants || []),
+        ])],
+        attemptSummaries: best.attemptSummaries,
+      },
+    })
+    if (block) textBlocks.push(block)
+
+    const primaryText = normalizeShortsTrack2V3Text(block?.rawText || '').toLowerCase()
+    const supplementalBands = tesseractSupplementalLineBandAttempts(attempts)
+    for (let bandIndex = 0; bandIndex < supplementalBands.length; bandIndex += 1) {
+      const { best: bandBest, likelihood: bandLikelihood } = supplementalBands[bandIndex]
+      const bandText = normalizeShortsTrack2V3Text(bandBest.rawText).toLowerCase()
+      if (!bandText || bandText === primaryText) continue
+      const supplementalBlock = textBlockFromResult({
         result: {
-          ...best,
-          rawText: best.scoring.bestAddressLine || best.rawText,
+          ...bandBest,
+          rawText: bandBest.rawText,
+          preprocessingVariant: bandBest.preprocessVariant,
         },
-        image,
-        index,
+        image: fastResult.image,
+        index: `${fastResult.index}:band:${bandIndex}`,
         source: 'local_tesseract',
-        adapter: 'tesseract_cli_multi_psm',
+        adapter: 'tesseract_cli_multi_psm_line_band',
         languages: languages.split('+'),
         providerMetadata: {
-          psm: best.psm,
-          preprocessVariant: best.preprocessVariant,
-          ocrScore: best.scoring.score,
-          selectionScore: best.selectionScore,
-          consensusCount: best.consensusCount,
-          bestAddressLine: best.scoring.bestAddressLine,
-          lowConfidence: best.scoring.lowConfidence,
-          uncertainHouseNumber: best.scoring.uncertainHouseNumber,
-          qualityFlags: best.scoring.qualityFlags,
+          psm: bandBest.psm,
+          preprocessVariant: bandBest.preprocessVariant,
+          ocrScore: bandBest.scoring.score,
+          addressLikelihoodScore: bandLikelihood.score,
+          addressLikelihoodFeatures: bandLikelihood.features,
+          selectionScore: bandBest.selectionScore,
+          consensusCount: bandBest.consensusCount,
+          bestAddressLine: bandBest.scoring.bestAddressLine,
+          lowConfidence: true,
+          uncertainHouseNumber: bandBest.scoring.uncertainHouseNumber,
+          qualityFlags: [...new Set([
+            ...(Array.isArray(bandBest.scoring.qualityFlags) ? bandBest.scoring.qualityFlags : []),
+            'LINE_BAND_RESCUE',
+            'LOW_PROVIDER_CONFIDENCE',
+          ])],
           attemptCount: attempts.length,
-          attemptedPsms: psmModes,
-          attemptedPreprocessVariants: [...new Set(variants.map((variant) =>
-            variant.preprocessVariant || 'original'
-          ))],
-          attemptSummaries: best.attemptSummaries,
+          deepPassRan: true,
+          lineBandRescue: true,
+          addressSignalClass: supplementalBands[bandIndex].addressSignal?.signalClass || null,
         },
       })
-      if (block) textBlocks.push(block)
+      if (supplementalBlock) textBlocks.push(supplementalBlock)
     }
+  }
 
-    if (Date.now() >= deadline) {
-      addProviderError(providerError(
-        'LOCAL_OCR_TIMEOUT',
-        'Tesseract exceeded the local OCR time budget.',
-        'local_tesseract',
-      ))
-      break
-    }
+  if (Date.now() >= deadline) {
+    addProviderError(providerError(
+      'LOCAL_OCR_TIMEOUT',
+      'Tesseract exceeded the local OCR time budget.',
+      'local_tesseract',
+    ))
   }
 
   return {
@@ -891,8 +1434,74 @@ async function runTesseractAdapter(images, config, commandRunner, deadline, deps
     provider: 'local_tesseract',
     textBlocks,
     imageCount: images.length,
+    attemptCount: fastAttemptCount + deepAttemptCount + lineBandAttemptCount,
+    fastAttemptCount,
+    deepAttemptCount,
+    deepPassImageCount: deepResults.length,
+    lineBandAttemptCount,
+    lineBandImageCount: lineBandResults.length,
+    temporalNeighborImageCount: episodeNeighborImages.length,
+    runtimeMs: Date.now() - startedAt,
     providerErrors,
   }
+}
+
+function normalizedPathKey(value = '') {
+  return safeString(value, 2000).replace(/\\/gu, '/').toLowerCase()
+}
+
+function ocrBlockMatchesImage(block = {}, image = {}) {
+  const blockPath = normalizedPathKey(block.imagePath)
+  const imagePath = normalizedPathKey(image.imagePath)
+  if (blockPath && imagePath && blockPath === imagePath) return true
+  const blockFrame = finiteNumber(block.frameIndex, null)
+  const imageFrame = finiteNumber(image.frameIndex, null)
+  const blockTimestamp = finiteNumber(block.timestampSeconds, null)
+  const imageTimestamp = finiteNumber(image.timestampSeconds, null)
+  return Boolean(
+    blockFrame !== null && imageFrame !== null && blockFrame === imageFrame &&
+    blockTimestamp !== null && imageTimestamp !== null &&
+    Math.abs(blockTimestamp - imageTimestamp) <= 0.05,
+  )
+}
+
+function rankImagesForAddressOcr(images = [], scoutBlocks = []) {
+  return [...images]
+    .map((image) => {
+      const matchingBlocks = scoutBlocks.filter((block) => ocrBlockMatchesImage(block, image))
+      const likelihoods = matchingBlocks.map((block) => scoreShortsTrack2V3AddressLikelihood(
+        block.rawText || block.normalizedText,
+      ))
+      const bestLikelihood = likelihoods.sort((left, right) => right.score - left.score)[0] || {
+        score: 0,
+        features: {},
+      }
+      const providerConfidence = Math.max(
+        0,
+        ...matchingBlocks.map((block) => finiteNumber(block.confidence, 0)),
+      )
+      return {
+        image,
+        addressRankScore: Number(
+          (
+            bestLikelihood.score +
+            Number(image.selectorScore || 0) * 25 +
+            providerConfidence * 8
+          ).toFixed(4),
+        ),
+        bestLikelihood,
+      }
+    })
+    .sort((left, right) =>
+      right.addressRankScore - left.addressRankScore ||
+      Number(left.image.selectionRank || 0) - Number(right.image.selectionRank || 0)
+    )
+    .map((item, addressRank) => ({
+      ...item.image,
+      addressRank,
+      addressRankScore: item.addressRankScore,
+      scoutAddressLikelihoodScore: item.bestLikelihood.score,
+    }))
 }
 
 function engineBestSnippets(blocks = []) {
@@ -918,6 +1527,15 @@ function summarizeEngineRun(result = {}) {
     status: safeString(result.status, 40) || 'UNKNOWN',
     imageCountSent: Math.max(0, finiteNumber(result.imageCount, 0)),
     bestSnippets: engineBestSnippets(result.textBlocks),
+    runtimeMs: Math.max(0, finiteNumber(result.runtimeMs, 0)),
+    attemptCount: Math.max(0, finiteNumber(result.attemptCount, 0)),
+    fastAttemptCount: Math.max(0, finiteNumber(result.fastAttemptCount, 0)),
+    deepAttemptCount: Math.max(0, finiteNumber(result.deepAttemptCount, 0)),
+    deepPassImageCount: Math.max(0, finiteNumber(result.deepPassImageCount, 0)),
+    lineBandAttemptCount: Math.max(0, finiteNumber(result.lineBandAttemptCount, 0)),
+    lineBandImageCount: Math.max(0, finiteNumber(result.lineBandImageCount, 0)),
+    addressRankedInput: Boolean(result.addressRankedInput),
+    runtimeDetails: safeOcrRuntimeDetails(result.runtimeDetails),
   }
 }
 
@@ -1006,12 +1624,32 @@ export async function runShortsTrack2V3LocalOcrProvider({
   let attemptedImageCount = images.length
   let debugDiagnostics = null
 
-  for (const adapter of adapters) {
-    const result = adapter === 'paddleocr'
-      ? await runPaddleOcrAdapter(images, normalizedConfig, commandRunner, deps, deadline)
+  const executionAdapters = ensembleMode && adapters.includes('tesseract')
+    ? ['tesseract', ...adapters.filter((adapter) => adapter !== 'tesseract')]
+    : adapters
+  let addressRankedImages = images
+  let tesseractScoutBlockCount = 0
+
+  for (const adapter of executionAdapters) {
+    const inputImages = ensembleMode && adapter !== 'tesseract'
+      ? addressRankedImages
+      : images
+    const adapterStartedAt = Date.now()
+    const rawResult = adapter === 'paddleocr'
+      ? await runPaddleOcrAdapter(inputImages, normalizedConfig, commandRunner, deps, deadline)
       : adapter === 'easyocr'
-        ? await runEasyOcrAdapter(images, normalizedConfig, commandRunner, deps, deadline)
-        : await runTesseractAdapter(images, normalizedConfig, commandRunner, deadline, deps)
+        ? await runEasyOcrAdapter(inputImages, normalizedConfig, commandRunner, deps, deadline)
+        : await runTesseractAdapter(inputImages, normalizedConfig, commandRunner, deadline, deps)
+    const result = {
+      ...rawResult,
+      runtimeMs: Math.max(0, finiteNumber(rawResult.runtimeMs, Date.now() - adapterStartedAt)),
+      addressRankedInput: ensembleMode && adapter !== 'tesseract',
+    }
+
+    if (ensembleMode && adapter === 'tesseract' && result.status === 'OK') {
+      tesseractScoutBlockCount = result.textBlocks.length
+      addressRankedImages = rankImagesForAddressOcr(images, result.textBlocks)
+    }
 
     adapterErrors.push(...result.providerErrors)
     engineRuns[result.provider || `local_${adapter}`] = summarizeEngineRun(result)
@@ -1034,6 +1672,10 @@ export async function runShortsTrack2V3LocalOcrProvider({
         debugDiagnostics,
         engineRuns,
         imageCount: attemptedImageCount,
+        routingDiagnostics: {
+          addressFirstRouting: false,
+          tesseractScoutBlockCount: 0,
+        },
       }
     }
     availableAdapterFailed = true
@@ -1055,6 +1697,19 @@ export async function runShortsTrack2V3LocalOcrProvider({
         (total, result) => total + Math.max(0, finiteNumber(result.imageCount, 0)),
         0,
       ),
+      routingDiagnostics: {
+        addressFirstRouting: executionAdapters[0] === 'tesseract',
+        tesseractScoutBlockCount,
+        heavyOcrImageOrder: addressRankedImages.slice(0, Math.max(
+          normalizedConfig.maxPaddleOcrImages,
+          normalizedConfig.maxEasyOcrImages,
+        )).map((image) => ({
+          id: image.id,
+          addressRank: image.addressRank ?? null,
+          addressRankScore: image.addressRankScore ?? null,
+          scoutAddressLikelihoodScore: image.scoutAddressLikelihoodScore ?? null,
+        })),
+      },
     }
   }
 

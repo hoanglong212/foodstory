@@ -12,7 +12,12 @@ import { useRoute } from "vue-router";
 import L from "leaflet";
 import "leaflet.markercluster";
 import AppIcon from "../components/AppIcon.vue";
+import FoodMapDiscoveryTray from "../components/food-map/FoodMapDiscoveryTray.vue";
+import FoodMapImportPanel from "../components/food-map/FoodMapImportPanel.vue";
+import FoodMapRail from "../components/food-map/FoodMapRail.vue";
+import VisionAutoResultPanel from "../components/food-map/VisionAutoResultPanel.vue";
 import streetImage from "../assets/street.jpg";
+import { useVisionAuto } from "../composables/useVisionAuto";
 import { useFoodSpotStore } from "../stores/foodSpotStore";
 import { useRestaurantStore } from "../stores/restaurantStore";
 import { useUiStore } from "../stores/uiStore";
@@ -176,6 +181,48 @@ const restaurantFilters = reactive({
 });
 const formErrors = reactive({});
 const form = reactive(emptyForm());
+const importPanel = ref(null);
+const activeRailItem = ref("explore");
+const discoveryTab = ref("discover");
+const activeVisionCandidate = ref(null);
+const foodMapRailItems = computed(() => {
+  const places = resultPlaces.value;
+  const items = [{ id: "explore", label: "Explore", icon: "map-pin" }];
+  if (places.length) {
+    items.push({ id: "filters", label: "Filters", icon: "filter" });
+  }
+  if (places.some((place) => String(place.category || "").trim())) {
+    items.push({ id: "cuisines", label: "Cuisines", icon: "utensils" });
+  }
+  if (places.some((place) => Number.isFinite(discoveryTrendScore(place)))) {
+    items.push({ id: "trends", label: "Trends", icon: "trending-up" });
+  }
+  if (places.some((place) => savedPlaceKeys.value.has(place.key))) {
+    items.push({ id: "saved", label: "Saved", icon: "bookmark" });
+  }
+  return items;
+});
+const {
+  inputMode: visionInputMode,
+  state: visionState,
+  url: visionUrl,
+  inputError: visionInputError,
+  errorMessage: visionErrorMessage,
+  result: visionResult,
+  elapsedSeconds: visionElapsedSeconds,
+  hasSubmittedSource: visionHasSubmittedSource,
+  canAnalyze: canAnalyzeVision,
+  sourceSummary: visionSourceSummary,
+  analyzingCopy: visionAnalyzingCopy,
+  openLink: openVisionLink,
+  backToMenu: backVisionToMenu,
+  setUrl: setVisionUrl,
+  clearUrl: clearVisionUrl,
+  clearResult: clearVisionResult,
+  cancel: cancelVisionAnalysis,
+  submitDishDiscovery,
+  selectDish: selectVisionDish,
+} = useVisionAuto();
 
 let map = null;
 let markerCluster = null;
@@ -382,6 +429,52 @@ const resultPlaces = computed(() => {
 
   return combined;
 });
+const discoveryTrayPlaces = computed(() => {
+  let places = [...resultPlaces.value];
+
+  if (discoveryTab.value === "nearby") {
+    places = places.filter((place) => Number.isFinite(discoveryDistance(place)));
+  } else if (discoveryTab.value === "trending") {
+    places = places.filter((place) => Number.isFinite(discoveryTrendScore(place)));
+    places.sort((left, right) => discoveryTrendScore(right) - discoveryTrendScore(left));
+  } else if (discoveryTab.value === "top-rated") {
+    places = places.filter((place) => place.rating > 0);
+    places.sort((left, right) => right.rating - left.rating);
+  } else if (discoveryTab.value === "hidden-gems") {
+    places = places.filter((place) => place.raw?.is_hidden_gem === true);
+  } else if (discoveryTab.value === "saved") {
+    places = places.filter((place) => savedPlaceKeys.value.has(place.key));
+  }
+
+  return places.slice(0, 8);
+});
+const discoveryTrayEmptyMessage = computed(() => {
+  if (discoveryTab.value === "nearby") {
+    return "Distance is not available for the current places yet.";
+  }
+  if (discoveryTab.value === "trending") {
+    return "FoodStory does not have trend data for these places yet.";
+  }
+  if (discoveryTab.value === "hidden-gems") {
+    return "No places are marked as hidden gems in this view yet.";
+  }
+  if (discoveryTab.value === "saved") {
+    return "Save a place from the map to find it here.";
+  }
+  return "No places match this view yet. Try changing the active map filters.";
+});
+
+watch(foodMapRailItems, (items) => {
+  if (items.some((item) => item.id === activeRailItem.value)) return;
+  activeRailItem.value = "explore";
+  discoveryTab.value = "discover";
+});
+
+const visionMatchedMapPlace = computed(() => {
+  const match = visionResult.value?.matchedPlace;
+  const existing = findExistingVisionPlace(match);
+  return existing ? normalizeDiscovery(existing.place, existing.type) : null;
+});
 const resultSheetSubtitle = computed(() => {
   if (scanUrl.value.trim()) {
     return "Based on your latest scan or current filters";
@@ -471,13 +564,15 @@ function normalizeDiscovery(place, type) {
   const isRestaurant = type === "restaurant";
   const rating = Number(isRestaurant ? place.avg_rating : place.rating) || 0;
   const district = place.district || "Ho Chi Minh City";
+  const name = place.name || "Food place";
+  const providedImage = place.image_url || place.image || "";
 
   return {
     key: `${type}-${place.id}`,
     id: place.id,
     type,
     raw: place,
-    name: place.name || "Food place",
+    name,
     dish: isRestaurant
       ? place.description || place.category || "Recommended food destination"
       : place.dish_name || "A delicious dish waiting to be discovered",
@@ -500,11 +595,88 @@ function normalizeDiscovery(place, type) {
           ? "FoodStory selection"
           : "Your journal"),
     distance: place.distance || place.distance_km || "",
-    image: place.image_url || place.image || streetImage,
+    image: providedImage || streetImage,
+    imageAlt: providedImage ? `Photo of ${name}` : "",
+    reviewCount: Number(place.review_count || place.reviewCount || 0) || 0,
     latitude: Number(place.latitude),
     longitude: Number(place.longitude),
     isOwned: type === "personal",
   };
+}
+
+function discoveryDistance(place) {
+  const rawDistance = place?.distance;
+  if (typeof rawDistance === "number") return rawDistance;
+  const match = String(rawDistance || "").match(/\d+(?:\.\d+)?/);
+  const value = Number(match?.[0]);
+  return Number.isFinite(value) ? value : Number.NaN;
+}
+
+function discoveryTrendScore(place) {
+  const value = Number(
+    place?.raw?.trend_score ?? place?.raw?.trendScore ?? Number.NaN,
+  );
+  return Number.isFinite(value) ? value : Number.NaN;
+}
+
+function sameCoordinates(left, right) {
+  const leftLat = Number(left?.latitude ?? left?.lat);
+  const leftLng = Number(left?.longitude ?? left?.lng);
+  const rightLat = Number(right?.latitude ?? right?.lat);
+  const rightLng = Number(right?.longitude ?? right?.lng);
+  return (
+    Number.isFinite(leftLat) &&
+    Number.isFinite(leftLng) &&
+    Number.isFinite(rightLat) &&
+    Number.isFinite(rightLng) &&
+    Math.abs(leftLat - rightLat) < 0.000001 &&
+    Math.abs(leftLng - rightLng) < 0.000001
+  );
+}
+
+function findExistingVisionPlace(match) {
+  if (!match) return null;
+  const sourceType = String(match.sourceType || "").toLowerCase();
+  const sourceId = Number(match.sourceId);
+  const hasSourceId = Number.isFinite(sourceId);
+
+  if (hasSourceId && ["foodstory", "restaurant", "restaurants"].includes(sourceType)) {
+    const restaurant = restaurantStore.restaurants.find(
+      (item) => Number(item.id) === sourceId,
+    );
+    if (restaurant) return { place: restaurant, type: "restaurant" };
+  }
+
+  if (
+    hasSourceId &&
+    ["food_spot", "foodspot", "personal", "community"].includes(sourceType)
+  ) {
+    const personal = foodSpotStore.spots.find(
+      (item) => Number(item.id) === sourceId,
+    );
+    if (personal) return { place: personal, type: "personal" };
+    const community = foodSpotStore.communitySpots.find(
+      (item) => Number(item.id) === sourceId,
+    );
+    if (community) return { place: community, type: "community" };
+  }
+
+  const restaurant = restaurantStore.restaurants.find((item) =>
+    sameCoordinates(item, match),
+  );
+  if (restaurant) return { place: restaurant, type: "restaurant" };
+
+  const personal = foodSpotStore.spots.find((item) =>
+    sameCoordinates(item, match),
+  );
+  if (personal) return { place: personal, type: "personal" };
+
+  const community = foodSpotStore.communitySpots.find((item) =>
+    sameCoordinates(item, match),
+  );
+  if (community) return { place: community, type: "community" };
+
+  return null;
 }
 
 function invalidateMapAfterTransition() {
@@ -1176,6 +1348,7 @@ async function clearRestaurantFilters() {
 
 async function setMapMode(mode) {
   if (!["personal", "community", "stats"].includes(mode)) return;
+  if (mode === mapMode.value) return;
 
   mapMode.value = mode;
   sidebarMode.value = "list";
@@ -1368,7 +1541,7 @@ function focusCoordinates(place) {
   )
     return;
   map.flyTo([Number(place.latitude), Number(place.longitude)], 16, {
-    duration: 0.8,
+    duration: 0.45,
   });
 }
 
@@ -1544,6 +1717,231 @@ async function focusDiscoveryFoodMapMatch(match) {
   }
 
   isResultSheetOpen.value = true;
+}
+
+async function handleFoodMapRail(item) {
+  activeRailItem.value = item;
+
+  if (item === "explore") {
+    await setMapMode("community");
+    return;
+  }
+  if (item === "filters") {
+    setFilterDrawer(true);
+    return;
+  }
+  if (item === "cuisines") {
+    restaurantFiltersOpen.value = true;
+    setFilterDrawer(true);
+    return;
+  }
+  if (item === "trends") {
+    discoveryTab.value = "trending";
+    isResultSheetOpen.value = true;
+    return;
+  }
+  if (item === "saved") {
+    discoveryTab.value = "saved";
+    isResultSheetOpen.value = true;
+  }
+}
+
+function hasVisionCoordinates(candidate) {
+  return (
+    Number.isFinite(Number(candidate?.lat)) &&
+    Number.isFinite(Number(candidate?.lng))
+  );
+}
+
+async function focusVisionMatchedPlace(match = visionResult.value?.matchedPlace) {
+  if (!match) return;
+  const existing = findExistingVisionPlace(match);
+
+  if (existing?.type === "restaurant") {
+    showRestaurants.value = true;
+    showRestaurantDetail(existing.place);
+    return;
+  }
+  if (existing?.type === "community") {
+    if (mapMode.value !== "community") await setMapMode("community");
+    showCommunityDetail(existing.place);
+    return;
+  }
+  if (existing?.type === "personal") {
+    if (mapMode.value !== "personal") await setMapMode("personal");
+    showDetail(existing.place);
+    return;
+  }
+
+  if (hasVisionCoordinates(match)) {
+    focusCoordinates({ latitude: match.lat, longitude: match.lng });
+  }
+}
+
+function saveVisionMatchedPlace() {
+  const existing = findExistingVisionPlace(visionResult.value?.matchedPlace);
+  if (!existing) return;
+  toggleSavedPlace(normalizeDiscovery(existing.place, existing.type));
+}
+
+function visionDraftFromCandidate(candidate = null) {
+  return {
+    name: candidate?.placeName || candidate?.name || null,
+    address: candidate?.address || null,
+    phone: candidate?.phone || null,
+    dishNames: [candidate?.dishHint].filter(Boolean),
+    locationHints: [candidate?.locationHint].filter(Boolean),
+    sourceUrl: visionUrl.value.trim() || null,
+    lat: candidate?.lat ?? null,
+    lng: candidate?.lng ?? null,
+    provider: candidate?.provider || null,
+    providerPlaceId: candidate?.providerPlaceId || null,
+    googleMapsUri: candidate?.googleMapsUri || null,
+    category: candidate?.category || null,
+    categories: Array.isArray(candidate?.categories) ? candidate.categories : [],
+  };
+}
+
+function visionDraftPrefill(draft) {
+  const notes = [
+    draft?.address ? `Location clue: ${draft.address}` : "",
+    draft?.phone ? `Phone: ${draft.phone}` : "",
+    draft?.locationHints?.length
+      ? `Location hints: ${draft.locationHints.join(", ")}`
+      : "",
+    draft?.sourceUrl ? `Source: ${draft.sourceUrl}` : "",
+    draft?.provider ? `Place provider: ${draft.provider}` : "",
+    draft?.providerPlaceId ? `Provider place ID: ${draft.providerPlaceId}` : "",
+    draft?.googleMapsUri ? `Google Maps: ${draft.googleMapsUri}` : "",
+    draft?.categories?.length ? `Categories: ${draft.categories.join(", ")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return {
+    name: draft?.name || "",
+    dish_name: draft?.dishNames?.[0] || "",
+    category: draft?.category || draft?.categories?.[0] || "",
+    district: "",
+    latitude: hasVisionCoordinates(draft) ? String(draft.lat) : "",
+    longitude: hasVisionCoordinates(draft) ? String(draft.lng) : "",
+    notes,
+    tags: "",
+  };
+}
+
+async function openVisionDraftWorkflow(draft) {
+  if (!draft) return;
+  await setMapMode("personal");
+  openAddForm(visionDraftPrefill(draft));
+  await nextTick();
+
+  if (hasVisionCoordinates(draft)) {
+    showPreviewMarker(Number(draft.lat), Number(draft.lng));
+    focusCoordinates({ latitude: Number(draft.lat), longitude: Number(draft.lng) });
+  } else {
+    startPicking();
+  }
+
+  activeVisionCandidate.value = null;
+  clearVisionResult();
+}
+
+function reviewVisionCandidate(candidate) {
+  activeVisionCandidate.value = candidate;
+  if (hasVisionCoordinates(candidate)) {
+    if (candidate?.sourceType === "external") {
+      showPreviewMarker(Number(candidate.lat), Number(candidate.lng));
+    }
+    focusCoordinates({ latitude: candidate.lat, longitude: candidate.lng });
+  }
+}
+
+function dismissVisionResult() {
+  activeVisionCandidate.value = null;
+  if (sidebarMode.value !== "add") clearPreviewMarker();
+  clearVisionResult();
+}
+
+function closeVisionResult() {
+  dismissVisionResult();
+  nextTick(() => importPanel.value?.focusDefault());
+}
+
+async function handleVisionSubmit() {
+  activeVisionCandidate.value = null;
+  clearPreviewMarker();
+  await submitDishDiscovery();
+}
+
+async function handleVisionDishSelection(candidate) {
+  const center = map?.getCenter?.();
+  await selectVisionDish(
+    candidate,
+    center && Number.isFinite(center.lat) && Number.isFinite(center.lng)
+      ? { lat: center.lat, lng: center.lng }
+      : null,
+  );
+}
+
+async function focusVisionDishPlace(place) {
+  const sourceId = Number(place?.sourceId);
+  if (Number.isFinite(sourceId) && place.sourceType === "restaurant") {
+    const restaurant = restaurantStore.restaurants.find((item) => Number(item.id) === sourceId);
+    if (restaurant) {
+      showRestaurants.value = true;
+      showRestaurantDetail(restaurant);
+      return;
+    }
+  }
+  const personal = Number.isFinite(sourceId)
+    ? foodSpotStore.spots.find((item) => Number(item.id) === sourceId)
+    : null;
+  if (personal) {
+    if (mapMode.value !== "personal") await setMapMode("personal");
+    showDetail(personal);
+    return;
+  }
+  const community = Number.isFinite(sourceId)
+    ? foodSpotStore.communitySpots.find((item) => Number(item.id) === sourceId)
+    : null;
+  if (community) {
+    if (mapMode.value !== "community") await setMapMode("community");
+    showCommunityDetail(community);
+    return;
+  }
+  if (Number.isFinite(Number(place?.lat)) && Number.isFinite(Number(place?.lng))) {
+    activeVisionCandidate.value = place;
+    showPreviewMarker(Number(place.lat), Number(place.lng));
+    focusCoordinates({ latitude: Number(place.lat), longitude: Number(place.lng) });
+  }
+}
+
+async function retryVisionRequest() {
+  clearPreviewMarker();
+  await submitDishDiscovery();
+}
+
+function cancelVisionRequest() {
+  clearPreviewMarker();
+  cancelVisionAnalysis();
+}
+
+async function openVisionManualAdd() {
+  await setMapMode("personal");
+  openAddForm();
+  dismissVisionResult();
+}
+
+function startAnotherVisionLink() {
+  dismissVisionResult();
+  openVisionLink();
+  nextTick(() => importPanel.value?.focusLink());
+}
+
+function closeVisionInput() {
+  backVisionToMenu();
+  nextTick(() => importPanel.value?.focusDefault());
 }
 
 async function applyFoodMapDiscoveryResponse(result) {
@@ -1811,6 +2209,38 @@ function formatDate(value) {
   }).format(date);
 }
 
+function handleFoodMapKeydown(event) {
+  if (event.key !== "Escape") return;
+
+  if (["analyzing", "fast_analysis", "deep_analysis", "resolving", "dish_analyzing", "dish_searching"].includes(visionState.value)) {
+    cancelVisionAnalysis();
+    event.preventDefault();
+    nextTick(() => importPanel.value?.focusDefault());
+    return;
+  }
+  if (activeVisionCandidate.value) {
+    activeVisionCandidate.value = null;
+    event.preventDefault();
+    return;
+  }
+  if (visionState.value !== "idle") {
+    dismissVisionResult();
+    event.preventDefault();
+    nextTick(() => importPanel.value?.focusDefault());
+    return;
+  }
+  if (visionInputMode.value !== "menu") {
+    closeVisionInput();
+    event.preventDefault();
+    return;
+  }
+  if (isFilterDrawerOpen.value || isDetailDrawerOpen.value) {
+    setFilterDrawer(false);
+    setDetailDrawer(false);
+    event.preventDefault();
+  }
+}
+
 watch(
   () => [filters.district, filters.category, filters.rating],
   () => {
@@ -1866,6 +2296,7 @@ watch(
 );
 
 onMounted(async () => {
+  window.addEventListener("keydown", handleFoodMapKeydown);
   await nextTick();
   initialiseMap();
   if (mapMode.value === "community") {
@@ -1911,6 +2342,8 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener("keydown", handleFoodMapKeydown);
+  cancelVisionAnalysis();
   window.clearTimeout(filterTimer);
   window.clearTimeout(communitySearchTimer);
   window.clearTimeout(restaurantSearchTimer);
@@ -1940,7 +2373,63 @@ onBeforeUnmount(() => {
     class="food-map-page"
     :class="[`mode-${mapMode}`, { 'results-collapsed': !isResultSheetOpen }]"
   >
-    <form class="taste-scan-bar" @submit.prevent="handleScanUrl">
+    <FoodMapRail
+      :items="foodMapRailItems"
+      :active-id="activeRailItem"
+      @select="handleFoodMapRail"
+    />
+
+    <FoodMapImportPanel
+      ref="importPanel"
+      :input-mode="visionInputMode"
+      :state="visionState"
+      :url="visionUrl"
+      :input-error="visionInputError"
+      :source-summary="visionSourceSummary"
+      :has-submitted-source="visionHasSubmittedSource"
+      :can-analyze="canAnalyzeVision"
+      :analyzing-copy="visionAnalyzingCopy"
+      :elapsed-seconds="visionElapsedSeconds"
+      @open-link="openVisionLink"
+      @update:url="setVisionUrl"
+      @back="closeVisionInput"
+      @submit="handleVisionSubmit"
+      @cancel="cancelVisionRequest"
+      @change-link="openVisionLink"
+      @clear-link="clearVisionUrl"
+    />
+
+    <VisionAutoResultPanel
+      :state="visionState"
+      :result="visionResult"
+      :error-message="visionErrorMessage"
+      :matched-map-place="visionMatchedMapPlace"
+      @dismiss="closeVisionResult"
+      @focus-match="focusVisionMatchedPlace"
+      @save-match="saveVisionMatchedPlace"
+      @focus-candidate="reviewVisionCandidate"
+      @confirm-candidate="openVisionDraftWorkflow(visionDraftFromCandidate($event))"
+      @edit-candidate="openVisionDraftWorkflow(visionDraftFromCandidate($event))"
+      @reject-candidate="closeVisionResult"
+      @try-link="startAnotherVisionLink"
+      @manual-add="openVisionManualAdd"
+      @retry="retryVisionRequest"
+      @change-source="startAnotherVisionLink"
+      @select-dish="handleVisionDishSelection"
+      @focus-dish-place="focusVisionDishPlace"
+      @add-dish-place="openVisionDraftWorkflow(visionDraftFromCandidate($event))"
+    />
+
+    <FoodMapDiscoveryTray
+      :active-tab="discoveryTab"
+      :places="discoveryTrayPlaces"
+      :selected-key="selectedDiscovery?.key || ''"
+      :empty-message="discoveryTrayEmptyMessage"
+      :searched="Boolean(scanUrl.trim() || communitySearch.trim() || restaurantFilters.search.trim())"
+      @select="selectDiscovery"
+    />
+
+    <form class="taste-scan-bar legacy-food-map-control" @submit.prevent="handleScanUrl">
       <span class="taste-scan-link" aria-hidden="true">🔗</span>
       <label class="sr-only" for="taste-map-scan">
         Find a food place from a social or video link
@@ -2550,69 +3039,6 @@ onBeforeUnmount(() => {
       "
     ></button>
 
-    <section
-      class="taste-result-sheet"
-      :class="{ collapsed: !isResultSheetOpen }"
-      aria-label="Matching results"
-    >
-      <button
-        class="taste-sheet-handle"
-        type="button"
-        :aria-label="isResultSheetOpen ? 'Collapse results' : 'Expand results'"
-        :aria-expanded="isResultSheetOpen"
-        @click="toggleResultSheet"
-      >
-        <span></span>
-      </button>
-      <div class="taste-sheet-heading">
-        <div>
-          <h2>✨ Matching Results</h2>
-          <p>{{ resultSheetSubtitle }}</p>
-        </div>
-        <span>{{ resultPlaces.length }} places</span>
-      </div>
-      <div v-if="resultPlaces.length" class="taste-result-list">
-        <article
-          v-for="place in resultPlaces"
-          :key="place.key"
-          class="taste-result-card"
-          :class="{ active: selectedDiscovery?.key === place.key }"
-          tabindex="0"
-          role="button"
-          @click="selectDiscovery(place)"
-          @keydown.enter.prevent="selectDiscovery(place)"
-          @keydown.space.prevent="selectDiscovery(place)"
-        >
-          <img :src="place.image" :alt="place.name" />
-          <div class="taste-result-copy">
-            <span>{{ place.category }}</span>
-            <strong>{{ place.name }}</strong>
-            <p>{{ formatPlaceMeta(place) }}</p>
-            <small>
-              <b>{{ place.rating ? place.rating.toFixed(1) : "New" }} ★</b>
-              <span v-if="place.price">{{ place.price }}</span>
-            </small>
-          </div>
-          <button
-            type="button"
-            :class="{ saved: isPlaceSaved(place) }"
-            :aria-label="
-              isPlaceSaved(place)
-                ? `Remove ${place.name} from saved places`
-                : `Save ${place.name}`
-            "
-            @click.stop="toggleSavedPlace(place)"
-          >
-            <AppIcon name="heart" size="17" />
-          </button>
-        </article>
-      </div>
-      <div v-else class="taste-result-empty">
-        <AppIcon name="search" size="24" />
-        <span>No matching places yet. Try changing your filters.</span>
-      </div>
-    </section>
-
     <button
       class="taste-floating-scan"
       :class="{ raised: isResultSheetOpen }"
@@ -2625,6 +3051,7 @@ onBeforeUnmount(() => {
     </button>
 
     <aside
+      v-if="isFilterDrawerOpen"
       class="food-map-sidebar"
       :class="{ open: isFilterDrawerOpen }"
       aria-label="Manage food map"
@@ -3110,7 +3537,7 @@ onBeforeUnmount(() => {
                 ><small>{{ item.count }} · {{ item.percentage }}%</small>
               </div>
               <span class="food-map-stat-track"
-                ><i :style="{ width: `${item.percentage}%` }"></i
+                ><i :style="{ '--stat-progress': item.percentage / 100 }"></i
               ></span>
             </div>
           </section>
@@ -3133,7 +3560,7 @@ onBeforeUnmount(() => {
                 ><small>{{ item.count }} · {{ item.percentage }}%</small>
               </div>
               <span class="food-map-stat-track"
-                ><i :style="{ width: `${item.percentage}%` }"></i
+                ><i :style="{ '--stat-progress': item.percentage / 100 }"></i
               ></span>
             </div>
           </section>
@@ -3147,7 +3574,7 @@ onBeforeUnmount(() => {
             >
               <span>{{ item.rating }}★</span>
               <span class="food-map-stat-track"
-                ><i :style="{ width: `${item.percentage}%` }"></i
+                ><i :style="{ '--stat-progress': item.percentage / 100 }"></i
               ></span>
               <small>{{ item.count }}</small>
             </div>
@@ -3444,6 +3871,7 @@ onBeforeUnmount(() => {
     </div>
 
     <aside
+      v-if="isDetailDrawerOpen"
       class="taste-detail-drawer"
       :class="{ open: isDetailDrawerOpen }"
       aria-label="Place details"
@@ -4400,11 +4828,13 @@ onBeforeUnmount(() => {
 
 .food-map-stat-track i {
   display: block;
-  width: 0;
+  width: 100%;
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, #d94b3d, #f4a261);
-  transition: width 650ms ease;
+  transform: scaleX(var(--stat-progress, 0));
+  transform-origin: left center;
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .food-map-rating-row {
@@ -8377,7 +8807,7 @@ onBeforeUnmount(() => {
    SMOOTH MAP HOTFIX: preserve street detail and reduce rendering lag
    ========================================================== */
 :deep(.leaflet-tile-pane) {
-  filter: saturate(0.98) contrast(1.03) brightness(0.99) !important;
+  filter: none !important;
   opacity: 1 !important;
 }
 
@@ -8477,5 +8907,57 @@ onBeforeUnmount(() => {
   contain: layout paint !important;
   will-change: auto !important;
   box-shadow: 0 10px 24px rgba(75, 46, 22, 0.12) !important;
+}
+
+/* Keep map interactions on the compositor's cheap path. Large backdrop blurs
+   and a permanent full-map GPU layer caused expensive repaints on every click. */
+.food-map-leaflet {
+  contain: none;
+  will-change: auto;
+}
+
+.food-map-sidebar,
+.taste-detail-drawer,
+.taste-drawer-backdrop,
+.taste-drawer-close {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* The current map and drawers remain mounted; these were superseded by the
+   focused rail, import flow, and discovery tray above. */
+.legacy-food-map-control,
+.food-map-discovery-panel,
+.taste-menu-button,
+.taste-top-actions,
+.taste-locate-button,
+.taste-edge-handle,
+.taste-result-sheet,
+.taste-floating-scan {
+  display: none !important;
+}
+
+:deep(.leaflet-bottom.leaflet-right),
+.food-map-page.results-collapsed :deep(.leaflet-bottom.leaflet-right) {
+  right: 18px;
+  bottom: 82px;
+}
+
+@media (max-width: 768px) {
+  .food-map-page {
+    min-height: 100svh;
+  }
+
+  :deep(.leaflet-bottom.leaflet-right),
+  .food-map-page.results-collapsed :deep(.leaflet-bottom.leaflet-right) {
+    right: 12px;
+    bottom: calc(132px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .food-map-stat-track i {
+    transition: none;
+  }
 }
 </style>

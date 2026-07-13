@@ -1,3 +1,10 @@
+export const SHORTS_TRACK2_V3_INPUT_CLASSES = Object.freeze({
+  SINGLE_PLACE: 'SINGLE_PLACE',
+  MULTI_PLACE_LISTICLE: 'MULTI_PLACE_LISTICLE',
+  RELEVANT_NEGATIVE: 'RELEVANT_NEGATIVE',
+  UNSUPPORTED: 'UNSUPPORTED',
+})
+
 function safeText(value, maxLength = 4000) {
   return String(value ?? '').slice(0, maxLength)
 }
@@ -60,6 +67,7 @@ const TITLE_TOP_LIST_PATTERNS = [
 ]
 
 const TITLE_GENERIC_LIST_PATTERNS = [
+  { pattern: /\b\d{1,2}\s+quan\b/u, reason: 'TITLE_GENERIC_LIST' },
   { pattern: /\blist\b/u, reason: 'TITLE_GENERIC_LIST' },
   { pattern: /\bdanh\s+sach\b/u, reason: 'TITLE_GENERIC_LIST' },
   { pattern: /\btong\s+hop\b/u, reason: 'TITLE_GENERIC_LIST' },
@@ -74,11 +82,6 @@ const TITLE_GENERIC_LIST_PATTERNS = [
 ]
 
 const DESCRIPTION_MULTI_PLACE_PATTERNS = [
-  { pattern: /\bcac\s+dia\s+chi\b/u, reason: 'DESCRIPTION_ADDRESSES_OF_PLACES' },
-  { pattern: /\bdia\s+chi\s+cac\s+noi\b/u, reason: 'DESCRIPTION_ADDRESSES_OF_PLACES' },
-  { pattern: /\bcac\s+noi\s+trong\s+video\b/u, reason: 'DESCRIPTION_ADDRESSES_OF_PLACES' },
-  { pattern: /\baddresses\s+of\s+places\b/u, reason: 'DESCRIPTION_ADDRESSES_OF_PLACES' },
-  { pattern: /\bplaces\s+in\s+the\s+video\b/u, reason: 'DESCRIPTION_ADDRESSES_OF_PLACES' },
   { pattern: /\bdanh\s+sach\b/u, reason: 'DESCRIPTION_MULTI_PLACE' },
   { pattern: /\btong\s+hop\b/u, reason: 'DESCRIPTION_MULTI_PLACE' },
   { pattern: /\bnhieu\s+quan\b/u, reason: 'DESCRIPTION_MULTI_PLACE' },
@@ -118,9 +121,28 @@ const NO_ADDRESS_PATTERNS = [
   /\bcach\s+lam\b/u,
 ]
 
-function buildResult({ intent, mustNotResolve, reason, signals = [] }) {
+function inputClassForIntent(intent, combinedText = '') {
+  if (['MULTI_PLACE_OR_LIST', 'GENERIC_FOOD_LIST'].includes(intent)) {
+    return SHORTS_TRACK2_V3_INPUT_CLASSES.MULTI_PLACE_LISTICLE
+  }
+  if (['OCR_ADDRESS_LIKELY', 'SINGLE_PLACE_LIKELY'].includes(intent)) {
+    return SHORTS_TRACK2_V3_INPUT_CLASSES.SINGLE_PLACE
+  }
+  if (intent === 'NO_ADDRESS_INTENT') {
+    return SHORTS_TRACK2_V3_INPUT_CLASSES.RELEVANT_NEGATIVE
+  }
+  const folded = normalizeShortsTrack2V3IntentText(combinedText)
+  const foodRelevant = /\b(?:food|an|mon|quan|tiem|cafe|ca phe|nha hang|bun|pho|com|banh|xoi|che|lau|nuong|oc|hu tieu|mi|tra sua|review)\b/u
+    .test(folded)
+  return foodRelevant
+    ? SHORTS_TRACK2_V3_INPUT_CLASSES.RELEVANT_NEGATIVE
+    : SHORTS_TRACK2_V3_INPUT_CLASSES.UNSUPPORTED
+}
+
+function buildResult({ intent, mustNotResolve, reason, signals = [], combinedText = '' }) {
   return {
     intent,
+    inputClass: inputClassForIntent(intent, combinedText),
     mustNotResolve,
     reason,
     signals,
@@ -129,7 +151,9 @@ function buildResult({ intent, mustNotResolve, reason, signals = [] }) {
 
 export function classifyShortsTrack2V3Intent(context = {}) {
   const text = contextText(context)
+  const combinedText = `${text.title}\n${text.description}`
   const signals = []
+  const result = (value) => buildResult({ ...value, combinedText })
 
   const titleTopMatch = firstMatch(text.titleFolded, TITLE_TOP_LIST_PATTERNS)
   if (titleTopMatch) {
@@ -144,7 +168,7 @@ export function classifyShortsTrack2V3Intent(context = {}) {
       intent,
       mustNotResolve: true,
     }))
-    return buildResult({
+    return result({
       intent,
       mustNotResolve: true,
       reason: titleTopMatch.reason,
@@ -165,10 +189,19 @@ export function classifyShortsTrack2V3Intent(context = {}) {
       intent,
       mustNotResolve: true,
     }))
-    return buildResult({
+    return result({
       intent,
       mustNotResolve: true,
       reason: titleListMatch.reason,
+      signals,
+    })
+  }
+
+  if (NO_ADDRESS_PATTERNS.some((pattern) => pattern.test(`${text.titleFolded}\n${text.descriptionFolded}`))) {
+    return result({
+      intent: 'NO_ADDRESS_INTENT',
+      mustNotResolve: false,
+      reason: 'NO_ADDRESS_SIGNAL',
       signals,
     })
   }
@@ -183,7 +216,7 @@ export function classifyShortsTrack2V3Intent(context = {}) {
       intent: 'MULTI_PLACE_OR_LIST',
       mustNotResolve: true,
     }))
-    return buildResult({
+    return result({
       intent: 'MULTI_PLACE_OR_LIST',
       mustNotResolve: true,
       reason: descriptionListMatch.reason,
@@ -204,7 +237,7 @@ export function classifyShortsTrack2V3Intent(context = {}) {
       intent: 'OCR_ADDRESS_LIKELY',
       mustNotResolve: false,
     }))
-    return buildResult({
+    return result({
       intent: 'OCR_ADDRESS_LIKELY',
       mustNotResolve: false,
       reason: ocrMatch.reason,
@@ -225,7 +258,7 @@ export function classifyShortsTrack2V3Intent(context = {}) {
       intent: 'SINGLE_PLACE_LIKELY',
       mustNotResolve: false,
     }))
-    return buildResult({
+    return result({
       intent: 'SINGLE_PLACE_LIKELY',
       mustNotResolve: false,
       reason: singlePlaceMatch.reason,
@@ -233,16 +266,7 @@ export function classifyShortsTrack2V3Intent(context = {}) {
     })
   }
 
-  if (NO_ADDRESS_PATTERNS.some((pattern) => pattern.test(`${text.titleFolded}\n${text.descriptionFolded}`))) {
-    return buildResult({
-      intent: 'NO_ADDRESS_INTENT',
-      mustNotResolve: false,
-      reason: 'NO_ADDRESS_SIGNAL',
-      signals,
-    })
-  }
-
-  return buildResult({
+  return result({
     intent: 'UNKNOWN',
     mustNotResolve: false,
     reason: text.titleFolded || text.descriptionFolded

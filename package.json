@@ -17,5 +17,8 @@
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
+  },
+  "dependencies": {
+    "codex": "^0.2.3"
   }
 }

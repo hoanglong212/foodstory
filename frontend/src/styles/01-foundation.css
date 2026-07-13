@@ -11,6 +11,9 @@
   --accent-hot: #f4a261;
   --rose: #c95f78;
   --green: #2a9d8f;
+  --success: #3cb97a;
+  --warning: #e8a838;
+  --info: #5b9bd5;
   --line: rgba(255, 255, 255, 0.08);
   --card-border: rgba(255, 255, 255, 0.06);
   --field-border: rgba(255, 255, 255, 0.12);
@@ -55,8 +58,8 @@
   --shell-bg: var(--bg);
   --hero-image: url("https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=70");
   --hero-overlay:
-    linear-gradient(90deg, rgba(26, 26, 29, 0.85), rgba(42, 33, 29, 0.6)),
-    linear-gradient(180deg, rgba(26, 26, 29, 0.4), rgba(26, 26, 29, 0.95));
+    linear-gradient(90deg, rgba(26, 26, 29, 0.88), rgba(42, 33, 29, 0.62)),
+    linear-gradient(180deg, rgba(26, 26, 29, 0.35), rgba(26, 26, 29, 0.97));
   --hero-copy: #e9e5df;
   --chip-bg: rgba(244, 162, 97, 0.15);
   --chip-strong-bg: rgba(244, 162, 97, 0.25);
@@ -64,13 +67,19 @@
   --soft-surface: rgba(255, 255, 255, 0.03);
   --soft-surface-strong: rgba(255, 255, 255, 0.07);
   --dot-color: rgba(255, 255, 255, 0.05);
-  --shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  --shadow-hover: 0 30px 60px rgba(0, 0, 0, 0.45);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  --shadow-hover: 0 16px 40px rgba(0, 0, 0, 0.32);
   --nav-height: 88px;
+  --focus-ring: 0 0 0 3px rgba(230, 57, 70, 0.22);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 220ms;
+  --duration-slow: 360ms;
   --font-serif: "Playfair Display", serif;
   --font-sans: "Outfit", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", monospace;
   font-family: var(--font-sans);
   color: var(--text);
   background: var(--bg);
@@ -94,6 +103,9 @@
   --accent-hot: #e88532;
   --rose: #b84a62;
   --green: #2a9d8f;
+  --success: #2e8b5e;
+  --warning: #c87d1a;
+  --info: #3a7ec5;
   --line: rgba(45, 41, 38, 0.12);
   --card-border: rgba(45, 41, 38, 0.12);
   --field-border: rgba(45, 41, 38, 0.18);
@@ -137,8 +149,8 @@
   --header-solid-control: rgba(45, 41, 38, 0.08);
   --shell-bg: var(--bg);
   --hero-overlay:
-    linear-gradient(90deg, rgba(45, 41, 38, 0.5), rgba(232, 133, 50, 0.2)),
-    linear-gradient(180deg, rgba(246, 240, 231, 0.1), rgba(246, 240, 231, 0.95));
+    linear-gradient(90deg, rgba(45, 41, 38, 0.55), rgba(232, 133, 50, 0.18)),
+    linear-gradient(180deg, rgba(246, 240, 231, 0.08), rgba(246, 240, 231, 0.96));
   --hero-copy: #4a4541;
   --chip-bg: rgba(232, 133, 50, 0.15);
   --chip-strong-bg: rgba(232, 133, 50, 0.25);
@@ -146,8 +158,9 @@
   --soft-surface: rgba(45, 41, 38, 0.05);
   --soft-surface-strong: rgba(45, 41, 38, 0.1);
   --dot-color: rgba(45, 41, 38, 0.1);
-  --shadow: 0 16px 32px rgba(45, 41, 38, 0.1);
-  --shadow-hover: 0 24px 48px rgba(45, 41, 38, 0.18);
+  --shadow: 0 6px 20px rgba(45, 41, 38, 0.08);
+  --shadow-hover: 0 12px 32px rgba(45, 41, 38, 0.14);
+  --focus-ring: 0 0 0 3px rgba(216, 67, 77, 0.2);
   color-scheme: light;
 }
 
@@ -218,11 +231,18 @@ h5,
 h6 {
   font-family: var(--font-serif);
   margin: 0;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
 }
 
 p {
   margin: 0;
+  text-wrap: pretty;
 }
 
 #app {
@@ -309,10 +329,10 @@ body:has(.food-map-page) .site-footer {
 
 .motion-target {
   opacity: 0;
-  transform: translate3d(0, 24px, 0);
+  transform: translate3d(0, 20px, 0);
   transition:
-    opacity 620ms var(--ease-standard) var(--motion-delay, 0ms),
-    transform 720ms var(--ease-out) var(--motion-delay, 0ms);
+    opacity 500ms var(--ease-standard) var(--motion-delay, 0ms),
+    transform 580ms var(--ease-out-quart) var(--motion-delay, 0ms);
   will-change: opacity, transform;
 }
 
@@ -386,9 +406,17 @@ body:has(.food-map-page) .site-footer {
   background: var(--accent);
   box-shadow: 0 10px 24px rgba(237, 59, 18, 0.24);
   transition:
-    background-color 260ms var(--ease-standard),
-    transform 260ms var(--ease-out),
-    box-shadow 260ms var(--ease-standard);
+    background-color var(--duration-normal) var(--ease-standard),
+    transform var(--duration-normal) var(--ease-out-quart),
+    box-shadow var(--duration-normal) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .brand:hover .brand-mark {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 14px 32px rgba(237, 59, 18, 0.32);
+    background: color-mix(in srgb, var(--accent) 90%, #000);
+  }
 }
 
 .main-nav {
@@ -437,15 +465,25 @@ body:has(.food-map-page) .site-footer {
   background: var(--header-pill);
 }
 
-.main-nav a.active::after {
+.main-nav a::after {
   position: absolute;
   right: 20px;
   bottom: 6px;
   left: 20px;
-  height: 3px;
+  height: 4px;
   border-radius: 999px;
   background: var(--accent);
   content: "";
+  opacity: 0;
+  transform: translateY(3px);
+  transition:
+    opacity var(--duration-normal) var(--ease-out-quart),
+    transform var(--duration-normal) var(--ease-out-quart);
+}
+
+.main-nav a.active::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .header-actions {
@@ -497,7 +535,7 @@ body:has(.food-map-page) .site-footer {
 .pagination button:focus-visible,
 .tag-cloud button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(237, 59, 18, 0.22);
+  box-shadow: var(--focus-ring);
 }
 
 .hero-section {
@@ -584,7 +622,7 @@ body:has(.food-map-page) .site-footer {
 }
 
 .section-heading p:not(.eyebrow) {
-  max-width: 720px;
+  max-width: 65ch;
   color: var(--muted);
   font-size: 16px;
   line-height: 1.65;
@@ -640,39 +678,58 @@ body:has(.food-map-page) .site-footer {
   border: 1px solid transparent;
   border-radius: 8px;
   font-weight: 850;
+  transition:
+    transform var(--duration-normal) var(--ease-out-quart),
+    background-color var(--duration-normal) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard),
+    border-color var(--duration-normal) var(--ease-standard),
+    opacity var(--duration-normal) var(--ease-standard);
 }
 
-.btn:hover {
-  transform: translateY(-3px);
+@media (hover: hover) {
+  .btn:hover {
+    transform: translateY(-2px);
+  }
 }
 
 .btn:active {
-  transform: translateY(-1px);
+  transform: translateY(0);
+  transition-duration: 80ms;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  pointer-events: none;
 }
 
 .btn-primary {
   color: #fff;
-  background: linear-gradient(135deg, var(--accent), var(--rose));
-  box-shadow: 0 8px 20px rgba(230, 57, 70, 0.3);
+  background: var(--accent);
+  box-shadow: 0 4px 14px rgba(230, 57, 70, 0.25);
   border: none;
 }
 
-.btn-primary:hover {
-  box-shadow: 0 12px 28px rgba(230, 57, 70, 0.4);
-  transform: translateY(-3px);
+@media (hover: hover) {
+  .btn-primary:hover {
+    background: color-mix(in srgb, var(--accent) 88%, #000);
+    box-shadow: 0 6px 20px rgba(230, 57, 70, 0.35);
+    transform: translateY(-2px);
+  }
 }
 
 .btn-outline {
   border-color: var(--button-outline);
   color: var(--text);
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.btn-outline:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--text);
+@media (hover: hover) {
+  .btn-outline:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--text);
+  }
 }
 
 .btn-light {
@@ -723,28 +780,28 @@ body:has(.food-map-page) .site-footer {
   border-radius: 12px;
   background: var(--panel);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   transition:
-    opacity 620ms var(--ease-standard),
-    transform 320ms var(--ease-out),
-    border-color 320ms var(--ease-standard),
-    background-color 320ms var(--ease-standard),
-    box-shadow 320ms var(--ease-standard);
+    opacity 500ms var(--ease-standard),
+    transform var(--duration-normal) var(--ease-out-quart),
+    border-color var(--duration-normal) var(--ease-standard),
+    background-color var(--duration-normal) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard);
 }
 
 .recipe-card {
   overflow: hidden;
 }
 
-.recipe-card:hover,
-.news-card:hover,
-.topic-card:hover,
-.team-grid article:hover,
-.news-sidebar section:hover {
-  border-color: var(--accent);
-  box-shadow: var(--shadow-hover);
-  transform: translateY(-8px);
+@media (hover: hover) {
+  .recipe-card:hover,
+  .news-card:hover,
+  .topic-card:hover,
+  .team-grid article:hover,
+  .news-sidebar section:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-4px);
+  }
 }
 
 .image-wrap {
@@ -1015,14 +1072,14 @@ body:has(.food-map-page) .site-footer {
 
 .quote-band blockquote {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   margin: 0;
-
   color: var(--quote-text);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(30px, 4.4vw, 48px);
+  font-family: var(--font-serif);
+  font-size: clamp(34px, 5vw, 56px);
   font-style: italic;
-  line-height: 1.2;
+  font-weight: 500;
+  line-height: 1.15;
 }
 
 .quote-band strong {
@@ -1091,22 +1148,27 @@ body:has(.food-map-page) .site-footer {
 
 .topic-icon.red {
   color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
 .topic-icon.pink {
   color: var(--rose);
+  background: color-mix(in srgb, var(--rose) 15%, transparent);
 }
 
 .topic-icon.blue {
-  color: #91b7ff;
+  color: var(--info);
+  background: color-mix(in srgb, var(--info) 15%, transparent);
 }
 
 .topic-icon.orange {
-  color: var(--accent-hot);
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 15%, transparent);
 }
 
 .topic-icon.green {
-  color: var(--green);
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 15%, transparent);
 }
 
 .topic-card h3 {
@@ -1127,8 +1189,9 @@ body:has(.food-map-page) .site-footer {
 }
 
 .footer-brand {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
   color: var(--text);
+  font-size: 22px;
 }
 
 .site-footer h2 {
@@ -1159,19 +1222,21 @@ body:has(.food-map-page) .site-footer {
 
 .social-row a {
   display: grid;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   margin: 0;
   place-items: center;
-  border-radius: 8px;
+  border-radius: 50%;
   background: var(--soft-surface-strong);
   color: var(--muted-strong);
+  transition: all var(--duration-fast) var(--ease-out-quart);
 }
 
 .social-row a:hover {
   color: #fff;
   background: var(--accent);
-  transform: translateY(-3px);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 8px 24px rgba(237, 59, 18, 0.28);
 }
 
 .footer-email {
@@ -1270,9 +1335,11 @@ body:has(.food-map-page) .site-footer {
 }
 
 .news-detail-content {
-  color: var(--muted);
+  max-width: 65ch;
+  margin: 0 auto;
+  color: var(--muted-strong);
   font-size: 17px;
-  line-height: 1.7;
+  line-height: 1.75;
 }
 
 .search-panel {
@@ -1280,6 +1347,10 @@ body:has(.food-map-page) .site-footer {
   grid-template-columns: minmax(240px, 1fr) 260px 180px;
   gap: 12px;
   margin-bottom: 28px;
+  padding: 18px;
+  border-radius: 12px;
+  background: var(--soft-surface);
+  border: 1px solid var(--line);
 }
 
 .search-panel label,
@@ -1319,24 +1390,26 @@ body:has(.food-map-page) .site-footer {
 }
 
 .news-list {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
 .news-card {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 24px;
   padding: 24px;
 }
 
 .news-card time {
   display: grid;
-  height: 124px;
+  height: auto;
+  aspect-ratio: 1;
   place-items: center;
-  border-radius: 8px;
+  border-radius: 12px;
   color: var(--accent);
-  background: var(--chip-bg);
+  background: var(--chip-strong-bg);
   text-align: center;
 }
 
@@ -1379,13 +1452,14 @@ body:has(.food-map-page) .site-footer {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-width: 48px;
+  min-width: 42px;
   min-height: 42px;
-  border: 1px solid var(--field-border);
-  border-radius: 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   color: var(--text);
-  background: var(--panel);
+  background: var(--soft-surface);
   font-weight: 850;
+  transition: all var(--duration-fast) var(--ease-out-quart);
 }
 
 .pagination button:not(:disabled):hover {
@@ -1404,11 +1478,17 @@ body:has(.food-map-page) .site-footer {
 }
 
 .empty-state {
-  padding: 28px;
-  border: 1px dashed var(--line);
-  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 40px 28px;
+  border: 1px dashed color-mix(in srgb, var(--muted) 30%, transparent);
+  border-radius: 12px;
   color: var(--muted);
+  background: var(--soft-surface);
   text-align: center;
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .news-sidebar {
@@ -1482,9 +1562,6 @@ body:has(.food-map-page) .site-footer {
   padding-top: 46px;
   padding-bottom: 46px;
   background-color: var(--band-bg);
-  background-image: radial-gradient(var(--dot-color) 1px, transparent 1px);
-  background-position: 0 calc(var(--parallax-soft, 0px) * 0.45);
-  background-size: 36px 36px;
   margin-bottom: clamp(34px, 5vw, 64px);
 }
 
@@ -1498,21 +1575,22 @@ body:has(.food-map-page) .site-footer {
 .about-visual img {
   width: min(250px, 72vw);
   aspect-ratio: 1;
-  border: 8px solid rgba(237, 59, 18, 0.55);
   border-radius: 50%;
   object-fit: cover;
-  box-shadow: var(--shadow);
+  box-shadow:
+    0 0 0 8px color-mix(in srgb, var(--accent) 15%, transparent),
+    var(--shadow);
   transform: translate3d(0, calc(var(--parallax-soft, 0px) * -0.08), 0);
   transition:
-    transform 300ms var(--ease-out),
-    box-shadow 260ms var(--ease-standard),
-    border-color 260ms var(--ease-standard);
+    transform var(--duration-normal) var(--ease-out-quart),
+    box-shadow var(--duration-normal) var(--ease-standard);
   will-change: transform;
 }
 
 .about-visual:hover img {
-  border-color: rgba(237, 59, 18, 0.78);
-  box-shadow: var(--shadow-hover);
+  box-shadow:
+    0 0 0 12px color-mix(in srgb, var(--accent) 25%, transparent),
+    var(--shadow-hover);
 }
 
 .about-visual blockquote {
@@ -1570,7 +1648,9 @@ body:has(.food-map-page) .site-footer {
 .stats-row strong {
   grid-column: 2;
   color: var(--accent);
-  font-size: 28px;
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1.1;
 }
 
 .stats-row .app-icon {
@@ -1713,11 +1793,11 @@ body:has(.food-map-page) .site-footer {
 }
 
 .mood-card.active.mood-street {
-  transform: translateX(-18px) rotate(-2.5deg);
+  transform: translateX(-18px) rotate(-3.5deg) scale(1.02);
 }
 
 .mood-card.active.mood-homemade {
-  transform: translateX(18px) rotate(2.5deg);
+  transform: translateX(18px) rotate(3.5deg) scale(1.02);
 }
 
 .mood-card.active::before {
@@ -1974,6 +2054,7 @@ body:has(.food-map-page) .site-footer {
 .auth-panel {
   width: min(560px, 100%);
   padding: clamp(26px, 4vw, 42px);
+  border-top: 4px solid var(--accent);
 }
 
 .auth-panel h1,
@@ -2016,8 +2097,11 @@ body:has(.food-map-page) .site-footer {
 .comment-form label,
 .nutrition-fieldset legend {
   color: var(--text);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: -2px;
 }
 
 .form-field input,
@@ -2068,19 +2152,36 @@ body:has(.food-map-page) .site-footer {
 .field-error,
 .form-error {
   color: #ffd1dc;
-  background: rgba(239, 71, 111, 0.14);
-  border: 1px solid rgba(239, 71, 111, 0.3);
+  background: rgba(239, 71, 111, 0.12);
+  border: 1px solid rgba(239, 71, 111, 0.28);
   border-radius: 8px;
-  padding: 10px 12px;
-  line-height: 1.45;
+  padding: 12px 14px;
+  line-height: 1.5;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+:root[data-theme="light"] .field-error,
+:root[data-theme="light"] .form-error {
+  color: #9a2442;
+  background: rgba(239, 71, 111, 0.08);
+  border-color: rgba(239, 71, 111, 0.22);
 }
 
 .form-success {
   color: #ecffd9;
-  background: rgba(103, 152, 92, 0.16);
-  border: 1px solid rgba(103, 152, 92, 0.32);
+  background: rgba(103, 152, 92, 0.14);
+  border: 1px solid rgba(103, 152, 92, 0.3);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+:root[data-theme="light"] .form-success {
+  color: #1a5e3a;
+  background: rgba(46, 139, 94, 0.08);
+  border-color: rgba(46, 139, 94, 0.22);
 }
 
 .form-grid {
@@ -2109,6 +2210,7 @@ body:has(.food-map-page) .site-footer {
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
+  justify-content: space-between;
 }
 
 .auth-switch {
@@ -2866,9 +2968,11 @@ body:has(.food-map-page) .site-footer {
   border-radius: 999px;
   color: #fff;
   background: var(--accent);
-  padding: 9px 16px;
+  padding: 9px 18px;
   font-weight: 900;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 .profile-tabs {
@@ -2905,17 +3009,21 @@ body:has(.food-map-page) .site-footer {
 .profile-details div {
   border-radius: 8px;
   background: var(--soft-surface);
-  padding: 14px;
+  padding: 16px 20px;
 }
 
 .profile-details dt {
   color: var(--muted);
+  font-size: 12px;
   font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .profile-details dd {
   margin: 6px 0 0;
   color: var(--text);
+  font-size: 18px;
   font-weight: 900;
   overflow-wrap: anywhere;
 }
@@ -2940,14 +3048,16 @@ body:has(.food-map-page) .site-footer {
 
 .profile-comment-dates dt {
   color: var(--muted);
-  font-size: 12px;
-  font-weight: 850;
+  font-size: 11px;
+  font-weight: 900;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .profile-comment-dates dd {
   margin: 4px 0 0;
   color: var(--text);
+  font-size: 14px;
   font-weight: 850;
 }
 
@@ -3020,21 +3130,34 @@ body:has(.food-map-page) .site-footer {
 
 .not-found-content h1 {
   margin-bottom: 16px;
-  color: var(--text);
-  font-size: clamp(42px, 9vw, 86px);
-  font-weight: 950;
+  color: var(--accent);
+  font-family: var(--font-serif);
+  font-size: clamp(62px, 11vw, 112px);
+  font-style: italic;
+  font-weight: 500;
   line-height: 1;
 }
 
 .not-found-content p:not(.eyebrow) {
   max-width: 560px;
-  margin: 0 auto 28px;
-  color: var(--muted);
-  font-size: 17px;
-  line-height: 1.7;
+  margin: 0 auto 34px;
+  color: var(--muted-strong);
+  font-size: 18px;
+  line-height: 1.75;
 }
 
 .news-skeleton-list {
   display: grid;
   gap: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

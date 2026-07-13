@@ -14,6 +14,7 @@ function evidence(rawText, overrides = {}) {
     rawText,
     normalizedText: rawText,
     confidence: 0.8,
+    ...overrides,
   }
 }
 
@@ -140,6 +141,92 @@ describe('Track 2 V3 evidence fusion', () => {
     assert.equal(candidate.canAutoResolve, false)
   })
 
+  for (const [rawText, expectedAddress] of [
+    [
+      '122 Vinh Khánh, E. Khánh Hôi (Quân 4 Cū) 16:00-24:00 TRẠM NƯỚNG BBQ',
+      '122 Vinh Khánh, Khánh Hôi, Quận 4',
+    ],
+    [
+      'Xôigà56 56TrinhDinhTrong QuânTân Phú',
+      '56 Trinh Dinh Trong, Quận Tân Phú',
+    ],
+  ]) {
+    it(`keeps generalized noisy address evidence through fusion: ${rawText}`, () => {
+      const { fusion, candidates } = candidatesFromFusion([
+        evidence(rawText, { id: 'ev:phase39a', frameIndex: 7, timestampSeconds: 21 }),
+      ])
+      const candidate = findCandidate(candidates, 'OCR_ADDRESS_FRAGMENT', [expectedAddress])
+
+      assert.equal(fusion.status, 'PASS_THROUGH')
+      assert.ok(candidate)
+      assert.equal(candidate.addressFragment, expectedAddress)
+      assert.ok(candidate.riskFlags.includes('OCR_NAMED_ADMIN_ADDRESS'))
+      assert.ok(candidate.riskFlags.includes('REVIEW_ONLY'))
+      assert.equal(candidate.canAutoResolve, false)
+    })
+  }
+
+  it('fuses repeated partial address OCR across stage-local episode ids as review-only consensus', () => {
+    const fusion = fuseShortsTrack2V3Evidence({ evidence: [
+      evidence('242 Déc Lap”. . A', {
+        id: 'ev:normal',
+        frameIndex: 56,
+        timestampSeconds: 96.375,
+        episodeId: 'episode-155',
+        segmentId: 'segment-155',
+      }),
+      evidence('4242 Dọc Lapy', {
+        id: 'ev:gemini',
+        frameIndex: 59,
+        timestampSeconds: 99.375,
+        episodeId: 'episode-049',
+        segmentId: 'segment-049',
+      }),
+      evidence('242 Doc Lap,', {
+        id: 'ev:adaptive',
+        frameIndex: 60,
+        timestampSeconds: 99.75,
+        episodeId: null,
+        segmentId: null,
+      }),
+    ] })
+
+    const fused = fusion.fusedEvidence.find((item) =>
+      item.source === 'track2_v3_evidence_fusion' &&
+      item.fusion?.reason === 'CROSS_STAGE_PARTIAL_ADDRESS_CONSENSUS'
+    )
+
+    assert.equal(fusion.status, 'FUSED')
+    assert.ok(fused, 'expected a cross-stage partial address consensus fusion')
+    assert.equal(fused.forceReviewOnly, true)
+    assert.ok(fused.supportCount >= 2)
+    assert.equal(fused.addressSignal.signalClass, 'HOUSE_STREET_PARTIAL')
+  })
+
+  it('does not fuse distant incompatible addresses when stage-local episode ids collide', () => {
+    const fusion = fuseShortsTrack2V3Evidence({ evidence: [
+      evidence('18 Nguyễn Trãi, Phường 2, Quận 5', {
+        id: 'ev:listicle:first',
+        episodeId: 'episode-001',
+        segmentId: 'segment-001',
+        frameIndex: 1,
+        timestampSeconds: 1,
+      }),
+      evidence('92 Lê Lợi, Phường 7, Quận 3', {
+        id: 'ev:listicle:second',
+        episodeId: 'episode-001',
+        segmentId: 'segment-001',
+        frameIndex: 90,
+        timestampSeconds: 90,
+      }),
+    ] })
+
+    assert.equal(fusion.fusedEvidenceCount, 0)
+    assert.ok(fusion.fusedEvidence.every((item) =>
+      !(item.rawText.includes('Nguyễn Trãi') && item.rawText.includes('Lê Lợi'))
+    ))
+  })
+
   it('does not create address candidates from generic text only', () => {
     const { fusion, candidates } = candidatesFromFusion([
       evidence('Sài Gòn Về Đêm Thường sẽ thêm gì nhất?', {
@@ -152,4 +239,88 @@ describe('Track 2 V3 evidence fusion', () => {
     assert.equal(fusion.status, 'PASS_THROUGH')
     assert.deepEqual(candidates, [])
   })
+  it('composes split ward OCR admin evidence without treating a trailing digit as house number', () => {
+    const fusion = fuseShortsTrack2V3Evidence({ evidence: [
+      evidence('136 Van Kiet', {
+        id: 'ev:136:street', frameIndex: 44, timestampSeconds: 43.125,
+        episodeId: 'episode-136', segmentId: 'segment-136',
+      }),
+      evidence('ms\nPhư\nong\n3: Binh\nT\nhanh\n3', {
+        id: 'ev:136:admin', frameIndex: 44, timestampSeconds: 43.125,
+        episodeId: 'episode-136', segmentId: 'segment-136',
+      }),
+    ] })
+
+    const fused = fusion.fusedEvidence.find((item) => item.source === 'track2_v3_evidence_fusion')
+    assert.ok(fused, 'expected split admin band to complement house street evidence')
+    assert.equal(fused.fusion.reason, 'SAME_FRAME_COMPLEMENTARY')
+    assert.equal(fused.rawText, '136 Van Kiet, Phường 3')
+    assert.equal(fused.addressSignal.strongAddressAnchor, true)
+  })
+
+  it('prefers same-frame complementary address composition over repeated partial consensus in one cluster', () => {
+    const fusion = fuseShortsTrack2V3Evidence({ evidence: [
+      evidence('45/9 Hài Hải Nguyen', {
+        id: 'ev:normal:partial', frameIndex: 59, timestampSeconds: 57.375,
+        episodeId: 'episode-normal', segmentId: 'segment-normal',
+      }),
+      evidence('45/9 Han Hal Nguyen', {
+        id: 'ev:band:street', frameIndex: 56, timestampSeconds: 54.375,
+        episodeId: 'episode-band', segmentId: 'segment-band',
+      }),
+      evidence("Phirong'16 Quan 11", {
+        id: 'ev:band:admin', frameIndex: 56, timestampSeconds: 54.375,
+        episodeId: 'episode-band', segmentId: 'segment-band',
+      }),
+    ] })
+
+    const fused = fusion.fusedEvidence.find((item) => item.source === 'track2_v3_evidence_fusion')
+    assert.ok(fused, 'expected one fused address evidence item')
+    assert.equal(fused.fusion.reason, 'SAME_FRAME_COMPLEMENTARY')
+    assert.match(fused.rawText, /^45\/9 Han Hal Nguyen, Phường 16, Quận 11$/u)
+    assert.equal(fused.addressSignal.strongAddressAnchor, true)
+  })
+
+  it('semantically composes same-frame line-band house street and split admin evidence', () => {
+    const fusion = fuseShortsTrack2V3Evidence({ evidence: [
+      evidence('| 18/8 Wàn Hai Nguyên „|', {
+        id: 'ev:band:street', episodeId: 'episode-125', segmentId: 'segment-125',
+        frameIndex: 56, timestampSeconds: 54.375,
+      }),
+      evidence("—_— &\n`. ah\n\\ Phu\nong'16\nQuan 11", {
+        id: 'ev:band:admin', episodeId: 'episode-125', segmentId: 'segment-125',
+        frameIndex: 56, timestampSeconds: 54.375,
+      }),
+    ] })
+
+    const fused = fusion.fusedEvidence.find((item) => item.source === 'track2_v3_evidence_fusion')
+    assert.ok(fused)
+    assert.equal(fused.fusion.reason, 'SAME_FRAME_COMPLEMENTARY')
+    assert.equal(fused.rawText, '18/8 Wàn Hai Nguyên, Phường 16, Quận 11')
+    assert.equal(fused.addressSignal.strongAddressAnchor, true)
+    assert.equal(fused.forceReviewOnly, true)
+  })
+
+  it('does not promote a garbage-tagged admin fragment through same-frame fusion', () => {
+    const fusion = fuseShortsTrack2V3Evidence({ evidence: [
+      evidence('8 J Doc Pas', {
+        id: 'ev:noisy:street', frameIndex: 5, timestampSeconds: 8.25,
+        episodeId: 'episode-noisy', segmentId: 'segment-noisy',
+        confidence: 0.7,
+        providerMetadata: { qualityFlags: ['LOW_PROVIDER_CONFIDENCE'] },
+      }),
+      evidence('P M . . Doe Pas', {
+        id: 'ev:noisy:admin', frameIndex: 5, timestampSeconds: 8.25,
+        episodeId: 'episode-noisy', segmentId: 'segment-noisy',
+        confidence: 0.68,
+        providerMetadata: { qualityFlags: ['OCR_GARBAGE_TOKENS'] },
+      }),
+    ] })
+
+    assert.equal(
+      fusion.fusedEvidence.some((item) => item.source === 'track2_v3_evidence_fusion'),
+      false,
+    )
+  })
+
 })

@@ -443,6 +443,51 @@ describe('Track 2 V3 local OCR provider', () => {
     assert.equal('details' in nonDebugError, false)
   })
 
+  it('uses TRACK2_TESSERACT_BIN for the production Tesseract probe', async () => {
+    const configuredPath = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+    const previous = process.env.TRACK2_TESSERACT_BIN
+    process.env.TRACK2_TESSERACT_BIN = configuredPath
+    const commands = []
+    const tsv = [
+      'level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext',
+      '5\t1\t1\t1\t1\t1\t0\t0\t10\t10\t93\t242',
+      '5\t1\t1\t1\t1\t2\t12\t0\t10\t10\t91\tĐộc',
+      '5\t1\t1\t1\t1\t3\t24\t0\t10\t10\t90\tLập',
+    ].join('\n')
+
+    try {
+      const result = await runShortsTrack2V3LocalOcrProvider({
+        selectedImages: [{ cropPath: 'C:\\offline\\configured-tesseract-crop.jpg' }],
+        config: {
+          track2V3LocalOcrEnabled: true,
+          track2V3LocalOcrProvider: 'tesseract',
+          track2V3TesseractEnabled: true,
+          localOcrLanguages: 'vie+eng',
+          localOcrTimeoutMs: 5000,
+          maxLocalOcrImages: 1,
+        },
+        deps: {
+          commandRunner: async ({ command, args }) => {
+            commands.push(command)
+            if (args[0] === '--version') return { ok: command === configuredPath, stdout: 'tesseract 5' }
+            if (args[0] === '--list-langs') {
+              return { ok: true, stdout: 'List of available languages in C:\\tessdata (2):\nvie\neng\n' }
+            }
+            return { ok: true, stdout: tsv }
+          },
+        },
+      })
+
+      assert.equal(commands[0], configuredPath)
+      assert.equal(result.status, 'OK')
+      assert.equal(result.provider, 'local_tesseract')
+      assert.ok(result.textBlocks.some((block) => /242 Độc Lập/u.test(block.rawText)))
+    } finally {
+      if (previous === undefined) delete process.env.TRACK2_TESSERACT_BIN
+      else process.env.TRACK2_TESSERACT_BIN = previous
+    }
+  })
+
   it('falls back to mocked Tesseract CLI when EasyOCR is unavailable', async () => {
     const tsv = [
       'level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext',

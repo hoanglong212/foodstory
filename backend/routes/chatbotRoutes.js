@@ -11,6 +11,7 @@ router.post('/ask', optionalAuth, async (req, res) => {
       lastRecipeId = null,
       lastRecipeTitle = null,
       lastRestaurantId = null,
+      conversationHistory = [],
     } = req.body
 
     if (typeof message !== 'string' || !message.trim()) {
@@ -23,6 +24,7 @@ router.post('/ask', optionalAuth, async (req, res) => {
       lastRecipeId,
       lastRecipeTitle,
       lastRestaurantId,
+      conversationHistory,
       userId: req.user?.id || null,
     })
 
