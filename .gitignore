@@ -1,29 +1,70 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
+# Environment files
 .env
 .env.*
 !.env.example
 backend/.env
 backend/.env.*
 !backend/.env.example
-*.session.sql
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+ai-service/.env
+ai-service/.env.*
+!ai-service/.env.example
 
-node_modules
-dist
-dist-ssr
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Python environments and caches
+.venv/
+ai-service/.venv/
+**/__pycache__/
+**/*pycache*/
+*.pyc
+*.pyo
+*.pyd
+
+# Build output
+dist/
+dist-ssr/
+artifacts/
+backend/artifacts/
+
+# Logs
+logs/
+*.log
+*.err.log
+*.out.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Temporary files
+tmp/
+temp/
+backend/tmp/
+backend/_patch_backups/
+backend/.track2v3-backup-*/
+*_tmp.mjs
+*.backup
+*.backup.*
+*.zip
 *.local
+
+# Generated project tree reports
+project-tree.txt
+project-tree-clean.txt
+project-tree-before-cleanup.txt
+project-tree-after-cleanup.txt
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
@@ -46,15 +87,15 @@ Last Browser
 Last Version
 Local State
 
-# Database
-db.js   
-backend/config/env.js
-backend/server.js
-backend/db.js
-backend/config/db.js
-backend/database/schema.sql
-backend/database/seed.sql
-package-lock.json
-backend/package-lock.json
-backend/db.js
-backend/.env.example
+# Local database/session files and credentials
+*.session.sql
+backend/secret/
+backend/secrets/
+*.service-account.json
+*service-account*.json
+google-vision-service-account.json
+
+
+.agents/
+
+.codex/

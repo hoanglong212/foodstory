@@ -37,6 +37,21 @@ function emptyDishFallback(reason) {
   }
 }
 
+function publicMatchedPlace(place, reason) {
+  if (!place) return emptyPlace(reason)
+  return {
+    name: place.name || null,
+    address: place.address || place.formattedAddress || null,
+    district: place.district || null,
+    city: place.city || null,
+    source: place.sourceType || place.source || null,
+    existsInFoodMap: true,
+    matchedFoodMapPlace: place,
+    confidence: roundScore(place.confidence),
+    reason,
+  }
+}
+
 function roundScore(value) {
   return Math.round(Number(value || 0) * 1000) / 1000
 }
@@ -110,10 +125,103 @@ function publicTextSources(textSources = []) {
           type: capString(source?.type, 40),
           text: capString(source?.text, 700),
           confidence: roundScore(source?.confidence),
+          source: capString(source?.source || 'unknown', 160),
           usable: source?.usable !== false,
         }))
         .filter((source) => source.type && source.text)
     : []
+}
+
+function publicUrlEvidence(evidence = null) {
+  if (!evidence || typeof evidence !== 'object') return null
+  const values = (items = [], maximumLength = 700, maximumItems = 5) =>
+    Array.isArray(items)
+      ? items
+          .map((item) => capString(item, maximumLength))
+          .filter(Boolean)
+          .slice(0, maximumItems)
+      : []
+  return {
+    platform: capString(evidence.platform || 'unknown', 40),
+    provider: evidence.provider ? capString(evidence.provider, 80) : null,
+    resolvedInputType: capString(
+      evidence.resolvedInputType || 'unknown',
+      60,
+    ),
+    extractionStatus: capString(
+      evidence.extractionStatus || 'unknown',
+      60,
+    ),
+    videoId: evidence.videoId ? capString(evidence.videoId, 32) : null,
+    title: evidence.title ? capString(evidence.title, 500) : null,
+    description: evidence.description
+      ? capString(evidence.description, 700)
+      : null,
+    channelTitle: evidence.channelTitle
+      ? capString(evidence.channelTitle, 300)
+      : null,
+    publishedAt: evidence.publishedAt
+      ? capString(evidence.publishedAt, 80)
+      : null,
+    ogTitle: evidence.ogTitle ? capString(evidence.ogTitle, 500) : null,
+    ogDescription: evidence.ogDescription
+      ? capString(evidence.ogDescription, 700)
+      : null,
+    jsonLdEvidence: values(evidence.jsonLdEvidence),
+    thumbnailUrl: evidence.thumbnailUrl
+      ? capString(evidence.thumbnailUrl, 2_048)
+      : null,
+    thumbnailOcrStatus: capString(
+      evidence.thumbnailOcrStatus || 'not_available',
+      60,
+    ),
+    warnings: values(evidence.warnings, 180, 12),
+  }
+}
+
+function publicEvidenceValidation(validation = null) {
+  if (!validation || typeof validation !== 'object') return null
+  return {
+    provider: capString(validation.provider || 'rule', 40),
+    mode: capString(validation.mode || 'rule', 40),
+    requested: validation.requested === true,
+    applied: validation.applied === true,
+    status: capString(validation.status || 'not_requested', 60),
+    keyConfigured: validation.keyConfigured === true,
+    modelConfigured: validation.modelConfigured === true,
+    httpStatus:
+      validation.httpStatus != null &&
+      Number.isFinite(Number(validation.httpStatus))
+        ? Number(validation.httpStatus)
+        : null,
+    confidence: roundScore(validation.confidence),
+    rejectedEntities: (Array.isArray(validation.rejectedEntities)
+      ? validation.rejectedEntities
+      : []
+    )
+      .map((item) => ({
+        field: capString(item?.field, 40),
+        value: capString(item?.value, 180),
+        reason: capString(item?.reason, 180),
+      }))
+      .filter((item) => item.field && item.value && item.reason)
+      .slice(0, 12),
+    canResolveLocation:
+      typeof validation.canResolveLocation === 'boolean'
+        ? validation.canResolveLocation
+        : null,
+    recommendedNextAction: capString(
+      validation.recommendedNextAction || 'none',
+      60,
+    ),
+    warnings: (Array.isArray(validation.warnings)
+      ? validation.warnings
+      : []
+    )
+      .map((item) => capString(item, 180))
+      .filter(Boolean)
+      .slice(0, 8),
+  }
 }
 
 function publicEntitySummary(entities = null) {
@@ -190,6 +298,11 @@ function publicEntitySummary(entities = null) {
     warnings: Array.isArray(safeEntities.warnings)
       ? safeEntities.warnings.map((warning) => capString(warning, 180))
       : [],
+    extractorUsed: capString(safeEntities.extractorUsed || 'rule', 40),
+    mergeDebug:
+      safeEntities.mergeDebug && typeof safeEntities.mergeDebug === 'object'
+        ? safeEntities.mergeDebug
+        : {},
   }
 }
 
@@ -208,10 +321,12 @@ function publicLocationQuery(locationQuery = null) {
     query: safeQuery.query ? capString(safeQuery.query, 320) : null,
     canResolveLocation: safeQuery.canResolveLocation === true,
     confidence: roundScore(safeQuery.confidence),
+    score: Math.max(0, Math.round(Number(safeQuery.score) || 0)),
     reason: capString(
       safeQuery.reason || 'No location evidence was provided.',
       220,
     ),
+    strategy: capString(safeQuery.strategy || 'insufficient_evidence', 80),
     components: {
       address: components.address
         ? capString(components.address, 220)
@@ -224,7 +339,82 @@ function publicLocationQuery(locationQuery = null) {
       locationHints: publicValues(components.locationHints, 100),
       priceHints: publicValues(components.priceHints, 60),
     },
+    evidence: publicValues(safeQuery.evidence, 220),
     warnings: publicValues(safeQuery.warnings, 220),
+  }
+}
+
+function publicLocationResolution(resolution = null) {
+  const safe = resolution || {
+    status: 'provider_disabled',
+    resolvedLocation: null,
+    candidates: [],
+    confidence: 0,
+    reason: 'not_requested',
+    warnings: [],
+  }
+  const candidate = (value) => ({
+    name: value?.name ? capString(value.name, 180) : null,
+    formattedAddress: value?.formattedAddress
+      ? capString(value.formattedAddress, 300)
+      : null,
+    phone: value?.phone ? capString(value.phone, 40) : null,
+    lat: Number.isFinite(Number(value?.lat)) ? Number(value.lat) : null,
+    lng: Number.isFinite(Number(value?.lng)) ? Number(value.lng) : null,
+    placeId: value?.placeId ? capString(value.placeId, 255) : null,
+    rating: Number.isFinite(Number(value?.rating))
+      ? Number(value.rating)
+      : null,
+    userRatingsTotal: Number.isFinite(Number(value?.userRatingsTotal))
+      ? Number(value.userRatingsTotal)
+      : null,
+    source: value?.source ? capString(value.source, 40) : null,
+    rawTypes: Array.isArray(value?.rawTypes)
+      ? value.rawTypes.map((item) => capString(item, 80)).slice(0, 20)
+      : [],
+    confidence: roundScore(value?.confidence),
+    matchReasons: Array.isArray(value?.matchReasons)
+      ? value.matchReasons.map((item) => capString(item, 80)).slice(0, 10)
+      : [],
+  })
+
+  return {
+    status: capString(safe.status || 'error', 40),
+    resolvedLocation: safe.resolvedLocation
+      ? candidate(safe.resolvedLocation)
+      : null,
+    candidates: Array.isArray(safe.candidates)
+      ? safe.candidates.slice(0, 10).map(candidate)
+      : [],
+    confidence: roundScore(safe.confidence),
+    reason: capString(safe.reason || 'unknown', 180),
+    warnings: Array.isArray(safe.warnings)
+      ? safe.warnings.map((item) => capString(item, 180)).slice(0, 8)
+      : [],
+  }
+}
+
+function publicNextAction(nextAction = null) {
+  const safe = nextAction || {
+    type: 'none',
+    message: 'No next action is required.',
+    payload: {},
+  }
+  const payload =
+    safe.payload && typeof safe.payload === 'object'
+      ? safe.payload
+      : {}
+  let payloadIsBounded = false
+  try {
+    payloadIsBounded = JSON.stringify(payload).length <= 12_000
+  } catch {
+    payloadIsBounded = false
+  }
+  return {
+    type: capString(safe.type || 'none', 60),
+    message: capString(safe.message || '', 500),
+    payload:
+      payloadIsBounded ? payload : { truncated: true },
   }
 }
 
@@ -238,10 +428,16 @@ export function createFoodMapSocialResponse({
   steps = [],
   warnings = [],
   urlExtraction = null,
+  urlEvidence = null,
+  evidenceValidation = null,
   ocrEvidence = null,
   textSources = [],
   entities = null,
   locationQuery = null,
+  locationResolution = null,
+  nextAction = null,
+  matchedPlace = null,
+  draftPlace = null,
 }) {
   if (!FOOD_MAP_SOCIAL_STATUSES.includes(status)) {
     throw new Error(`Unsupported Food Map social discovery status: ${status}`)
@@ -267,13 +463,22 @@ export function createFoodMapSocialResponse({
     textSources: publicTextSources(textSources),
     entities: publicEntities,
     locationQuery: publicLocationQuery(locationQuery),
-    place: emptyPlace(placeReason),
+    locationResolution: publicLocationResolution(locationResolution),
+    nextAction: publicNextAction(nextAction),
+    place: publicMatchedPlace(matchedPlace, placeReason),
     dishFallback: emptyDishFallback(dishReason),
-    addPlaceDraft: null,
+    addPlaceDraft: draftPlace || null,
     debug: {
       steps,
       warnings,
       ...(urlExtraction ? { urlExtraction } : {}),
+      ...(urlEvidence ? { urlEvidence: publicUrlEvidence(urlEvidence) } : {}),
+      ...(evidenceValidation
+        ? {
+            evidenceValidation:
+              publicEvidenceValidation(evidenceValidation),
+          }
+        : {}),
     },
   }
 }

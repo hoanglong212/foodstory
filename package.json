@@ -1,25 +1,24 @@
 {
   "name": "foodstory",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "axios": "^1.7.9",
-    "bootstrap": "^5.3.3",
-    "chart.js": "^4.4.7",
-    "leaflet": "^1.9.4",
-    "leaflet.markercluster": "^1.5.3",
-    "pinia": "^3.0.4",
-    "vue": "^3.5.34",
-    "vue-router": "^5.0.7"
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "track2:v3": "npm run track2:v3 --prefix backend",
+    "build": "npm run build --prefix frontend",
+    "test": "npm run test --prefix backend",
+    "test:backend": "npm run test --prefix backend",
+    "test:frontend": "npm run test --prefix frontend",
+    "test:shorts": "npm run test:shorts --prefix backend",
+    "test:vision-auto": "npm run test:vision-auto --prefix backend",
+    "test:food-map-social-discovery": "npm run test:food-map-social-discovery --prefix backend",
+    "test:food-map-discovery": "npm run test:food-map-discovery --prefix backend"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.6",
-    "vite": "^8.0.12"
+    "concurrently": "^9.0.0"
+  },
+  "dependencies": {
+    "codex": "^0.2.3"
   }
 }

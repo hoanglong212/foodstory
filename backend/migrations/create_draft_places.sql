@@ -1,0 +1,25 @@
+CREATE TABLE IF NOT EXISTS draft_places (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NULL,
+  source_type VARCHAR(40) NOT NULL,
+  source_url VARCHAR(2000) NULL,
+  source_image_url VARCHAR(1000) NULL,
+  suggested_name VARCHAR(255) NULL,
+  suggested_address VARCHAR(500) NULL,
+  suggested_phone VARCHAR(40) NULL,
+  suggested_dishes JSON NULL,
+  lat DECIMAL(10,7) NULL,
+  lng DECIMAL(10,7) NULL,
+  provider_place_id VARCHAR(255) NULL,
+  provider VARCHAR(40) NULL,
+  confidence DECIMAL(5,4) NOT NULL DEFAULT 0,
+  evidence JSON NULL,
+  status ENUM('pending', 'confirmed', 'rejected') NOT NULL DEFAULT 'pending',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_draft_places_user
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_draft_places_status (status),
+  INDEX idx_draft_places_provider_place (provider, provider_place_id),
+  INDEX idx_draft_places_coordinates (lat, lng)
+);

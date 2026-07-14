@@ -47,6 +47,10 @@ const upload = multer({
     fileSize: MAX_IMAGE_BYTES,
     files: 1,
     fields: 3,
+    fieldSize: 4096,
+    parts: 4,
+    headerPairs: 50,
+    fieldNestingDepth: 0,
   },
   fileFilter(req, file, callback) {
     if (!ALLOWED_IMAGE_TYPES.has(file.mimetype)) {

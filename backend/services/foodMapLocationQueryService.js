@@ -1,12 +1,12 @@
+const MAX_COMPONENT_ITEMS = 8
+const MAX_QUERY_LENGTH = 260
+const LOCATION_GATE_SCORE = 10
 const STRONG_LOCATION_TYPES = new Set([
   'ward',
   'district',
   'city',
   'landmark',
 ])
-
-const MAX_COMPONENT_ITEMS = 8
-const MAX_QUERY_LENGTH = 320
 
 function roundScore(value) {
   return Math.round(Number(value || 0) * 1000) / 1000
@@ -34,23 +34,30 @@ function normalizeText(value) {
     .trim()
 }
 
+function evidenceValues(entity) {
+  const values = Array.isArray(entity?.evidence)
+    ? entity.evidence
+    : entity?.evidence
+      ? [entity.evidence]
+      : []
+  return values.map((value) => cleanText(value, 220)).filter(Boolean)
+}
+
 function entityValue(entity) {
   return entity?.value ? cleanText(entity.value) : null
 }
 
-function entityValues(items, valueKey = 'value') {
+function uniqueEntityValues(items, valueKey = 'value') {
   const values = []
   const seen = new Set()
-
   for (const item of Array.isArray(items) ? items : []) {
-    const value = cleanText(item?.[valueKey])
+    const value = cleanText(item?.[valueKey] || item?.value)
     const key = normalizeText(value)
     if (!value || !key || seen.has(key)) continue
     seen.add(key)
     values.push(value)
     if (values.length >= MAX_COMPONENT_ITEMS) break
   }
-
   return values
 }
 
@@ -58,34 +65,25 @@ function componentsFromEntities(entities = {}) {
   return {
     address: entityValue(entities.address),
     placeName: entityValue(entities.placeName),
-    phones: entityValues(entities.phones, 'normalized'),
-    dishNames: entityValues(entities.dishNames),
-    locationHints: entityValues(entities.locationHints),
-    priceHints: entityValues(entities.priceHints),
+    phones: uniqueEntityValues(entities.phones, 'normalized'),
+    dishNames: uniqueEntityValues(entities.dishNames),
+    locationHints: uniqueEntityValues(entities.locationHints),
+    priceHints: uniqueEntityValues(entities.priceHints),
   }
-}
-
-function repeatedTokenRatio(value) {
-  const tokens = normalizeText(value)
-    .split(' ')
-    .filter((token) => token.length >= 2)
-  if (tokens.length < 4) return 0
-  return 1 - new Set(tokens).size / tokens.length
 }
 
 function normalizedVietnamesePhone(value) {
   const digits = String(value || '').replace(/\D/g, '')
   const local = digits.startsWith('84') ? `0${digits.slice(2)}` : digits
-  const isMobile = /^0[35789]\d{8}$/.test(local)
-  const isLandline = /^02\d{8,9}$/.test(local)
-  return isMobile || isLandline ? local : null
+  return /^0[35789]\d{8}$/.test(local) || /^02\d{8,9}$/.test(local)
+    ? local
+    : null
 }
 
-function strongPhones(phones = []) {
+function strongPhones(items = []) {
   const values = []
   const seen = new Set()
-
-  for (const phone of Array.isArray(phones) ? phones : []) {
+  for (const phone of Array.isArray(items) ? items : []) {
     if (Number(phone?.confidence || 0) < 0.62) continue
     const normalized = normalizedVietnamesePhone(
       phone?.normalized || phone?.value,
@@ -95,131 +93,99 @@ function strongPhones(phones = []) {
     values.push({
       value: normalized,
       confidence: clampScore(phone.confidence),
+      evidence: evidenceValues(phone),
     })
   }
-
   return values
 }
 
-function strongLocationHints(locationHints = []) {
-  const hints = []
+function strongLocations(items = []) {
+  const values = []
   const seen = new Set()
-
-  for (const location of Array.isArray(locationHints) ? locationHints : []) {
-    if (!STRONG_LOCATION_TYPES.has(location?.type)) continue
-    if (Number(location?.confidence || 0) < 0.35) continue
+  for (const location of Array.isArray(items) ? items : []) {
+    if (
+      !STRONG_LOCATION_TYPES.has(location?.type) ||
+      Number(location?.confidence || 0) < 0.35
+    ) {
+      continue
+    }
     const value = cleanText(location.value, 100)
     const key = normalizeText(value)
     if (!value || !key || seen.has(key)) continue
     seen.add(key)
-    hints.push({
+    values.push({
       value,
       type: location.type,
       confidence: clampScore(location.confidence),
+      evidence: evidenceValues(location),
     })
   }
-
-  return hints
+  return values
 }
 
-function hasEmbeddedLocation(address) {
-  const normalized = normalizeText(address)
-  return (
-    /\b(?:p|phuong|ward)\s*\d{1,2}\b/.test(normalized) ||
-    /\b(?:q|quan|district)\s*\d{1,2}\b/.test(normalized) ||
-    /\b(?:tp|thanh pho|city)\b/.test(normalized)
-  )
-}
-
-function strongAddress(address, locationHints) {
-  const value = entityValue(address)
-  if (!value || Number(address?.confidence || 0) < 0.62) return null
-
+function addressQuality(entity, locations) {
+  const value = entityValue(entity)
+  if (!value || Number(entity?.confidence || 0) < 0.58) return null
   const normalized = normalizeText(value)
   const hasHouseNumber =
-    /\b\d{1,5}[a-z]?(?:[/-]\d{1,5}[a-z]?)?\b/i.test(value)
-  const hasStreetName =
-    /\b\d{1,5}[a-z]?(?:[/-]\d{1,5}[a-z]?)?\s+[\p{L}]{2,}/u.test(
-      value,
+    /\b\d{1,5}[a-z]?(?:[/-]\d{1,5}[a-z]?)?\b/.test(normalized)
+  const hasStreet =
+    /\b(?:duong|street|road|avenue|boulevard|hem|ngo)\b/.test(normalized) ||
+    /\b\d{1,5}[a-z]?(?:[/-]\d{1,5}[a-z]?)?\s+[a-z]{2,}(?:\s+[a-z]{2,})+/.test(
+      normalized,
     )
-  const textAfterHouseNumber = normalized
+  const hasAdmin =
+    /\b(?:phuong|ward|quan|district|thanh pho|city|province|tinh|tp hcm|tphcm)\b/.test(
+      normalized,
+    ) || locations.length > 0
+  const remainder = normalized
     .replace(/^\d{1,5}[a-z]?(?:[/-]\d{1,5}[a-z]?)?\s*/, '')
     .trim()
-  const locationOnlyRemainder = strongLocationHints(locationHints).some(
-    (location) => normalizeText(location.value) === textAfterHouseNumber,
+  const locationOnlyRemainder = locations.some(
+    (location) => normalizeText(location.value) === remainder,
   )
-  const hasLocation =
-    hasEmbeddedLocation(value) || strongLocationHints(locationHints).length > 0
+  if (!hasHouseNumber || !hasStreet || locationOnlyRemainder) return null
+  return {
+    value,
+    confidence: clampScore(entity.confidence),
+    hasAdmin,
+    evidence: evidenceValues(entity),
+  }
+}
 
+function placeQuality(entity, dishes) {
+  const value = entityValue(entity)
+  if (!value || Number(entity?.confidence || 0) < 0.5) return null
+  const normalized = normalizeText(value)
+  const tokens = normalized.split(' ').filter(Boolean)
+  const repeatedRatio =
+    tokens.length < 4 ? 0 : 1 - new Set(tokens).size / tokens.length
+  const categoryLike = uniqueEntityValues(dishes)
+    .map(normalizeText)
+    .some(
+      (dish) =>
+        dish === normalized ||
+        (dish && new RegExp(`\\b${dish.replace(/\s+/g, '\\s+')}\\b`).test(normalized)),
+    )
   if (
-    !hasHouseNumber ||
-    !hasStreetName ||
-    !hasLocation ||
-    locationOnlyRemainder
+    value.length > 80 ||
+    !tokens.length ||
+    tokens.length > 9 ||
+    repeatedRatio >= 0.35
   ) {
     return null
   }
   return {
     value,
-    confidence: clampScore(address.confidence),
-  }
-}
-
-function placeNameQuality(placeName, dishNames = []) {
-  const value = entityValue(placeName)
-  if (!value || Number(placeName?.confidence || 0) < 0.5) {
-    return { usable: false, categoryLike: false, reason: 'missing_place_name' }
-  }
-
-  const normalized = normalizeText(value)
-  const tokens = normalized.split(' ').filter(Boolean)
-  const letterCount = [...value].filter((character) =>
-    /\p{L}/u.test(character),
-  ).length
-  const visibleCount = [...value].filter(
-    (character) => !/\s/u.test(character),
-  ).length
-  const priceCount = (
-    value.match(/\b\d{1,3}\s*(?:k|vnd|đ|d)\b/giu) || []
-  ).length
-
-  if (
-    value.length > 80 ||
-    tokens.length > 9 ||
-    tokens.length === 0 ||
-    visibleCount === 0 ||
-    letterCount / visibleCount < 0.55 ||
-    priceCount >= 2 ||
-    repeatedTokenRatio(value) >= 0.35
-  ) {
-    return { usable: false, categoryLike: false, reason: 'noisy_place_name' }
-  }
-
-  const normalizedDishes = entityValues(dishNames).map(normalizeText)
-  if (normalizedDishes.includes(normalized)) {
-    return { usable: false, categoryLike: true, reason: 'dish_only_name' }
-  }
-
-  const categoryLike = normalizedDishes.some((dish) => {
-    if (!dish) return false
-    const pattern = dish.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      .replace(/\s+/g, '\\s+')
-    return new RegExp(`\\b${pattern}\\b`).test(normalized)
-  })
-
-  return {
-    usable: true,
-    value,
-    confidence: clampScore(placeName.confidence),
+    confidence: clampScore(entity.confidence),
     categoryLike,
-    reason: 'clean_place_name',
+    evidence: evidenceValues(entity),
   }
 }
 
 function joinQuery(parts) {
   const values = []
   const seen = new Set()
-
   for (const part of parts.flat()) {
     const value = cleanText(part)
     const key = normalizeText(value)
@@ -227,162 +193,197 @@ function joinQuery(parts) {
     seen.add(key)
     values.push(value)
   }
+  const query = values.join(' ')
+  return query.length <= MAX_QUERY_LENGTH
+    ? query
+    : query.slice(0, MAX_QUERY_LENGTH).trim()
+}
 
-  return cleanText(values.join(', '), MAX_QUERY_LENGTH)
+function conflictPenalty(locations) {
+  const byType = new Map()
+  for (const location of locations) {
+    if (!['city', 'district'].includes(location.type)) continue
+    if (!byType.has(location.type)) byType.set(location.type, new Set())
+    byType.get(location.type).add(normalizeText(location.value))
+  }
+  return [...byType.values()].some((values) => values.size > 1) ? 3 : 0
+}
+
+function allEvidence({ address, place, phones, locations, dishes }) {
+  return [
+    ...(address?.evidence || []),
+    ...(place?.evidence || []),
+    ...phones.flatMap((phone) => phone.evidence),
+    ...locations.flatMap((location) => location.evidence),
+    ...dishes.flatMap((dish) => evidenceValues(dish)),
+  ]
+    .filter(Boolean)
+    .filter((value, index, values) => values.indexOf(value) === index)
+    .slice(0, 12)
 }
 
 function result({
   query = null,
   canResolveLocation = false,
   confidence = 0,
+  score = 0,
   reason,
+  strategy = 'insufficient_evidence',
   components,
+  evidence = [],
   warnings = [],
 }) {
   return {
     query: query || null,
     canResolveLocation: canResolveLocation === true,
     confidence: clampScore(confidence),
+    score: Math.max(0, Math.round(Number(score) || 0)),
     reason,
+    strategy,
     components,
+    evidence: [...new Set(evidence.filter(Boolean))].slice(0, 12),
     warnings: [...new Set(warnings.filter(Boolean))],
   }
 }
 
-export function buildFoodMapLocationQuery(entities = {}) {
+export function buildFoodMapLocationQuery(input = {}) {
+  const entities = input?.entities || input
   const components = componentsFromEntities(entities)
-  const locations = strongLocationHints(entities.locationHints)
+  const locations = strongLocations(entities.locationHints)
   const phones = strongPhones(entities.phones)
-  const address = strongAddress(entities.address, entities.locationHints)
-  const place = placeNameQuality(entities.placeName, entities.dishNames)
+  const address = addressQuality(entities.address, locations)
+  const place = placeQuality(entities.placeName, entities.dishNames)
+  const dishes = Array.isArray(entities.dishNames)
+    ? entities.dishNames.filter((dish) => Number(dish?.confidence || 0) >= 0.45)
+    : []
   const locationValues = locations.map((location) => location.value)
   const phoneValues = phones.map((phone) => phone.value)
+  const dishValues = uniqueEntityValues(dishes).slice(0, 2)
+  const warnings = []
+  let score = 0
 
-  if (address) {
+  if (phones.length) score += 8
+  if (address) score += address.hasAdmin ? 10 : 8
+  if (place) score += 5
+  if (locations.length) score += 2
+  if (dishes.length) score += 1
+  if (place && locations.length) score += 3
+  if (place && dishes.length && locations.length) score += 1
+
+  const penalty = conflictPenalty(locations)
+  if (penalty) {
+    score -= penalty
+    warnings.push('Conflicting district or city evidence reduced the query score.')
+  }
+  if (
+    [components.address, components.placeName, ...components.locationHints]
+      .filter(Boolean)
+      .some((value) => String(value).length > 180)
+  ) {
+    score -= 2
+    warnings.push('An overlong query component was penalized.')
+  }
+
+  let strategy = 'insufficient_evidence'
+  let query = null
+  let reason = 'insufficient_evidence'
+  if (address && phones.length) {
+    strategy = 'place_address_phone'
+    query = joinQuery([
+      place?.value || [],
+      address.value,
+      phoneValues.slice(0, 1),
+    ])
+    reason = 'address_phone_supported'
+  } else if (address) {
+    strategy = 'address'
     const normalizedAddress = normalizeText(address.value)
     const supplementalLocations = locationValues.filter(
       (location) => !normalizedAddress.includes(normalizeText(location)),
     )
-    const confidence = Math.min(
-      0.97,
-      address.confidence +
-        (locations.length ? 0.06 : 0) +
-        (phones.length ? 0.04 : 0),
+    query = joinQuery([
+      place?.value || [],
+      address.value,
+      supplementalLocations,
+    ])
+    reason = address.hasAdmin
+      ? 'address_house_street_location'
+      : 'address_house_street'
+  } else if (place && phones.length) {
+    strategy = 'place_phone'
+    query = joinQuery([
+      place.value,
+      phoneValues.slice(0, 1),
+      locationValues,
+    ])
+    reason = 'place_phone_supported'
+  } else if (place && locations.length) {
+    strategy = dishes.length
+      ? 'place_dish_location_hint'
+      : 'place_location_hint'
+    query = joinQuery([place.value, dishValues.slice(0, 1), locationValues])
+    reason = strategy
+  } else if (phones.length && locations.length) {
+    strategy = 'phone_location_hint'
+    query = joinQuery([phoneValues.slice(0, 1), locationValues])
+    reason = 'phone_location_supported'
+  } else if (phones.length) {
+    reason = 'phone_only_needs_context'
+    warnings.push(
+      'Phone evidence needs place, address, or strong location context before map resolution.',
     )
-    return result({
-      query: joinQuery([address.value, supplementalLocations, phoneValues]),
-      canResolveLocation: true,
-      confidence,
-      reason: phones.length
-        ? 'Confident address with a normalized Vietnamese phone number.'
-        : 'Confident address with a district, city, ward, or landmark hint.',
-      components,
-    })
+  } else if (place) {
+    reason = 'place_name_only_not_enough_for_location'
+  } else if (dishes.length && !locations.length) {
+    reason = 'dish_only_not_enough_for_location'
+  } else if (locations.length) {
+    reason = 'weak_location_only_not_enough_for_location'
+  } else {
+    reason = 'noisy_ocr_not_enough_for_location'
   }
 
-  if (phones.length) {
-    const bestPhoneConfidence = Math.max(
-      ...phones.map((phone) => phone.confidence),
-    )
-    return result({
-      query: joinQuery([phoneValues, locationValues]),
-      canResolveLocation: true,
-      confidence: Math.min(
-        0.92,
-        0.7 + bestPhoneConfidence * 0.18 + (locations.length ? 0.06 : 0),
-      ),
-      reason: locations.length
-        ? 'Normalized Vietnamese phone number with a location hint.'
-        : 'Normalized Vietnamese phone number is strong location evidence.',
-      components,
-    })
-  }
-
-  if (place.usable && locations.length) {
-    const normalizedPlace = normalizeText(place.value)
-    const supplementalLocations = locationValues.filter(
-      (location) => !normalizedPlace.includes(normalizeText(location)),
-    )
-    const bestLocationConfidence = Math.max(
-      ...locations.map((location) => location.confidence),
-    )
-    let confidence =
-      0.2 + place.confidence * 0.52 + bestLocationConfidence * 0.24
-    const warnings = []
-
-    if (place.categoryLike || entities.dishNames?.length) {
-      confidence = Math.min(confidence, 0.74)
-      warnings.push(
-        'Place name is supported by dish or category text, so confidence is capped at medium.',
+  const canResolveLocation = score >= LOCATION_GATE_SCORE && Boolean(query)
+  if (!canResolveLocation) query = null
+  const confidence = canResolveLocation
+    ? Math.min(
+        0.96,
+        0.42 +
+          Math.min(score, 20) * 0.025 +
+          Number(Boolean(address)) * 0.08 +
+          Number(Boolean(phones.length)) * 0.06,
       )
-    }
-
-    return result({
-      query: joinQuery([
-        place.value,
-        place.categoryLike ? components.dishNames.slice(0, 1) : [],
-        supplementalLocations,
-      ]),
-      canResolveLocation: true,
-      confidence,
-      reason:
-        place.categoryLike || entities.dishNames?.length
-          ? 'Clean place name with dish or category evidence and a location hint.'
-          : 'Clean place name with a district, city, ward, or landmark hint.',
-      components,
-      warnings,
-    })
-  }
-
-  const warnings = []
-  if (entityValue(entities.address)) {
-    warnings.push(
-      'Address evidence is incomplete or lacks a usable location hint.',
-    )
-  }
-  if (place.reason === 'noisy_place_name') {
-    warnings.push(
-      'Long, repeated, price-heavy, or noisy text was rejected as a place name.',
-    )
-  }
-  if (place.usable && !locations.length) {
-    warnings.push('Place name needs a district, city, ward, or landmark hint.')
-  }
-  if (components.dishNames.length) {
+    : Math.min(0.49, Math.max(0, score) / 20)
+  if (dishes.length && !place && !address && !phones.length) {
     warnings.push('Dish text alone is not enough to resolve a real-world place.')
   }
-  if (components.locationHints.length && !locations.length) {
-    warnings.push('Only weak or unknown location text was found.')
-  } else if (locations.length) {
+  if (locations.length && !place && !address && !phones.length) {
     warnings.push('A location hint alone is not enough to identify a place.')
   }
 
-  const weakConfidence = Math.min(
-    0.49,
-    Math.max(
-      Number(entities.address?.confidence || 0) * 0.4,
-      Number(entities.placeName?.confidence || 0) * 0.4,
-      ...((entities.dishNames || []).map(
-        (dish) => Number(dish?.confidence || 0) * 0.25,
-      )),
-      ...((entities.locationHints || []).map(
-        (location) => Number(location?.confidence || 0) * 0.2,
-      )),
-      0,
-    ),
-  )
-
   return result({
-    reason: 'Evidence is not strong enough to form a safe map search query.',
-    confidence: weakConfidence,
+    query,
+    canResolveLocation,
+    confidence,
+    score,
+    reason,
+    strategy,
     components,
+    evidence: allEvidence({
+      address,
+      place,
+      phones,
+      locations,
+      dishes,
+    }),
     warnings,
   })
 }
 
 export function emptyFoodMapLocationQuery() {
   return result({
-    reason: 'No location evidence was provided.',
+    reason: 'no_location_evidence',
     components: componentsFromEntities({}),
   })
 }
+
+export const FOOD_MAP_LOCATION_GATE_SCORE = LOCATION_GATE_SCORE

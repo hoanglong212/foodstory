@@ -1,0 +1,5 @@
+# Media acquisition for YouTube URLs.
+yt-dlp
+
+# Required only for the enabled Track 2 V3 local ASR rescue.
+faster-whisper

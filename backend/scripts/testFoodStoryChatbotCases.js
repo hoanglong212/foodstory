@@ -83,10 +83,18 @@ async function main() {
 
   console.table(rows)
   await pool.end()
+  // Give HTTP keep-alive/native handles time to finish closing before forcing
+  // this standalone diagnostic process to exit.
+  await new Promise((resolve) => setTimeout(resolve, 1000))
   process.exit(0)
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
   console.error('FoodStory chatbot cases failed:', error)
-  process.exit(1)
+  try {
+    await pool.end()
+  } catch {
+    // Preserve the original test failure when the pool is already closing.
+  }
+  process.exitCode = 1
 })
