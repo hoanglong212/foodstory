@@ -19,8 +19,6 @@
     "seed:users": "node database/seedUsers.js",
     "sync:ai-knowledge": "node scripts/syncFoodStoryKnowledge.js",
     "sync:image-embeddings": "node scripts/precomputeImageEmbeddings.js",
-    "debug:shorts-track1": "node scripts/debugShortsTrack1Live.js",
-    "debug:shorts-pipeline": "node scripts/debugShortsPipelineLive.js",
     "track2:v3": "node scripts/track2/runTrack2V3Live.js",
     "track2:v3:debug-frames": "node scripts/track2/debugTrack2V3Frames.js",
     "track2:v3:smart-overlay-debug": "node scripts/track2/debugTrack2V3SmartOverlay.js",

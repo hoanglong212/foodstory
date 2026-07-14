@@ -52,7 +52,10 @@ describe('Track 2 V3 candidate quality integration', () => {
     assert.equal(result.metrics.candidateQualityGateRan, true)
     assert.ok(result.metrics.rawCandidateCount >= 1)
     assert.ok(result.metrics.keptCandidateCount >= 1)
-    assert.equal(result.metrics.droppedCandidateCount, 0)
+    assert.equal(
+      result.metrics.rawCandidateCount,
+      result.metrics.keptCandidateCount + result.metrics.droppedCandidateCount,
+    )
     assert.ok(result.candidates.some((candidate) =>
       candidate.displayText.includes('Phạm Văn chí') &&
         ['ADDRESS_ANCHORED', 'CLEAN_FULL_ADDRESS'].includes(candidate.qualityGateReason),

@@ -108,12 +108,6 @@ export {
   runShortsTrack2V3SmartOverlayDryRun,
 } from './shortsTrack2V3SmartOverlaySelectorService.js'
 export { writeShortsTrack2V3SelectorDiagnostics } from './shortsTrack2V3SelectorDiagnosticsService.js'
-export {
-  summarizeShortsTrack2V3AuditCase,
-  buildShortsTrack2V3AuditSummary,
-  assertShortsTrack2V3AuditSafe,
-} from './shortsTrack2V3AuditService.js'
-
 export { proposeShortsTrack2V3TextRegions } from './shortsTrack2V3TextRegionProposalService.js'
 export { buildShortsTrack2V3TemporalTextEpisodes } from './shortsTrack2V3TemporalTextEpisodeService.js'
 export { buildShortsTrack2V3TemporalOcrConsensus } from './shortsTrack2V3TemporalOcrConsensusService.js'
