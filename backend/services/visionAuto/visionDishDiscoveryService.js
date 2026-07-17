@@ -271,7 +271,7 @@ async function loadLocalPlaces(database = pool, timeoutMs = 6_000) {
     }, Math.max(1_000, timeoutMs))
   })
   const queries = Promise.all([
-    database.execute(`SELECT id, name, address, district, category, latitude, longitude, avg_rating, price_range, description FROM restaurants WHERE latitude IS NOT NULL AND longitude IS NOT NULL LIMIT 500`),
+    database.execute(`SELECT id, name, address, district, category, latitude, longitude, avg_rating, price_range, description, featured_dish, image_url, source_url, DATE_FORMAT(verified_at, '%Y-%m-%d') AS verified_at FROM restaurants WHERE latitude IS NOT NULL AND longitude IS NOT NULL LIMIT 500`),
     database.execute(`SELECT id, name, dish_name, category, district, latitude, longitude, rating FROM food_spots WHERE latitude IS NOT NULL AND longitude IS NOT NULL LIMIT 500`),
   ])
   const [[restaurants], [spots]] = await Promise.race([queries, timeout]).finally(() => clearTimeout(timer))

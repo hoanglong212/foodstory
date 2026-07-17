@@ -26,98 +26,110 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: Home,
+      meta: { title: 'Home' },
     },
     {
       path: '/news',
       name: 'news',
       component: News,
+      meta: { title: 'Food News' },
     },
     {
       path: '/news/:id',
       name: 'news-detail',
       component: NewsDetail,
+      meta: { title: 'News Article' },
     },
     {
       path: '/about',
       name: 'about',
       component: About,
+      meta: { title: 'About Us' },
     },
     {
       path: '/recipes',
       name: 'recipes',
       component: Recipes,
+      meta: { title: 'Recipes' },
     },
     {
       path: '/admin',
       name: 'AdminDashboard',
       component: AdminDashboardView,
-      meta: { requiresAuth: true, requiresAdmin: true },
+      meta: { requiresAuth: true, requiresAdmin: true, title: 'Admin Dashboard' },
     },
     {
       path: '/recipes/new',
       name: 'recipe-new',
       component: RecipeForm,
-      meta: { requiresAuth: true, requiresAdmin: true },
+      meta: { requiresAuth: true, requiresAdmin: true, title: 'Create Recipe' },
     },
     {
       path: '/recipes/submit',
       name: 'recipe-submit',
       component: RecipeForm,
-      meta: { requiresAuth: true, userSubmission: true },
+      meta: { requiresAuth: true, userSubmission: true, title: 'Submit a Recipe' },
     },
     {
       path: '/recipes/:id',
       name: 'recipe-detail',
       component: RecipeDetail,
+      meta: { title: 'Recipe' },
     },
     {
       path: '/recipes/:id/edit',
       name: 'recipe-edit',
       component: RecipeForm,
-      meta: { requiresAuth: true, requiresAdmin: true },
+      meta: { requiresAuth: true, requiresAdmin: true, title: 'Edit Recipe' },
     },
     {
       path: '/login',
       name: 'login',
       component: Login,
-      meta: { guestOnly: true },
+      meta: { guestOnly: true, title: 'Login' },
     },
     {
       path: '/register',
       name: 'register',
       component: Register,
-      meta: { guestOnly: true },
+      meta: { guestOnly: true, title: 'Create Account' },
     },
     {
       path: '/profile',
       name: 'profile',
       component: Profile,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, title: 'My Profile' },
     },
     {
       path: '/food-map',
       name: 'FoodMap',
       component: FoodMapView,
-      meta: { requiresAuth: true },
+      meta: { guestPreview: true, title: 'Food Map' },
     },
     {
       path: '/favorites',
       name: 'favorites',
       component: Profile,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, title: 'Favorite Recipes' },
     },
     {
       path: '/checklist',
       name: 'checklist',
       component: Profile,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, title: 'Ingredient Checklists' },
     },
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: NotFound,
+      meta: { title: 'Page Not Found' },
     },
   ],
+})
+
+router.afterEach((to) => {
+  const pageTitle = typeof to.meta.title === 'string' ? to.meta.title : ''
+  document.title = pageTitle ? `${pageTitle} | FoodStory` : 'FoodStory'
 })
 
 router.beforeEach(async (to) => {
@@ -126,7 +138,7 @@ router.beforeEach(async (to) => {
   authStore.loadFromStorage()
 
   if (authStore.token && !authStore.sessionChecked) {
-    if (to.meta.requiresAuth || to.meta.guestOnly) {
+    if (to.meta.requiresAuth || to.meta.guestOnly || to.meta.guestPreview) {
       await authStore.fetchMe({ timeoutMs: 3000 })
     } else {
       authStore.fetchMe({ timeoutMs: 3000, silent: true })

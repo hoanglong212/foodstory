@@ -1,0 +1,596 @@
+.chatbot-root {
+  --fb-ink: #202824;
+  --fb-ink-soft: #2e3933;
+  --fb-paper: #f5f7f4;
+  --fb-surface: #ffffff;
+  --fb-line: #dce2dc;
+  --fb-muted: #69756f;
+  --fb-terracotta: #c9563b;
+  --fb-terracotta-dark: #a9432d;
+  --fb-herb: #4e745e;
+  --fb-slate: #547187;
+  z-index: var(--z-chatbot, 4200);
+  font-family: var(--font-sans, Inter, system-ui, sans-serif);
+}
+
+.chat-bubble-btn {
+  right: 24px;
+  bottom: 24px;
+  display: flex;
+  width: auto;
+  min-width: 214px;
+  height: 60px;
+  padding: 7px 16px 7px 8px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 11px;
+  border: 0;
+  border-radius: 14px;
+  color: #fff;
+  background: var(--fb-ink);
+  box-shadow: 0 6px 14px rgba(19, 29, 24, 0.24);
+  transform: none;
+  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.chat-bubble-btn:hover {
+  background: var(--fb-ink-soft);
+  box-shadow: 0 8px 14px rgba(19, 29, 24, 0.3);
+  transform: translateY(-2px);
+}
+
+.launcher-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--fb-terracotta);
+}
+
+.launcher-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  text-align: left;
+}
+
+.launcher-copy strong {
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+
+.launcher-copy small {
+  color: #bfc8c3;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.unread-dot {
+  top: 5px;
+  right: 5px;
+  width: 10px;
+  height: 10px;
+  border-color: var(--fb-ink);
+  background: #ecb64c;
+}
+
+.chat-window {
+  right: 24px;
+  bottom: 96px;
+  width: min(480px, calc(100vw - 32px));
+  height: min(740px, calc(100dvh - var(--nav-height, 76px) - 116px));
+  min-height: 520px;
+  border: 1px solid #c7d0c9;
+  border-radius: 16px;
+  color: var(--fb-ink);
+  background: var(--fb-paper);
+  box-shadow: 0 10px 14px rgba(20, 29, 24, 0.24);
+}
+
+.chat-header {
+  min-height: 76px;
+  padding: 14px 16px;
+  color: #fff;
+  background: var(--fb-ink);
+}
+
+.bot-avatar {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 11px;
+  color: #fff;
+  background: var(--fb-terracotta);
+}
+
+.chat-header-title strong {
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+
+.chat-header-title small {
+  display: flex;
+  margin-top: 2px;
+  align-items: center;
+  gap: 6px;
+  color: #bbc5bf;
+  font-size: 10px;
+}
+
+.chat-header-title small i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #79ad86;
+  box-shadow: 0 0 0 3px rgba(121, 173, 134, 0.12);
+}
+
+.chat-header-actions {
+  gap: 6px;
+}
+
+.chat-header-actions > button {
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  color: #edf1ee;
+  background: transparent;
+}
+
+.new-chat-btn {
+  display: flex !important;
+  padding: 0 10px !important;
+  gap: 6px;
+  font-size: 10px;
+}
+
+.close-chat-btn {
+  width: 42px;
+  border-radius: 9px;
+}
+
+.chat-header-actions > button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.chat-messages {
+  padding: 20px 18px 22px;
+  gap: 18px;
+  background: var(--fb-paper);
+  scrollbar-color: #b8c1bb transparent;
+}
+
+.message-row {
+  gap: 8px;
+}
+
+.msg-bot,
+.msg-user {
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.58;
+}
+
+.msg-bot {
+  max-width: 92%;
+  border: 1px solid var(--fb-line);
+  border-radius: 4px 12px 12px 12px;
+  color: #2b3630;
+  background: var(--fb-surface);
+  box-shadow: 0 3px 10px rgba(32, 40, 36, 0.04);
+}
+
+.msg-user {
+  max-width: 82%;
+  border-radius: 12px 4px 12px 12px;
+  color: #fff;
+  background: var(--fb-terracotta);
+}
+
+.response-label {
+  display: flex;
+  margin: -2px 0 0 4px;
+  align-items: center;
+  gap: 5px;
+  color: var(--fb-herb);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.rag-warning {
+  max-width: 92%;
+  padding: 9px 11px;
+  border: 1px solid #e4d29a;
+  border-radius: 8px;
+  color: #665421;
+  background: #fff9e8;
+  font-size: 11px;
+}
+
+.result-list,
+.vision-results,
+.vision-section {
+  gap: 10px;
+}
+
+.vision-label {
+  color: var(--fb-muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.vision-card,
+.result-card {
+  border: 1px solid var(--fb-line);
+  border-radius: 10px;
+  color: var(--fb-ink);
+  background: var(--fb-surface);
+  box-shadow: 0 4px 14px rgba(32, 40, 36, 0.05);
+}
+
+.vision-card {
+  min-height: 78px;
+  padding: 10px;
+}
+
+.vision-card:hover,
+.result-card:hover {
+  border-color: #b8c6bc;
+  transform: translateY(-1px);
+}
+
+.vision-card-img {
+  width: 62px;
+  height: 58px;
+  border-radius: 7px;
+}
+
+.vision-card-info strong,
+.result-card h3 {
+  color: var(--fb-ink);
+}
+
+.vision-card-info small,
+.result-card p,
+.recipe-result-meta span {
+  color: var(--fb-muted);
+}
+
+.inspiration-ingredients {
+  display: -webkit-box;
+  margin-top: 5px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.4;
+}
+
+.similarity-badge {
+  border-radius: 5px;
+  color: var(--fb-herb);
+  background: #edf5ef;
+}
+
+.result-card {
+  padding: 12px;
+}
+
+.result-card h3 {
+  margin: 5px 0;
+  font-size: 15px;
+}
+
+.result-card-topline {
+  min-width: 0;
+}
+
+.ingredient-match-badge {
+  display: inline-flex;
+  min-height: 22px;
+  padding: 3px 7px;
+  align-items: center;
+  border-radius: 5px;
+  color: #31553d;
+  background: #e7f2e9;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: right;
+}
+
+.ingredient-match-badge.partial {
+  color: #6a541d;
+  background: #fff3d6;
+}
+
+.recipe-result-layout {
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 13px;
+}
+
+.recipe-result-layout img {
+  width: 132px;
+  height: 108px;
+  border-radius: 8px;
+  background: #e8ece8;
+}
+
+.result-badge,
+.source-badge {
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: var(--fb-terracotta-dark);
+  background: #f9ebe7;
+  font-size: 8px;
+  letter-spacing: 0.06em;
+}
+
+.result-rating {
+  color: #8c681e;
+}
+
+.result-action,
+.source-action {
+  min-height: 32px;
+  margin-top: 9px;
+  color: var(--fb-terracotta-dark);
+  font-size: 11px;
+}
+
+.result-action:hover,
+.source-action:hover {
+  color: var(--fb-ink);
+}
+
+.source-list {
+  width: 100%;
+  padding: 0;
+  border-top: 1px solid var(--fb-line);
+  border-bottom: 1px solid var(--fb-line);
+}
+
+.source-list-title {
+  display: flex;
+  min-height: 42px;
+  padding: 0 2px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--fb-muted);
+  cursor: pointer;
+  font-size: 11px;
+  list-style: none;
+}
+
+.source-list-title::-webkit-details-marker {
+  display: none;
+}
+
+.source-list-title > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fb-ink);
+  font-weight: 800;
+}
+
+.source-list-title > span:last-child {
+  color: #52615a;
+  font-variant-numeric: tabular-nums;
+}
+
+.source-card {
+  display: grid;
+  padding: 10px 2px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-top: 1px solid var(--fb-line);
+  border-radius: 0;
+  color: var(--fb-ink);
+  background: transparent;
+}
+
+.source-card h3 {
+  color: var(--fb-ink);
+}
+
+.source-card p {
+  color: var(--fb-muted);
+}
+
+.suggestions {
+  flex-wrap: wrap;
+  gap: 7px;
+  overflow: visible;
+}
+
+.suggestion-chip {
+  min-height: 36px;
+  padding: 7px 11px;
+  flex: 0 1 auto;
+  border: 1px solid #cbd5ce;
+  border-radius: 8px;
+  color: #3f5d4b;
+  background: #fff;
+  font-size: 11px;
+  white-space: normal;
+  text-align: left;
+}
+
+.suggestion-chip:hover:not(:disabled) {
+  border-color: var(--fb-herb);
+  color: #fff;
+  background: var(--fb-herb);
+}
+
+.typing-bubble {
+  display: flex;
+  min-width: 225px;
+  align-items: center;
+  gap: 7px;
+  color: var(--fb-muted);
+  font-size: 11px;
+}
+
+.typing-indicator > span {
+  width: 5px;
+  height: 5px;
+  background: var(--fb-herb);
+}
+
+.chat-input-area {
+  min-height: 94px;
+  padding: 11px 13px 9px;
+  grid-template-columns: minmax(0, 1fr) 44px 44px;
+  grid-template-rows: 44px auto;
+  gap: 7px;
+  border-top: 1px solid var(--fb-line);
+  background: var(--fb-surface);
+}
+
+.chat-input-area > textarea {
+  min-width: 0;
+  max-height: 88px;
+  padding: 11px 13px;
+  resize: none;
+  border: 1px solid #cfd7d1;
+  border-radius: 9px;
+  outline: 0;
+  color: var(--fb-ink);
+  background: #f8faf8;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.chat-input-area > textarea::placeholder {
+  color: #88938d;
+}
+
+.chat-input-area > textarea:focus {
+  border-color: var(--fb-herb);
+  box-shadow: 0 0 0 3px rgba(78, 116, 94, 0.12);
+}
+
+.camera-btn,
+.chat-input-area > button {
+  width: 44px;
+  height: 44px;
+  border-radius: 9px;
+}
+
+.camera-btn {
+  border-color: #cfd7d1;
+  color: var(--fb-ink);
+  background: #f8faf8;
+}
+
+.camera-btn:hover:not(.disabled) {
+  border-color: var(--fb-herb);
+  color: var(--fb-herb);
+}
+
+.chat-input-area > button {
+  background: var(--fb-terracotta);
+}
+
+.chat-input-area > button:hover:not(:disabled) {
+  background: var(--fb-terracotta-dark);
+}
+
+.composer-hint {
+  grid-column: 1 / -1;
+  margin: 0 2px;
+  color: #8a958f;
+  font-size: 10px;
+}
+
+.chat-bubble-btn:focus-visible,
+.chat-window button:focus-visible,
+.chat-window summary:focus-visible,
+.chat-window textarea:focus-visible {
+  outline: 3px solid rgba(84, 113, 135, 0.45);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .chat-bubble-btn {
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    width: 58px;
+    min-width: 58px;
+    height: 58px;
+    padding: 7px;
+    border-radius: 14px;
+  }
+
+  .launcher-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .launcher-copy {
+    display: none;
+  }
+
+  .new-chat-btn span {
+    display: none;
+  }
+
+  .new-chat-btn {
+    width: 42px;
+    padding: 0 !important;
+  }
+
+  .chat-window,
+  :global(body:has(.food-map-page)) .chat-window {
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .chat-header {
+    padding-top: max(14px, env(safe-area-inset-top));
+  }
+
+  .chat-messages {
+    padding: 18px 14px 24px;
+  }
+
+  .recipe-result-layout {
+    grid-template-columns: 110px minmax(0, 1fr);
+  }
+
+  .recipe-result-layout img {
+    width: 110px;
+    height: 102px;
+  }
+
+  .chat-input-area {
+    padding-bottom: max(9px, env(safe-area-inset-bottom));
+  }
+
+  .composer-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .recipe-result-layout {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .recipe-result-layout img {
+    width: 96px;
+    height: 96px;
+  }
+}

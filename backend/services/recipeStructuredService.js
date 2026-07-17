@@ -4,6 +4,7 @@ const RECIPE_SELECT = `
   SELECT
     r.id,
     r.title,
+    r.image_url,
     r.description,
     r.instructions,
     r.servings,
@@ -313,6 +314,14 @@ export function findAvailableIngredient(ingredients, ingredientName) {
   return matches[0] || { ingredient: null, matchScore: 0 }
 }
 
+export function keepBestIngredientCoverage(ranked = []) {
+  if (!ranked.length) return []
+  const bestCoverage = Number(ranked[0]?.coverage || 0)
+  return ranked.filter(
+    (item) => Math.abs(Number(item.coverage || 0) - bestCoverage) < 0.000001
+  )
+}
+
 export async function findRecipesByIngredients(availableIngredients = [], limit = 3) {
   const requested = [...new Set(
     availableIngredients.map(normalizeText).filter(Boolean)
@@ -379,48 +388,50 @@ export async function findRecipesByIngredients(availableIngredients = [], limit 
     ingredientsByRecipe.set(key, current)
   }
 
-  const ranked = recipes
-    .map((recipe) => {
-      const ingredients = ingredientsByRecipe.get(Number(recipe.id)) || []
-      const matchedIngredients = resolvedRequested
-        .map((requestedIngredient) => {
-          const match = findAvailableIngredient(
-            ingredients,
-            requestedIngredient.resolved
-          )
-          return match.ingredient
-            ? {
-                requested: requestedIngredient.input,
-                interpretedAs: requestedIngredient.resolved,
-                corrected: requestedIngredient.corrected,
-                ingredient: match.ingredient,
-                score: match.matchScore,
-              }
-            : null
-        })
-        .filter(Boolean)
-      const coverage = matchedIngredients.length / resolvedRequested.length
-      const averageMatch = matchedIngredients.length
-        ? matchedIngredients.reduce((sum, item) => sum + item.score, 0) /
-          matchedIngredients.length
-        : 0
-      return {
-        recipe: { ...recipe, ingredients },
-        matchedIngredients,
-        missingIngredients: requested.filter(
-          (item) => !matchedIngredients.some((match) => match.requested === item)
-        ),
-        coverage,
-        matchScore: 0.8 * coverage + 0.2 * averageMatch,
-      }
-    })
-    .filter((item) => item.matchedIngredients.length > 0)
-    .sort(
-      (left, right) =>
-        right.coverage - left.coverage ||
-        right.matchScore - left.matchScore ||
-        left.recipe.ingredients.length - right.recipe.ingredients.length
-    )
+  const ranked = keepBestIngredientCoverage(
+    recipes
+      .map((recipe) => {
+        const ingredients = ingredientsByRecipe.get(Number(recipe.id)) || []
+        const matchedIngredients = resolvedRequested
+          .map((requestedIngredient) => {
+            const match = findAvailableIngredient(
+              ingredients,
+              requestedIngredient.resolved
+            )
+            return match.ingredient
+              ? {
+                  requested: requestedIngredient.input,
+                  interpretedAs: requestedIngredient.resolved,
+                  corrected: requestedIngredient.corrected,
+                  ingredient: match.ingredient,
+                  score: match.matchScore,
+                }
+              : null
+          })
+          .filter(Boolean)
+        const coverage = matchedIngredients.length / resolvedRequested.length
+        const averageMatch = matchedIngredients.length
+          ? matchedIngredients.reduce((sum, item) => sum + item.score, 0) /
+            matchedIngredients.length
+          : 0
+        return {
+          recipe: { ...recipe, ingredients },
+          matchedIngredients,
+          missingIngredients: requested.filter(
+            (item) => !matchedIngredients.some((match) => match.requested === item)
+          ),
+          coverage,
+          matchScore: 0.8 * coverage + 0.2 * averageMatch,
+        }
+      })
+      .filter((item) => item.matchedIngredients.length > 0)
+      .sort(
+        (left, right) =>
+          right.coverage - left.coverage ||
+          right.matchScore - left.matchScore ||
+          left.recipe.ingredients.length - right.recipe.ingredients.length
+      )
+  )
     .slice(0, Math.max(1, Math.min(Number(limit) || 3, 5)))
 
   return {

@@ -84,6 +84,13 @@ function closeMobileNav() {
   isMobileNavOpen.value = false
 }
 
+function handleGlobalKeydown(event) {
+  if (event.key === 'Escape' && isMobileNavOpen.value) {
+    closeMobileNav()
+    document.querySelector('.mobile-menu-toggle')?.focus()
+  }
+}
+
 async function logout() {
   closeMobileNav()
   await authStore.logout()
@@ -187,6 +194,7 @@ onMounted(async () => {
   updateParallax()
   window.addEventListener('scroll', requestParallaxFrame, { passive: true })
   window.addEventListener('resize', requestParallaxFrame)
+  window.addEventListener('keydown', handleGlobalKeydown)
   window.addEventListener('foodstory-auth-expired', handleAuthExpired)
 
   await nextTick()
@@ -197,6 +205,7 @@ onBeforeUnmount(() => {
   revealObserver?.disconnect()
   window.removeEventListener('scroll', requestParallaxFrame)
   window.removeEventListener('resize', requestParallaxFrame)
+  window.removeEventListener('keydown', handleGlobalKeydown)
   window.removeEventListener('foodstory-auth-expired', handleAuthExpired)
 
   if (rafId) {
@@ -229,6 +238,14 @@ watch(
     await nextTick()
     observeMotion()
     requestParallaxFrame()
+  },
+)
+
+watch(
+  () => route.path,
+  async () => {
+    await nextTick()
+    document.getElementById('main-content')?.focus({ preventScroll: true })
   },
 )
 </script>
@@ -315,7 +332,7 @@ watch(
     <main id="main-content" tabindex="-1">
       <RouterView v-slot="{ Component, route: activeRoute }">
         <Transition name="page" mode="out-in">
-          <div :key="activeRoute.fullPath" class="page-view">
+          <div :key="activeRoute.name || activeRoute.path" class="page-view">
             <component :is="Component" />
           </div>
         </Transition>

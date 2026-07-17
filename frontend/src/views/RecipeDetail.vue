@@ -503,6 +503,8 @@ async function loadRecipe(recipeId = route.params.id) {
       return
     }
 
+    document.title = `${loadedRecipe.title} | FoodStory`
+
     commentStore.comments
       .filter((comment) => Number(comment.recipe_id) === Number(loadedRecipe.id))
       .forEach((comment) => {
@@ -1010,7 +1012,7 @@ watch(
       </section>
 
       <div class="recipe-detail-content">
-        <main class="recipe-detail-main-column">
+        <article class="recipe-detail-main-column">
           <section class="recipe-blog-section">
             <div class="recipe-card-heading">
               <span class="recipe-card-heading-icon">
@@ -1049,14 +1051,14 @@ watch(
                   <AppIcon name="leaf" size="21" />
                 </span>
                 <div>
-                  <p class="section-kicker">Key ingredients</p>
-                  <h2>Key Ingredients</h2>
+                  <p class="section-kicker">Shopping list</p>
+                  <h2>All Ingredients</h2>
                 </div>
               </div>
               <span class="section-count">{{ ingredientItems.length }} items</span>
             </div>
             <ul v-if="hasIngredients" class="ingredient-list recipe-key-ingredients">
-              <li v-for="ingredient in ingredientItems.slice(0, 8)" :key="ingredient.key">
+              <li v-for="ingredient in ingredientItems" :key="ingredient.key">
                 <span class="recipe-ingredient-icon">
                   <AppIcon name="leaf" size="16" />
                 </span>
@@ -1315,7 +1317,7 @@ watch(
             </div>
           </section>
 
-        </main>
+        </article>
 
         <aside class="recipe-detail-sidebar">
           <section class="recipe-side-card">
@@ -1360,7 +1362,9 @@ watch(
                 aria-valuemin="0"
                 aria-valuemax="100"
               >
-                <span :style="{ width: `${checklistProgress}%` }"></span>
+                <span
+                  :style="{ transform: `scaleX(${checklistProgress / 100})` }"
+                ></span>
               </div>
             </div>
             <p v-if="!authStore.isLoggedIn">
@@ -1371,7 +1375,12 @@ watch(
             <p v-else-if="!checklistStore.activeChecklist" class="muted-copy">
               Generate a checklist to tick off ingredients while shopping or cooking.
             </p>
-            <ul v-else class="checklist-list recipe-live-checklist">
+            <ul
+              v-else
+              class="checklist-list recipe-live-checklist"
+              tabindex="0"
+              aria-label="Ingredient checklist. Scroll within this list to review every item."
+            >
               <li v-for="item in checklistStore.items" :key="item.id">
                 <label>
                   <input

@@ -7,8 +7,8 @@ import { fetchDailyMeal } from "../services/mealApi";
 const fallbackMeal = {
   title: "Steak and Kidney Pie",
   image: "https://www.themealdb.com/images/media/meals/qysyss1511558054.jpg",
-  category: "British",
-  area: "Beef",
+  category: "Beef",
+  area: "British",
   description:
     "A rich savory pie for days when you want something different without losing the comfort of a home-cooked meal.",
   tags: [],
@@ -59,12 +59,12 @@ const featuredRecipes = [
 ];
 
 const categories = [
-  { label: "Vietnamese Cuisine", icon: "bowl", accent: "red" },
-  { label: "Street Food", icon: "store", accent: "pink" },
-  { label: "Recipes", icon: "book-open", accent: "blue" },
-  { label: "Trends", icon: "trending-up", accent: "orange" },
-  { label: "Ingredients", icon: "leaf", accent: "green" },
-  { label: "News", icon: "newspaper", accent: "purple" },
+  { label: "Vietnamese Cuisine", icon: "bowl", accent: "red", to: "/recipes?category=Vietnamese" },
+  { label: "Street Food", icon: "store", accent: "pink", to: "/food-map" },
+  { label: "Recipes", icon: "book-open", accent: "blue", to: "/recipes" },
+  { label: "Trends", icon: "trending-up", accent: "orange", to: "/news?category=Trends" },
+  { label: "Ingredients", icon: "leaf", accent: "green", to: "/recipes" },
+  { label: "News", icon: "newspaper", accent: "purple", to: "/news" },
 ];
 
 async function loadDailyMeal() {
@@ -142,7 +142,7 @@ onBeforeUnmount(() => {
         <p class="text-red">Featured Recipes</p>
         <h2>Our Most Loved Dishes</h2>
       </div>
-      <RouterLink class="text-link" to="/news">
+      <RouterLink class="text-link" to="/recipes">
         <span>View all</span>
         <AppIcon name="arrow-right" size="17" />
       </RouterLink>
@@ -181,7 +181,7 @@ onBeforeUnmount(() => {
               <AppIcon name="star" size="16" />
               {{ recipe.rating }}
             </strong>
-            <RouterLink to="/news">
+            <RouterLink to="/recipes">
               <span>View More</span>
               <AppIcon name="arrow-right" size="16" />
             </RouterLink>
@@ -191,7 +191,7 @@ onBeforeUnmount(() => {
     </div>
   </section>
 
-  <section class="section random-section page-pad">
+  <section id="daily-inspiration" class="section random-section page-pad">
     <div class="section-heading">
       <p class="eyebrow">TheMealDB API</p>
       <h2>Daily Inspiration</h2>
@@ -215,7 +215,7 @@ onBeforeUnmount(() => {
         </div>
         <h3>{{ dailyMeal.title }}</h3>
         <p>
-          {{ dailyMeal.description.slice(0, 220) }}...
+          {{ (dailyMeal.description || "A fresh meal idea for your next cooking session.").slice(0, 220) }}...
         </p>
         
         <div v-if="dailyMeal.tags && dailyMeal.tags.length" class="meal-tags">
@@ -256,16 +256,17 @@ onBeforeUnmount(() => {
       <h2>Food Topics</h2>
     </div>
     <div class="category-grid">
-      <article
+      <RouterLink
         v-for="category in categories"
         :key="category.label"
+        :to="category.to"
         class="topic-card"
       >
         <span :class="['topic-icon', category.accent]">
           <AppIcon :name="category.icon" size="24" />
         </span>
         <h3>{{ category.label }}</h3>
-      </article>
+      </RouterLink>
     </div>
   </section>
 </template>

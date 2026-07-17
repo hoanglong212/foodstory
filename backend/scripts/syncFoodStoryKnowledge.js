@@ -120,6 +120,7 @@ function buildRestaurantDocument(restaurant) {
     restaurant.category ? `Category: ${restaurant.category}.` : '',
     restaurant.district ? `District: ${restaurant.district}.` : '',
     restaurant.address ? `Address: ${restaurant.address}.` : '',
+    restaurant.featured_dish ? `Featured dish: ${restaurant.featured_dish}.` : '',
     restaurant.description ? `Description: ${restaurant.description}` : '',
     restaurant.price_range ? `Price range: ${restaurant.price_range}.` : '',
     restaurant.avg_rating ? `Average rating: ${restaurant.avg_rating}.` : '',
@@ -139,6 +140,9 @@ function buildRestaurantDocument(restaurant) {
       longitude: restaurant.longitude,
       avgRating: restaurant.avg_rating,
       priceRange: restaurant.price_range,
+      featuredDish: restaurant.featured_dish,
+      sourceUrl: restaurant.source_url,
+      verifiedAt: restaurant.verified_at,
     },
   }
 }

@@ -1,89 +1,26 @@
-const DAILY_MEAL_CACHE_KEY = 'foodstory_daily_meal_cache'
-const DAILY_MEAL_CACHE_TTL_MS = 6 * 60 * 60 * 1000
-const DAILY_MEAL_TIMEOUT_MS = 2500
-const DAILY_MEAL_URL = 'https://www.themealdb.com/api/json/v1/1/random.php'
-
-function readCachedMeal() {
-  try {
-    const cached = JSON.parse(window.sessionStorage.getItem(DAILY_MEAL_CACHE_KEY) || 'null')
-    if (!cached?.meal || !cached?.savedAt) {
-      return null
-    }
-
-    if (Date.now() - cached.savedAt > DAILY_MEAL_CACHE_TTL_MS) {
-      window.sessionStorage.removeItem(DAILY_MEAL_CACHE_KEY)
-      return null
-    }
-
-    return cached.meal
-  } catch {
-    return null
-  }
-}
-
-function writeCachedMeal(meal) {
-  try {
-    window.sessionStorage.setItem(
-      DAILY_MEAL_CACHE_KEY,
-      JSON.stringify({
-        meal,
-        savedAt: Date.now(),
-      }),
-    )
-  } catch {
-    // Cache is an optimization only.
-  }
-}
+import api from './api'
 
 export async function fetchDailyMeal() {
-  const cachedMeal = readCachedMeal()
-  if (cachedMeal) {
-    return cachedMeal
+  const response = await api.get('/home/daily-inspiration')
+  const meal = response.data
+
+  if (!meal?.title || !meal?.image) {
+    throw new Error('FoodStory returned no Daily Inspiration meal.')
   }
 
-  const controller = new AbortController()
-  const timeoutId = window.setTimeout(() => controller.abort(), DAILY_MEAL_TIMEOUT_MS)
-
-  const response = await fetch(DAILY_MEAL_URL, { signal: controller.signal }).finally(() => {
-    window.clearTimeout(timeoutId)
-  })
-
-  if (!response.ok) {
-    throw new Error('Unable to load TheMealDB inspiration.')
+  return {
+    id: meal.id || meal.title,
+    title: meal.title,
+    image: meal.image,
+    category: meal.category || 'Meal',
+    area: meal.area || 'Global',
+    description: meal.description || '',
+    tags: Array.isArray(meal.tags) ? meal.tags.slice(0, 3) : [],
+    ingredients: Array.isArray(meal.ingredients)
+      ? meal.ingredients.slice(0, 5)
+      : [],
+    source: meal.source || 'foodstory',
+    isFallback: Boolean(meal.isFallback),
+    dateKey: meal.dateKey || null,
   }
-
-  const data = await response.json()
-  const meal = data.meals?.[0]
-
-  if (!meal) {
-    throw new Error('TheMealDB returned no meal today.')
-  }
-
-  const mealSummary = {
-    title: meal.strMeal,
-    image: meal.strMealThumb,
-    category: meal.strCategory,
-    area: meal.strArea,
-    description: meal.strInstructions,
-    tags: (meal.strTags || '').split(',').filter(tag => tag.trim()).map(tag => tag.trim()).slice(0, 3),
-    ingredients: extractIngredients(meal),
-  }
-
-  writeCachedMeal(mealSummary)
-  return mealSummary
-}
-
-function extractIngredients(meal) {
-  const ingredients = []
-  for (let i = 1; i <= 20; i++) {
-    const ingredient = meal[`strIngredient${i}`]
-    const measure = meal[`strMeasure${i}`]
-    if (ingredient && ingredient.trim()) {
-      ingredients.push({
-        name: ingredient.trim(),
-        measure: (measure || '').trim(),
-      })
-    }
-  }
-  return ingredients.slice(0, 5)
 }

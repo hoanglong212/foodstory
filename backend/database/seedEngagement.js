@@ -355,7 +355,7 @@ async function seedEngagement() {
     console.log(`- Favorites: ${favoritePairs.length}`)
     console.log(`- Ratings: ${ratingPairs.length}`)
     console.log(`- Comments: ${comments.length}`)
-    console.log(`- Seed user password: ${SEED_PASSWORD}`)
+    console.log('- Seed user password configured (value omitted from logs)')
   } catch (error) {
     await connection.rollback()
     throw error

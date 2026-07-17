@@ -314,7 +314,7 @@ onBeforeUnmount(() => {
         {{ loadError || serverError }}
       </p>
 
-      <p v-if="isLoadingForm" class="status-panel">Loading form...</p>
+      <p v-if="isLoadingForm" class="status-panel" role="status" aria-live="polite">Loading form...</p>
 
       <div v-else-if="submittedRecipe" class="submission-success" role="status">
         <span class="submission-success-icon">

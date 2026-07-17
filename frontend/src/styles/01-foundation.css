@@ -149,9 +149,9 @@
   --header-solid-control: rgba(45, 41, 38, 0.08);
   --shell-bg: var(--bg);
   --hero-overlay:
-    linear-gradient(90deg, rgba(45, 41, 38, 0.55), rgba(232, 133, 50, 0.18)),
-    linear-gradient(180deg, rgba(246, 240, 231, 0.08), rgba(246, 240, 231, 0.96));
-  --hero-copy: #4a4541;
+    linear-gradient(90deg, rgba(28, 22, 18, 0.72), rgba(56, 35, 22, 0.42)),
+    linear-gradient(180deg, rgba(28, 22, 18, 0.28), rgba(28, 22, 18, 0.78));
+  --hero-copy: #f7eee6;
   --chip-bg: rgba(232, 133, 50, 0.15);
   --chip-strong-bg: rgba(232, 133, 50, 0.25);
   --button-outline: rgba(45, 41, 38, 0.3);
@@ -187,7 +187,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -207,7 +208,8 @@ a {
 a,
 button,
 input,
-select {
+select,
+textarea {
   transition:
     color 220ms var(--ease-standard),
     background-color 220ms var(--ease-standard),
@@ -653,12 +655,31 @@ body:has(.food-map-page) .site-footer {
   color: var(--accent-hot);
 }
 
+:root[data-theme="light"] .hero-content h1 {
+  color: #fffaf5;
+  text-shadow: 0 2px 18px rgba(20, 13, 9, 0.28);
+}
+
+:root[data-theme="light"] .hero-content h1 span {
+  color: #ff9b52;
+}
+
+:root[data-theme="light"] .hero-content > .eyebrow {
+  border-color: rgba(255, 174, 112, 0.72);
+  color: #ffd4b3;
+  background: rgba(35, 22, 15, 0.46);
+}
+
 .hero-copy {
   max-width: 720px;
   margin: 20px auto 0;
   color: var(--hero-copy);
   font-size: clamp(19px, 2.2vw, 21px);
   line-height: 1.55;
+}
+
+:root[data-theme="light"] .hero-copy {
+  text-shadow: 0 1px 10px rgba(20, 13, 9, 0.32);
 }
 
 .hero-actions {
@@ -725,10 +746,21 @@ body:has(.food-map-page) .site-footer {
   background: rgba(255, 255, 255, 0.04);
 }
 
+:root[data-theme="light"] .hero-actions .btn-outline {
+  border-color: rgba(255, 250, 245, 0.66);
+  color: #fffaf5;
+  background: rgba(28, 22, 18, 0.24);
+}
+
 @media (hover: hover) {
   .btn-outline:hover {
     background: rgba(255, 255, 255, 0.1);
     border-color: var(--text);
+  }
+
+  :root[data-theme="light"] .hero-actions .btn-outline:hover {
+    border-color: #fffaf5;
+    background: rgba(28, 22, 18, 0.42);
   }
 }
 
@@ -934,6 +966,7 @@ body:has(.food-map-page) .site-footer {
 }
 
 .random-section {
+  scroll-margin-top: calc(var(--nav-height, 76px) + 20px);
   padding-top: 34px;
 }
 
@@ -1229,7 +1262,11 @@ body:has(.food-map-page) .site-footer {
   border-radius: 50%;
   background: var(--soft-surface-strong);
   color: var(--muted-strong);
-  transition: all var(--duration-fast) var(--ease-out-quart);
+  transition:
+    color var(--duration-fast) var(--ease-out-quart),
+    background-color var(--duration-fast) var(--ease-out-quart),
+    box-shadow var(--duration-fast) var(--ease-out-quart),
+    transform var(--duration-fast) var(--ease-out-quart);
 }
 
 .social-row a:hover {
@@ -1459,7 +1496,11 @@ body:has(.food-map-page) .site-footer {
   color: var(--text);
   background: var(--soft-surface);
   font-weight: 850;
-  transition: all var(--duration-fast) var(--ease-out-quart);
+  transition:
+    color var(--duration-fast) var(--ease-out-quart),
+    background-color var(--duration-fast) var(--ease-out-quart),
+    border-color var(--duration-fast) var(--ease-out-quart),
+    transform var(--duration-fast) var(--ease-out-quart);
 }
 
 .pagination button:not(:disabled):hover {
@@ -3160,4 +3201,13 @@ body:has(.food-map-page) .site-footer {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }

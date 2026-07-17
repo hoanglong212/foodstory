@@ -106,7 +106,7 @@ function dishExploreLinks(candidate) {
       <div class="vision-result-actions">
         <button class="vision-result-primary" type="button" @click="emit('focus-match')">View on map</button>
         <button type="button" @click="emit('focus-match')">Details</button>
-        <button v-if="matchedMapPlace" type="button" @click="emit('save-match')"><AppIcon name="bookmark" size="16" /> Save</button>
+        <button v-if="matchedMapPlace" type="button" @click="emit('save-match')"><AppIcon name="bookmark" size="16" /> {{ matchedMapPlace.isOwned ? 'Open My Map' : 'Add to My Map' }}</button>
       </div>
     </template>
 

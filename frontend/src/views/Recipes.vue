@@ -778,7 +778,7 @@ async function deleteRecipe(recipe) {
         </section>
       </aside>
 
-      <main class="recipe-reference-main">
+      <div class="recipe-reference-main">
         <header id="discover" class="recipe-reference-hero">
           <img
             v-if="bigRightNow[0]"
@@ -1187,7 +1187,7 @@ async function deleteRecipe(recipe) {
             </nav>
           </section>
         </template>
-      </main>
+      </div>
 
       <aside class="recipe-right-rail" aria-label="Trending recipes">
         <section v-if="trendingTopics.length" class="trending-card">

@@ -925,8 +925,14 @@ body:has(.recipe-detail-magazine) .mobile-menu-toggle {
 
   .recipe-detail-magazine .recipe-detail-sidebar {
     position: static;
-    grid-row: auto;
+    grid-row: 1;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: none;
+    overflow: visible;
+  }
+
+  .recipe-detail-magazine .recipe-detail-main-column {
+    grid-row: 2;
   }
 
   .recipe-detail-magazine .recipe-detail-title-block {

@@ -14,6 +14,27 @@ function isVietnameseRoute(routeOrIntent) {
   return routeOrIntent?.entities?.responseLanguage === 'vi'
 }
 
+const VIETNAMESE_INGREDIENT_LABELS = new Map([
+  ['trung', 'trứng'],
+  ['sua', 'sữa'],
+  ['ca', 'cá'],
+  ['ga', 'gà'],
+  ['bo', 'bò'],
+  ['thit bo', 'thịt bò'],
+  ['heo', 'heo'],
+  ['thit heo', 'thịt heo'],
+  ['tom', 'tôm'],
+  ['com', 'cơm'],
+  ['banh mi', 'bánh mì'],
+])
+
+function ingredientInputLabel(value, vietnamese = false) {
+  const normalized = String(value || '').trim()
+  return vietnamese
+    ? VIETNAMESE_INGREDIENT_LABELS.get(normalized) || normalized
+    : normalized
+}
+
 export function buildRecipeSource(recipe, score = 1, matchLevel = 'exact') {
   if (!recipe) return null
   return {
@@ -88,6 +109,56 @@ export function createChatbotResponse({
   }
 }
 
+export function buildRetrievalPresentationResults(results = []) {
+  return results
+    .filter((item) => ['recipe', 'restaurant', 'food_spot'].includes(item.sourceType))
+    .map((item) => {
+      const metadata = item.metadata || {}
+      if (item.sourceType === 'recipe') {
+        return {
+          id: item.sourceId,
+          title: item.title,
+          image_url: metadata.imageUrl || metadata.image_url || null,
+          category: metadata.categoryName || metadata.category || 'Recipe',
+          prep_time: Number(metadata.prepTime || metadata.prep_time || 0),
+          cook_time: Number(metadata.cookTime || metadata.cook_time || 0),
+          servings: Number(metadata.servings || 0) || null,
+          difficulty: metadata.difficulty || null,
+          calories: Number(metadata.calories || 0),
+          protein: Number(metadata.protein || 0),
+          avg_rating: Number(metadata.averageRating || metadata.avg_rating || 0),
+          result_type: 'recipe',
+        }
+      }
+
+      if (item.sourceType === 'restaurant') {
+        return {
+          id: item.sourceId,
+          name: item.title,
+          image_url: metadata.imageUrl || metadata.image_url || null,
+          category: metadata.category || 'Restaurant',
+          district: metadata.district || null,
+          address: metadata.address || null,
+          price_range: metadata.priceRange || metadata.price_range || null,
+          avg_rating: Number(metadata.averageRating || metadata.avg_rating || 0),
+          description: metadata.description || null,
+          result_type: 'restaurant',
+        }
+      }
+
+      return {
+        id: item.sourceId,
+        name: item.title,
+        image_url: metadata.imageUrl || metadata.image_url || null,
+        category: metadata.category || 'Saved place',
+        district: metadata.district || null,
+        dish_name: metadata.dishName || metadata.dish_name || null,
+        rating: Number(metadata.rating || 0),
+        result_type: 'spot',
+      }
+    })
+}
+
 function noDataAnswer(result, vietnamese = false) {
   if (result.status === 'needs_context') {
     return vietnamese
@@ -132,7 +203,7 @@ function noDataAnswer(result, vietnamese = false) {
     : 'FoodStory does not have enough structured data for that request.')
 }
 
-export function buildRecipeStructuredResponse(result, routeOrIntent) {
+function buildRecipeStructuredResponseInternal(result, routeOrIntent) {
   const intent = routeIntent(routeOrIntent)
   const vietnamese = isVietnameseRoute(routeOrIntent)
 
@@ -175,8 +246,12 @@ export function buildRecipeStructuredResponse(result, routeOrIntent) {
     })
     const best = ranked[0]
     const corrections = (result.ingredientCorrections || [])
-      .map((item) => `${item.input} → ${item.resolved}`)
-      .join(', ')
+      .map((item) =>
+        vietnamese
+          ? `“${ingredientInputLabel(item.input, true)}” là ${item.resolved}`
+          : `${item.input} → ${item.resolved}`
+      )
+      .join(vietnamese ? ' và ' : ', ')
     const correctionPrefix = corrections
       ? vietnamese
         ? `Tôi hiểu ${corrections}. `
@@ -194,10 +269,14 @@ export function buildRecipeStructuredResponse(result, routeOrIntent) {
       sources,
       results: ranked.map((item) => ({
         ...item.recipe,
+        match_coverage: item.coverage,
+        matched_ingredient_count: item.matchedIngredients.length,
+        requested_ingredient_count: result.requestedIngredients?.length || 0,
+        missing_ingredients: item.missingIngredients || [],
         result_type: 'recipe',
       })),
       suggestions: vietnamese
-        ? [`Cần bao nhiêu ${result.requestedIngredients?.[0] || 'nguyên liệu'}?`]
+        ? [`Cần bao nhiêu ${ingredientInputLabel(result.requestedIngredients?.[0], true) || 'nguyên liệu'}?`]
         : [`How much ${result.requestedIngredients?.[0] || 'of it'} is needed?`],
     })
   }
@@ -371,6 +450,51 @@ export function buildRecipeStructuredResponse(result, routeOrIntent) {
   })
 }
 
+function normalizeRecipePresentation(recipe) {
+  if (!recipe) return null
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    category: recipe.category || recipe.category_name || 'Recipe',
+    image_url: recipe.image_url || recipe.imageUrl || null,
+    prep_time: Number(recipe.prep_time || recipe.prepTime || 0),
+    cook_time: Number(recipe.cook_time || recipe.cookTime || 0),
+    servings: Number(recipe.servings || 0) || null,
+    difficulty: recipe.difficulty || null,
+    calories: Number(recipe.calories || 0),
+    protein: Number(recipe.protein || 0),
+    avg_rating: Number(recipe.avg_rating || recipe.average_rating || 0),
+    match_coverage:
+      recipe.match_coverage === null || recipe.match_coverage === undefined
+        ? null
+        : Number(recipe.match_coverage),
+    matched_ingredient_count:
+      Number(recipe.matched_ingredient_count || 0) || null,
+    requested_ingredient_count:
+      Number(recipe.requested_ingredient_count || 0) || null,
+    missing_ingredients: Array.isArray(recipe.missing_ingredients)
+      ? recipe.missing_ingredients.slice(0, 6)
+      : [],
+    result_type: 'recipe',
+  }
+}
+
+export function buildRecipeStructuredResponse(result, routeOrIntent) {
+  const response = buildRecipeStructuredResponseInternal(result, routeOrIntent)
+  const existingResults = (response.results || []).map((item) =>
+    item.result_type === 'recipe' || item.title
+      ? normalizeRecipePresentation(item)
+      : item
+  )
+
+  if (existingResults.length) {
+    return { ...response, results: existingResults.filter(Boolean) }
+  }
+
+  const recipe = normalizeRecipePresentation(result?.recipe)
+  return recipe ? { ...response, results: [recipe] } : response
+}
+
 function describeRestaurant(restaurant) {
   const details = [
     restaurant.category,
@@ -516,7 +640,9 @@ export function buildRestaurantStructuredResponse(result, routeOrIntent) {
       : vietnamese
         ? `FoodStory có ${restaurant.name}, nhưng chưa có thông tin mức giá.`
         : `FoodStory has ${restaurant.name}, but its price range is not recorded.`,
-    restaurant_rating: Number.isFinite(Number(restaurant.avg_rating))
+    restaurant_rating:
+      Number.isFinite(Number(restaurant.avg_rating)) &&
+      Number(restaurant.avg_rating) > 0
       ? vietnamese
         ? `${restaurant.name} có điểm đánh giá trung bình ${restaurant.avg_rating}/5 trên FoodStory.`
         : `${restaurant.name} has an average FoodStory rating of ${restaurant.avg_rating} out of 5.`

@@ -373,6 +373,25 @@ function extractDirectRecipeName(message) {
   ) || null
 }
 
+function extractNamedDishCookingRequest(message) {
+  const normalized = normalizeText(message)
+  const patterns = [
+    /^(?:toi|minh)\s+(?:muon|can)\s+(?:nau|lam|che bien)\s+(?:mon\s+)?(.+)$/,
+    /^(?:i\s+)?(?:want|would like|need)\s+to\s+(?:cook|make|prepare)\s+(.+)$/,
+  ]
+
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern)
+    if (!match) continue
+    const recipeName = cleanEntity(match[1])
+    if (!recipeName || /^(?:gi|mon gi|something|something tasty)$/.test(recipeName)) {
+      return null
+    }
+    return recipeName
+  }
+  return null
+}
+
 function extractRecipeIngredientListRequest(message) {
   const normalized = normalizeText(message)
   if (
@@ -393,6 +412,8 @@ function extractRecipeIngredientListRequest(message) {
     /^(?:cho toi|liet ke)\s+(?:danh sach\s+)?nguyen lieu\s+(?:de\s+)?(?:nau|lam|che bien)?\s*(.+)$/,
     /^nguyen lieu\s+(?:de\s+)?(?:nau|lam|che bien)\s+(.+)$/,
     /^(?:what|which)\s+ingredients\s+(?:do i need\s+)?(?:for|to cook|to make)\s+(.+)$/,
+    /^(?:what|which)\s+ingredients\s+are\s+(?:in|used in)\s+(.+)$/,
+    /^what\s+are\s+the\s+ingredients\s+(?:in|for|of)\s+(.+)$/,
     /^what\s+do\s+i\s+need\s+to\s+(?:cook|make)\s+(.+)$/,
   ]
   for (const pattern of patterns) {
@@ -813,7 +834,9 @@ export function routeFoodStoryQuery(message, context = {}) {
     )
   }
 
-  const directRecipeName = extractDirectRecipeName(message)
+  const namedDishCookingRequest = extractNamedDishCookingRequest(message)
+  const directRecipeName =
+    extractDirectRecipeName(message) || namedDishCookingRequest
   if (directRecipeName) {
     return makeRoute(
       targetServings ? 'recipe_serving_scale' : 'recipe_steps',
@@ -822,6 +845,7 @@ export function routeFoodStoryQuery(message, context = {}) {
         targetServings,
         budgetAmount: budget?.amount || null,
         budgetCurrency: budget?.currency || null,
+        allowGeneralGuidance: true,
         sourcePreference: 'recipe',
       },
       0.96,
@@ -1036,6 +1060,7 @@ export function routeFoodStoryQuery(message, context = {}) {
           recipeName,
           needsRecipeContext:
             !recipeName && /\b(?:mon nay|mon do|cong thuc nay)\b/.test(normalized),
+          allowGeneralGuidance: Boolean(recipeName),
           sourcePreference: 'recipe',
         },
         0.94,
@@ -1195,7 +1220,7 @@ export function routeFoodStoryQuery(message, context = {}) {
   }
 
   if (
-    /\bmy (?:saved )?(?:places|food spots)\b/.test(normalized) ||
+    /\bmy (?:saved )?(?:food map )?(?:places|food spots)\b/.test(normalized) ||
     /\bwhat places (?:did|have) i save\b/.test(normalized) ||
     /\bshow\b.*\bmy saved places\b/.test(normalized)
   ) {
@@ -1321,7 +1346,12 @@ export function routeFoodStoryQuery(message, context = {}) {
 
     return makeRoute(
       'recipe_steps',
-      { recipeName, needsRecipeContext, sourcePreference: 'recipe' },
+      {
+        recipeName,
+        needsRecipeContext,
+        allowGeneralGuidance: Boolean(recipeName),
+        sourcePreference: 'recipe',
+      },
       0.94,
       { structured: true }
     )

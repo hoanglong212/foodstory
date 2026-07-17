@@ -11,8 +11,8 @@ import ratingRoutes from './routes/ratingRoutes.js'
 import checklistRoutes from './routes/checklistRoutes.js'
 import foodSpotsRoutes from './routes/foodSpots.js'
 import restaurantsRoutes from './routes/restaurants.js'
-import chatbotRoutes from './routes/chatbot.js'
 import foodStoryChatbotRoutes from './routes/chatbotRoutes.js'
+import homeRoutes from './routes/homeRoutes.js'
 import adminRoutes from './routes/admin.js'
 import pool from './db.js'
 import aiRoutes from './routes/aiRoutes.js'
@@ -81,6 +81,7 @@ app.get('/api/health', async (req, res) => {
 })
 
 app.use('/api/auth', authRoutes)
+app.use('/api/home', homeRoutes)
 app.use('/api/news', newsRoutes)
 app.use('/api/recipes', recipeRoutes)
 app.use('/api', ratingRoutes)
@@ -89,7 +90,6 @@ app.use('/api/favorites', favoriteRoutes)
 app.use('/api', checklistRoutes)
 app.use('/api/food-spots', foodSpotsRoutes)
 app.use('/api/restaurants', restaurantsRoutes)
-app.use('/api/chatbot', chatbotRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/ai', aiRoutes)
 app.use('/api/vision', visionRoutes)
