@@ -88,6 +88,7 @@ export function useVisionAuto({
 
   let controller = null
   let elapsedTimer = 0
+  let pollDelayCancel = null
   const runGuard = createVisionAutoRunGuard()
   let startedAt = 0
   let activeJobId = ''
@@ -118,6 +119,21 @@ export function useVisionAuto({
     elapsedTimer = window.setInterval(() => {
       elapsedSeconds.value = Math.floor((Date.now() - startedAt) / 1000)
     }, 500)
+  }
+
+  function waitForNextPoll(signal) {
+    return new Promise((resolve) => {
+      let timer = 0
+      const finish = () => {
+        window.clearTimeout(timer)
+        signal?.removeEventListener('abort', finish)
+        if (pollDelayCancel === finish) pollDelayCancel = null
+        resolve()
+      }
+      timer = window.setTimeout(finish, 1500)
+      signal?.addEventListener('abort', finish, { once: true })
+      pollDelayCancel = finish
+    })
   }
 
   function clearResult() {
@@ -154,6 +170,7 @@ export function useVisionAuto({
   function cancel() {
     runGuard.invalidate()
     controller?.abort()
+    pollDelayCancel?.()
     if (activeJobId) cancelJob(activeJobId).catch(() => undefined)
     activeJobId = ''
     controller = null
@@ -184,16 +201,23 @@ export function useVisionAuto({
     state.value = 'analyzing'
     hasSubmittedSource.value = true
     startElapsedTimer()
+    let submittedJobId = ''
 
     try {
       const created = await createJob({ url: url.value.trim(), signal: requestController.signal })
-      activeJobId = created?.data?.jobId || ''
-      if (!activeJobId) throw new Error('Vision Auto job did not start.')
+      const jobId = created?.data?.jobId || ''
+      if (!jobId) throw new Error('Vision Auto job did not start.')
+      submittedJobId = jobId
+      if (!runGuard.isCurrent(requestId) || requestController.signal.aborted) {
+        cancelJob(jobId).catch(() => undefined)
+        return null
+      }
+      activeJobId = jobId
       let job = created.data
       while (!['completed', 'not_found', 'failed', 'cancelled', 'timed_out'].includes(job.status)) {
-        await new Promise((resolve) => window.setTimeout(resolve, 1500))
+        await waitForNextPoll(requestController.signal)
         if (!runGuard.isCurrent(requestId) || requestController.signal.aborted) return null
-        job = (await getJob(activeJobId, { signal: requestController.signal })).data
+        job = (await getJob(jobId, { signal: requestController.signal })).data
         state.value = job.status === 'fast_analysis' || job.status === 'deep_analysis' || job.status === 'resolving' ? job.status : 'analyzing'
       }
       if (!runGuard.isCurrent(requestId)) return null
@@ -225,7 +249,7 @@ export function useVisionAuto({
       if (runGuard.isCurrent(requestId)) {
         stopElapsedTimer()
         controller = null
-        activeJobId = ''
+        if (activeJobId === submittedJobId) activeJobId = ''
       }
     }
   }
