@@ -5,6 +5,19 @@ from fastapi import HTTPException
 import main
 
 
+class FakeNetworkStream:
+    def __init__(self, address):
+        self.address = address
+
+    def get_extra_info(self, name):
+        return self.address if name == "server_addr" else None
+
+
+class FakeResponse:
+    def __init__(self, address):
+        self.extensions = {"network_stream": FakeNetworkStream(address)}
+
+
 def expect_http_error(callable_, status_code):
     try:
         callable_()
@@ -33,7 +46,33 @@ def run():
         400,
     )
     print("PASS loopback/private image URL is rejected")
-    print("AI service deterministic smoke complete: 4/4 checks passed, 0 failed.")
+
+    expect_http_error(
+        lambda: main.validate_public_response_peer(FakeResponse(("127.0.0.1", 80))),
+        400,
+    )
+    assert main.validate_public_response_peer(
+        FakeResponse(("93.184.216.34", 443))
+    ) == "93.184.216.34"
+    print("PASS connected peer IP is revalidated after DNS resolution")
+
+    assert main.embedding_request_is_authorized(
+        "Bearer expected-token",
+        configured_token="expected-token",
+        require_auth=True,
+    )
+    assert not main.embedding_request_is_authorized(
+        "Bearer wrong-token",
+        configured_token="expected-token",
+        require_auth=True,
+    )
+    assert not main.embedding_request_is_authorized(
+        "",
+        configured_token="",
+        require_auth=True,
+    )
+    print("PASS AI service bearer-token boundary fails closed")
+    print("AI service deterministic smoke complete: 6/6 checks passed, 0 failed.")
 
 
 if __name__ == "__main__":

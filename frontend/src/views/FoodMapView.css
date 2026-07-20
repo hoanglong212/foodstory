@@ -50,7 +50,7 @@
   text-transform: uppercase;
 }
 
-.food-map-sidebar-header h1 {
+.food-map-sidebar-header h2 {
   max-width: 270px;
   color: var(--map-text);
   font-size: 25px;
@@ -1566,7 +1566,7 @@
   content: "";
 }
 
-.food-map-sidebar-header h1 {
+.food-map-sidebar-header h2 {
   max-width: 285px;
   color: var(--map-text);
   font-size: clamp(27px, 2vw, 35px);
@@ -2808,7 +2808,7 @@
   background: transparent;
 }
 
-.food-map-sidebar-header h1 {
+.food-map-sidebar-header h2 {
   color: var(--food-text);
   font-size: 24px;
 }

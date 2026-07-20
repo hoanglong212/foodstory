@@ -1,3 +1,5 @@
+import { getAiServiceHeaders } from './aiServiceAuth.js'
+
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000'
 
 export async function embedText(text) {
@@ -7,9 +9,9 @@ export async function embedText(text) {
 
   const response = await fetch(`${AI_SERVICE_URL}/embed/text`, {
     method: 'POST',
-    headers: {
+    headers: getAiServiceHeaders({
       'Content-Type': 'application/json',
-    },
+    }),
     body: JSON.stringify({ text }),
   })
 

@@ -1974,6 +1974,8 @@ onBeforeUnmount(() => {
     class="food-map-page"
     :class="`mode-${mapMode}`"
   >
+    <h1 class="sr-only">Food Map</h1>
+
     <FoodMapRail
       v-if="!pickingMode"
       :items="foodMapViewItems"
@@ -2085,7 +2087,7 @@ onBeforeUnmount(() => {
       <header v-if="sidebarMode !== 'add'" class="food-map-sidebar-header">
         <div>
           <p class="food-map-kicker">{{ sidebarKicker }}</p>
-          <h1>{{ sidebarTitle }}</h1>
+          <h2>{{ sidebarTitle }}</h2>
           <p class="food-map-storyline">{{ sidebarStoryline }}</p>
           <p class="food-map-layer-counts">
             <template v-if="mapMode === 'personal'">

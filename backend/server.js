@@ -2,6 +2,8 @@ import './config/env.js'
 import http from 'node:http'
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
+import { rateLimit } from 'express-rate-limit'
 import authRoutes from './routes/authRoutes.js'
 import newsRoutes from './routes/newsRoutes.js'
 import recipeRoutes from './routes/recipeRoutes.js'
@@ -27,6 +29,7 @@ import { initWebSocketServer } from './websocket/wsServer.js'
 const app = express()
 const server = http.createServer(app)
 const port = Number(process.env.PORT || 3000)
+const isProduction = process.env.NODE_ENV === 'production'
 const localFrontendOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
@@ -38,8 +41,37 @@ const frontendOrigins = [
   .split(',')
   .map((origin) => origin.trim())
     .filter(Boolean),
-  ...localFrontendOrigins,
+  ...(isProduction ? [] : localFrontendOrigins),
 ].filter((origin, index, origins) => origin && origins.indexOf(origin) === index)
+
+const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS || 0)
+if (Number.isInteger(trustProxyHops) && trustProxyHops > 0) {
+  app.set('trust proxy', trustProxyHops)
+}
+
+function positiveInteger(value, fallback) {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
+}
+
+const rateLimitWindowMs = positiveInteger(process.env.API_RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000)
+const apiRateLimiter = rateLimit({
+  windowMs: rateLimitWindowMs,
+  limit: positiveInteger(process.env.API_RATE_LIMIT_MAX, 500),
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
+  message: { error: 'Too many requests. Please try again later.' },
+})
+const authRateLimiter = rateLimit({
+  windowMs: rateLimitWindowMs,
+  limit: positiveInteger(process.env.AUTH_RATE_LIMIT_MAX, 25),
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  skip: (req) => req.method === 'OPTIONS',
+  message: { error: 'Too many authentication attempts. Please try again later.' },
+})
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET is required. Set it in backend/.env or the process environment.')
@@ -48,6 +80,7 @@ if (process.env.JWT_SECRET === 'replace_with_a_long_random_secret') {
   console.warn('JWT_SECRET should be set to a unique long random value before deployment.')
 }
 
+app.use(helmet())
 app.use(
   cors({
     origin(origin, callback) {
@@ -80,7 +113,8 @@ app.get('/api/health', async (req, res) => {
   }
 })
 
-app.use('/api/auth', authRoutes)
+app.use('/api', apiRateLimiter)
+app.use('/api/auth', authRateLimiter, authRoutes)
 app.use('/api/home', homeRoutes)
 app.use('/api/news', newsRoutes)
 app.use('/api/recipes', recipeRoutes)

@@ -405,7 +405,7 @@ watch(
       </section>
 
       <div class="footer-bottom">
-        <span>© 2026 FoodStory. Student Project - Stage 2.</span>
+        <span>© 2026 FoodStory. Student Project - Stage 3.</span>
         <span>Built with Vue, Vite, Pinia, Express and MySQL</span>
       </div>
     </footer>
