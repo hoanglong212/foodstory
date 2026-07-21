@@ -1,0 +1,134 @@
+[
+  {
+    "id": 1,
+    "date": "2026-05-25",
+    "shortDate": "25 TH.05 2026",
+    "day": "25",
+    "month": "TH.05",
+    "year": "2026",
+    "title": "How to Make Crispy Spring Rolls That Stay Crunchy",
+    "content": "The key is to fry them twice so the wrappers turn evenly golden, stay crisp longer, and absorb less oil.",
+    "category": "Recipes"
+  },
+  {
+    "id": 2,
+    "date": "2026-05-07",
+    "shortDate": "07 TH.05 2026",
+    "day": "07",
+    "month": "TH.05",
+    "year": "2026",
+    "title": "Saigon Broken Rice: The Soul of a Southern Breakfast",
+    "content": "Broken rice with grilled pork, shredded pork skin, egg loaf, and sweet-sour fish sauce is an essential southern favorite.",
+    "category": "Vietnamese Cuisine"
+  },
+  {
+    "id": 3,
+    "date": "2026-04-28",
+    "shortDate": "28 TH.04 2026",
+    "day": "28",
+    "month": "TH.04",
+    "year": "2026",
+    "title": "Five Hue Beef Noodle Soup Shops Worth Trying",
+    "content": "From fragrant spicy broth to springy crab cakes, each place preserves a distinct taste of Hue.",
+    "category": "Places"
+  },
+  {
+    "id": 4,
+    "date": "2026-04-16",
+    "shortDate": "16 TH.04 2026",
+    "day": "16",
+    "month": "TH.04",
+    "year": "2026",
+    "title": "Hanoi Egg Coffee Returns to Modern Cafe Menus",
+    "content": "The rich, silky egg cream is being reinvented with cocoa, matcha, and sea salt for modern tastes.",
+    "category": "Trends"
+  },
+  {
+    "id": 5,
+    "date": "2026-03-29",
+    "shortDate": "29 TH.03 2026",
+    "day": "29",
+    "month": "TH.03",
+    "year": "2026",
+    "title": "Balancing Nutrition in a Vietnamese Family Meal",
+    "content": "A meal with vegetables, protein, soup, and a savory main course makes dinner satisfying and practical for a busy schedule.",
+    "category": "Vietnamese Cuisine"
+  },
+  {
+    "id": 6,
+    "date": "2026-03-14",
+    "shortDate": "14 TH.03 2026",
+    "day": "14",
+    "month": "TH.03",
+    "year": "2026",
+    "title": "The Secret to a Bold Sweet-and-Sour Thai Hot Pot Broth",
+    "content": "Lemongrass, galangal, lime leaves, and tamarind create a fragrant broth without requiring complicated seasoning.",
+    "category": "Recipes"
+  },
+  {
+    "id": 7,
+    "date": "2026-02-22",
+    "shortDate": "22 TH.02 2026",
+    "day": "22",
+    "month": "TH.02",
+    "year": "2026",
+    "title": "Vietnamese Banh Mi Shines at Food Festivals",
+    "content": "Crisp baguettes, varied fillings, and fresh herbs keep banh mi among the most recognizable street foods.",
+    "category": "Street Food"
+  },
+  {
+    "id": 8,
+    "date": "2026-02-05",
+    "shortDate": "05 TH.02 2026",
+    "day": "05",
+    "month": "TH.02",
+    "year": "2026",
+    "title": "How to Keep Fresh Herbs Crisp in the Refrigerator",
+    "content": "Wash and dry the herbs, wrap them in paper towels, and store them in an airtight container to preserve their aroma for days.",
+    "category": "Ingredients"
+  },
+  {
+    "id": 9,
+    "date": "2026-01-20",
+    "shortDate": "20 TH.01 2026",
+    "day": "20",
+    "month": "TH.01",
+    "year": "2026",
+    "title": "Student Snacks: Easy Favorites Near Campus",
+    "content": "Mixed rice paper, fried fish balls, and kumquat tea remain a familiar trio for afternoon study sessions.",
+    "category": "Street Food"
+  },
+  {
+    "id": 10,
+    "date": "2026-01-08",
+    "shortDate": "08 TH.01 2026",
+    "day": "08",
+    "month": "TH.01",
+    "year": "2026",
+    "title": "Vietnamese Dipping Sauce: A Simple Ratio for Beginners",
+    "content": "One part fish sauce, one part sugar, one part lime juice, and four parts water is an easy base to adjust to taste.",
+    "category": "Recipes"
+  },
+  {
+    "id": 11,
+    "date": "2025-12-18",
+    "shortDate": "18 TH.12 2025",
+    "day": "18",
+    "month": "TH.12",
+    "year": "2025",
+    "title": "Fresh Spring Rolls as a Light Office Lunch",
+    "content": "Fresh spring rolls combine herbs, rice noodles, shrimp, pork, and peanut sauce for a quick yet balanced lunch.",
+    "category": "Vietnamese Cuisine"
+  },
+  {
+    "id": 12,
+    "date": "2025-12-02",
+    "shortDate": "02 TH.12 2025",
+    "day": "02",
+    "month": "TH.12",
+    "year": "2025",
+    "title": "The Minimalist Food Photography Trend on Social Media",
+    "content": "Natural light, clean wooden backgrounds, and close angles make everyday dishes look more appealing.",
+    "category": "Trends"
+  }
+]

@@ -177,6 +177,6 @@ server.on('error', (error) => {
   console.error('HTTP server error:', error)
 })
 
-server.listen(port, () => {
-  console.log(`FoodStory API running on http://localhost:${port}`)
+server.listen(port, '0.0.0.0', () => {
+  console.log(`FoodStory API listening on 0.0.0.0:${port}`)
 })

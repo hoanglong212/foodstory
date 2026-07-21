@@ -6,6 +6,7 @@
   "scripts": {
     "vauto": "node scripts/vauto.js",
     "start": "node server.js",
+    "start:production": "node database/bootstrapProduction.js && node server.js",
     "dev": "nodemon server.js",
     "migrate": "node database/migrate.js",
     "audit:recipe-images": "node database/auditRecipeImages.js",
@@ -21,6 +22,7 @@
     "seed:recipes": "node database/seedRecipes.js",
     "seed:recipes:sql": "node database/seedRecipes.js --write-sql",
     "seed:users": "node database/seedUsers.js",
+    "seed:users:production": "node database/seedProductionUsers.js",
     "sync:ai-knowledge": "node scripts/syncFoodStoryKnowledge.js",
     "sync:image-embeddings": "node scripts/precomputeImageEmbeddings.js",
     "track2:v3": "node scripts/track2/runTrack2V3Live.js",

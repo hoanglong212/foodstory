@@ -5,7 +5,7 @@ import pool from '../db.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const newsJsonPath = path.resolve(__dirname, '../../src/data/news.json')
+const newsJsonPath = path.resolve(__dirname, 'newsSeed.json')
 
 async function migrateNews() {
   const raw = await fs.readFile(newsJsonPath, 'utf8')
