@@ -23,16 +23,17 @@ function classifyImage(recipe, duplicateCount) {
   }
 
   if (imageUrl.startsWith('/images/')) {
-    const expectedName = `${String(recipe.title || '').trim()}.jpg`
+    const title = String(recipe.title || '').trim()
+    const expectedNames = new Set([`${title}.jpg`, `${title}.webp`])
     const actualName = decodeURIComponent(imageUrl.slice('/images/'.length))
-    return actualName === expectedName
+    return expectedNames.has(actualName)
       ? {
           status: 'verified_local',
-          reason: 'Local asset filename exactly matches the recipe title.',
+          reason: 'Local asset filename and supported format exactly match the recipe title.',
         }
       : {
           status: 'manual_review',
-          reason: `Local asset ${actualName} does not exactly match ${expectedName}.`,
+          reason: `Local asset ${actualName} does not match a supported local filename for ${title}.`,
         }
   }
 

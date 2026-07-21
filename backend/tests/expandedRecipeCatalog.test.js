@@ -28,7 +28,7 @@ test('every expanded recipe carries complete metadata and measured ingredients',
   for (const recipe of expandedRecipeCatalog) {
     assert.ok(recipe.title.length >= 4, recipe.title)
     assert.ok(recipe.description.includes('serve four'), recipe.title)
-    assert.equal(recipe.imageUrl, `/images/${encodeURIComponent(recipe.title)}.png`, recipe.title)
+    assert.equal(recipe.imageUrl, `/images/${encodeURIComponent(recipe.title)}.webp`, recipe.title)
     assert.ok(!recipe.imageUrl.includes('placeholder'), recipe.title)
     assert.ok(Number.isInteger(recipe.prepTime) && recipe.prepTime >= 0, recipe.title)
     assert.ok(Number.isInteger(recipe.cookTime) && recipe.cookTime >= 0, recipe.title)

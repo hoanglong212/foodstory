@@ -17,6 +17,7 @@
     "migrate:english-data": "node database/migrateLegacyEnglishData.js",
     "migrate:verified-restaurants": "node database/migrateVerifiedRestaurantCatalog.js",
     "migrate:expanded-recipes": "node database/migrateExpandedRecipeCatalog.js",
+    "migrate:expanded-recipe-images": "node database/migrateExpandedRecipeImagesToWebp.js",
     "seed:recipes": "node database/seedRecipes.js",
     "seed:recipes:sql": "node database/seedRecipes.js --write-sql",
     "seed:users": "node database/seedUsers.js",

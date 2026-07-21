@@ -318,7 +318,7 @@ function parseLine(line) {
     protein,
     carbs,
     fat,
-    imageUrl: `/images/${encodeURIComponent(title)}.png`,
+    imageUrl: `/images/${encodeURIComponent(title)}.webp`,
   }
   Object.assign(recipe, META_OVERRIDES[title])
   recipe.description = `${title} is a ${category} recipe built around ${ingredients[0].name}, ${ingredients[1].name}, and ${ingredients[2].name}. Quantities serve four; nutrition is an estimate per serving.`
