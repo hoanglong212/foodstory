@@ -145,6 +145,29 @@ test('clearing recipe filters returns an empty popular filter state', () => {
   })
 })
 
+test('removing one recipe filter preserves the other active constraints', () => {
+  const route = routeFoodStoryQuery('bỏ bộ lọc rating', {
+    recipeSearchFilters: {
+      tag: 'Healthy',
+      maxCalories: 700,
+      minRating: 4,
+      maxTotalTime: 30,
+      sort: 'fastest',
+    },
+  })
+
+  assert.equal(route.intent, 'recipe_filter_search')
+  assert.deepEqual(route.entities.recipeSearchFilters, {
+    category: null,
+    tag: 'Healthy',
+    maxCalories: 700,
+    minRating: null,
+    maxTotalTime: 30,
+    minProtein: null,
+    sort: 'fastest',
+  })
+})
+
 test('direct nutrition questions are not mistaken for recipe discovery', () => {
   const route = routeFoodStoryQuery('How many calories are in pho bo?')
 

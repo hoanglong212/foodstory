@@ -263,9 +263,9 @@ function extractRecipeSearchNumber(normalized, patterns) {
 
 export function extractRecipeSearchFilters(message, previousFilters = {}) {
   const normalized = normalizeText(message)
-  const resetAll = /\b(?:clear|reset|remove)\s+(?:all\s+)?filters?\b|\b(?:bo|xoa|dat lai)\s+(?:tat ca\s+)?(?:bo loc|loc)\b/.test(
-    normalized
-  )
+  const resetAll =
+    /\b(?:clear|reset)\s+(?:all\s+)?filters?\b|\bremove\s+all\s+filters?\b/.test(normalized) ||
+    /\b(?:xoa|dat lai)\s+(?:tat ca\s+)?(?:bo loc|loc)\b|\bbo\s+tat ca\s+(?:bo loc|loc)\b/.test(normalized)
   const followup = /\b(?:another|more|else|same|keep|still|next|other|filters?|con|khac|them|tiep|giu|van|bo loc)\b/.test(
     normalized
   )
