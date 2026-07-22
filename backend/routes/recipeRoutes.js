@@ -6,6 +6,18 @@ import { requireAdmin } from '../middleware/roleMiddleware.js'
 const router = express.Router()
 const MAX_DESCRIPTION_LENGTH = 1000
 const MAX_INSTRUCTIONS_LENGTH = 10000
+const RECIPE_SORT_SQL = Object.freeze({
+  newest: 'r.created_at DESC, r.id DESC',
+  popular:
+    'rating_count DESC, avg_rating DESC, favorite_count DESC, r.created_at DESC, r.id DESC',
+  rating: 'avg_rating DESC, rating_count DESC, r.created_at DESC, r.id DESC',
+  fastest:
+    'CASE WHEN COALESCE(r.prep_time, 0) + COALESCE(r.cook_time, 0) > 0 THEN 0 ELSE 1 END ASC, COALESCE(r.prep_time, 0) + COALESCE(r.cook_time, 0) ASC, r.created_at DESC, r.id DESC',
+  lightest:
+    'CASE WHEN COALESCE(r.calories, 0) > 0 THEN 0 ELSE 1 END ASC, r.calories ASC, r.created_at DESC, r.id DESC',
+  protein: 'r.protein DESC, r.created_at DESC, r.id DESC',
+  saved: 'favorite_count DESC, rating_count DESC, avg_rating DESC, r.created_at DESC, r.id DESC',
+})
 
 function toPositiveInt(value) {
   if (typeof value === 'number') {
@@ -322,6 +334,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
     const search = String(req.query.search || '').trim()
     const category = String(req.query.category || '').trim()
     const tag = String(req.query.tag || '').trim()
+    const sort = String(req.query.sort || 'newest').trim().toLowerCase()
     const userId = req.user?.id || 0
     const includeMeta = req.query.includeMeta !== '0'
     const where = ['r.status = ?']
@@ -329,6 +342,9 @@ router.get('/', optionalAuth, async (req, res, next) => {
 
     if (isTooLong(search, 120) || isTooLong(category, 100) || isTooLong(tag, 100)) {
       return res.status(400).json({ error: 'Search and filter values are too long.' })
+    }
+    if (!Object.hasOwn(RECIPE_SORT_SQL, sort)) {
+      return res.status(400).json({ error: 'Invalid recipe sort.' })
     }
 
     if (search) {
@@ -413,7 +429,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
        ) tag_stats ON tag_stats.recipe_id = r.id
        LEFT JOIN favorites user_fav ON user_fav.recipe_id = r.id AND user_fav.user_id = ?
        ${whereSql}
-       ORDER BY r.created_at DESC, r.id DESC
+       ORDER BY ${RECIPE_SORT_SQL[sort]}
        LIMIT ? OFFSET ?`,
       [userId, ...params, pageSize, offset],
     )

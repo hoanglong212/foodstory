@@ -471,6 +471,28 @@
   box-shadow: var(--recipe-shadow);
 }
 
+.recipe-state-card {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.recipe-state-card button {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--recipe-accent);
+  border-radius: 8px;
+  color: #fff;
+  background: var(--recipe-accent);
+  font-weight: 850;
+}
+
+.recipe-state-card button:hover {
+  background: var(--recipe-accent-strong);
+}
+
 .recipe-feature-banner {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(360px, 1fr);

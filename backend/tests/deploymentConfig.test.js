@@ -73,3 +73,26 @@ test('news pagination avoids MySQL 8.4 prepared LIMIT parameters', async () => {
   assert.doesNotMatch(newsRoutes, /const \[items\] = await pool\.execute\(/u)
   assert.match(newsRoutes, /Math\.min\([^\n]+, 50\)/u)
 })
+
+test('admin list pagination avoids MySQL 8.4 prepared LIMIT parameters', async () => {
+  const adminRoutes = await fs.readFile(
+    path.join(backendRoot, 'routes/admin.js'),
+    'utf8'
+  )
+
+  assert.equal((adminRoutes.match(/const \[items\] = await pool\.query\(/gu) || []).length, 3)
+  assert.doesNotMatch(adminRoutes, /const \[items\] = await pool\.execute\(/u)
+})
+
+test('recipe sorting is server-side, bounded to an allow-list, and deterministic', async () => {
+  const recipeRoutes = await fs.readFile(
+    path.join(backendRoot, 'routes/recipeRoutes.js'),
+    'utf8'
+  )
+
+  for (const sort of ['newest', 'popular', 'rating', 'fastest', 'lightest', 'protein', 'saved']) {
+    assert.match(recipeRoutes, new RegExp(`\\b${sort}:`))
+  }
+  assert.match(recipeRoutes, /Object\.hasOwn\(RECIPE_SORT_SQL, sort\)/u)
+  assert.match(recipeRoutes, /ORDER BY \$\{RECIPE_SORT_SQL\[sort\]\}/u)
+})

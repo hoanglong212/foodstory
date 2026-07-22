@@ -310,7 +310,10 @@ router.get('/recipes', async (req, res, next) => {
        ${whereSql}`,
       params,
     )
-    const [items] = await pool.execute(
+    // MySQL 8.4 rejects binary-protocol parameters in LIMIT/OFFSET. These
+    // values are bounded integers from getPagination, while query() still
+    // escapes all search and filter values before rendering the SQL.
+    const [items] = await pool.query(
       `SELECT
          r.id, r.category_id, r.submitted_by, r.title, r.image_url,
          r.description, r.instructions, r.calories, r.protein, r.carbs, r.fat,
@@ -552,7 +555,8 @@ router.get('/users', async (req, res, next) => {
       `SELECT COUNT(*) AS total FROM users u ${whereSql}`,
       params,
     )
-    const [items] = await pool.execute(
+    // Keep paginated admin lists compatible with MySQL 8.4 (see above).
+    const [items] = await pool.query(
       `SELECT
          u.id, u.username, u.email, u.role, u.is_banned, u.created_at,
          (SELECT COUNT(*) FROM recipes WHERE submitted_by = u.id) AS recipe_count,
@@ -722,7 +726,8 @@ router.get('/comments', async (req, res, next) => {
        ${whereSql}`,
       params,
     )
-    const [items] = await pool.execute(
+    // Keep paginated admin lists compatible with MySQL 8.4 (see above).
+    const [items] = await pool.query(
       `SELECT
          c.id, c.user_id, c.recipe_id, c.content, c.created_at, c.updated_at,
          u.username, u.email, r.title AS recipe_title

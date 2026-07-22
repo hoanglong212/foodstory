@@ -8,6 +8,11 @@ import { useAuthStore } from '../stores/authStore'
 import { useFavoriteStore } from '../stores/favoriteStore'
 import { useRecipeStore } from '../stores/recipeStore'
 import { useUiStore } from '../stores/uiStore'
+import {
+  buildRecipeFilterQuery,
+  normalizeRecipeFilterQuery,
+  recipeFilterStatesEqual,
+} from '../utils/recipeFilterQuery'
 
 const recipeStore = useRecipeStore()
 const favoriteStore = useFavoriteStore()
@@ -20,7 +25,11 @@ const deletingRecipeId = ref(null)
 const favoriteBusyIds = ref([])
 const showAdvancedFilters = ref(false)
 const showAllCategories = ref(false)
-const sortBy = ref('newest')
+const initialFilterState = normalizeRecipeFilterQuery(route.query)
+recipeStore.searchQuery = initialFilterState.search
+recipeStore.filters.category = initialFilterState.category
+recipeStore.filters.tag = initialFilterState.tag
+const sortBy = ref(initialFilterState.sort)
 const searchInput = ref(null)
 
 let filterTimer = 0
@@ -199,12 +208,30 @@ function scheduleRecipeFetch() {
   }, 280)
 }
 
-onMounted(() => {
-  if (typeof route.query.category === 'string' && route.query.category.trim()) {
-    suppressNextFilterFetch = true
-    recipeStore.filters.category = route.query.category.trim()
+function currentFilterState() {
+  return {
+    search: recipeStore.searchQuery,
+    category: recipeStore.filters.category,
+    tag: recipeStore.filters.tag,
+    sort: sortBy.value,
+  }
+}
+
+function syncRecipeFilterQuery() {
+  const nextQuery = buildRecipeFilterQuery(currentFilterState())
+  const queryKeys = ['search', 'category', 'tag', 'sort']
+  const routeIsCanonical = queryKeys.every(
+    (key) => (typeof route.query[key] === 'string' ? route.query[key] : '') === (nextQuery[key] || ''),
+  )
+  if (routeIsCanonical) {
+    return
   }
 
+  router.replace({ query: nextQuery }).catch(() => {})
+}
+
+onMounted(() => {
+  syncRecipeFilterQuery()
   loadRecipeIndex({ includeMeta: true })
 
   if (authStore.isLoggedIn) {
@@ -213,14 +240,40 @@ onMounted(() => {
 })
 
 watch(
-  () => [recipeStore.searchQuery, recipeStore.filters.category, recipeStore.filters.tag],
+  () => [
+    recipeStore.searchQuery,
+    recipeStore.filters.category,
+    recipeStore.filters.tag,
+    sortBy.value,
+  ],
   () => {
     if (suppressNextFilterFetch) {
       suppressNextFilterFetch = false
       return
     }
+    recipeStore.pagination.currentPage = 1
+    syncRecipeFilterQuery()
     scheduleRecipeFetch()
   },
+)
+
+watch(
+  () => route.query,
+  (query) => {
+    const nextFilters = normalizeRecipeFilterQuery(query)
+    if (recipeFilterStatesEqual(nextFilters, currentFilterState())) {
+      return
+    }
+
+    suppressNextFilterFetch = true
+    recipeStore.searchQuery = nextFilters.search
+    recipeStore.filters.category = nextFilters.category
+    recipeStore.filters.tag = nextFilters.tag
+    sortBy.value = nextFilters.sort
+    recipeStore.pagination.currentPage = 1
+    scheduleRecipeFetch()
+  },
+  { deep: true },
 )
 
 watch(
@@ -239,10 +292,23 @@ onBeforeUnmount(() => {
 })
 
 async function loadRecipeIndex(options = {}) {
-  await recipeStore.fetchRecipes(options.page || 1, { includeMeta: options.includeMeta === true })
+  const requests = [
+    recipeStore.fetchRecipes(options.page || 1, {
+      includeMeta: options.includeMeta === true,
+      sort: sortBy.value,
+    }),
+  ]
   if (options.refreshDiscovery !== false) {
-    recipeStore.fetchRecipeArchive({ reset: true, pageSize: 120, maxPages: 1 })
+    requests.push(
+      recipeStore.fetchRecipeArchive({
+        reset: true,
+        pageSize: 120,
+        maxPages: 1,
+        sort: sortBy.value,
+      }),
+    )
   }
+  await Promise.all(requests)
 }
 
 function fillSection(preferred, fallback, count) {
@@ -394,10 +460,10 @@ function sortRecipes(recipes, overrideSort = sortBy.value) {
       return Number(right.avg_rating || right.average_rating || 0) - Number(left.avg_rating || left.average_rating || 0)
     }
     if (overrideSort === 'fastest') {
-      return totalMinutes(left) - totalMinutes(right)
+      return comparePositiveAscending(totalMinutes(left), totalMinutes(right))
     }
     if (overrideSort === 'lightest') {
-      return Number(left.calories || 9999) - Number(right.calories || 9999)
+      return comparePositiveAscending(Number(left.calories || 0), Number(right.calories || 0))
     }
     if (overrideSort === 'protein') {
       return Number(right.protein || 0) - Number(left.protein || 0)
@@ -413,6 +479,15 @@ function sortRecipes(recipes, overrideSort = sortBy.value) {
 
     return safeDate(right.created_at || right.updated_at) - safeDate(left.created_at || left.updated_at)
   })
+}
+
+function comparePositiveAscending(left, right) {
+  const leftKnown = Number.isFinite(left) && left > 0
+  const rightKnown = Number.isFinite(right) && right > 0
+  if (leftKnown !== rightKnown) {
+    return leftKnown ? -1 : 1
+  }
+  return leftKnown ? left - right : 0
 }
 
 function safeDate(value) {
@@ -563,6 +638,13 @@ function isQuickFilterActive(chip) {
 function clearAllFilters() {
   sortBy.value = 'newest'
   recipeStore.resetFilters()
+}
+
+function retryRecipeIndex() {
+  loadRecipeIndex({
+    page: recipeStore.pagination.currentPage,
+    includeMeta: recipeStore.categories.length === 0,
+  })
 }
 
 async function goToPage(page) {
@@ -935,12 +1017,18 @@ async function deleteRecipe(recipe) {
         <div v-if="recipeStore.isLoading" class="recipe-reference-loading" aria-label="Loading recipes">
           <SkeletonCard v-for="index in 6" :key="index" />
         </div>
-        <p v-else-if="recipeStore.error" class="form-error" role="alert">{{ recipeStore.error }}</p>
+        <div v-else-if="recipeStore.error" class="form-error recipe-state-card" role="alert">
+          <p>{{ recipeStore.error }}</p>
+          <button type="button" @click="retryRecipeIndex">Try again</button>
+        </div>
 
         <template v-else>
-          <p v-if="!hasRecipes" class="empty-state">
-            No recipes match your search and filters.
-          </p>
+          <div v-if="!hasRecipes" class="empty-state recipe-state-card">
+            <p>No recipes match your search and filters.</p>
+            <button v-if="activeFilterSummary.length" type="button" @click="clearAllFilters">
+              Clear filters
+            </button>
+          </div>
 
           <section v-if="featuredRecipe" id="featured" class="recipe-feature-banner">
             <RouterLink

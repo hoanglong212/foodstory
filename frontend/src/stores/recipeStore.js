@@ -229,6 +229,7 @@ export const useRecipeStore = defineStore('recipes', {
             search: this.searchQuery,
             category: this.filters.category,
             tag: this.filters.tag,
+            sort: options.sort || 'newest',
             includeMeta: includeMeta ? '1' : '0',
           },
         })
@@ -275,6 +276,7 @@ export const useRecipeStore = defineStore('recipes', {
           search: this.searchQuery,
           category: this.filters.category,
           tag: this.filters.tag,
+          sort: options.sort || 'newest',
           includeMeta: '0',
         }
         const firstResponse = await api.get('/recipes', {
