@@ -435,10 +435,28 @@ router.get('/', optionalAuth, async (req, res, next) => {
     )
 
     const [categories] = includeMeta
-      ? await pool.execute('SELECT id, name FROM categories ORDER BY name ASC')
+      ? await pool.execute(
+          `SELECT c.id, c.name
+           FROM categories c
+           WHERE EXISTS (
+             SELECT 1 FROM recipes browse_recipe
+             WHERE browse_recipe.category_id = c.id AND browse_recipe.status = 'approved'
+           )
+           ORDER BY c.name ASC`,
+        )
       : [[]]
     const [tags] = includeMeta
-      ? await pool.execute('SELECT id, name FROM tags ORDER BY name ASC')
+      ? await pool.execute(
+          `SELECT t.id, t.name
+           FROM tags t
+           WHERE EXISTS (
+             SELECT 1
+             FROM recipe_tags browse_recipe_tag
+             JOIN recipes browse_recipe ON browse_recipe.id = browse_recipe_tag.recipe_id
+             WHERE browse_recipe_tag.tag_id = t.id AND browse_recipe.status = 'approved'
+           )
+           ORDER BY t.name ASC`,
+        )
       : [[]]
 
     res.json({

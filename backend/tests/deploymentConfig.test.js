@@ -96,3 +96,13 @@ test('recipe sorting is server-side, bounded to an allow-list, and deterministic
   assert.match(recipeRoutes, /Object\.hasOwn\(RECIPE_SORT_SQL, sort\)/u)
   assert.match(recipeRoutes, /ORDER BY \$\{RECIPE_SORT_SQL\[sort\]\}/u)
 })
+
+test('recipe browse metadata hides category and tag filters with no approved recipes', async () => {
+  const recipeRoutes = await fs.readFile(
+    path.join(backendRoot, 'routes/recipeRoutes.js'),
+    'utf8'
+  )
+
+  assert.match(recipeRoutes, /browse_recipe\.category_id = c\.id AND browse_recipe\.status = 'approved'/u)
+  assert.match(recipeRoutes, /browse_recipe_tag\.tag_id = t\.id AND browse_recipe\.status = 'approved'/u)
+})
