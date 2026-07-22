@@ -1,10 +1,21 @@
 import OpenAI from 'openai'
 import 'dotenv/config'
 
-const groq = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: 'https://api.groq.com/openai/v1',
-})
+let groqClient = null
+
+function getGroqClient() {
+  const apiKey = String(process.env.GROQ_API_KEY || '').trim()
+  if (!apiKey) throw new Error('Missing GROQ_API_KEY in .env')
+
+  if (!groqClient) {
+    groqClient = new OpenAI({
+      apiKey,
+      baseURL: 'https://api.groq.com/openai/v1',
+    })
+  }
+
+  return groqClient
+}
 
 const answerCache = new Map()
 const DEFAULT_CACHE_TTL_MS = 10 * 60 * 1000
@@ -350,7 +361,7 @@ export async function generateFoodStoryAnswer({
   const cachedAnswer = readCache(key)
   if (cachedAnswer) return cachedAnswer
 
-  const response = await groq.chat.completions.create({
+  const response = await getGroqClient().chat.completions.create({
     model: process.env.GROQ_CHAT_MODEL || 'llama-3.1-8b-instant',
     temperature: 0.2,
     max_tokens: boundedInteger(
@@ -389,7 +400,7 @@ export async function generateGeneralCustomerAnswer({
   const cachedAnswer = readCache(key)
   if (cachedAnswer) return cachedAnswer
 
-  const response = await groq.chat.completions.create({
+  const response = await getGroqClient().chat.completions.create({
     model: process.env.GROQ_CHAT_MODEL || 'llama-3.1-8b-instant',
     temperature: 0.25,
     max_tokens: boundedInteger(
@@ -436,7 +447,7 @@ export async function generateGeneralKnowledgeAnswer({
   const cachedAnswer = readCache(key)
   if (cachedAnswer) return cachedAnswer
 
-  const response = await groq.chat.completions.create({
+  const response = await getGroqClient().chat.completions.create({
     model: process.env.GROQ_CHAT_MODEL || 'llama-3.1-8b-instant',
     temperature: 0.25,
     max_tokens: boundedInteger(
@@ -478,7 +489,7 @@ export async function generateExternalFoodAnswer({
   const cachedResult = readCache(key)
   if (cachedResult) return cachedResult
 
-  const response = await groq.chat.completions.create({
+  const response = await getGroqClient().chat.completions.create({
     model: process.env.GROQ_WEB_SEARCH_MODEL || 'groq/compound-mini',
     temperature: 0.15,
     max_tokens: boundedInteger(

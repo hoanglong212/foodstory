@@ -1,8 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import fs from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const backendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repositoryRoot = path.resolve(backendRoot, '..')
@@ -27,4 +29,25 @@ test('Render Blueprint keeps secrets external and wires both public services', a
   assert.match(blueprint, /key: DATABASE_URL\s+sync: false/u)
   assert.match(blueprint, /key: JWT_SECRET\s+generateValue: true/u)
   assert.doesNotMatch(blueprint, /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/u)
+})
+
+test('backend can import the optional Groq provider without an API key', () => {
+  const moduleUrl = pathToFileURL(
+    path.join(backendRoot, 'services/groqService.js')
+  ).href
+  const result = spawnSync(
+    process.execPath,
+    ['--input-type=module', '--eval', `await import(${JSON.stringify(moduleUrl)})`],
+    {
+      cwd: os.tmpdir(),
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        DOTENV_CONFIG_PATH: path.join(os.tmpdir(), 'foodstory-no-dotenv'),
+        GROQ_API_KEY: '',
+      },
+    }
+  )
+
+  assert.equal(result.status, 0, result.stderr)
 })
