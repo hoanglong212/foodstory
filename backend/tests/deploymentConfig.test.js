@@ -51,3 +51,14 @@ test('backend can import the optional Groq provider without an API key', () => {
 
   assert.equal(result.status, 0, result.stderr)
 })
+
+test('recipe pagination avoids MySQL 8.4 prepared LIMIT parameters', async () => {
+  const recipeRoutes = await fs.readFile(
+    path.join(backendRoot, 'routes/recipeRoutes.js'),
+    'utf8'
+  )
+
+  assert.match(recipeRoutes, /const \[items\] = await pool\.query\(/u)
+  assert.doesNotMatch(recipeRoutes, /const \[items\] = await pool\.execute\(/u)
+  assert.match(recipeRoutes, /Math\.min\([^\n]+, 200\)/u)
+})

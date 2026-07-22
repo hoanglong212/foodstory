@@ -373,7 +373,10 @@ router.get('/', optionalAuth, async (req, res, next) => {
     const totalItems = countRows[0].totalItems
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
 
-    const [items] = await pool.execute(
+    // MySQL 8.4 rejects binary-protocol DOUBLE parameters for LIMIT/OFFSET.
+    // mysql2.query() still escapes every value while rendering the bounded
+    // pagination numbers as SQL integer literals.
+    const [items] = await pool.query(
       `SELECT
          r.*,
          c.name AS category_name,
