@@ -33,7 +33,7 @@ test('Render Blueprint keeps secrets external and wires all public services', as
   assert.equal((blueprint.match(/key: AI_SERVICE_API_TOKEN\s+sync: false/gu) || []).length, 2)
   assert.match(blueprint, /name: foodstory-ai-cos30043-hoanglong212/u)
   assert.match(blueprint, /rootDir: ai-service/u)
-  assert.match(blueprint, /buildCommand: pip install --no-cache-dir -r requirements-render\.txt/u)
+  assert.match(blueprint, /buildCommand: pip install --no-cache-dir "torch==2\.13\.0\+cpu" --index-url https:\/\/download\.pytorch\.org\/whl\/cpu && pip install --no-cache-dir -r requirements-render\.txt/u)
   assert.match(blueprint, /startCommand: uvicorn main:app --host 0\.0\.0\.0 --port \$PORT/u)
   assert.match(blueprint, /key: AI_SERVICE_ENABLE_CLIP\s+value: "false"/u)
   assert.doesNotMatch(blueprint, /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/u)
