@@ -136,7 +136,11 @@ const studentPicks = computed(() => {
     )
   })
 
-  return fillSection(sortRecipes(preferred, 'fastest'), popularRecipes.value, 3)
+  return fillSection(
+    sortRecipes(preferred, 'fastest'),
+    isResultFocusedMode.value ? [] : popularRecipes.value,
+    3,
+  )
 })
 const healthyChoices = computed(() => {
   const preferred = discoveryRecipes.value.filter((recipe) => {
@@ -151,7 +155,11 @@ const healthyChoices = computed(() => {
     )
   })
 
-  return fillSection(sortRecipes(preferred, 'protein'), popularRecipes.value.slice(3), 3)
+  return fillSection(
+    sortRecipes(preferred, 'protein'),
+    isResultFocusedMode.value ? [] : popularRecipes.value.slice(3),
+    3,
+  )
 })
 const todayPicks = computed(() => fillSection(popularRecipes.value.slice(1), discoveryRecipes.value, 3))
 const trendingTopics = computed(() => {
@@ -200,6 +208,13 @@ const activeFilterSummary = computed(() => {
   }
   return pieces
 })
+const hasActiveSearch = computed(() => Boolean(recipeStore.searchQuery.trim()))
+const hasActiveStructuredFilter = computed(
+  () => recipeStore.filters.category !== 'all' || recipeStore.filters.tag !== 'all',
+)
+const isResultFocusedMode = computed(
+  () => hasActiveSearch.value || hasActiveStructuredFilter.value,
+)
 
 function scheduleRecipeFetch() {
   window.clearTimeout(filterTimer)
@@ -811,7 +826,11 @@ async function deleteRecipe(recipe) {
 </script>
 
 <template>
-  <section class="recipe-reference-page" aria-label="FoodStory recipe discovery">
+  <section
+    class="recipe-reference-page"
+    :class="{ 'results-focused': isResultFocusedMode }"
+    aria-label="FoodStory recipe discovery"
+  >
     <div class="recipe-reference-layout">
       <aside class="recipe-left-sidebar" aria-label="Recipe navigation">
         <nav class="recipe-sidebar-nav" aria-label="Primary recipe navigation">
@@ -914,7 +933,11 @@ async function deleteRecipe(recipe) {
             </label>
           </form>
 
-          <div class="recipe-reference-chips" aria-label="Quick recipe filters">
+          <div
+            v-if="!isResultFocusedMode"
+            class="recipe-reference-chips"
+            aria-label="Quick recipe filters"
+          >
             <button
               v-for="chip in quickFilterChips"
               :key="chip.label"
@@ -1030,7 +1053,7 @@ async function deleteRecipe(recipe) {
             </button>
           </div>
 
-          <section v-if="featuredRecipe" id="featured" class="recipe-feature-banner">
+          <section v-if="!isResultFocusedMode && featuredRecipe" id="featured" class="recipe-feature-banner">
             <RouterLink
               class="feature-image-panel"
               :to="{ name: 'recipe-detail', params: { id: featuredRecipe.id } }"
@@ -1087,7 +1110,11 @@ async function deleteRecipe(recipe) {
             </div>
           </section>
 
-          <section v-if="bigRightNow.length" id="big-right-now" class="reference-section">
+          <section
+            v-if="!isResultFocusedMode && bigRightNow.length"
+            id="big-right-now"
+            class="reference-section"
+          >
             <div class="reference-section-title">
               <h2>Big Right Now</h2>
               <button type="button" @click="setSortAndShow('popular')">
@@ -1129,7 +1156,11 @@ async function deleteRecipe(recipe) {
             </div>
           </section>
 
-          <section v-if="studentPicks.length" id="student-picks" class="reference-section">
+          <section
+            v-if="!isResultFocusedMode && studentPicks.length"
+            id="student-picks"
+            class="reference-section"
+          >
             <div class="reference-section-title with-subtitle">
               <div>
                 <h2>
@@ -1177,7 +1208,11 @@ async function deleteRecipe(recipe) {
             </div>
           </section>
 
-          <section v-if="healthyChoices.length" id="healthy-choices" class="reference-section">
+          <section
+            v-if="!isResultFocusedMode && healthyChoices.length"
+            id="healthy-choices"
+            class="reference-section"
+          >
             <div class="reference-section-title with-subtitle">
               <div>
                 <h2>
@@ -1222,8 +1257,14 @@ async function deleteRecipe(recipe) {
           <section v-if="allRecipes.length" id="all-recipes" class="reference-section all-recipes-reference">
             <div class="reference-section-title with-subtitle">
               <div>
-                <h2>All Recipes</h2>
-                <p>Browse a page-sized archive without dumping the entire database.</p>
+                <h2>{{ isResultFocusedMode ? 'Search Results' : 'All Recipes' }}</h2>
+                <p>
+                  {{
+                    isResultFocusedMode
+                      ? 'Showing recipes that match your current search and filters.'
+                      : 'Browse a page-sized archive without dumping the entire database.'
+                  }}
+                </p>
               </div>
               <span>
                 Page {{ recipeStore.pagination.currentPage }} of {{ recipeStore.pagination.totalPages }}
@@ -1278,7 +1319,7 @@ async function deleteRecipe(recipe) {
       </div>
 
       <aside class="recipe-right-rail" aria-label="Trending recipes">
-        <section v-if="trendingTopics.length" class="trending-card">
+        <section v-if="!isResultFocusedMode && trendingTopics.length" class="trending-card">
           <h2>
             <AppIcon name="trending-up" size="18" />
             Trending Now
@@ -1306,6 +1347,7 @@ async function deleteRecipe(recipe) {
         </section>
 
         <section
+          v-if="!isResultFocusedMode"
           class="back-to-top-card"
           :style="{ '--rail-image': `url(${imageSrc(todayPicks[0] || featuredRecipe)})` }"
         >
@@ -1319,3 +1361,18 @@ async function deleteRecipe(recipe) {
     </div>
   </section>
 </template>
+
+<style scoped>
+.recipe-reference-page.results-focused .recipe-reference-hero {
+  gap: 14px;
+}
+
+.recipe-reference-page.results-focused .recipe-filter-tools,
+.recipe-reference-page.results-focused .active-filter-summary {
+  justify-content: flex-start;
+}
+
+.recipe-reference-page.results-focused .recipe-right-rail {
+  gap: 0;
+}
+</style>
