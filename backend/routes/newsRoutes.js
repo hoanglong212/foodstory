@@ -141,7 +141,10 @@ router.get('/', async (req, res, next) => {
     const totalItems = countRows[0].totalItems
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
 
-    const [items] = await pool.execute(
+    // MySQL 8.4 rejects LIMIT/OFFSET placeholders through the binary prepared
+    // statement protocol used by execute(); query() keeps the values escaped
+    // while using the compatible text protocol.
+    const [items] = await pool.query(
       `SELECT
          id,
          title,

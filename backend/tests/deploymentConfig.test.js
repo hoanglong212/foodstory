@@ -62,3 +62,14 @@ test('recipe pagination avoids MySQL 8.4 prepared LIMIT parameters', async () =>
   assert.doesNotMatch(recipeRoutes, /const \[items\] = await pool\.execute\(/u)
   assert.match(recipeRoutes, /Math\.min\([^\n]+, 200\)/u)
 })
+
+test('news pagination avoids MySQL 8.4 prepared LIMIT parameters', async () => {
+  const newsRoutes = await fs.readFile(
+    path.join(backendRoot, 'routes/newsRoutes.js'),
+    'utf8'
+  )
+
+  assert.match(newsRoutes, /const \[items\] = await pool\.query\(/u)
+  assert.doesNotMatch(newsRoutes, /const \[items\] = await pool\.execute\(/u)
+  assert.match(newsRoutes, /Math\.min\([^\n]+, 50\)/u)
+})
