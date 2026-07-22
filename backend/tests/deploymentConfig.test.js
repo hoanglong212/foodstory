@@ -18,10 +18,10 @@ test('backend news seed matches the frontend fallback catalogue', async () => {
   assert.deepEqual(backendNews, frontendNews)
 })
 
-test('Render Blueprint keeps secrets external and wires both public services', async () => {
+test('Render Blueprint keeps secrets external and wires all public services', async () => {
   const blueprint = await fs.readFile(path.join(repositoryRoot, 'render.yaml'), 'utf8')
   assert.match(blueprint, /name: foodstory-api-cos30043-hoanglong212/u)
-  assert.equal((blueprint.match(/branch: codex\/render-deployment/gu) || []).length, 2)
+  assert.equal((blueprint.match(/branch: codex\/render-deployment/gu) || []).length, 3)
   assert.match(blueprint, /startCommand: npm run start:production/u)
   assert.match(blueprint, /healthCheckPath: \/api\/health/u)
   assert.match(blueprint, /name: foodstory-cos30043-hoanglong212/u)
@@ -29,6 +29,13 @@ test('Render Blueprint keeps secrets external and wires both public services', a
   assert.match(blueprint, /key: DATABASE_URL\s+sync: false/u)
   assert.match(blueprint, /key: JWT_SECRET\s+generateValue: true/u)
   assert.match(blueprint, /key: GROQ_API_KEY\s+sync: false/u)
+  assert.match(blueprint, /key: AI_SERVICE_URL\s+value: https:\/\/foodstory-ai-cos30043-hoanglong212\.onrender\.com/u)
+  assert.equal((blueprint.match(/key: AI_SERVICE_API_TOKEN\s+sync: false/gu) || []).length, 2)
+  assert.match(blueprint, /name: foodstory-ai-cos30043-hoanglong212/u)
+  assert.match(blueprint, /rootDir: ai-service/u)
+  assert.match(blueprint, /buildCommand: pip install --no-cache-dir -r requirements-render\.txt/u)
+  assert.match(blueprint, /startCommand: uvicorn main:app --host 0\.0\.0\.0 --port \$PORT/u)
+  assert.match(blueprint, /key: AI_SERVICE_ENABLE_CLIP\s+value: "false"/u)
   assert.doesNotMatch(blueprint, /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/u)
 })
 

@@ -4,13 +4,13 @@ import ipaddress
 import os
 import secrets
 import socket
+import threading
 import time
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from urllib.parse import urljoin, urlparse
 
 import httpx
-import open_clip
 import torch
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from PIL import Image, UnidentifiedImageError
@@ -36,6 +36,10 @@ AI_SERVICE_RATE_LIMIT_PER_MINUTE = max(
     1,
     int(os.getenv("AI_SERVICE_RATE_LIMIT_PER_MINUTE", "120")),
 )
+AI_SERVICE_ENABLE_CLIP = os.getenv(
+    "AI_SERVICE_ENABLE_CLIP",
+    "true",
+).strip().lower() in {"1", "true", "yes", "on"}
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 FOOD_PROMPTS = [
     "a close-up photo of a prepared meal",
@@ -183,7 +187,7 @@ DISH_CLASSES = [
     },
 ]
 
-model = SentenceTransformer(MODEL_NAME)
+model = None
 clip_model = None
 clip_preprocess = None
 clip_tokenizer = None
@@ -191,6 +195,8 @@ food_class_features = None
 dish_class_features = None
 rate_limit_buckets = defaultdict(deque)
 rate_limit_lock = asyncio.Lock()
+text_model_load_lock = threading.Lock()
+clip_model_load_lock = threading.Lock()
 
 if AI_SERVICE_REQUIRE_AUTH and not AI_SERVICE_API_TOKEN:
     raise RuntimeError(
@@ -198,49 +204,69 @@ if AI_SERVICE_REQUIRE_AUTH and not AI_SERVICE_API_TOKEN:
     )
 
 
+def load_text_model():
+    global model
+
+    if model is None:
+        with text_model_load_lock:
+            if model is None:
+                model = SentenceTransformer(MODEL_NAME)
+
+    return model
+
+
 def load_clip_model():
     global clip_model, clip_preprocess, clip_tokenizer, food_class_features
     global dish_class_features
 
-    if clip_model is None:
-        clip_model, _, clip_preprocess = open_clip.create_model_and_transforms(
-            CLIP_MODEL_NAME,
-            pretrained=CLIP_PRETRAINED,
-            force_quick_gelu=True,
+    if not AI_SERVICE_ENABLE_CLIP:
+        raise HTTPException(
+            status_code=503,
+            detail="CLIP image embeddings are disabled for this deployment",
         )
-        clip_model = clip_model.to(DEVICE)
-        clip_model.eval()
-        clip_tokenizer = open_clip.get_tokenizer(CLIP_MODEL_NAME)
 
-        with torch.inference_mode():
-            class_features = []
-            for prompts in (FOOD_PROMPTS, NON_FOOD_PROMPTS):
-                prompt_features = clip_model.encode_text(clip_tokenizer(prompts).to(DEVICE))
-                prompt_features = prompt_features / prompt_features.norm(dim=-1, keepdim=True)
-                class_feature = prompt_features.mean(dim=0, keepdim=True)
-                class_features.append(
-                    class_feature / class_feature.norm(dim=-1, keepdim=True)
-                )
-            food_class_features = torch.cat(class_features, dim=0)
+    if clip_model is None:
+        with clip_model_load_lock:
+            if clip_model is None:
+                import open_clip
 
-            dish_features = []
-            for dish_class in DISH_CLASSES:
-                prompt_features = clip_model.encode_text(
-                    clip_tokenizer(dish_class["prompts"]).to(DEVICE)
+                clip_model, _, clip_preprocess = open_clip.create_model_and_transforms(
+                    CLIP_MODEL_NAME,
+                    pretrained=CLIP_PRETRAINED,
+                    force_quick_gelu=True,
                 )
-                prompt_features = prompt_features / prompt_features.norm(
-                    dim=-1, keepdim=True
-                )
-                class_feature = prompt_features.mean(dim=0, keepdim=True)
-                dish_features.append(
-                    class_feature / class_feature.norm(dim=-1, keepdim=True)
-                )
-            dish_class_features = torch.cat(dish_features, dim=0)
+                clip_model = clip_model.to(DEVICE)
+                clip_model.eval()
+                clip_tokenizer = open_clip.get_tokenizer(CLIP_MODEL_NAME)
+
+                with torch.inference_mode():
+                    class_features = []
+                    for prompts in (FOOD_PROMPTS, NON_FOOD_PROMPTS):
+                        prompt_features = clip_model.encode_text(clip_tokenizer(prompts).to(DEVICE))
+                        prompt_features = prompt_features / prompt_features.norm(dim=-1, keepdim=True)
+                        class_feature = prompt_features.mean(dim=0, keepdim=True)
+                        class_features.append(
+                            class_feature / class_feature.norm(dim=-1, keepdim=True)
+                        )
+                    food_class_features = torch.cat(class_features, dim=0)
+
+                    dish_features = []
+                    for dish_class in DISH_CLASSES:
+                        prompt_features = clip_model.encode_text(
+                            clip_tokenizer(dish_class["prompts"]).to(DEVICE)
+                        )
+                        prompt_features = prompt_features / prompt_features.norm(
+                            dim=-1, keepdim=True
+                        )
+                        class_feature = prompt_features.mean(dim=0, keepdim=True)
+                        dish_features.append(
+                            class_feature / class_feature.norm(dim=-1, keepdim=True)
+                        )
+                    dish_class_features = torch.cat(dish_features, dim=0)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    await asyncio.to_thread(load_clip_model)
     yield
 
 
@@ -490,6 +516,8 @@ def health_check():
         "model": MODEL_NAME,
         "clip_model": f"{CLIP_MODEL_NAME}:{CLIP_PRETRAINED}",
         "clip_device": DEVICE,
+        "text_model_loaded": model is not None,
+        "clip_enabled": AI_SERVICE_ENABLE_CLIP,
         "clip_loaded": clip_model is not None,
         "dish_prompt_count": len(DISH_CLASSES),
     }
@@ -502,7 +530,7 @@ def embed_text(request: TextEmbeddingRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Text must not be empty")
 
-    embedding = model.encode(text, normalize_embeddings=True)
+    embedding = load_text_model().encode(text, normalize_embeddings=True)
 
     return {
         "text": text,
@@ -519,12 +547,14 @@ async def embed_image(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Only JPEG, PNG, WebP, or GIF images are allowed")
 
     contents = await file.read(MAX_IMAGE_BYTES + 1)
+    await asyncio.to_thread(load_clip_model)
     return await asyncio.to_thread(encode_image, contents)
 
 
 @app.post("/embed-image-url")
 async def embed_image_url(request: ImageUrlEmbeddingRequest):
     contents = await download_image(request.url.strip())
+    await asyncio.to_thread(load_clip_model)
     return await asyncio.to_thread(encode_image, contents)
 
 
@@ -534,4 +564,5 @@ async def embed_clip_text(request: ClipTextEmbeddingRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Text must not be empty")
 
+    await asyncio.to_thread(load_clip_model)
     return await asyncio.to_thread(encode_clip_text, text)

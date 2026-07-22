@@ -27,12 +27,38 @@ services:
         generateValue: true
       - key: GROQ_API_KEY
         sync: false
+      - key: AI_SERVICE_URL
+        value: https://foodstory-ai-cos30043-hoanglong212.onrender.com
+      - key: AI_SERVICE_API_TOKEN
+        sync: false
       - key: ADMIN_USERNAME
         value: admin
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
+  - type: web
+    name: foodstory-ai-cos30043-hoanglong212
+    runtime: python
+    plan: free
+    region: singapore
+    branch: codex/render-deployment
+    rootDir: ai-service
+    buildCommand: pip install --no-cache-dir -r requirements-render.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: AI_SERVICE_ENV
+        value: production
+      - key: AI_SERVICE_REQUIRE_AUTH
+        value: "true"
+      - key: AI_SERVICE_API_TOKEN
+        sync: false
+      - key: AI_SERVICE_RATE_LIMIT_PER_MINUTE
+        value: "60"
+      - key: AI_SERVICE_ENABLE_CLIP
+        value: "false"
   - type: web
     name: foodstory-cos30043-hoanglong212
     runtime: static

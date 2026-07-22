@@ -31,6 +31,7 @@ def run():
     health = main.health_check()
     assert health["status"] == "ok"
     assert health["service"] == "foodstory-ai-service"
+    assert health["text_model_loaded"] is False
     print("PASS lightweight health contract")
 
     embedded = main.embed_text(main.TextEmbeddingRequest(text="Vietnamese noodle soup"))
