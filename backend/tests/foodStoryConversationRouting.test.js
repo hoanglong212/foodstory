@@ -83,8 +83,36 @@ test('missing recipe data falls through to Groq while clarification states do no
       status: 'no_results',
       kind: 'recipe_filter_search',
     }),
-    false
+    true
   )
+})
+
+test('recipe availability questions search FoodStory before Groq', () => {
+  const route = routeFoodStoryQuery('do you have any beef recipe')
+
+  assert.equal(route.intent, 'recipe_filter_search')
+  assert.equal(route.shouldUseStructuredLookup, true)
+  assert.equal(route.entities.recipeSearchFilters.query, 'beef')
+})
+
+test('generic recipe availability search supports arbitrary food terms', () => {
+  const chicken = routeFoodStoryQuery('do you have any chicken recipes')
+  const pasta = routeFoodStoryQuery('are there any pasta recipes')
+
+  assert.equal(chicken.intent, 'recipe_filter_search')
+  assert.equal(chicken.entities.recipeSearchFilters.query, 'chicken')
+  assert.equal(pasta.intent, 'recipe_filter_search')
+  assert.equal(pasta.entities.recipeSearchFilters.query, 'pasta')
+})
+
+test('Vietnamese recipe availability terms map to the English recipe catalogue', () => {
+  const beef = routeFoodStoryQuery('FoodStory có món bò không')
+  const chicken = routeFoodStoryQuery('FoodStory có món gà không')
+
+  assert.equal(beef.intent, 'recipe_filter_search')
+  assert.equal(beef.entities.recipeSearchFilters.query, 'beef')
+  assert.equal(chicken.intent, 'recipe_filter_search')
+  assert.equal(chicken.entities.recipeSearchFilters.category, 'chicken')
 })
 
 test('recipe discovery extracts live nutrition, rating, and tag filters', () => {
@@ -135,6 +163,7 @@ test('clearing recipe filters returns an empty popular filter state', () => {
 
   assert.equal(route.intent, 'recipe_filter_search')
   assert.deepEqual(route.entities.recipeSearchFilters, {
+    query: null,
     category: null,
     tag: null,
     maxCalories: null,
@@ -158,6 +187,7 @@ test('removing one recipe filter preserves the other active constraints', () => 
 
   assert.equal(route.intent, 'recipe_filter_search')
   assert.deepEqual(route.entities.recipeSearchFilters, {
+    query: null,
     category: null,
     tag: 'Healthy',
     maxCalories: 700,
@@ -220,6 +250,38 @@ test('recipe filter ranking uses live nutrition, ratings, time, and tags', () =>
     minRating: 4.5,
     maxTotalTime: 30,
     minProtein: 25,
+    sort: 'rating',
+  })
+
+  assert.deepEqual(matched.map((recipe) => recipe.id), [1])
+})
+
+test('recipe text search includes stored ingredient names', () => {
+  const recipes = [
+    {
+      id: 1,
+      title: 'Savory Rice Bowl',
+      description: 'A filling weeknight dinner',
+      category_name: 'Asian',
+      tag_names: 'High Protein',
+      ingredient_names: 'beef strips,jasmine rice,onion',
+      calories: 520,
+      avg_rating: 4.4,
+    },
+    {
+      id: 2,
+      title: 'Tofu Rice Bowl',
+      description: 'A plant-based dinner',
+      category_name: 'Asian',
+      tag_names: 'Vegetarian',
+      ingredient_names: 'tofu,jasmine rice,onion',
+      calories: 480,
+      avg_rating: 4.5,
+    },
+  ]
+
+  const matched = filterRecipesBySearchFilters(recipes, {
+    query: 'beef',
     sort: 'rating',
   })
 

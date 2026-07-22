@@ -70,6 +70,7 @@ function normalizedRecipeSearchFilters(value) {
     'saved',
   ])
   return {
+    query: typeof value.query === 'string' ? value.query.slice(0, 80) || null : null,
     category: typeof value.category === 'string' ? value.category.slice(0, 80) || null : null,
     tag: typeof value.tag === 'string' ? value.tag.slice(0, 80) || null : null,
     maxCalories: numberOrNull(value.maxCalories),
@@ -336,6 +337,7 @@ function openRecipeCollection(filters = {}) {
   router.push({
     path: '/recipes',
     query: {
+      search: normalized?.query || undefined,
       category: normalized?.category || undefined,
       tag: normalized?.tag || undefined,
       sort: normalized?.sort || undefined,

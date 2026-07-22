@@ -36,7 +36,12 @@ const RECIPE_SELECT = `
       FROM recipe_tags recipe_tag_link
       JOIN tags recipe_tag ON recipe_tag.id = recipe_tag_link.tag_id
       WHERE recipe_tag_link.recipe_id = r.id
-    ) AS tag_names
+    ) AS tag_names,
+    (
+      SELECT GROUP_CONCAT(DISTINCT recipe_search_ingredient.ingredient_name SEPARATOR ',')
+      FROM recipe_ingredients recipe_search_ingredient
+      WHERE recipe_search_ingredient.recipe_id = r.id
+    ) AS ingredient_names
   FROM recipes r
   LEFT JOIN categories c ON c.id = r.category_id
 `
@@ -247,6 +252,7 @@ function normalizeRecipeSearchFilters(value = {}) {
     ? value
     : {}
   return {
+    query: String(source.query || '').trim().slice(0, 80) || null,
     category: String(source.category || '').trim().slice(0, 80) || null,
     tag: String(source.tag || '').trim().slice(0, 80) || null,
     maxCalories: Number(source.maxCalories) > 0 ? Number(source.maxCalories) : null,
@@ -270,6 +276,7 @@ function recipeSearchText(recipe) {
     recipe.description,
     recipe.category_name,
     recipe.tag_names,
+    recipe.ingredient_names,
   ].filter(Boolean).join(' '))
 }
 
@@ -277,6 +284,10 @@ function recipeMatchesSearchFilters(recipe, filters) {
   const searchable = recipeSearchText(recipe)
   const tags = normalizeText(recipe.tag_names)
   const totalTime = Number(recipe.prep_time || 0) + Number(recipe.cook_time || 0)
+  if (filters.query) {
+    const queryTokens = normalizeText(filters.query).split(/\s+/).filter(Boolean)
+    if (!queryTokens.every((token) => searchable.includes(token))) return false
+  }
   if (filters.category && !searchable.includes(normalizeText(filters.category))) return false
   if (filters.tag && !tags.includes(normalizeText(filters.tag))) return false
   if (filters.maxCalories && !(Number(recipe.calories || 0) > 0 && Number(recipe.calories) <= filters.maxCalories)) {

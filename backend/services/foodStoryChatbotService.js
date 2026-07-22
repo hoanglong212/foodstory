@@ -72,7 +72,7 @@ const RECIPE_GROQ_FALLBACK_STATUSES = new Set([
 ])
 
 export function recipeResultNeedsGroqFallback(result = {}) {
-  if (result.kind === 'recipe_filter_search') return false
+  if (result.kind === 'recipe_filter_search') return result.status === 'no_results'
   if (
     result.kind === 'ingredient_recommendation' &&
     !result.results?.length &&
@@ -723,6 +723,16 @@ export async function askFoodStoryChatbot(question, context = {}) {
         return finish(
           {
             ...response,
+            answer:
+              result.kind === 'recipe_filter_search'
+                ? route.entities.responseLanguage === 'vi'
+                  ? `FoodStory không tìm thấy công thức phù hợp trong database. Sau đây là gợi ý nấu ăn tổng quát từ Groq, không phải dữ liệu FoodStory:\n\n${response.answer}`
+                  : `FoodStory did not find a matching recipe in its database. Here is general cooking guidance from Groq, not FoodStory data:\n\n${response.answer}`
+                : response.answer,
+            recipeSearchFilters:
+              result.kind === 'recipe_filter_search'
+                ? result.filters
+                : response.recipeSearchFilters,
             clearRecipeContext: result.status === 'recipe_not_found',
           },
           normalizedContext

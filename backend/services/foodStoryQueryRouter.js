@@ -232,6 +232,7 @@ export function normalizeRecipeSearchFilters(value = {}) {
     ? source.sort
     : 'popular'
   return {
+    query: cleanEntity(source.query).slice(0, 80) || null,
     category: cleanEntity(source.category).slice(0, 80) || null,
     tag: cleanEntity(source.tag).slice(0, 80) || null,
     maxCalories: boundedNumber(source.maxCalories, 1, 5_000),
@@ -244,6 +245,7 @@ export function normalizeRecipeSearchFilters(value = {}) {
 
 function hasActiveRecipeSearchFilters(filters = {}) {
   return Boolean(
+    filters.query ||
     filters.category ||
     filters.tag ||
     filters.maxCalories ||
@@ -251,6 +253,41 @@ function hasActiveRecipeSearchFilters(filters = {}) {
     filters.maxTotalTime ||
     filters.minProtein
   )
+}
+
+function extractRecipeDiscoveryQuery(normalized) {
+  const patterns = [
+    /\b(?:do you|does foodstory)\s+have\s+(?:any\s+|some\s+)?(.+?)\s+recipes?\b/,
+    /\bare there\s+(?:any\s+|some\s+)?(.+?)\s+recipes?\b/,
+    /\b(?:show|list|find|recommend|suggest)(?:\s+me)?\s+(?:any\s+|some\s+|a\s+|good\s+|best\s+|great\s+|tasty\s+)*(.+?)\s+recipes?\b/,
+    /\b(?:foodstory\s+)?co\s+(?:cong thuc|mon)\s+(.+?)(?:\s+khong)?\b/,
+  ]
+  const genericWords = new Set([
+    'a', 'any', 'best', 'food', 'good', 'great', 'meal', 'meals', 'recipe',
+    'recipes', 'some', 'tasty', 'the',
+  ])
+  const queryAliases = new Map([
+    ['bo', 'beef'],
+    ['thit bo', 'beef'],
+    ['ga', 'chicken'],
+    ['thit ga', 'chicken'],
+    ['heo', 'pork'],
+    ['thit heo', 'pork'],
+    ['tom', 'shrimp'],
+    ['ca', 'fish'],
+  ])
+
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern)
+    if (!match) continue
+    const query = match[1]
+      .split(/\s+/)
+      .filter((word) => !genericWords.has(word))
+      .join(' ')
+      .trim()
+    if (query && query.length <= 80) return queryAliases.get(query) || query
+  }
+  return null
 }
 
 function extractRecipeSearchNumber(normalized, patterns) {
@@ -272,6 +309,9 @@ export function extractRecipeSearchFilters(message, previousFilters = {}) {
   const discoveryRequest =
     /\b(?:recommend|suggest|find|filter)\b/.test(normalized) ||
     /\b(?:show|list)\b.*\b(?:recipes?|meals?|dishes?)\b/.test(normalized) ||
+    /\b(?:do you|does foodstory)\s+have\s+(?:any\s+|some\s+)?.+?\s+recipes?\b/.test(normalized) ||
+    /\bare there\s+(?:any\s+|some\s+)?.+?\s+recipes?\b/.test(normalized) ||
+    /\b(?:foodstory\s+)?co\s+(?:cong thuc|mon)\s+.+/.test(normalized) ||
     /\bwhat should i (?:cook|eat)\b/.test(normalized) ||
     /\b(?:goi y|de xuat|tu van|tim|loc)\b.*\b(?:cong thuc|mon|mon an)\b/.test(normalized) ||
     /\b(?:mon nao|an gi|nau gi)\b/.test(normalized)
@@ -279,6 +319,8 @@ export function extractRecipeSearchFilters(message, previousFilters = {}) {
   const filters = resetAll || !followup
     ? normalizeRecipeSearchFilters()
     : { ...previous }
+  const discoveryQuery = extractRecipeDiscoveryQuery(normalized)
+  if (discoveryQuery) filters.query = discoveryQuery
 
   const maxCalories = extractRecipeSearchNumber(normalized, [
     /\b(?:under|below|less than|no more than|maximum|max|up to)\s+(\d{2,4})\s*(?:calories?|calo|kcal)\b/,
@@ -324,6 +366,14 @@ export function extractRecipeSearchFilters(message, previousFilters = {}) {
   if (/\b(?:vegetarian|vegan|mon chay|do chay|an chay)\b/.test(normalized)) filters.tag = 'Vegetarian'
   if (/\b(?:student friendly|sinh vien)\b/.test(normalized)) filters.tag = 'Student-friendly'
   if (/\b(?:quick and easy|quick meal|de lam|nhanh gon)\b/.test(normalized)) filters.tag = 'Quick Meal'
+  if (
+    filters.query &&
+    [filters.category, filters.tag].some(
+      (value) => value && normalizeText(value) === normalizeText(filters.query)
+    )
+  ) {
+    filters.query = null
+  }
 
   if (/\b(?:highest rated|best rated|top rated|rating cao|danh gia cao)\b/.test(normalized)) {
     filters.sort = 'rating'
@@ -348,7 +398,7 @@ export function extractRecipeSearchFilters(message, previousFilters = {}) {
   }
 
   const hasNewConstraint = Boolean(
-    resetAll || category || maxCalories || minRating !== null || maxTotalTime ||
+    resetAll || discoveryQuery || category || maxCalories || minRating !== null || maxTotalTime ||
     minProtein !== null || filters.tag || /\b(?:rated|rating|calor|calo|kcal|protein|minutes?|phut|fastest|quickest|popular|pho bien)\b/.test(normalized)
   )
   if (!discoveryRequest && !(followup && (hasActiveRecipeSearchFilters(previous) || hasNewConstraint))) {

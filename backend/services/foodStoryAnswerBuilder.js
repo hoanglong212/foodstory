@@ -213,6 +213,7 @@ function buildRecipeStructuredResponseInternal(result, routeOrIntent) {
     const recipes = result.results || []
     const filters = result.filters || {}
     const labels = [
+      filters.query ? `${vietnamese ? 'từ khóa' : 'search'} ${filters.query}` : null,
       filters.category ? `${vietnamese ? 'nhóm' : 'category'} ${filters.category}` : null,
       filters.tag ? `${vietnamese ? 'thẻ' : 'tag'} ${filters.tag}` : null,
       filters.maxCalories ? `${vietnamese ? 'tối đa' : 'up to'} ${formatNumber(filters.maxCalories)} kcal` : null,

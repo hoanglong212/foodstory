@@ -70,6 +70,7 @@ test('retrieval metadata becomes a display-ready recipe card', () => {
 
 test('live recipe filter responses expose rating, nutrition, tags, and filter memory', () => {
   const filters = {
+    query: null,
     category: null,
     tag: 'Healthy',
     maxCalories: 500,
