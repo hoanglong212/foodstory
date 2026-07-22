@@ -28,6 +28,7 @@ test('Render Blueprint keeps secrets external and wires both public services', a
   assert.match(blueprint, /staticPublishPath: \.\/dist/u)
   assert.match(blueprint, /key: DATABASE_URL\s+sync: false/u)
   assert.match(blueprint, /key: JWT_SECRET\s+generateValue: true/u)
+  assert.match(blueprint, /key: GROQ_API_KEY\s+sync: false/u)
   assert.doesNotMatch(blueprint, /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/u)
 })
 
@@ -105,4 +106,33 @@ test('recipe browse metadata hides category and tag filters with no approved rec
 
   assert.match(recipeRoutes, /browse_recipe\.category_id = c\.id AND browse_recipe\.status = 'approved'/u)
   assert.match(recipeRoutes, /browse_recipe_tag\.tag_id = t\.id AND browse_recipe\.status = 'approved'/u)
+})
+
+test('structured recipe queries use only columns present in the production recipe schema', async () => {
+  const [recipeService, schema] = await Promise.all([
+    fs.readFile(path.join(backendRoot, 'services/recipeStructuredService.js'), 'utf8'),
+    fs.readFile(path.join(backendRoot, 'database/schema.sql'), 'utf8'),
+  ])
+
+  const recipeTable = schema.match(
+    /CREATE TABLE IF NOT EXISTS recipes \(([\s\S]*?)\n\);/u
+  )?.[1]
+  const recipeSelect = recipeService.match(
+    /const RECIPE_SELECT = `([\s\S]*?)`/u
+  )?.[1]
+  assert.ok(recipeTable)
+  assert.ok(recipeSelect)
+
+  const schemaColumns = new Set(
+    [...recipeTable.matchAll(/^\s{2}([a-z_]+)\s+(?:INT|VARCHAR|ENUM|TEXT|DATETIME|TIMESTAMP)\b/gmu)]
+      .map((match) => match[1])
+  )
+  const selectedRecipeColumns = [
+    ...new Set([...recipeSelect.matchAll(/\br\.([a-z_]+)\b/gu)].map((match) => match[1])),
+  ]
+
+  assert.deepEqual(
+    selectedRecipeColumns.filter((column) => !schemaColumns.has(column)),
+    []
+  )
 })

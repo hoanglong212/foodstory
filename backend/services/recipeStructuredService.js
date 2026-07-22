@@ -15,10 +15,6 @@ const RECIPE_SELECT = `
     r.carbs,
     r.fat,
     r.difficulty,
-    r.recipe_notes,
-    r.storage_notes,
-    r.blog_intro,
-    r.why_love_it,
     c.name AS category_name
   FROM recipes r
   LEFT JOIN categories c ON c.id = r.category_id
