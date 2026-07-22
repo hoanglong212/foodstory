@@ -94,6 +94,7 @@ export function createChatbotResponse({
   results = [],
   suggestions = [],
   groqCalled = false,
+  recipeSearchFilters = undefined,
 }) {
   return {
     answer,
@@ -106,6 +107,7 @@ export function createChatbotResponse({
     results,
     suggestions,
     groqCalled,
+    ...(recipeSearchFilters !== undefined ? { recipeSearchFilters } : {}),
   }
 }
 
@@ -207,6 +209,66 @@ function buildRecipeStructuredResponseInternal(result, routeOrIntent) {
   const intent = routeIntent(routeOrIntent)
   const vietnamese = isVietnameseRoute(routeOrIntent)
 
+  if (result.kind === 'recipe_filter_search') {
+    const recipes = result.results || []
+    const filters = result.filters || {}
+    const labels = [
+      filters.category ? `${vietnamese ? 'nhóm' : 'category'} ${filters.category}` : null,
+      filters.tag ? `${vietnamese ? 'thẻ' : 'tag'} ${filters.tag}` : null,
+      filters.maxCalories ? `${vietnamese ? 'tối đa' : 'up to'} ${formatNumber(filters.maxCalories)} kcal` : null,
+      filters.minRating !== null && filters.minRating !== undefined
+        ? `${vietnamese ? 'rating từ' : 'rating at least'} ${formatNumber(filters.minRating)}/5`
+        : null,
+      filters.maxTotalTime ? `${vietnamese ? 'không quá' : 'within'} ${formatNumber(filters.maxTotalTime)} ${vietnamese ? 'phút' : 'minutes'}` : null,
+      filters.minProtein !== null && filters.minProtein !== undefined
+        ? `${vietnamese ? 'protein từ' : 'at least'} ${formatNumber(filters.minProtein)}g protein`
+        : null,
+    ].filter(Boolean)
+    const filterSummary = labels.length
+      ? labels.join(', ')
+      : vietnamese
+        ? 'không có giới hạn bổ sung'
+        : 'no additional constraints'
+
+    if (!recipes.length) {
+      return createChatbotResponse({
+        answer: vietnamese
+          ? `FoodStory chưa có công thức nào khớp đồng thời các điều kiện: ${filterSummary}. Tôi giữ nguyên bộ lọc để bạn có thể bỏ bớt một điều kiện.`
+          : `FoodStory has no stored recipe matching all of these conditions: ${filterSummary}. I kept the filters so you can relax one condition.`,
+        mode: 'no_data',
+        intent,
+        retrievalStatus: 'no_results',
+        confidence: 0,
+        message: 'No approved FoodStory recipe matched every live database filter.',
+        results: [],
+        sources: [],
+        suggestions: vietnamese
+          ? ['Bỏ bộ lọc rating', 'Xóa tất cả bộ lọc']
+          : ['Remove the rating filter', 'Clear all filters'],
+        groqCalled: false,
+        recipeSearchFilters: filters,
+      })
+    }
+
+    return createChatbotResponse({
+      answer: vietnamese
+        ? `Tôi tìm thấy ${result.totalMatched} công thức FoodStory khớp ${filterSummary}. Đây là ${recipes.length} kết quả phù hợp nhất theo ${filters.sort || 'popular'}.`
+        : `I found ${result.totalMatched} FoodStory recipes matching ${filterSummary}. Here are the best ${recipes.length} sorted by ${filters.sort || 'popular'}.`,
+      mode: 'structured',
+      intent,
+      retrievalStatus: 'matched',
+      confidence: 1,
+      message: 'Filtered approved recipes directly from live FoodStory recipe, nutrition, rating, favorite, category, and tag data.',
+      sources: recipes.map((recipe) => buildRecipeSource(recipe, 1)),
+      results: recipes.map((recipe) => ({ ...recipe, result_type: 'recipe' })),
+      suggestions: vietnamese
+        ? ['Món khác cùng bộ lọc', 'Xóa tất cả bộ lọc']
+        : ['More with the same filters', 'Clear all filters'],
+      groqCalled: false,
+      recipeSearchFilters: filters,
+    })
+  }
+
   if (result.kind === 'ingredient_recommendation') {
     const ranked = result.results || []
     const sources = ranked.map((item) =>
@@ -230,6 +292,7 @@ function buildRecipeStructuredResponseInternal(result, routeOrIntent) {
         suggestions: vietnamese
           ? ['Tôi có thêm trứng', 'Tìm công thức dễ làm']
           : ['I also have eggs', 'Find an easy recipe'],
+        recipeSearchFilters: result.filters || undefined,
       })
     }
 
@@ -278,6 +341,7 @@ function buildRecipeStructuredResponseInternal(result, routeOrIntent) {
       suggestions: vietnamese
         ? [`Cần bao nhiêu ${ingredientInputLabel(result.requestedIngredients?.[0], true) || 'nguyên liệu'}?`]
         : [`How much ${result.requestedIngredients?.[0] || 'of it'} is needed?`],
+      recipeSearchFilters: result.filters || undefined,
     })
   }
 
@@ -464,6 +528,15 @@ function normalizeRecipePresentation(recipe) {
     calories: Number(recipe.calories || 0),
     protein: Number(recipe.protein || 0),
     avg_rating: Number(recipe.avg_rating || recipe.average_rating || 0),
+    rating_count: Number(recipe.rating_count || 0),
+    favorite_count: Number(recipe.favorite_count || 0),
+    tags: Array.isArray(recipe.tags)
+      ? recipe.tags.slice(0, 8)
+      : String(recipe.tag_names || '')
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean)
+          .slice(0, 8),
     match_coverage:
       recipe.match_coverage === null || recipe.match_coverage === undefined
         ? null

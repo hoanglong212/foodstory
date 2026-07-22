@@ -216,6 +216,148 @@ function extractNutritionField(message) {
   return NUTRITION_FIELDS.find(([, pattern]) => pattern.test(normalized))?.[0] || null
 }
 
+function boundedNumber(value, minimum, maximum) {
+  if (value === null || value === undefined || value === '') return null
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return null
+  return Math.min(maximum, Math.max(minimum, parsed))
+}
+
+export function normalizeRecipeSearchFilters(value = {}) {
+  const source = value && typeof value === 'object' && !Array.isArray(value)
+    ? value
+    : {}
+  const sort = ['popular', 'rating', 'fastest', 'lightest', 'protein', 'saved']
+    .includes(source.sort)
+    ? source.sort
+    : 'popular'
+  return {
+    category: cleanEntity(source.category).slice(0, 80) || null,
+    tag: cleanEntity(source.tag).slice(0, 80) || null,
+    maxCalories: boundedNumber(source.maxCalories, 1, 5_000),
+    minRating: boundedNumber(source.minRating, 0, 5),
+    maxTotalTime: boundedNumber(source.maxTotalTime, 1, 1_440),
+    minProtein: boundedNumber(source.minProtein, 0, 500),
+    sort,
+  }
+}
+
+function hasActiveRecipeSearchFilters(filters = {}) {
+  return Boolean(
+    filters.category ||
+    filters.tag ||
+    filters.maxCalories ||
+    filters.minRating ||
+    filters.maxTotalTime ||
+    filters.minProtein
+  )
+}
+
+function extractRecipeSearchNumber(normalized, patterns) {
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern)
+    if (match) return Number(match[1])
+  }
+  return null
+}
+
+export function extractRecipeSearchFilters(message, previousFilters = {}) {
+  const normalized = normalizeText(message)
+  const resetAll = /\b(?:clear|reset|remove)\s+(?:all\s+)?filters?\b|\b(?:bo|xoa|dat lai)\s+(?:tat ca\s+)?(?:bo loc|loc)\b/.test(
+    normalized
+  )
+  const followup = /\b(?:another|more|else|same|keep|still|next|other|filters?|con|khac|them|tiep|giu|van|bo loc)\b/.test(
+    normalized
+  )
+  const discoveryRequest =
+    /\b(?:recommend|suggest|find|filter)\b/.test(normalized) ||
+    /\b(?:show|list)\b.*\b(?:recipes?|meals?|dishes?)\b/.test(normalized) ||
+    /\bwhat should i (?:cook|eat)\b/.test(normalized) ||
+    /\b(?:goi y|de xuat|tu van|tim|loc)\b.*\b(?:cong thuc|mon|mon an)\b/.test(normalized) ||
+    /\b(?:mon nao|an gi|nau gi)\b/.test(normalized)
+  const previous = normalizeRecipeSearchFilters(previousFilters)
+  const filters = resetAll || !followup
+    ? normalizeRecipeSearchFilters()
+    : { ...previous }
+
+  const maxCalories = extractRecipeSearchNumber(normalized, [
+    /\b(?:under|below|less than|no more than|maximum|max|up to)\s+(\d{2,4})\s*(?:calories?|calo|kcal)\b/,
+    /\b(?:duoi|it hon|khong qua|toi da)\s+(\d{2,4})\s*(?:calo|kcal)\b/,
+    /\b(\d{2,4})\s*(?:calories?|calo|kcal)\s+(?:or less|or fewer|tro xuong)\b/,
+  ])
+  const minRating = extractRecipeSearchNumber(normalized, [
+    /\b(?:rating|rated)\s*(?:above|over|at least|from|>=)?\s*(\d(?:\.\d)?)\b/,
+    /\b(?:above|over|at least|minimum|from)\s*(\d(?:\.\d)?)\s*(?:stars?|rating)\b/,
+    /\b(?:rating|danh gia|tu|tren|it nhat)\s*(?:tren|tu|it nhat)?\s*(\d(?:\.\d)?)\s*(?:sao)?\b/,
+  ])
+  const maxTotalTime = extractRecipeSearchNumber(normalized, [
+    /\b(?:under|below|less than|within|no more than|up to)\s+(\d{1,3})\s*(?:minutes?|mins?)\b/,
+    /\b(?:duoi|trong|it hon|khong qua|toi da)\s+(\d{1,3})\s*(?:phut)\b/,
+  ])
+  const minProtein = extractRecipeSearchNumber(normalized, [
+    /\b(?:at least|minimum|over|above)\s*(\d{1,3})\s*g(?:rams?)?\s+(?:of\s+)?protein\b/,
+    /\b(?:it nhat|toi thieu|tren)\s*(\d{1,3})\s*g\s*(?:protein|dam|chat dam)\b/,
+  ])
+
+  if (/\b(?:remove|clear)\b.*\bcalor|\bbo\b.*\bcalo/.test(normalized)) {
+    filters.maxCalories = null
+  } else if (maxCalories) {
+    filters.maxCalories = boundedNumber(maxCalories, 1, 5_000)
+  }
+  if (/\b(?:remove|clear)\b.*\brating|\bbo\b.*\b(?:rating|danh gia)/.test(normalized)) {
+    filters.minRating = null
+  } else if (minRating !== null) {
+    filters.minRating = boundedNumber(minRating, 0, 5)
+  } else if (/\b(?:highly rated|top rated|rating cao|danh gia cao)\b/.test(normalized)) {
+    filters.minRating = 4
+  }
+  if (/\b(?:remove|clear)\b.*\btime|\bbo\b.*\bthoi gian/.test(normalized)) {
+    filters.maxTotalTime = null
+  } else if (maxTotalTime) {
+    filters.maxTotalTime = boundedNumber(maxTotalTime, 1, 1_440)
+  }
+  if (minProtein !== null) filters.minProtein = boundedNumber(minProtein, 0, 500)
+
+  const category = extractFoodCategory(message)
+  if (category) filters.category = category
+  if (/\b(?:healthy|lanh manh|tot cho suc khoe)\b/.test(normalized)) filters.tag = 'Healthy'
+  if (/\b(?:vegetarian|vegan|mon chay|do chay|an chay)\b/.test(normalized)) filters.tag = 'Vegetarian'
+  if (/\b(?:student friendly|sinh vien)\b/.test(normalized)) filters.tag = 'Student-friendly'
+  if (/\b(?:quick and easy|quick meal|de lam|nhanh gon)\b/.test(normalized)) filters.tag = 'Quick Meal'
+
+  if (/\b(?:highest rated|best rated|top rated|rating cao|danh gia cao)\b/.test(normalized)) {
+    filters.sort = 'rating'
+  } else if (/\b(?:lowest calorie|lightest|it calo|calo thap)\b/.test(normalized)) {
+    filters.sort = 'lightest'
+  } else if (/\b(?:fastest|quickest|nhanh nhat|nhanh gon)\b/.test(normalized)) {
+    filters.sort = 'fastest'
+  } else if (/\b(?:highest protein|high protein|protein cao|nhieu dam)\b/.test(normalized)) {
+    filters.sort = 'protein'
+  } else if (/\b(?:most saved|saved most|luu nhieu nhat)\b/.test(normalized)) {
+    filters.sort = 'saved'
+  } else if (/\b(?:most popular|popular|pho bien)\b/.test(normalized)) {
+    filters.sort = 'popular'
+  } else if (minRating !== null) {
+    filters.sort = 'rating'
+  } else if (maxCalories) {
+    filters.sort = 'lightest'
+  } else if (maxTotalTime) {
+    filters.sort = 'fastest'
+  } else if (minProtein !== null) {
+    filters.sort = 'protein'
+  }
+
+  const hasNewConstraint = Boolean(
+    resetAll || category || maxCalories || minRating !== null || maxTotalTime ||
+    minProtein !== null || filters.tag || /\b(?:rated|rating|calor|calo|kcal|protein|minutes?|phut|fastest|quickest|popular|pho bien)\b/.test(normalized)
+  )
+  if (!discoveryRequest && !(followup && (hasActiveRecipeSearchFilters(previous) || hasNewConstraint))) {
+    return null
+  }
+
+  return normalizeRecipeSearchFilters(filters)
+}
+
 function removeServingSuffix(value) {
   return cleanEntity(
     String(value || '').replace(/\s+(?:for|to)\s+\d+\s*(?:servings?|people)?\s*$/i, '')
@@ -683,6 +825,7 @@ function createRoute(intent, entities, confidence, options) {
       lastRecipeTitle: null,
       helpTopic: null,
       responseLanguage: 'en',
+      recipeSearchFilters: null,
       ...entities,
     },
     confidence,
@@ -702,6 +845,10 @@ export function routeFoodStoryQuery(message, context = {}) {
   const budget = extractBudget(message)
   const priceRange = extractPriceRange(message) || budgetToPriceRange(budget)
   const availableIngredients = extractAvailableIngredients(message)
+  const recipeSearchFilters = extractRecipeSearchFilters(
+    message,
+    context.recipeSearchFilters
+  )
   const routeContext = {
     lastRecipeId: context.lastRecipeId || null,
     lastRecipeTitle: context.lastRecipeTitle || null,
@@ -731,6 +878,20 @@ export function routeFoodStoryQuery(message, context = {}) {
         targetServings,
         budgetAmount: budget?.amount || null,
         budgetCurrency: budget?.currency || null,
+        recipeSearchFilters,
+        sourcePreference: 'recipe',
+      },
+      0.97,
+      { structured: true }
+    )
+  }
+
+  if (recipeSearchFilters) {
+    return makeRoute(
+      'recipe_filter_search',
+      {
+        cuisineOrCategory: recipeSearchFilters.category,
+        recipeSearchFilters,
         sourcePreference: 'recipe',
       },
       0.97,

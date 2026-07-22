@@ -91,7 +91,7 @@ function questionNeedsConversationMemory(question) {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/đ/g, 'd')
     .toLowerCase()
-  return /\b(?:it|its|this|that|these|those|same|previous|above|earlier|before|remember|them|one|first|last time|old chat|conversation|we discussed|talked about|you said|i told you|nho|truoc do|luc truoc|ban dau|toi da hoi|toi da noi|ban da noi|cuoc tro chuyen|cai do|dieu do)\b/i.test(
+  return /\b(?:it|its|this|that|these|those|same|previous|above|earlier|before|remember|them|one|another|more|else|other|next|keep|still|same filters?|previous filters?|first|last time|old chat|conversation|we discussed|talked about|you said|i told you|nho|truoc do|luc truoc|ban dau|toi da hoi|toi da noi|ban da noi|cuoc tro chuyen|cai do|dieu do|mon khac|con mon|them mon|tiep|giu|van|bo loc|loc nay)\b/i.test(
     normalized
   )
 }

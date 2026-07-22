@@ -67,3 +67,65 @@ test('retrieval metadata becomes a display-ready recipe card', () => {
     result_type: 'recipe',
   })
 })
+
+test('live recipe filter responses expose rating, nutrition, tags, and filter memory', () => {
+  const filters = {
+    category: null,
+    tag: 'Healthy',
+    maxCalories: 500,
+    minRating: 4,
+    maxTotalTime: 30,
+    minProtein: 20,
+    sort: 'rating',
+  }
+  const response = buildRecipeStructuredResponse(
+    {
+      status: 'matched',
+      kind: 'recipe_filter_search',
+      filters,
+      totalMatched: 1,
+      results: [
+        {
+          id: 9,
+          title: 'Healthy Tofu Bowl',
+          category_name: 'Vegetarian',
+          image_url: '/uploads/recipes/tofu-bowl.webp',
+          calories: 420,
+          protein: 28,
+          prep_time: 10,
+          cook_time: 15,
+          avg_rating: 4.7,
+          rating_count: 12,
+          favorite_count: 8,
+          tag_names: 'Healthy,Vegetarian',
+        },
+      ],
+    },
+    { intent: 'recipe_filter_search', entities: { responseLanguage: 'en' } }
+  )
+
+  assert.equal(response.mode, 'structured')
+  assert.equal(response.groqCalled, false)
+  assert.deepEqual(response.recipeSearchFilters, filters)
+  assert.deepEqual(response.results[0], {
+    id: 9,
+    title: 'Healthy Tofu Bowl',
+    category: 'Vegetarian',
+    image_url: '/uploads/recipes/tofu-bowl.webp',
+    prep_time: 10,
+    cook_time: 15,
+    servings: null,
+    difficulty: null,
+    calories: 420,
+    protein: 28,
+    avg_rating: 4.7,
+    rating_count: 12,
+    favorite_count: 8,
+    tags: ['Healthy', 'Vegetarian'],
+    match_coverage: null,
+    matched_ingredient_count: null,
+    requested_ingredient_count: null,
+    missing_ingredients: [],
+    result_type: 'recipe',
+  })
+})

@@ -15,7 +15,28 @@ const RECIPE_SELECT = `
     r.carbs,
     r.fat,
     r.difficulty,
-    c.name AS category_name
+    c.name AS category_name,
+    COALESCE((
+      SELECT AVG(recipe_rating.rating_value)
+      FROM ratings recipe_rating
+      WHERE recipe_rating.recipe_id = r.id
+    ), 0) AS avg_rating,
+    COALESCE((
+      SELECT COUNT(*)
+      FROM ratings recipe_rating_count
+      WHERE recipe_rating_count.recipe_id = r.id
+    ), 0) AS rating_count,
+    COALESCE((
+      SELECT COUNT(*)
+      FROM favorites recipe_favorite
+      WHERE recipe_favorite.recipe_id = r.id
+    ), 0) AS favorite_count,
+    (
+      SELECT GROUP_CONCAT(DISTINCT recipe_tag.name ORDER BY recipe_tag.name SEPARATOR ',')
+      FROM recipe_tags recipe_tag_link
+      JOIN tags recipe_tag ON recipe_tag.id = recipe_tag_link.tag_id
+      WHERE recipe_tag_link.recipe_id = r.id
+    ) AS tag_names
   FROM recipes r
   LEFT JOIN categories c ON c.id = r.category_id
 `
@@ -221,6 +242,102 @@ export async function getRecipeIngredients(recipeId) {
   return rows
 }
 
+function normalizeRecipeSearchFilters(value = {}) {
+  const source = value && typeof value === 'object' && !Array.isArray(value)
+    ? value
+    : {}
+  return {
+    category: String(source.category || '').trim().slice(0, 80) || null,
+    tag: String(source.tag || '').trim().slice(0, 80) || null,
+    maxCalories: Number(source.maxCalories) > 0 ? Number(source.maxCalories) : null,
+    minRating: Number(source.minRating) >= 0 && source.minRating !== null
+      ? Number(source.minRating)
+      : null,
+    maxTotalTime: Number(source.maxTotalTime) > 0 ? Number(source.maxTotalTime) : null,
+    minProtein: Number(source.minProtein) >= 0 && source.minProtein !== null
+      ? Number(source.minProtein)
+      : null,
+    sort: ['popular', 'rating', 'fastest', 'lightest', 'protein', 'saved']
+      .includes(source.sort)
+      ? source.sort
+      : 'popular',
+  }
+}
+
+function recipeSearchText(recipe) {
+  return normalizeText([
+    recipe.title,
+    recipe.description,
+    recipe.category_name,
+    recipe.tag_names,
+  ].filter(Boolean).join(' '))
+}
+
+function recipeMatchesSearchFilters(recipe, filters) {
+  const searchable = recipeSearchText(recipe)
+  const tags = normalizeText(recipe.tag_names)
+  const totalTime = Number(recipe.prep_time || 0) + Number(recipe.cook_time || 0)
+  if (filters.category && !searchable.includes(normalizeText(filters.category))) return false
+  if (filters.tag && !tags.includes(normalizeText(filters.tag))) return false
+  if (filters.maxCalories && !(Number(recipe.calories || 0) > 0 && Number(recipe.calories) <= filters.maxCalories)) {
+    return false
+  }
+  if (filters.minRating !== null && Number(recipe.avg_rating || 0) < filters.minRating) return false
+  if (filters.maxTotalTime && !(totalTime > 0 && totalTime <= filters.maxTotalTime)) return false
+  if (filters.minProtein !== null && Number(recipe.protein || 0) < filters.minProtein) return false
+  return true
+}
+
+function compareRecipesByFilter(left, right, sort) {
+  const leftTime = Number(left.prep_time || 0) + Number(left.cook_time || 0)
+  const rightTime = Number(right.prep_time || 0) + Number(right.cook_time || 0)
+  if (sort === 'rating') {
+    return Number(right.avg_rating || 0) - Number(left.avg_rating || 0) ||
+      Number(right.rating_count || 0) - Number(left.rating_count || 0)
+  }
+  if (sort === 'fastest') {
+    return (leftTime || Number.MAX_SAFE_INTEGER) - (rightTime || Number.MAX_SAFE_INTEGER) ||
+      Number(right.avg_rating || 0) - Number(left.avg_rating || 0)
+  }
+  if (sort === 'lightest') {
+    return (Number(left.calories || 0) || Number.MAX_SAFE_INTEGER) -
+      (Number(right.calories || 0) || Number.MAX_SAFE_INTEGER) ||
+      Number(right.avg_rating || 0) - Number(left.avg_rating || 0)
+  }
+  if (sort === 'protein') {
+    return Number(right.protein || 0) - Number(left.protein || 0) ||
+      Number(right.avg_rating || 0) - Number(left.avg_rating || 0)
+  }
+  if (sort === 'saved') {
+    return Number(right.favorite_count || 0) - Number(left.favorite_count || 0) ||
+      Number(right.avg_rating || 0) - Number(left.avg_rating || 0)
+  }
+  return Number(right.rating_count || 0) - Number(left.rating_count || 0) ||
+    Number(right.avg_rating || 0) - Number(left.avg_rating || 0) ||
+    Number(right.favorite_count || 0) - Number(left.favorite_count || 0)
+}
+
+export function filterRecipesBySearchFilters(recipes = [], inputFilters = {}) {
+  const filters = normalizeRecipeSearchFilters(inputFilters)
+  return [...recipes]
+    .filter((recipe) => recipeMatchesSearchFilters(recipe, filters))
+    .sort((left, right) => compareRecipesByFilter(left, right, filters.sort))
+}
+
+export async function findRecipesByFilters(inputFilters = {}, limit = 5) {
+  const filters = normalizeRecipeSearchFilters(inputFilters)
+  const recipes = await fetchApprovedRecipes()
+  const matched = filterRecipesBySearchFilters(recipes, filters)
+  const boundedLimit = Math.max(1, Math.min(Number(limit) || 5, 8))
+  return {
+    status: matched.length ? 'matched' : 'no_results',
+    kind: 'recipe_filter_search',
+    filters,
+    totalMatched: matched.length,
+    results: matched.slice(0, boundedLimit),
+  }
+}
+
 function editDistance(left, right) {
   const a = String(left || '')
   const b = String(right || '')
@@ -318,7 +435,7 @@ export function keepBestIngredientCoverage(ranked = []) {
   )
 }
 
-export async function findRecipesByIngredients(availableIngredients = [], limit = 3) {
+export async function findRecipesByIngredients(availableIngredients = [], limit = 3, inputFilters = null) {
   const requested = [...new Set(
     availableIngredients.map(normalizeText).filter(Boolean)
   )].slice(0, 6)
@@ -326,9 +443,17 @@ export async function findRecipesByIngredients(availableIngredients = [], limit 
     return { status: 'no_ingredients', kind: 'ingredient_recommendation', results: [] }
   }
 
-  const recipes = await fetchApprovedRecipes()
+  const filters = inputFilters ? normalizeRecipeSearchFilters(inputFilters) : null
+  const recipes = (await fetchApprovedRecipes()).filter((recipe) =>
+    filters ? recipeMatchesSearchFilters(recipe, filters) : true
+  )
   if (!recipes.length) {
-    return { status: 'no_results', kind: 'ingredient_recommendation', results: [] }
+    return {
+      status: 'no_results',
+      kind: 'ingredient_recommendation',
+      filters,
+      results: [],
+    }
   }
 
   const placeholders = recipes.map(() => '?').join(', ')
@@ -439,6 +564,7 @@ export async function findRecipesByIngredients(availableIngredients = [], limit 
     kind: 'ingredient_recommendation',
     requestedIngredients: requested,
     ingredientCorrections: resolvedRequested.filter((item) => item.corrected),
+    filters,
     results: ranked,
   }
 }
@@ -708,8 +834,15 @@ async function handleSteps(entities, context) {
 }
 
 export async function handleRecipeStructuredQuery(route, context = {}) {
+  if (route.intent === 'recipe_filter_search') {
+    return findRecipesByFilters(route.entities.recipeSearchFilters)
+  }
   if (route.intent === 'recipe_by_ingredients') {
-    return findRecipesByIngredients(route.entities.availableIngredients)
+    return findRecipesByIngredients(
+      route.entities.availableIngredients,
+      3,
+      route.entities.recipeSearchFilters
+    )
   }
   if (route.intent === 'recipe_ingredients') {
     return handleIngredientList(route.entities, context)

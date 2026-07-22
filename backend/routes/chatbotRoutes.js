@@ -13,6 +13,7 @@ router.post('/ask', optionalAuth, async (req, res) => {
       lastRecipeId = null,
       lastRecipeTitle = null,
       lastRestaurantId = null,
+      recipeSearchFilters = null,
       conversationHistory = [],
       conversationMemory = '',
     } = req.body
@@ -35,11 +36,20 @@ router.post('/ask', optionalAuth, async (req, res) => {
         message: `Conversation memory cannot exceed ${MAX_CONVERSATION_MEMORY_LENGTH} characters`,
       })
     }
+    if (
+      recipeSearchFilters !== null &&
+      (typeof recipeSearchFilters !== 'object' || Array.isArray(recipeSearchFilters))
+    ) {
+      return res.status(400).json({
+        message: 'Recipe search filters must be an object',
+      })
+    }
 
     const result = await askFoodStoryChatbot(message, {
       lastRecipeId,
       lastRecipeTitle,
       lastRestaurantId,
+      recipeSearchFilters,
       conversationHistory,
       conversationMemory,
       userId: req.user?.id || null,

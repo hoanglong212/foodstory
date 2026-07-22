@@ -25,6 +25,7 @@ const launcherElement = ref(null)
 const lastRecipeId = ref(null)
 const lastRecipeTitle = ref(null)
 const lastRestaurantId = ref(null)
+const recipeSearchFilters = ref(null)
 const imagePreviewUrls = new Set()
 const isBusy = computed(() => isLoading.value || isSearchingImage.value)
 const CHAT_HISTORY_VERSION = 2
@@ -53,6 +54,32 @@ function greetingMessage() {
   }
 }
 
+function normalizedRecipeSearchFilters(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const numberOrNull = (input) => {
+    if (input === null || input === undefined || input === '') return null
+    const parsed = Number(input)
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+  }
+  const allowedSorts = new Set([
+    'popular',
+    'rating',
+    'fastest',
+    'lightest',
+    'protein',
+    'saved',
+  ])
+  return {
+    category: typeof value.category === 'string' ? value.category.slice(0, 80) || null : null,
+    tag: typeof value.tag === 'string' ? value.tag.slice(0, 80) || null : null,
+    maxCalories: numberOrNull(value.maxCalories),
+    minRating: numberOrNull(value.minRating),
+    maxTotalTime: numberOrNull(value.maxTotalTime),
+    minProtein: numberOrNull(value.minProtein),
+    sort: allowedSorts.has(value.sort) ? value.sort : 'popular',
+  }
+}
+
 function storableMessage(message = {}) {
   return {
     role: message.role === 'user' ? 'user' : 'bot',
@@ -68,6 +95,7 @@ function storableMessage(message = {}) {
     suggestions: Array.isArray(message.suggestions)
       ? message.suggestions.slice(0, 4)
       : [],
+    recipeSearchFilters: normalizedRecipeSearchFilters(message.recipeSearchFilters),
   }
 }
 
@@ -83,6 +111,7 @@ function persistConversation() {
           lastRecipeId: lastRecipeId.value,
           lastRecipeTitle: lastRecipeTitle.value,
           lastRestaurantId: lastRestaurantId.value,
+          recipeSearchFilters: recipeSearchFilters.value,
         },
       }),
     )
@@ -102,6 +131,9 @@ function restoreConversation() {
     lastRecipeId.value = stored.context?.lastRecipeId || null
     lastRecipeTitle.value = stored.context?.lastRecipeTitle || null
     lastRestaurantId.value = stored.context?.lastRestaurantId || null
+    recipeSearchFilters.value = normalizedRecipeSearchFilters(
+      stored.context?.recipeSearchFilters,
+    )
     return messages.value.length > 0
   } catch {
     return false
@@ -143,6 +175,7 @@ function startNewConversation() {
   lastRecipeId.value = null
   lastRecipeTitle.value = null
   lastRestaurantId.value = null
+  recipeSearchFilters.value = null
   hasUnread.value = false
   persistConversation()
   nextTick(scrollToBottom)
@@ -297,6 +330,19 @@ function openRecipe(result) {
   router.push(`/recipes/${result.id}`)
 }
 
+function openRecipeCollection(filters = {}) {
+  const normalized = normalizedRecipeSearchFilters(filters)
+  closeChat()
+  router.push({
+    path: '/recipes',
+    query: {
+      category: normalized?.category || undefined,
+      tag: normalized?.tag || undefined,
+      sort: normalized?.sort || undefined,
+    },
+  })
+}
+
 function inspirationIngredients(result = {}) {
   return Array.isArray(result.ingredients)
     ? result.ingredients
@@ -411,6 +457,9 @@ function updateRecentContext(data = {}) {
     lastRecipeId.value = data.conversationContext.lastRecipeId || null
     lastRecipeTitle.value = data.conversationContext.lastRecipeTitle || null
     lastRestaurantId.value = data.conversationContext.lastRestaurantId || null
+    recipeSearchFilters.value = normalizedRecipeSearchFilters(
+      data.conversationContext.recipeSearchFilters,
+    )
     return
   }
   if (!['structured', 'grounded_rag'].includes(data.mode)) return
@@ -485,6 +534,7 @@ async function sendMessage(text = inputText.value) {
       lastRecipeId: lastRecipeId.value,
       lastRecipeTitle: lastRecipeTitle.value,
       lastRestaurantId: lastRestaurantId.value,
+      recipeSearchFilters: recipeSearchFilters.value,
       conversationHistory: conversationHistoryForApi(),
       conversationMemory: conversationMemoryForApi(),
     })
@@ -503,6 +553,7 @@ async function sendMessage(text = inputText.value) {
       sources: data.sources || [],
       results: data.results || [],
       suggestions: data.suggestions || [],
+      recipeSearchFilters: normalizedRecipeSearchFilters(data.recipeSearchFilters),
     })
     persistConversation()
 
@@ -831,8 +882,13 @@ onBeforeUnmount(() => {
                     <p class="recipe-result-meta">
                       <span><AppIcon name="clock" size="13" /> {{ recipeTime(result) }}</span>
                       <span><AppIcon name="users" size="13" /> {{ result.servings || '?' }} servings</span>
+                      <span v-if="result.calories">{{ result.calories }} kcal</span>
+                      <span v-if="result.protein">{{ result.protein }}g protein</span>
                     </p>
-                    <p class="result-rating">{{ ratingLabel(result.avg_rating) }}</p>
+                    <p class="result-rating">
+                      {{ ratingLabel(result.avg_rating) }}
+                      <span v-if="result.rating_count"> · {{ result.rating_count }} rating{{ result.rating_count === 1 ? '' : 's' }}</span>
+                    </p>
                   </div>
                 </div>
                 <button type="button" class="result-action" @click="openRecipe(result)">
@@ -884,6 +940,17 @@ onBeforeUnmount(() => {
               </template>
             </article>
           </div>
+
+          <button
+            v-if="message.role === 'bot' && message.results?.length && message.recipeSearchFilters"
+            type="button"
+            class="filter-results-action"
+            @click="openRecipeCollection(message.recipeSearchFilters)"
+          >
+            <AppIcon name="filter" size="14" />
+            Browse this collection in Recipes
+            <AppIcon name="arrow-right" size="14" />
+          </button>
 
           <details
             v-if="message.role === 'bot' && message.sources?.length"
@@ -1365,6 +1432,34 @@ onBeforeUnmount(() => {
 
 .result-action:hover {
   color: #fff;
+}
+
+.filter-results-action {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid #45454a;
+  border-radius: 10px;
+  color: #f4f4f5;
+  background: #2a2a2e;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.filter-results-action:hover {
+  border-color: #e53e3e;
+  background: #303035;
+}
+
+.filter-results-action:focus-visible {
+  outline: 2px solid #ff7676;
+  outline-offset: 2px;
 }
 
 .recipe-result-layout {

@@ -5,7 +5,10 @@ import {
   generateGeneralKnowledgeAnswer,
   generateExternalFoodAnswer,
 } from './groqService.js'
-import { routeFoodStoryQuery } from './foodStoryQueryRouter.js'
+import {
+  normalizeRecipeSearchFilters,
+  routeFoodStoryQuery,
+} from './foodStoryQueryRouter.js'
 import { resolveFoodStorySemanticRoute } from './foodStorySemanticRouterService.js'
 import { answerWebsiteKnowledgeQuestion } from './foodStoryWebsiteKnowledgeService.js'
 import {
@@ -36,6 +39,7 @@ const CHATBOT_TOP_K = 3
 const MINIMUM_GROQ_SCORE = 0.5
 const GROQ_ELIGIBLE_STATUSES = new Set(['matched', 'partial_match'])
 const RECIPE_STRUCTURED_INTENTS = new Set([
+  'recipe_filter_search',
   'recipe_by_ingredients',
   'recipe_ingredients',
   'recipe_ingredient_quantity',
@@ -68,6 +72,7 @@ const RECIPE_GROQ_FALLBACK_STATUSES = new Set([
 ])
 
 export function recipeResultNeedsGroqFallback(result = {}) {
+  if (result.kind === 'recipe_filter_search') return false
   if (
     result.kind === 'ingredient_recommendation' &&
     !result.results?.length &&
@@ -175,6 +180,12 @@ function finish(response, context = {}) {
         normalizeOptionalId(restaurantSource?.sourceId) ||
         context.lastRestaurantId ||
         null,
+      recipeSearchFilters: Object.prototype.hasOwnProperty.call(
+        publicResponse,
+        'recipeSearchFilters'
+      )
+        ? publicResponse.recipeSearchFilters
+        : context.recipeSearchFilters || null,
     },
   }
 }
@@ -526,6 +537,10 @@ export async function askFoodStoryChatbot(question, context = {}) {
       context.pendingIntent === 'recipe_serving_scale'
         ? context.pendingIntent
         : historyContext.pendingIntent,
+    recipeSearchFilters:
+      context.recipeSearchFilters && typeof context.recipeSearchFilters === 'object'
+        ? normalizeRecipeSearchFilters(context.recipeSearchFilters)
+        : null,
     conversationHistory,
     conversationMemory,
   }
