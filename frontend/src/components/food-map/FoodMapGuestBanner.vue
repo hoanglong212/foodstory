@@ -7,10 +7,10 @@ import AppIcon from '../AppIcon.vue'
     <AppIcon name="map-pin" size="19" />
     <div>
       <strong>Exploring as a guest</strong>
-      <span>Browse verified restaurants and community places.</span>
+      <span>Vision and map browsing work now. Sign in for precise address search and saving.</span>
     </div>
     <RouterLink :to="{ name: 'login', query: { redirect: '/food-map' } }">
-      Sign in to save
+      Sign in for more
     </RouterLink>
   </aside>
 </template>
@@ -19,7 +19,7 @@ import AppIcon from '../AppIcon.vue'
 .food-map-guest-banner {
   position: absolute;
   z-index: 27;
-  top: 16px;
+  top: 76px;
   right: 16px;
   display: flex;
   max-width: min(430px, calc(100% - 104px));
@@ -70,9 +70,9 @@ import AppIcon from '../AppIcon.vue'
 
 @media (max-width: 640px) {
   .food-map-guest-banner {
-    top: 10px;
+    top: 70px;
     right: 10px;
-    left: 80px;
+    left: 10px;
     max-width: none;
   }
 

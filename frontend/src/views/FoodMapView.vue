@@ -1768,6 +1768,7 @@ function visionDraftPrefill(draft) {
 
 async function openVisionDraftWorkflow(draft) {
   if (!draft) return;
+  if (!requireFoodMapAccount("add this place to your map")) return;
   const modeChange =
     mapMode.value !== "personal" ? setMapMode("personal") : Promise.resolve();
   await openAddForm(visionDraftPrefill(draft));
@@ -1866,6 +1867,7 @@ function cancelVisionRequest() {
 }
 
 async function openVisionManualAdd() {
+  if (!requireFoodMapAccount("add a place")) return;
   const modeChange =
     mapMode.value !== "personal" ? setMapMode("personal") : Promise.resolve();
   await openAddForm();
@@ -2237,7 +2239,7 @@ onBeforeUnmount(() => {
     <FoodMapGuestBanner v-if="isGuestPreview" />
 
     <FoodMapImportPanel
-      v-if="!isGuestPreview && !pickingMode"
+      v-if="!pickingMode"
       ref="importPanel"
       :input-mode="visionInputMode"
       :state="visionState"
@@ -2258,7 +2260,7 @@ onBeforeUnmount(() => {
     />
 
     <VisionAutoResultPanel
-      v-if="!isGuestPreview"
+      v-if="!pickingMode"
       :state="visionState"
       :result="visionResult"
       :error-message="visionErrorMessage"

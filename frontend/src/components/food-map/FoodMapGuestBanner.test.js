@@ -11,6 +11,9 @@ describe('FoodMapGuestBanner', () => {
     expect(wrapper.get('[aria-label="Guest Food Map preview"]').text()).toContain(
       'Exploring as a guest',
     )
+    expect(wrapper.text()).toContain('Vision and map browsing work now.')
+    expect(wrapper.text()).toContain('Sign in for precise address search and saving.')
+    expect(wrapper.get('a').text()).toBe('Sign in for more')
     expect(wrapper.getComponent(RouterLinkStub).props('to')).toEqual({
       name: 'login',
       query: { redirect: '/food-map' },
