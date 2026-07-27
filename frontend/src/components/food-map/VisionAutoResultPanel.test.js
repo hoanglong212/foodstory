@@ -55,3 +55,26 @@ describe('VisionAutoResultPanel external place results', () => {
     expect(wrapper.emitted('add-dish-place')).toEqual([[externalPlace]])
   })
 })
+
+describe('VisionAutoResultPanel dish evidence', () => {
+  it('labels title evidence without claiming it came from the thumbnail', () => {
+    const wrapper = mount(VisionAutoResultPanel, {
+      props: {
+        state: 'dish_candidates',
+        result: {
+          dishCandidates: [{
+            id: 'dish:title:cao-lau',
+            dishName: 'Cao Lầu',
+            evidenceLabel: 'Title evidence',
+            visualEvidence: ['Named explicitly in the public video title'],
+            aliases: [],
+          }],
+        },
+      },
+    })
+
+    expect(wrapper.text()).toContain('Title evidence:')
+    expect(wrapper.text()).toContain('Named explicitly in the public video title')
+    expect(wrapper.text()).not.toContain('Seen in the thumbnail')
+  })
+})

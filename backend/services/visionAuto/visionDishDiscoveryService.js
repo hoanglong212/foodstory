@@ -20,6 +20,11 @@ const GENERIC_DISHES = new Set([
 const DISH_RESPONSE_SCHEMA = {
   type: 'object',
   properties: {
+    titleDishName: {
+      type: 'string',
+      nullable: true,
+      description: 'The specific dish explicitly named in the public video title, without locations or hashtags.',
+    },
     candidates: {
       type: 'array',
       maxItems: MAX_CANDIDATES,
@@ -36,7 +41,7 @@ const DISH_RESPONSE_SCHEMA = {
       },
     },
   },
-  required: ['candidates'],
+  required: ['titleDishName', 'candidates'],
 }
 
 function capText(value, maxLength) {
@@ -78,12 +83,93 @@ function sanitizeCandidates(values) {
         confidence: Math.round(Math.min(1, Math.max(0, confidence)) * 1000) / 1000,
         aliases: uniqueTexts(candidate?.aliases, 6, 120),
         visualEvidence: uniqueTexts(candidate?.visualEvidence, 4, 160),
+        evidenceSource: 'thumbnail',
+        evidenceLabel: 'Thumbnail evidence',
         reviewRequired: true,
       }
     })
     .filter(Boolean)
     .sort((left, right) => right.confidence - left.confidence)
     .slice(0, MAX_CANDIDATES)
+}
+
+function inferTitleDishPhrase(title) {
+  const source = capText(String(title || '').split('#')[0], 400)
+    .replace(/\s+(?:\||[-–—])\s+.*$/u, '')
+    .trim()
+  if (!source) return ''
+
+  const patterns = [
+    /(?:^|\s)(?:món|mon)\s+(.+)$/iu,
+    /(?:^|\s)(?:cách làm|cach lam)\s+(.+)$/iu,
+    /(?:^|\s)(?:how to make|recipe(?:\s+for)?|making)\s*:?\s+(.+)$/iu,
+  ]
+  const match = patterns.map((pattern) => source.match(pattern)).find(Boolean)
+  const phrase = capText(match?.[1], 120)
+  const normalized = normalizeDiscoveryText(phrase)
+  const wordCount = normalized.split(' ').filter(Boolean).length
+  if (!normalized || GENERIC_DISHES.has(normalized) || wordCount > 10) return ''
+  return phrase
+}
+
+function titleDishNamedInMetadata(modelResult, metadata) {
+  const title = capText(metadata?.title, 400)
+  const normalizedTitle = normalizeDiscoveryText(title)
+  const modelTitleDish = capText(modelResult?.titleDishName, 120)
+  const normalizedModelDish = normalizeDiscoveryText(modelTitleDish)
+
+  if (
+    normalizedModelDish &&
+    !GENERIC_DISHES.has(normalizedModelDish) &&
+    normalizedTitle.includes(normalizedModelDish)
+  ) {
+    return modelTitleDish
+  }
+
+  return inferTitleDishPhrase(title)
+}
+
+function candidateMatchesDish(candidate, dishName) {
+  const normalizedDish = normalizeDiscoveryText(dishName)
+  if (!normalizedDish) return false
+  return [candidate?.dishName, ...(candidate?.aliases || [])].some((value) => {
+    const normalizedValue = normalizeDiscoveryText(value)
+    return (
+      normalizedValue === normalizedDish ||
+      normalizedValue.includes(normalizedDish) ||
+      normalizedDish.includes(normalizedValue)
+    )
+  })
+}
+
+function buildDishCandidates(modelResult, metadata) {
+  const visualCandidates = sanitizeCandidates(modelResult?.candidates)
+  const titleDishName = titleDishNamedInMetadata(modelResult, metadata)
+  if (!titleDishName) return visualCandidates
+
+  const matchingIndex = visualCandidates.findIndex((candidate) =>
+    candidateMatchesDish(candidate, titleDishName),
+  )
+  const matchingCandidate = matchingIndex >= 0 ? visualCandidates[matchingIndex] : null
+  const normalized = normalizeDiscoveryText(titleDishName)
+  const titleCandidate = {
+    id: `dish:title:${normalized.replace(/\s+/gu, '-')}`,
+    dishName: titleDishName,
+    cuisine: matchingCandidate?.cuisine || null,
+    confidence: Math.max(0.9, Number(matchingCandidate?.confidence) || 0),
+    aliases: matchingCandidate?.aliases || [],
+    visualEvidence: matchingCandidate?.visualEvidence?.length
+      ? matchingCandidate.visualEvidence
+      : ['Named explicitly in the public video title'],
+    evidenceSource: matchingCandidate ? 'title_and_thumbnail' : 'title',
+    evidenceLabel: matchingCandidate ? 'Title and thumbnail evidence' : 'Title evidence',
+    reviewRequired: true,
+  }
+
+  return [
+    titleCandidate,
+    ...visualCandidates.filter((_, index) => index !== matchingIndex),
+  ].slice(0, MAX_CANDIDATES)
 }
 
 function responseText(payload) {
@@ -120,7 +206,9 @@ export async function invokeDishVisionGemini({
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`
     const prompt = [
       'Identify up to three specific dishes visibly supported by this food-video thumbnail.',
-      'Use the title only as secondary context. Do not identify or infer a restaurant, address, city, or original filming location.',
+      'First extract titleDishName when the public video title explicitly names a specific dish. Remove locations, presenter names, and hashtags from that field.',
+      'When titleDishName is present and the thumbnail does not clearly contradict its food category, candidate 1 must be that dish. Do not replace it with a visually similar noodle soup.',
+      'Use the thumbnail to validate or add alternatives. Do not identify or infer a restaurant, address, city, or original filming location.',
       'Prefer a specific dish name over a broad cuisine. Return no candidates when the image is not sufficient.',
       metadata?.title ? `Public video title: ${capText(metadata.title, 400)}` : '',
     ].filter(Boolean).join('\n')
@@ -142,6 +230,8 @@ export async function invokeDishVisionGemini({
         generationConfig: {
           responseMimeType: 'application/json',
           responseSchema: DISH_RESPONSE_SCHEMA,
+          temperature: 0,
+          topP: 0.1,
           maxOutputTokens: 4_096,
         },
       }),
@@ -208,7 +298,7 @@ export async function identifyDishFromVideoSource(
     .jpeg({ quality: 84 })
     .toBuffer()
   const modelResult = await invokeModel({ imageBuffer, metadata, signal })
-  const dishCandidates = sanitizeCandidates(modelResult?.candidates)
+  const dishCandidates = buildDishCandidates(modelResult, metadata)
 
   return {
     status: dishCandidates.length ? 'dish_candidates' : 'dish_not_identified',
@@ -338,6 +428,9 @@ export async function searchLocalPlacesForDish(
 
 export const __visionDishDiscoveryTestUtils = {
   sanitizeCandidates,
+  inferTitleDishPhrase,
+  titleDishNamedInMetadata,
+  buildDishCandidates,
   dishMatchScore,
   distanceKm,
 }

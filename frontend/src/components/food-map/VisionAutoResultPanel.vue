@@ -207,7 +207,10 @@ function dishExploreLinks(candidate) {
           <div>
             <h3>{{ candidate.dishName }}</h3>
             <p v-if="candidate.cuisine">{{ candidate.cuisine }}</p>
-            <small v-if="candidate.visualEvidence?.length">Seen in the thumbnail: {{ candidate.visualEvidence.join(', ') }}</small>
+            <small v-if="candidate.visualEvidence?.length">
+              {{ candidate.evidenceLabel || 'Thumbnail evidence' }}:
+              {{ candidate.visualEvidence.join(', ') }}
+            </small>
             <div v-if="candidate.aliases?.length" class="vision-dish-aliases" aria-label="Other names">
               <span v-for="alias in candidate.aliases.slice(0, 3)" :key="alias">{{ alias }}</span>
             </div>

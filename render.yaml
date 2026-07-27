@@ -31,6 +31,8 @@ services:
         sync: false
       - key: GEMINI_MODEL
         value: gemini-2.5-flash
+      - key: VISION_DISH_DISCOVERY_TIMEOUT_MS
+        value: "25000"
       - key: GEOAPIFY_API_KEY
         sync: false
       - key: GUARDIAN_API_KEY

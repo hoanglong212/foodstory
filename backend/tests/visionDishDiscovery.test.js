@@ -7,6 +7,7 @@ import sharp from 'sharp'
 import { createVisionAutoRouter } from '../routes/visionAutoRoutes.js'
 import {
   identifyDishFromVideoSource,
+  invokeDishVisionGemini,
   searchLocalPlacesForDish,
   __visionDishDiscoveryTestUtils,
 } from '../services/visionAuto/visionDishDiscoveryService.js'
@@ -57,6 +58,87 @@ test('dish discovery returns bounded review candidates and never claims the orig
   assert.equal(result.dishCandidates[0].dishName, 'Bún bò Huế')
   assert.equal(result.dishCandidates[0].reviewRequired, true)
   assert.equal('address' in result.dishCandidates[0], false)
+})
+
+test('dish discovery promotes a dish explicitly named in the video title over a conflicting visual guess', async () => {
+  const imageBuffer = await sharp({
+    create: { width: 8, height: 8, channels: 3, background: '#d4a12b' },
+  }).png().toBuffer()
+
+  const result = await identifyDishFromVideoSource(
+    { sourceUrl: 'https://www.youtube.com/shorts/AbCdEf12345' },
+    {
+      fetchMetadata: async () => ({
+        title: 'Bí mật của món cao lầu Hội An #food #shorts',
+      }),
+      fetchImage: async () => ({ buffer: imageBuffer, contentType: 'image/png' }),
+      invokeModel: async () => ({
+        titleDishName: 'Cao Lầu',
+        candidates: [
+          {
+            dishName: 'Bún Bò Huế',
+            cuisine: 'Vietnamese',
+            confidence: 0.86,
+            aliases: ['Hue-style beef noodle soup'],
+            visualEvidence: ['round noodles', 'broth', 'sliced meat'],
+          },
+        ],
+      }),
+    },
+  )
+
+  assert.equal(result.status, 'dish_candidates')
+  assert.equal(result.dishCandidates[0].dishName, 'Cao Lầu')
+  assert.equal(result.dishCandidates[0].evidenceSource, 'title')
+  assert.equal(result.dishCandidates[0].evidenceLabel, 'Title evidence')
+  assert.deepEqual(
+    result.dishCandidates[0].visualEvidence,
+    ['Named explicitly in the public video title'],
+  )
+  assert.equal(result.dishCandidates[1].dishName, 'Bún Bò Huế')
+  assert.equal(result.dishCandidates[1].evidenceSource, 'thumbnail')
+})
+
+test('Gemini dish request uses low-variance generation and asks for an explicit title dish', async () => {
+  let requestBody = null
+  const result = await invokeDishVisionGemini({
+    imageBuffer: Buffer.from('fixture-thumbnail'),
+    metadata: { title: 'Bí mật của món cao lầu Hội An' },
+    apiKey: 'fixture-key',
+    model: 'gemini-fixture',
+    fetchImpl: async (_url, options) => {
+      requestBody = JSON.parse(options.body)
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          candidates: [{
+            content: {
+              parts: [{
+                text: JSON.stringify({ titleDishName: 'Cao Lầu', candidates: [] }),
+              }],
+            },
+          }],
+        }),
+      }
+    },
+  })
+
+  assert.equal(result.titleDishName, 'Cao Lầu')
+  assert.equal(requestBody.generationConfig.temperature, 0)
+  assert.equal(requestBody.generationConfig.topP, 0.1)
+  assert.ok(requestBody.contents[0].parts[0].text.includes('titleDishName'))
+  assert.ok(requestBody.generationConfig.responseSchema.required.includes('titleDishName'))
+})
+
+test('title dish extraction rejects a model invention that is absent from the public title', () => {
+  assert.equal(
+    __visionDishDiscoveryTestUtils.titleDishNamedInMetadata(
+      { titleDishName: 'Bún Bò Huế' },
+      { title: 'Quick kitchen noodle challenge' },
+    ),
+    '',
+  )
 })
 
 test('local dish search ranks matching FoodStory rows using map origin without inventing a place', async () => {
