@@ -138,6 +138,21 @@ test('known dish title matching keeps the longest exact catalog name', () => {
   )
 })
 
+test('title parsing removes a trailing proper-name location without shortening a title-cased dish', () => {
+  assert.equal(
+    __visionDishDiscoveryTestUtils.inferTitleDishPhrase(
+      'Bí mật của món cao lầu Hội An #food',
+    ),
+    'cao lầu',
+  )
+  assert.equal(
+    __visionDishDiscoveryTestUtils.inferTitleDishPhrase(
+      'Cách làm Bún Bò Huế',
+    ),
+    'Bún Bò Huế',
+  )
+})
+
 test('Gemini dish request uses low-variance generation and asks for an explicit title dish', async () => {
   let requestBody = null
   const result = await invokeDishVisionGemini({

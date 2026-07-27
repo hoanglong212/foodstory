@@ -105,7 +105,14 @@ function inferTitleDishPhrase(title) {
     /(?:^|\s)(?:how to make|recipe(?:\s+for)?|making)\s*:?\s+(.+)$/iu,
   ]
   const match = patterns.map((pattern) => source.match(pattern)).find(Boolean)
-  const phrase = capText(match?.[1], 120)
+  let phrase = capText(match?.[1], 120)
+    .replace(/\s+(?:tại|ở|from|in)\s+.+$/iu, '')
+    .trim()
+  if (/^\p{Ll}/u.test(phrase)) {
+    phrase = phrase
+      .replace(/\s+\p{Lu}[\p{L}\p{M}'’-]*(?:\s+\p{Lu}[\p{L}\p{M}'’-]*){0,3}$/u, '')
+      .trim()
+  }
   const normalized = normalizeDiscoveryText(phrase)
   const wordCount = normalized.split(' ').filter(Boolean).length
   if (!normalized || GENERIC_DISHES.has(normalized) || wordCount > 10) return ''
@@ -210,7 +217,7 @@ async function resolveKnownTitleDish(metadata, { database = pool, timeoutMs = 2_
 
   const results = await Promise.race([queries, timeout]).finally(() => clearTimeout(timer))
   const dishNames = results.flatMap(([rows]) => rows.map((row) => row.dish_name))
-  return findKnownDishInTitle(title, dishNames)
+  return findKnownDishInTitle(title, dishNames) || inferTitleDishPhrase(title)
 }
 
 function responseText(payload) {
@@ -328,7 +335,8 @@ export async function identifyDishFromVideoSource(
 
   const metadata = await fetchMetadata(input.url)
   const thumbnailUrl = `https://i.ytimg.com/vi/${encodeURIComponent(input.videoId)}/hqdefault.jpg`
-  const knownTitleDish = await resolveTitleDish(metadata).catch(() => '')
+  const knownTitleDish = await resolveTitleDish(metadata)
+    .catch(() => inferTitleDishPhrase(metadata?.title))
   if (knownTitleDish) {
     const dishCandidates = buildDishCandidates(
       { titleDishName: knownTitleDish, candidates: [] },
