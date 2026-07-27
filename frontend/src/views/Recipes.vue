@@ -9,6 +9,11 @@ import { useFavoriteStore } from '../stores/favoriteStore'
 import { useRecipeStore } from '../stores/recipeStore'
 import { useUiStore } from '../stores/uiStore'
 import { advanceRecipeImage, getRecipeBackgroundImage, getRecipeImageSource } from '../utils/recipeImage'
+import {
+  buildRecipeFilterQuery,
+  normalizeRecipeFilterQuery,
+  recipeFilterStatesEqual,
+} from '../utils/recipeFilterQuery'
 
 const recipeStore = useRecipeStore()
 const favoriteStore = useFavoriteStore()
