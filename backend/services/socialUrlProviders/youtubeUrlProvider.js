@@ -371,6 +371,22 @@ function oembedPayload(payload) {
   }
 }
 
+export async function fetchYouTubeOEmbedMetadata(
+  url,
+  {
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    fetchImpl = globalThis.fetch,
+  } = {},
+) {
+  return oembedPayload(
+    await defaultFetchOEmbed({
+      url,
+      timeoutMs: Math.max(200, Number(timeoutMs) || DEFAULT_TIMEOUT_MS),
+      fetchImpl,
+    }),
+  )
+}
+
 export async function resolveYouTubeUrl(
   { url } = {},
   {
