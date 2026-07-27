@@ -15,6 +15,14 @@ function normalize(value) {
   return clean(value, 500).toLocaleLowerCase('vi').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, ' ').trim()
 }
 
+function foldForBoundary(value) {
+  return clean(value, 500)
+    .toLocaleLowerCase('vi')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+}
+
 function tokenScore(left, right) {
   const a = new Set(normalize(left).split(' ').filter(Boolean))
   const b = new Set(normalize(right).split(' ').filter(Boolean))
@@ -100,7 +108,12 @@ function featureRecord(feature = {}) {
   const providerPlaceId = clean(properties.place_id || properties.datasource?.raw?.id, 255)
   const name = clean(properties.name || properties.address_line1 || '', 180)
   const formattedAddress = clean(properties.formatted || [properties.address_line1, properties.address_line2].filter(Boolean).join(', '), 320)
-  const categories = Array.isArray(properties.categories) ? properties.categories.map((value) => clean(value, 80)).filter(Boolean).slice(0, 8) : []
+  const categories = (
+    Array.isArray(properties.categories)
+      ? properties.categories
+      : [properties.category]
+  ).map((value) => clean(value, 80)).filter(Boolean).slice(0, 8)
+  const district = clean(properties.district || properties.suburb || properties.city_district || properties.county || properties.city, 100)
   const countryCode = clean(properties.country_code, 8).toLowerCase()
   if (!providerPlaceId || !lat || !lng || (!name && !formattedAddress) || countryCode !== 'vn') return null
   return {
@@ -110,11 +123,116 @@ function featureRecord(feature = {}) {
     id: `geoapify:${providerPlaceId}`,
     name: name || formattedAddress,
     formattedAddress,
+    district,
     lat,
     lng,
     categories,
     countryCode,
     existsInFoodStory: false,
+  }
+}
+
+function addressFeatureRecord(feature = {}) {
+  const place = featureRecord(feature)
+  if (!place) return null
+
+  const properties = feature?.properties || {}
+  const houseNumber = clean(
+    properties.housenumber || properties.house_number,
+    40,
+  )
+  const street = clean(
+    properties.street ||
+      properties.road ||
+      properties.address_line1,
+    180,
+  )
+  const district = clean(
+    properties.district ||
+      properties.suburb ||
+      properties.city_district ||
+      properties.county ||
+      properties.city,
+    100,
+  )
+  const resultType = clean(properties.result_type, 60)
+  const placeName = clean(properties.name, 180)
+  const isNamedPlace = Boolean(
+    placeName &&
+      placeName !== street &&
+      !['street', 'postcode', 'city', 'district', 'suburb'].includes(resultType),
+  )
+
+  return {
+    id: place.id,
+    label: place.formattedAddress,
+    shortLabel:
+      (isNamedPlace ? placeName : '') ||
+      [houseNumber, street].filter(Boolean).join(' ') ||
+      place.formattedAddress,
+    latitude: place.lat,
+    longitude: place.lng,
+    district,
+    type: resultType,
+    houseNumber,
+    street,
+    precision: houseNumber ? 'house' : isNamedPlace ? 'place' : street ? 'street' : 'area',
+    provider: place.provider,
+    sourceType: place.sourceType,
+    providerPlaceId: place.providerPlaceId,
+    placeName: isNamedPlace ? placeName : '',
+  }
+}
+
+function slashAlleyProfile(value) {
+  const match = clean(value, 240).match(
+    /^(\d{1,5}[a-z]?)\s*\/\s*(\d{1,5}[a-z]?)(?=\s+)(.+)$/iu,
+  )
+  if (!match) return null
+
+  const alleyNumber = clean(match[1], 40)
+  const innerHouseNumber = clean(match[2], 40)
+  const remainder = clean(match[3], 200)
+  const streetName = clean(
+    remainder
+      .split(',')[0]
+      .replace(/^(?:đường|duong)\s+/iu, ''),
+    160,
+  )
+  if (!alleyNumber || !innerHouseNumber || !remainder || !streetName) return null
+
+  return {
+    requestedHouseNumber: `${alleyNumber}/${innerHouseNumber}`,
+    alleyNumber,
+    innerHouseNumber,
+    streetName,
+    providerQuery: `${innerHouseNumber} Hẻm ${alleyNumber} ${remainder}`,
+  }
+}
+
+function canonicalSlashAlleyRecord(record, profile) {
+  if (!record || !profile) return null
+
+  const candidateHouse = normalize(record.houseNumber)
+  const candidateStreet = normalize(record.street)
+  const expectedHouse = normalize(profile.innerHouseNumber)
+  const expectedStreet = normalize(profile.streetName)
+  const escapedAlleyNumber = foldForBoundary(profile.alleyNumber)
+    .replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+  const hasAlley = new RegExp(
+    `(?:^|[\\s,])hem\\s+${escapedAlleyNumber}(?=[\\s,]|$)`,
+    'u',
+  ).test(foldForBoundary(record.street))
+  const streetMatches = candidateStreet.includes(expectedStreet) ||
+    tokenScore(profile.streetName, record.street) >= 0.5
+
+  if (candidateHouse !== expectedHouse || !hasAlley || !streetMatches) return null
+
+  return {
+    ...record,
+    shortLabel: `${profile.requestedHouseNumber} ${profile.streetName}`,
+    houseNumber: profile.requestedHouseNumber,
+    precision: 'house',
   }
 }
 
@@ -153,14 +271,92 @@ export function scoreGeoapifyPlace(hypothesis = {}, candidate = {}) {
 }
 
 async function geocode(text, options) {
+  const safeLimit = Math.min(Math.max(Number(options?.limit) || 5, 1), 10)
+  const requestOptions = { ...options }
+  delete requestOptions.limit
   const body = await geoapifyRequest(GEOAPIFY_GEOCODE_URL, {
     text,
     filter: 'countrycode:vn',
     lang: 'vi',
-    limit: 5,
+    limit: safeLimit,
     format: 'geojson',
-  }, options)
+  }, requestOptions)
   return Array.isArray(body?.features) ? body.features : []
+}
+
+export async function searchGeoapifyAddresses(
+  query,
+  options = {},
+) {
+  const text = clean(query, 240)
+  const apiKey = options.apiKey || options.config?.geoapifyApiKey
+  if (!text || !apiKey) return []
+
+  const requestOptions = {
+    ...options,
+    apiKey,
+  }
+  const alleyProfile = slashAlleyProfile(text)
+  if (alleyProfile) {
+    const alleyFeatures = await geocode(alleyProfile.providerQuery, requestOptions)
+    const exactAlleyResults = alleyFeatures
+      .map(addressFeatureRecord)
+      .map((record) => canonicalSlashAlleyRecord(record, alleyProfile))
+      .filter(Boolean)
+    if (exactAlleyResults.length) {
+      const safeLimit = Math.min(Math.max(Number(options.limit) || 5, 1), 10)
+      return exactAlleyResults.slice(0, safeLimit)
+    }
+  }
+
+  const features = await geocode(text, requestOptions)
+  const seen = new Set()
+  return features
+    .map(addressFeatureRecord)
+    .filter((item) => {
+      if (!item || seen.has(item.id)) return false
+      seen.add(item.id)
+      return true
+    })
+}
+
+export async function searchGeoapifyFoodPlaces(
+  query,
+  {
+    origin,
+    radiusMeters = 20_000,
+    limit = 10,
+    ...options
+  } = {},
+) {
+  const name = clean(query, 180)
+  const apiKey = options.apiKey || options.config?.geoapifyApiKey
+  const lat = finite(origin?.lat)
+  const lng = finite(origin?.lng)
+  if (!name || !apiKey || lat === null || lng === null) return []
+
+  const radius = Math.max(1_000, Math.min(50_000, Number(radiusMeters) || 20_000))
+  const safeLimit = Math.max(1, Math.min(10, Number(limit) || 10))
+  const body = await geoapifyRequest(GEOAPIFY_GEOCODE_URL, {
+    text: name,
+    filter: `circle:${lng},${lat},${radius}`,
+    bias: `proximity:${lng},${lat}`,
+    limit: safeLimit,
+    lang: 'vi',
+    format: 'geojson',
+  }, {
+    ...options,
+    apiKey,
+  })
+
+  const seen = new Set()
+  return (Array.isArray(body?.features) ? body.features : [])
+    .map(featureRecord)
+    .filter((place) => {
+      if (!place || !hasFoodCategory(place.categories) || seen.has(place.id)) return false
+      seen.add(place.id)
+      return true
+    })
 }
 
 async function localityAnchor(hypothesis, options) {

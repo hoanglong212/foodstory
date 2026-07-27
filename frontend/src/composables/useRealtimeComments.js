@@ -41,7 +41,12 @@ export function useRealtimeComments(recipeId) {
   }
 
   function scheduleReconnect(version) {
-    if (intentionallyClosed || version !== connectionVersion) {
+    if (
+      intentionallyClosed ||
+      version !== connectionVersion ||
+      !authStore.isLoggedIn ||
+      !authStore.token
+    ) {
       return
     }
 
@@ -96,7 +101,13 @@ export function useRealtimeComments(recipeId) {
 
   function connect() {
     const subscribedRecipeId = currentRecipeId()
-    if (!isMounted || intentionallyClosed || !subscribedRecipeId) {
+    if (
+      !isMounted ||
+      intentionallyClosed ||
+      !subscribedRecipeId ||
+      !authStore.isLoggedIn ||
+      !authStore.token
+    ) {
       return
     }
 
@@ -173,6 +184,15 @@ export function useRealtimeComments(recipeId) {
     () => currentRecipeId(),
     (nextId, previousId) => {
       if (isMounted && nextId !== previousId) {
+        restartConnection()
+      }
+    },
+  )
+
+  watch(
+    () => authStore.token,
+    (nextToken, previousToken) => {
+      if (isMounted && nextToken !== previousToken) {
         restartConnection()
       }
     },

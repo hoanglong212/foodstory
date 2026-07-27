@@ -2,8 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppIcon from './AppIcon.vue'
-
-const FALLBACK_IMAGE = '/images/food-placeholder.jpg'
+import { advanceRecipeImage, getRecipeImageSource } from '../utils/recipeImage'
 
 const props = defineProps({
   recipe: {
@@ -18,7 +17,7 @@ const props = defineProps({
 
 const emit = defineEmits(['delete'])
 
-const imageSrc = computed(() => String(props.recipe.image_url || '').trim() || FALLBACK_IMAGE)
+const imageSrc = computed(() => getRecipeImageSource(props.recipe))
 const ratingLabel = computed(() => {
   const average = Number(props.recipe.avg_rating || props.recipe.average_rating || 0)
   return average > 0 ? average.toFixed(1) : 'New'
@@ -92,10 +91,7 @@ function formatDuration(value) {
 }
 
 function useFallbackImage(event) {
-  if (event.target.src.endsWith(FALLBACK_IMAGE)) {
-    return
-  }
-  event.target.src = FALLBACK_IMAGE
+  advanceRecipeImage(event, props.recipe)
 }
 </script>
 

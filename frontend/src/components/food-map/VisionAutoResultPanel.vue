@@ -60,6 +60,26 @@ function placePhotoUrl(place) {
   return googlePlacePhotoUrl(place?.photo?.name)
 }
 
+function placeAddress(place) {
+  const address = String(place?.address || '').trim()
+  const district = String(place?.district || '').trim()
+  if (!address) return district || 'Address unavailable'
+  if (!district || address.toLocaleLowerCase().includes(district.toLocaleLowerCase())) return address
+  return `${address}, ${district}`
+}
+
+function placeCategory(place) {
+  const rawCategory = String(place?.category || place?.categories?.[0] || '').trim()
+  const category = rawCategory.split('.').filter(Boolean).at(-1) || 'restaurant'
+  const labels = {
+    cafe: 'Cafe',
+    fast_food: 'Fast food',
+    food_court: 'Food court',
+    restaurant: 'Restaurant',
+  }
+  return labels[category] || category.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
 function priceText(priceLevel) {
   return {
     PRICE_LEVEL_FREE: 'Free',
@@ -206,11 +226,11 @@ function dishExploreLinks(candidate) {
     </template>
 
     <template v-else-if="state === 'external_places_found' && dishPlaces.length">
-      <span class="vision-result-kicker"><AppIcon name="map-pin" size="15" /> Google Places</span>
-      <h2>Real places matching {{ result?.selectedDish?.dishName }}</h2>
-      <p class="vision-result-copy">Ranked from Google Places around the current map area. These are alternatives, not the original video location.</p>
+      <span class="vision-result-kicker"><AppIcon name="map-pin" size="15" /> Geoapify + OpenStreetMap</span>
+      <h2>Nearby places matching {{ result?.selectedDish?.dishName }}</h2>
+      <p class="vision-result-copy">Matched from nearby food-place names and categories. Confirm the venue before adding it; these are alternatives, not the original video location.</p>
       <ol class="vision-place-list">
-        <li v-for="place in dishPlaces" :key="place.id" class="vision-place-card vision-external-place">
+        <li v-for="(place, index) in dishPlaces" :key="place.id" class="vision-place-card vision-external-place">
           <figure v-if="placePhotoUrl(place)" class="vision-place-photo">
             <img :src="placePhotoUrl(place)" :alt="`Photo of ${place.name}`" loading="lazy" @error="$event.currentTarget.closest('figure').hidden = true" />
             <figcaption v-if="place.photo?.attribution?.[0]">
@@ -218,25 +238,37 @@ function dishExploreLinks(candidate) {
               <span v-else>Photo: {{ place.photo.attribution[0].displayName }}</span>
             </figcaption>
           </figure>
-          <div>
-            <h3>{{ place.name }}</h3>
-            <p>{{ [place.address, place.district].filter(Boolean).join(', ') || place.category }}</p>
-            <div class="vision-place-facts">
+          <div class="vision-external-content">
+            <header class="vision-place-heading">
+              <div>
+                <span class="vision-place-eyebrow">{{ placeCategory(place) }} · nearby option {{ index + 1 }}</span>
+                <h3>{{ place.name }}</h3>
+              </div>
+              <span v-if="place.distanceKm !== null" class="vision-distance-pill">{{ place.distanceKm }} km</span>
+            </header>
+            <p class="vision-place-address">
+              <AppIcon name="map-pin" size="15" />
+              <span>{{ placeAddress(place) }}</span>
+            </p>
+            <div v-if="priceText(place.priceLevel) || ratingText(place)" class="vision-place-facts">
               <span v-if="priceText(place.priceLevel)">{{ priceText(place.priceLevel) }}</span>
               <span v-if="ratingText(place)">{{ ratingText(place) }}<template v-if="place.userRatingCount"> · {{ place.userRatingCount.toLocaleString() }} ratings</template></span>
-              <span v-if="place.distanceKm !== null">{{ place.distanceKm }} km away</span>
             </div>
+            <p class="vision-place-match">
+              <AppIcon name="search" size="14" />
+              <span>Nearby name/category match for <strong>{{ result?.selectedDish?.dishName }}</strong></span>
+            </p>
             <blockquote v-if="place.reviews?.[0]" class="vision-place-review">
               <p>“{{ place.reviews[0].text }}”</p>
               <footer>
                 {{ place.reviews[0].authorName }}<template v-if="place.reviews[0].relativeTime"> · {{ place.reviews[0].relativeTime }}</template>
-                <a v-if="place.reviews[0].sourceUri" :href="place.reviews[0].sourceUri" target="_blank" rel="noopener noreferrer">Read on Google</a>
+                <a v-if="place.reviews[0].sourceUri" :href="place.reviews[0].sourceUri" target="_blank" rel="noopener noreferrer">Read source</a>
               </footer>
             </blockquote>
-            <small v-else>
-              <template v-if="ratingText(place)">{{ ratingText(place) }}<template v-if="place.userRatingCount"> · {{ place.userRatingCount.toLocaleString() }} ratings</template></template>
-              <template v-if="place.distanceKm !== null"> · {{ place.distanceKm }} km away</template>
-            </small>
+            <div class="vision-place-source">
+              <span><AppIcon name="check" size="14" /> Geoapify + OpenStreetMap</span>
+              <a v-if="place.mapUri" :href="place.mapUri" target="_blank" rel="noopener noreferrer">Open source map</a>
+            </div>
             <div class="vision-candidate-actions">
               <button class="vision-result-primary" type="button" @click="emit('focus-dish-place', place)">View on map</button>
               <button type="button" @click="emit('add-dish-place', place)">Add to FoodStory</button>
@@ -263,11 +295,11 @@ function dishExploreLinks(candidate) {
     </template>
 
     <template v-else-if="state === 'external_places_not_found'">
-      <span class="vision-result-kicker"><AppIcon name="search" size="15" /> Google Places</span>
+      <span class="vision-result-kicker"><AppIcon name="search" size="15" /> Open place search</span>
       <h2>No nearby match for {{ result?.selectedDish?.dishName }}</h2>
       <p class="vision-result-copy">Try moving the map to another area, then run the search again.</p>
       <div class="vision-result-actions">
-        <button class="vision-result-primary" type="button" @click="emit('try-link')">Try another video</button>
+        <button class="vision-result-primary" type="button" @click="emit('select-dish', result?.selectedDish)">Search this area again</button>
         <button type="button" @click="emit('dismiss')">Browse the map</button>
       </div>
     </template>
@@ -275,7 +307,7 @@ function dishExploreLinks(candidate) {
     <template v-else-if="state === 'external_places_unavailable'">
       <span class="vision-result-kicker"><AppIcon name="search" size="15" /> Real-place search</span>
       <h2>External place search is not ready</h2>
-      <p class="vision-result-copy">Dish identification works, but the Google Places connection has not been configured yet.</p>
+      <p class="vision-result-copy">Dish identification works, but the Geoapify place search has not been configured or enabled yet.</p>
       <div class="vision-result-actions">
         <button class="vision-result-primary" type="button" @click="emit('try-link')">Try another video</button>
         <button type="button" @click="emit('dismiss')">Browse the map</button>
@@ -310,7 +342,7 @@ function dishExploreLinks(candidate) {
   z-index: 32;
   top: calc(var(--nav-height) + 22px);
   right: 28px;
-  width: min(430px, calc(100vw - 116px));
+  width: min(480px, calc(100vw - 116px));
   max-height: calc(100svh - var(--nav-height) - 46px);
   overflow: auto;
   padding: 20px;
@@ -356,41 +388,69 @@ function dishExploreLinks(candidate) {
 .vision-dish-aliases span { padding: 4px 7px; border-radius: 999px; color: rgba(255,250,244,.75); background: rgba(255,255,255,.07); font-size: .65rem; }
 .vision-dish-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
 .vision-dish-links a, .vision-dish-explore a { display: inline-flex; min-height: 44px; align-items: center; gap: 6px; font-size: .72rem; }
-.vision-external-place { grid-template-columns: 104px minmax(0,1fr); align-items: start; }
-.vision-place-photo { position: relative; margin: 0; overflow: hidden; border-radius: 9px; background: #292a2d; }
-.vision-place-photo img { display: block; width: 104px; height: 104px; object-fit: cover; }
+.vision-external-place { display: block; padding: 0; overflow: hidden; background: linear-gradient(145deg, #1a1b1d, #151618); }
+.vision-external-content { min-width: 0; padding: 15px; }
+.vision-place-photo { position: relative; margin: 0; overflow: hidden; background: #292a2d; }
+.vision-place-photo img { display: block; width: 100%; height: 148px; object-fit: cover; }
 .vision-place-photo figcaption { position: absolute; right: 0; bottom: 0; left: 0; padding: 16px 5px 4px; background: linear-gradient(transparent, rgba(0,0,0,.8)); font-size: .56rem; line-height: 1.2; }
 .vision-place-photo figcaption a, .vision-place-photo figcaption span { color: rgba(255,255,255,.9); }
+.vision-place-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.vision-place-heading > div { min-width: 0; }
+.vision-place-heading h3 { margin-top: 4px; font-size: 1rem; }
+.vision-place-eyebrow { color: #f3a263; font-size: .62rem; font-weight: 850; letter-spacing: .055em; text-transform: uppercase; }
+.vision-distance-pill { flex: 0 0 auto; padding: 5px 8px; border: 1px solid rgba(243,150,77,.2); border-radius: 999px; color: #ffd5b4; background: rgba(243,150,77,.12); font-size: .66rem; font-weight: 850; white-space: nowrap; }
+.vision-place-address { display: flex; align-items: flex-start; gap: 7px; margin-top: 10px !important; }
+.vision-place-address svg { flex: 0 0 auto; margin-top: 1px; color: #f3a263; }
 .vision-place-facts { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
 .vision-place-facts span { padding: 4px 7px; border-radius: 6px; color: #f7d3b6; background: rgba(243,150,77,.1); font-size: .64rem; font-weight: 750; }
+.vision-place-match { display: flex; align-items: flex-start; gap: 7px; margin-top: 11px !important; padding: 9px 10px; border: 1px solid rgba(255,255,255,.08); border-radius: 9px; background: rgba(255,255,255,.035); }
+.vision-place-match svg { flex: 0 0 auto; margin-top: 1px; color: #f3a263; }
+.vision-place-match strong { color: rgba(255,250,244,.92); }
 .vision-place-review { margin: 11px 0 0; padding: 0; color: rgba(255,250,244,.78); }
 .vision-place-review p { display: -webkit-box; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; font-size: .72rem; font-style: italic; line-height: 1.45; }
 .vision-place-review footer { display: flex; flex-wrap: wrap; gap: 5px 9px; margin-top: 5px; color: rgba(255,250,244,.56); font-size: .63rem; }
+.vision-place-source { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.08); color: rgba(255,250,244,.56); font-size: .64rem; }
+.vision-place-source span { display: inline-flex; align-items: center; gap: 5px; }
+.vision-place-source svg { color: #77c79a; }
+.vision-place-source a { color: #f5aa71; font-weight: 750; text-decoration: none; }
+.vision-external-place .vision-candidate-actions { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
+.vision-external-place .vision-candidate-actions button { width: 100%; }
 .vision-dish-explore { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); }
 .vision-dish-explore strong { flex-basis: 100%; color: rgba(255,250,244,.8); font-size: .72rem; }
 button:focus-visible, a:focus-visible { outline: 3px solid rgba(249,151,76,.85); outline-offset: 2px; }
 @media (hover:hover) and (pointer:fine) { .vision-result-actions button:not(.vision-result-primary):hover, .vision-candidate-actions button:not(.vision-result-primary):hover { border-color: rgba(243,150,77,.3); background: rgba(243,150,77,.08); transform: translateY(-1px); } .vision-result-primary:hover { background: #f7a464 !important; transform: translateY(-1px); } }
-@media (max-width:768px) { .vision-result-panel { top: auto; right: 12px; bottom: calc(158px + env(safe-area-inset-bottom)); left: 12px; width: auto; max-height: min(62svh, 580px); } .vision-external-place { grid-template-columns: 88px minmax(0,1fr); } .vision-place-photo img { width: 88px; height: 96px; } }
-:global(:root[data-theme="light"]) .vision-result-panel { color: #302219; background: #fff; box-shadow: 0 6px 12px rgba(72,48,29,.13); }
-:global(:root[data-theme="light"]) .vision-result-panel h2,
-:global(:root[data-theme="light"]) .vision-place-card h3,
-:global(:root[data-theme="light"]) .vision-place-summary h2 { color: #302219; }
-:global(:root[data-theme="light"]) .vision-result-copy,
-:global(:root[data-theme="light"]) .vision-place-summary p:not(.vision-place-meta),
-:global(:root[data-theme="light"]) .vision-place-card p { color: #665347; }
-:global(:root[data-theme="light"]) .vision-place-summary small,
-:global(:root[data-theme="light"]) .vision-place-card small,
-:global(:root[data-theme="light"]) .vision-safety-note { color: #78685d; }
-:global(:root[data-theme="light"]) .vision-place-card,
-:global(:root[data-theme="light"]) .vision-dish-source { border-color: rgba(68,45,28,.13); background: #f7f3ee; }
-:global(:root[data-theme="light"]) .vision-result-close,
-:global(:root[data-theme="light"]) .vision-result-actions button,
-:global(:root[data-theme="light"]) .vision-candidate-actions button { border-color: rgba(68,45,28,.16); color: #4f3c30; background: #f8f4ef; }
-:global(:root[data-theme="light"]) .vision-dish-source figcaption,
-:global(:root[data-theme="light"]) .vision-place-review { color: #665347; }
-:global(:root[data-theme="light"]) .vision-dish-aliases span { color: #665347; background: #ebe5de; }
-:global(:root[data-theme="light"]) .vision-place-facts span { color: #8d3c18; background: #fff0e5; }
-:global(:root[data-theme="light"]) .vision-dish-explore { border-top-color: rgba(68,45,28,.12); }
-:global(:root[data-theme="light"]) .vision-dish-explore strong { color: #594638; }
+@media (max-width:768px) { .vision-result-panel { top: auto; right: 12px; bottom: calc(158px + env(safe-area-inset-bottom)); left: 12px; width: auto; max-height: min(62svh, 580px); } .vision-place-photo img { height: 132px; } }
+@media (max-width:420px) { .vision-external-place .vision-candidate-actions { grid-template-columns: minmax(0,1fr); } }
 @media (prefers-reduced-motion:reduce) { .vision-result-actions button, .vision-candidate-actions button { transition-duration: .01ms; } }
+</style>
+
+<style>
+:root[data-theme="light"] .vision-result-panel { color: #302219; background: #fff; box-shadow: 0 6px 12px rgba(72,48,29,.13); }
+:root[data-theme="light"] .vision-result-panel h2,
+:root[data-theme="light"] .vision-place-card h3,
+:root[data-theme="light"] .vision-place-summary h2 { color: #302219; }
+:root[data-theme="light"] .vision-result-copy,
+:root[data-theme="light"] .vision-place-summary p:not(.vision-place-meta),
+:root[data-theme="light"] .vision-place-card p { color: #665347; }
+:root[data-theme="light"] .vision-place-summary small,
+:root[data-theme="light"] .vision-place-card small,
+:root[data-theme="light"] .vision-safety-note { color: #78685d; }
+:root[data-theme="light"] .vision-place-card,
+:root[data-theme="light"] .vision-dish-source { border-color: rgba(68,45,28,.13); background: #f7f3ee; }
+:root[data-theme="light"] .vision-result-close,
+:root[data-theme="light"] .vision-result-actions button,
+:root[data-theme="light"] .vision-candidate-actions button { border-color: rgba(68,45,28,.16); color: #4f3c30; background: #f8f4ef; }
+:root[data-theme="light"] .vision-dish-source figcaption,
+:root[data-theme="light"] .vision-place-review { color: #665347; }
+:root[data-theme="light"] .vision-dish-aliases span { color: #665347; background: #ebe5de; }
+:root[data-theme="light"] .vision-place-facts span { color: #8d3c18; background: #fff0e5; }
+:root[data-theme="light"] .vision-external-place { background: linear-gradient(145deg, #fbf7f2, #f5efe8); }
+:root[data-theme="light"] .vision-place-eyebrow { color: #a7431d; }
+:root[data-theme="light"] .vision-distance-pill { border-color: rgba(167,67,29,.18); color: #8d3c18; background: #fff0e5; }
+:root[data-theme="light"] .vision-place-match { border-color: rgba(68,45,28,.1); background: rgba(255,255,255,.58); }
+:root[data-theme="light"] .vision-place-match strong { color: #3d2b20; }
+:root[data-theme="light"] .vision-place-source { border-top-color: rgba(68,45,28,.1); color: #78685d; }
+:root[data-theme="light"] .vision-place-source a { color: #9f421d; }
+:root[data-theme="light"] .vision-dish-explore { border-top-color: rgba(68,45,28,.12); }
+:root[data-theme="light"] .vision-dish-explore strong { color: #594638; }
 </style>

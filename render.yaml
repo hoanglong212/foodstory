@@ -1,13 +1,13 @@
 services:
   - type: web
     name: foodstory-api-cos30043-hoanglong212
-    runtime: node
+    runtime: docker
     plan: free
     region: singapore
     branch: codex/render-deployment
     rootDir: backend
-    buildCommand: npm ci --omit=dev
-    startCommand: npm run start:production
+    dockerfilePath: ./Dockerfile.vision-auto
+    dockerContext: .
     healthCheckPath: /api/health
     autoDeployTrigger: commit
     envVars:
@@ -27,6 +27,14 @@ services:
         generateValue: true
       - key: GROQ_API_KEY
         sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: GEOAPIFY_API_KEY
+        sync: false
+      - key: GUARDIAN_API_KEY
+        sync: false
       - key: AI_SERVICE_URL
         value: https://foodstory-ai-cos30043-hoanglong212.onrender.com
       - key: AI_SERVICE_API_TOKEN
@@ -37,6 +45,28 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
+      - key: VISION_AUTO_V2_ENABLED
+        value: "true"
+      - key: VISION_AUTO_V2_ROUTE_ENABLED
+        value: "true"
+      - key: VISION_AUTO_YOUTUBE_TRACK2_V3_ENABLED
+        value: "true"
+      - key: TRACK2_V3_ENABLED
+        value: "true"
+      - key: VISION_DISH_EXTERNAL_SEARCH_ENABLED
+        value: "true"
+      - key: LOCATION_RESOLUTION_PROVIDER
+        value: geoapify
+      - key: YOUTUBE_FRAME_SCAN_ENABLED
+        value: "true"
+      - key: TRACK2_V3_LOCAL_OCR_ENABLED
+        value: "true"
+      - key: TRACK2_V3_TESSERACT_ENABLED
+        value: "true"
+      - key: TRACK2_V3_PADDLEOCR_ENABLED
+        value: "false"
+      - key: TRACK2_V3_ASR_FALLBACK_ENABLED
+        value: "false"
   - type: web
     name: foodstory-ai-cos30043-hoanglong212
     runtime: python

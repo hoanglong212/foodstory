@@ -91,6 +91,17 @@ const pageNumbers = computed(() => {
 })
 
 const popularTags = ['street food', 'seasonal recipes', 'restaurant reviews', 'coffee', 'sustainable food', 'global cuisine']
+const isProviderConfigurationError = computed(() =>
+  /api key|not configured|configuration|guardian|service unavailable|503/i.test(errorMessage.value),
+)
+const newsErrorTitle = computed(() =>
+  isProviderConfigurationError.value ? 'Live news is not configured yet' : 'News is temporarily unavailable',
+)
+const newsErrorDescription = computed(() =>
+  isProviderConfigurationError.value
+    ? 'The recipe experience remains available while the external news provider is being configured.'
+    : 'Try again in a moment or continue exploring FoodStory recipes.',
+)
 
 async function fetchNews(page = currentPage.value) {
   if (!isAlive) {
@@ -166,6 +177,11 @@ function goToPage(page) {
   window.clearTimeout(searchTimer)
   const nextPage = Math.min(Math.max(page, 1), totalPages.value)
   fetchNews(nextPage)
+}
+
+function retryNews() {
+  window.clearTimeout(searchTimer)
+  fetchNews(currentPage.value || 1)
 }
 
 function handleImageError(event) {
@@ -287,7 +303,26 @@ onBeforeUnmount(() => {
         <div v-if="isLoading" class="news-skeleton-list" aria-label="Loading news">
           <SkeletonCard v-for="index in 5" :key="index" variant="row" />
         </div>
-        <p v-else-if="errorMessage" class="form-error" role="alert">{{ errorMessage }}</p>
+        <section v-else-if="errorMessage" class="news-unavailable-card" role="alert">
+          <span class="news-unavailable-icon" aria-hidden="true">
+            <AppIcon name="newspaper" size="28" />
+          </span>
+          <div>
+            <p class="eyebrow">External provider status</p>
+            <h2>{{ newsErrorTitle }}</h2>
+            <p>{{ newsErrorDescription }}</p>
+            <details>
+              <summary>Technical detail</summary>
+              <p>{{ errorMessage }}</p>
+            </details>
+            <div class="news-unavailable-actions">
+              <button class="btn btn-primary" type="button" @click="retryNews">
+                Try again
+              </button>
+              <RouterLink class="btn btn-outline" to="/recipes">Browse recipes</RouterLink>
+            </div>
+          </div>
+        </section>
 
         <template v-else>
           <article v-for="item in displayNews" :key="item.id" class="news-card external-news-card">
@@ -442,7 +477,72 @@ onBeforeUnmount(() => {
   font-weight: 750;
 }
 
+.news-unavailable-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  padding: clamp(22px, 4vw, 34px);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--card-border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--panel) 94%, var(--accent) 6%);
+  box-shadow: var(--shadow);
+}
+
+.news-unavailable-icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.news-unavailable-card > div {
+  display: grid;
+  gap: 10px;
+}
+
+.news-unavailable-card h2,
+.news-unavailable-card p {
+  margin: 0;
+}
+
+.news-unavailable-card details {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.news-unavailable-card summary {
+  width: fit-content;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.news-unavailable-card details p {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--panel-strong);
+}
+
+.news-unavailable-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
 @media (max-width: 640px) {
+  .news-unavailable-card {
+    grid-template-columns: 1fr;
+  }
+
+  .news-unavailable-actions .btn {
+    width: 100%;
+  }
+
   .news-thumbnail {
     float: none;
     width: 100%;

@@ -2877,8 +2877,8 @@
 .taste-detail-media-placeholder {
   display: grid;
   width: 100%;
-  height: 235px;
-  padding: 32px;
+  height: 175px;
+  padding: 24px;
   place-content: center;
   justify-items: center;
   gap: 8px;
@@ -2998,27 +2998,35 @@
   color: #d98911;
 }
 
+.taste-detail-rating strong.unrated {
+  color: #8a654d;
+}
+
 .taste-detail-rating span {
   color: #795e49;
 }
 
 .taste-detail-facts {
   display: grid;
-  gap: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
   margin: 0;
-  border-top: 1px solid rgba(113, 76, 44, 0.11);
-  border-bottom: 1px solid rgba(113, 76, 44, 0.11);
+  overflow: hidden;
+  border: 1px solid rgba(113, 76, 44, 0.11);
+  border-radius: 15px;
+  background: rgba(113, 76, 44, 0.1);
 }
 
 .taste-detail-facts > div {
   display: grid;
   gap: 5px;
-  padding: 13px 0;
-  border-bottom: 1px solid rgba(113, 76, 44, 0.08);
+  min-width: 0;
+  padding: 13px;
+  background: rgba(255, 252, 246, 0.96);
 }
 
-.taste-detail-facts > div:last-child {
-  border-bottom: 0;
+.taste-detail-facts > div.wide {
+  grid-column: 1 / -1;
 }
 
 .taste-detail-facts dt {
@@ -3031,10 +3039,22 @@
 }
 
 .taste-detail-facts dd {
-  margin: 0 0 0 24px;
+  margin: 0;
   color: #655141;
   font-size: 12px;
   line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.taste-detail-source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.taste-detail-source strong {
+  color: #654735;
 }
 
 .taste-detail-story {
@@ -3050,6 +3070,39 @@
   color: #6f5947;
   font-size: 12px;
   line-height: 1.65;
+}
+
+.taste-detail-coverage {
+  display: grid;
+  gap: 6px;
+  padding: 14px 15px;
+  border: 1px solid rgba(66, 139, 97, 0.18);
+  border-radius: 15px;
+  background: rgba(224, 244, 230, 0.62);
+}
+
+.taste-detail-coverage > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #387a50;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.taste-detail-coverage > strong {
+  color: #345d43;
+  font-size: 12px;
+}
+
+.taste-detail-coverage p,
+.taste-detail-coverage small {
+  margin: 0;
+  color: #567461;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .taste-related-recipe {
@@ -3342,7 +3395,7 @@
   }
 
   .taste-detail-media-placeholder {
-    height: 210px;
+    height: 160px;
   }
 
   .food-map-picking-banner {
@@ -3359,6 +3412,14 @@
 }
 
 @media (max-width: 480px) {
+
+  .taste-detail-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .taste-detail-facts > div.wide {
+    grid-column: auto;
+  }
 
   .taste-detail-actions {
     grid-template-columns: 1fr 1fr;
@@ -4039,4 +4100,178 @@
   .food-map-stat-track i {
     transition: none;
   }
+}
+
+/* Address-assisted location selection */
+.food-map-address-search {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid rgba(105, 70, 43, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 254, 251, 0.9);
+}
+
+.food-map-address-search > label {
+  color: #694f3c;
+  font-size: 0.75rem;
+  font-weight: 850;
+}
+
+.food-map-address-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.food-map-address-search-row input {
+  min-width: 0;
+}
+
+.food-map-address-search-row button {
+  display: inline-flex;
+  min-width: 94px;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid rgba(217, 90, 36, 0.34);
+  border-radius: 9px;
+  color: #fff;
+  background: #c94e1d;
+  font-size: 0.75rem;
+  font-weight: 850;
+}
+
+.food-map-address-search-row button:hover:not(:disabled) {
+  background: #b7461b;
+}
+
+.food-map-address-search-row button:focus-visible,
+.food-map-address-results button:focus-visible {
+  outline: 3px solid rgba(232, 108, 49, 0.34);
+  outline-offset: 2px;
+}
+
+.food-map-address-search > small {
+  color: var(--map-muted);
+  font-size: 0.665rem;
+  line-height: 1.4;
+}
+
+.food-map-address-results {
+  display: grid;
+  gap: 6px;
+  max-height: 228px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.food-map-address-results button {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  padding: 10px;
+  border: 1px solid rgba(105, 70, 43, 0.14);
+  border-radius: 9px;
+  color: var(--map-text);
+  background: #fffefb;
+  text-align: left;
+}
+
+.food-map-address-results button:hover {
+  border-color: rgba(217, 90, 36, 0.3);
+  background: #fff8ef;
+}
+
+.food-map-address-results .app-icon {
+  margin-top: 2px;
+  color: #d95a24;
+}
+
+.food-map-address-results span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.food-map-address-results strong {
+  color: var(--map-text);
+  font-size: 0.75rem;
+}
+
+.food-map-address-results small {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--map-muted);
+  font-size: 0.665rem;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.food-map-address-result-kind {
+  width: fit-content;
+  margin-top: 2px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #8d3b19;
+  background: rgba(217, 90, 36, 0.1);
+  font-size: 0.6rem;
+  font-style: normal;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.food-map-address-error {
+  margin: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(189, 63, 54, 0.18);
+  border-radius: 8px;
+  color: #9f332d;
+  background: #fff8f6;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.food-map-address-notice {
+  margin: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(180, 124, 35, 0.22);
+  border-radius: 8px;
+  color: #77501d;
+  background: #fffaf0;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.food-map-location-fieldset > .food-map-pick-secondary {
+  border-color: rgba(105, 70, 43, 0.2);
+  color: #6e503b;
+  background: rgba(255, 254, 251, 0.86);
+}
+
+@media (max-width: 520px) {
+  .food-map-address-search-row {
+    grid-template-columns: 1fr;
+  }
+
+  .food-map-address-search-row button {
+    width: 100%;
+  }
+}
+
+.food-map-address-search > small a {
+  color: #a83f17;
+  font-weight: 800;
+  text-underline-offset: 2px;
+}
+
+.food-map-address-search > small a:hover {
+  color: #7f2f11;
 }
