@@ -18,6 +18,7 @@ import FoodMapImportPanel from "../components/food-map/FoodMapImportPanel.vue";
 import FoodMapRail from "../components/food-map/FoodMapRail.vue";
 import VisionAutoResultPanel from "../components/food-map/VisionAutoResultPanel.vue";
 import { useVisionAuto } from "../composables/useVisionAuto";
+import { searchAddresses } from "../services/geocodingService";
 import { useFoodSpotStore } from "../stores/foodSpotStore";
 import { useAuthStore } from "../stores/authStore";
 import { useRestaurantStore } from "../stores/restaurantStore";
@@ -180,6 +181,11 @@ const formErrors = reactive({});
 const form = reactive(createFoodSpotForm());
 const placeNameInput = ref(null);
 const locationButton = ref(null);
+const addressQuery = ref("");
+const addressResults = ref([]);
+const selectedAddressLabel = ref("");
+const addressSearchError = ref("");
+const isSearchingAddress = ref(false);
 const optionalDetailsOpen = ref(false);
 const importPanel = ref(null);
 const activeViewItem = ref("discover");
@@ -263,6 +269,7 @@ let popupTimer = 0;
 let layoutTimer = 0;
 let markerRenderFrame = 0;
 let restaurantRenderFrame = 0;
+let addressSearchController = null;
 const markersById = new Map();
 const selectedSpot = computed(() => foodSpotStore.selectedSpot);
 const isEditing = computed(() => editingSpotId.value !== null);
@@ -560,11 +567,22 @@ function setDetailDrawer(open) {
   invalidateMapAfterTransition();
 }
 
+function resetAddressSearch() {
+  addressSearchController?.abort();
+  addressSearchController = null;
+  addressQuery.value = "";
+  addressResults.value = [];
+  selectedAddressLabel.value = "";
+  addressSearchError.value = "";
+  isSearchingAddress.value = false;
+}
+
 function resetForm() {
   Object.assign(form, createFoodSpotForm());
   Object.keys(formErrors).forEach((key) => delete formErrors[key]);
   editingSpotId.value = null;
   optionalDetailsOpen.value = false;
+  resetAddressSearch();
   clearPreviewMarker();
   stopPicking();
 }
@@ -1109,6 +1127,72 @@ function clearPreviewMarker() {
   previewMarker = null;
 }
 
+function prefersReducedMotion() {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
+}
+
+async function findAddress() {
+  const query = addressQuery.value.trim();
+  addressSearchError.value = "";
+  selectedAddressLabel.value = "";
+  addressResults.value = [];
+
+  addressSearchController?.abort();
+  const controller = new AbortController();
+  addressSearchController = controller;
+  isSearchingAddress.value = true;
+
+  try {
+    const results = await searchAddresses(query, {
+      signal: controller.signal,
+    });
+    if (controller !== addressSearchController) return;
+
+    addressResults.value = results;
+    if (!results.length) {
+      addressSearchError.value =
+        "No matching address was found. Try adding a ward, district, or city name.";
+    }
+  } catch (error) {
+    if (error?.name === "AbortError" || controller !== addressSearchController) return;
+    addressSearchError.value =
+      error?.message ||
+      "Address search is temporarily unavailable. You can still pick a point on the map.";
+  } finally {
+    if (controller === addressSearchController) {
+      addressSearchController = null;
+      isSearchingAddress.value = false;
+    }
+  }
+}
+
+function chooseAddress(result) {
+  if (!result || !Number.isFinite(result.latitude) || !Number.isFinite(result.longitude)) {
+    return;
+  }
+
+  addressSearchController?.abort();
+  addressSearchController = null;
+  isSearchingAddress.value = false;
+  form.latitude = result.latitude.toFixed(7);
+  form.longitude = result.longitude.toFixed(7);
+  selectedAddressLabel.value = result.label;
+  addressQuery.value = result.shortLabel || result.label;
+  addressResults.value = [];
+  addressSearchError.value = "";
+  delete formErrors.coordinates;
+  showPreviewMarker(result.latitude, result.longitude);
+  stopPicking();
+
+  if (map) {
+    if (prefersReducedMotion()) {
+      map.setView([result.latitude, result.longitude], 17, { animate: false });
+    } else {
+      map.flyTo([result.latitude, result.longitude], 17, { duration: 0.35 });
+    }
+  }
+}
+
 async function startPicking() {
   pickingMode.value = true;
   mapElement.value?.classList.add("is-picking");
@@ -1305,6 +1389,7 @@ function editSpot(spot) {
   });
   Object.keys(formErrors).forEach((key) => delete formErrors[key]);
   optionalDetailsOpen.value = true;
+  resetAddressSearch();
   showPreviewMarker(spot.latitude, spot.longitude);
   sidebarMode.value = "add";
   setDetailDrawer(false);
@@ -1952,6 +2037,8 @@ onBeforeUnmount(() => {
   window.clearTimeout(restaurantSearchTimer);
   window.clearTimeout(popupTimer);
   window.clearTimeout(layoutTimer);
+  addressSearchController?.abort();
+  addressSearchController = null;
   if (markerRenderFrame) window.cancelAnimationFrame(markerRenderFrame);
   if (restaurantRenderFrame) window.cancelAnimationFrame(restaurantRenderFrame);
   stopPicking();
@@ -2684,7 +2771,52 @@ onBeforeUnmount(() => {
             :class="{ selected: hasFoodSpotCoordinates(form) }"
           >
             <legend>Location <b>*</b></legend>
-            <div class="food-map-location-status">
+
+            <div class="food-map-address-search">
+              <label for="food-map-address-query">Search by address or place name</label>
+              <div class="food-map-address-search-row">
+                <input
+                  id="food-map-address-query"
+                  v-model="addressQuery"
+                  type="search"
+                  autocomplete="street-address"
+                  placeholder="Example: Ben Thanh Market, District 1"
+                  @keydown.enter.prevent="findAddress"
+                />
+                <button type="button" :disabled="isSearchingAddress" @click="findAddress">
+                  <span v-if="isSearchingAddress" class="food-map-spinner small"></span>
+                  <AppIcon v-else name="search" size="17" />
+                  <span>{{ isSearchingAddress ? "Searching" : "Search" }}</span>
+                </button>
+              </div>
+              <small>
+                Search uses
+                <a
+                  href="https://www.openstreetmap.org/copyright"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >OpenStreetMap contributors</a>.
+                You can still fine-tune the pin afterward.
+              </small>
+            </div>
+
+            <ul v-if="addressResults.length" class="food-map-address-results" aria-label="Address results">
+              <li v-for="result in addressResults" :key="result.id">
+                <button type="button" @click="chooseAddress(result)">
+                  <AppIcon name="map-pin" size="17" />
+                  <span>
+                    <strong>{{ result.shortLabel }}</strong>
+                    <small>{{ result.label }}</small>
+                  </span>
+                </button>
+              </li>
+            </ul>
+
+            <p v-if="addressSearchError" class="food-map-address-error" role="alert">
+              {{ addressSearchError }}
+            </p>
+
+            <div class="food-map-location-status" aria-live="polite">
               <AppIcon
                 :name="hasFoodSpotCoordinates(form) ? 'check' : 'map-pin'"
                 size="18"
@@ -2693,17 +2825,18 @@ onBeforeUnmount(() => {
                 <strong>{{
                   hasFoodSpotCoordinates(form)
                     ? "Location selected"
-                    : "Choose the exact place"
+                    : "Search above or choose the exact point"
                 }}</strong>
-                <small v-if="hasFoodSpotCoordinates(form)">
+                <small v-if="selectedAddressLabel">{{ selectedAddressLabel }}</small>
+                <small v-else-if="hasFoodSpotCoordinates(form)">
                   {{ form.latitude }}, {{ form.longitude }}
                 </small>
-                <small v-else>The form will pause while you click the map.</small>
+                <small v-else>Address search is the fastest option; map pin remains available.</small>
               </span>
             </div>
-            <button ref="locationButton" type="button" @click="startPicking">
+            <button ref="locationButton" type="button" class="food-map-pick-secondary" @click="startPicking">
               <AppIcon name="map-pin" size="17" />
-              {{ hasFoodSpotCoordinates(form) ? "Change map location" : "Pick on map" }}
+              {{ hasFoodSpotCoordinates(form) ? "Adjust pin on map" : "Pick manually on map" }}
             </button>
             <small
               v-if="formErrors.coordinates"
