@@ -1674,7 +1674,7 @@ body:has(.recipe-detail-magazine) .mobile-menu-toggle {
   overflow: hidden;
   border: 1px solid var(--recipe-line);
   border-radius: 12px;
-  background: #fffefa;
+  background: var(--recipe-paper);
 }
 
 .recipe-detail-magazine .recipe-disclosure-trigger {

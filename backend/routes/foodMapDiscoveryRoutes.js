@@ -11,6 +11,8 @@ import {
   buildUnclearResponse,
   buildUrlExtractionFailedResponse,
 } from '../services/foodMapDiscoveryService.js'
+import { requireAuth } from '../middleware/authMiddleware.js'
+import { searchGeoapifyAddresses } from '../services/visionAuto/providers/geoapifyPlaceProvider.js'
 
 const router = express.Router()
 const upload = multer({
@@ -66,6 +68,52 @@ function isSupportedSourceUrl(value) {
     return false
   }
 }
+
+router.get('/address-search', requireAuth, async (req, res) => {
+  const query = textField(req.query?.q)
+  if (query.length < 3 || query.length > 240) {
+    return res.status(400).json({
+      error: 'Enter an address between 3 and 240 characters.',
+      code: 'ADDRESS_QUERY_INVALID',
+    })
+  }
+
+  const apiKey = String(process.env.GEOAPIFY_API_KEY || '').trim()
+  if (!apiKey) {
+    return res.status(503).json({
+      error: 'The precise address provider is not configured.',
+      code: 'ADDRESS_PROVIDER_NOT_CONFIGURED',
+    })
+  }
+
+  try {
+    const results = await searchGeoapifyAddresses(query, {
+      apiKey,
+      timeoutMs: Number(process.env.GEOAPIFY_TIMEOUT_MS || 7_000),
+      limit: 5,
+    })
+    return res.json({
+      provider: 'geoapify',
+      results,
+    })
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      return res.status(499).json({
+        error: 'Address search was cancelled.',
+        code: 'ADDRESS_SEARCH_CANCELLED',
+      })
+    }
+
+    const status =
+      error?.code === 'provider_rate_limited' ? 429 :
+        error?.code === 'provider_unauthorized' ? 503 :
+          502
+    return res.status(status).json({
+      error: 'The precise address provider is temporarily unavailable.',
+      code: error?.code || 'ADDRESS_PROVIDER_UNAVAILABLE',
+    })
+  }
+})
 
 router.post('/discover', uploadSingleImage, async (req, res) => {
   const hint = textField(req.body?.hint)

@@ -114,7 +114,7 @@ test('dish matching handles accented and unaccented Vietnamese names', () => {
   )
 })
 
-test('external dish search returns reviewable Google Places around the map center', async () => {
+test('external dish search returns reviewable Geoapify places around the map center', async () => {
   let request = null
   const result = await searchExternalPlacesForDish(
     {
@@ -126,44 +126,38 @@ test('external dish search returns reviewable Google Places around the map cente
       enabled: true,
       apiKey: 'fixture-key',
       fetchImpl: async (url, options) => {
-        request = { url, options, body: JSON.parse(options.body) }
+        request = { url: new URL(String(url)), options }
         return {
           ok: true,
           status: 200,
           json: async () => ({
-            places: [
+            type: 'FeatureCollection',
+            features: [
               {
-                id: 'place-1',
-                displayName: { text: 'Seafood Fixture' },
-                formattedAddress: '10 Example Street, Ho Chi Minh City',
-                location: { latitude: 10.78, longitude: 106.7 },
-                primaryType: 'seafood_restaurant',
-                types: ['restaurant', 'seafood_restaurant'],
-                businessStatus: 'OPERATIONAL',
-                rating: 4.6,
-                userRatingCount: 1234,
-                googleMapsUri: 'https://maps.google.com/?cid=fixture',
-                priceLevel: 'PRICE_LEVEL_MODERATE',
-                photos: [{
-                  name: 'places/place-1/photos/photo-1',
-                  widthPx: 1200,
-                  heightPx: 800,
-                  authorAttributions: [{ displayName: 'Fixture photographer', uri: 'https://maps.google.com/fixture-author' }],
-                }],
-                reviews: [{
-                  text: { text: 'Fresh seafood and a rich hotpot broth.' },
-                  rating: 5,
-                  relativePublishTimeDescription: 'a month ago',
-                  authorAttribution: { displayName: 'Fixture reviewer', uri: 'https://maps.google.com/fixture-reviewer' },
-                  googleMapsUri: 'https://maps.google.com/fixture-review',
-                }],
+                type: 'Feature',
+                properties: {
+                  place_id: 'place-1',
+                  name: 'Seafood Fixture',
+                  formatted: '10 Example Street, Ho Chi Minh City',
+                  lat: 10.78,
+                  lon: 106.7,
+                  category: 'catering.restaurant',
+                  country_code: 'vn',
+                },
+                geometry: { type: 'Point', coordinates: [106.7, 10.78] },
               },
               {
-                id: 'closed-place',
-                displayName: { text: 'Closed Fixture' },
-                formattedAddress: '20 Example Street',
-                location: { latitude: 10.79, longitude: 106.71 },
-                businessStatus: 'CLOSED_PERMANENTLY',
+                type: 'Feature',
+                properties: {
+                  place_id: 'non-food-place',
+                  name: 'Non-food Fixture',
+                  formatted: '20 Example Street',
+                  lat: 10.79,
+                  lon: 106.71,
+                  category: 'commercial.supermarket',
+                  country_code: 'vn',
+                },
+                geometry: { type: 'Point', coordinates: [106.71, 10.79] },
               },
             ],
           }),
@@ -173,35 +167,36 @@ test('external dish search returns reviewable Google Places around the map cente
   )
 
   assert.equal(result.status, 'external_places_found')
-  assert.equal(result.source, 'google_places')
+  assert.equal(result.source, 'geoapify')
   assert.equal(result.originalPlaceKnown, false)
   assert.equal(result.restaurants.length, 1)
   assert.equal(result.restaurants[0].sourceType, 'external')
   assert.equal(result.restaurants[0].providerPlaceId, 'place-1')
   assert.equal(result.restaurants[0].dishHint, 'Lẩu hải sản')
   assert.equal(result.restaurants[0].reviewRequired, true)
-  assert.equal(result.restaurants[0].priceLevel, 'PRICE_LEVEL_MODERATE')
-  assert.equal(result.restaurants[0].photo.name, 'places/place-1/photos/photo-1')
-  assert.equal(result.restaurants[0].photo.attribution[0].displayName, 'Fixture photographer')
-  assert.equal(result.restaurants[0].reviews[0].authorName, 'Fixture reviewer')
-  assert.equal(result.restaurants[0].reviews[0].text, 'Fresh seafood and a rich hotpot broth.')
-  assert.equal(request.body.textQuery, 'Lẩu hải sản')
-  assert.equal(request.body.includedType, 'restaurant')
-  assert.deepEqual(request.body.locationBias.circle.center, { latitude: 10.7769, longitude: 106.7009 })
-  assert.match(request.options.headers['X-Goog-FieldMask'], /places\.rating/)
-  assert.match(request.options.headers['X-Goog-FieldMask'], /places\.photos/)
-  assert.match(request.options.headers['X-Goog-FieldMask'], /places\.reviews/)
-  assert.doesNotMatch(request.options.headers['X-Goog-FieldMask'], /\*/)
+  assert.equal(result.restaurants[0].rating, null)
+  assert.equal(result.restaurants[0].photo, null)
+  assert.deepEqual(result.restaurants[0].reviews, [])
+  assert.equal(result.restaurants[0].dishMatchBasis, 'geoapify_food_text_search')
+  assert.equal(request.url.origin, 'https://api.geoapify.com')
+  assert.equal(request.url.pathname, '/v1/geocode/search')
+  assert.equal(request.url.searchParams.get('text'), result.selectedDish.dishName)
+  assert.equal(request.url.searchParams.get('filter'), 'circle:106.7009,10.7769,20000')
+  assert.equal(request.url.searchParams.get('bias'), 'proximity:106.7009,10.7769')
+  assert.equal(request.url.searchParams.get('format'), 'geojson')
+  assert.equal(request.url.searchParams.get('apiKey'), 'fixture-key')
+  assert.equal(request.options.headers.accept, 'application/json')
 })
 
-test('external search fails closed when Google Places is not configured', async () => {
+test('external search fails closed when Geoapify is not configured', async () => {
   let fetched = false
   const result = await searchExternalPlacesForDish(
     { dishName: 'Phở', origin: { lat: 10.7, lng: 106.6 } },
     { enabled: true, apiKey: '', fetchImpl: async () => { fetched = true } },
   )
   assert.equal(result.status, 'external_places_unavailable')
-  assert.equal(result.reason, 'google_places_not_configured')
+  assert.equal(result.source, 'geoapify')
+  assert.equal(result.reason, 'geoapify_not_configured')
   assert.equal(result.restaurants.length, 0)
   assert.equal(fetched, false)
 })

@@ -144,14 +144,14 @@ export function createVisionAutoRouter({
       if (error?.code === 'dish_database_timeout') {
         return res.status(503).json({ error: 'FoodStory place search is temporarily unavailable.', code: error.code })
       }
-      if (error?.code === 'google_places_quota_exceeded') {
-        return res.status(429).json({ error: 'Google Places quota is temporarily exhausted.', code: error.code })
+      if (error?.code === 'geoapify_quota_exceeded') {
+        return res.status(429).json({ error: 'Geoapify quota is temporarily exhausted.', code: error.code })
       }
-      if (error?.code === 'google_places_timeout') {
-        return res.status(504).json({ error: 'Google Places search timed out.', code: error.code })
+      if (error?.code === 'geoapify_timeout') {
+        return res.status(504).json({ error: 'Geoapify place search timed out.', code: error.code })
       }
-      if (['google_places_api_key_invalid', 'google_places_forbidden', 'google_places_request_failed'].includes(error?.code)) {
-        return res.status(502).json({ error: 'Google Places search is temporarily unavailable.', code: error.code })
+      if (['geoapify_api_key_invalid', 'geoapify_request_failed'].includes(error?.code)) {
+        return res.status(502).json({ error: 'Geoapify place search is temporarily unavailable.', code: error.code })
       }
       return next(error)
     }

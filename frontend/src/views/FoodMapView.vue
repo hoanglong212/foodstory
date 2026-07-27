@@ -18,14 +18,20 @@ import FoodMapImportPanel from "../components/food-map/FoodMapImportPanel.vue";
 import FoodMapRail from "../components/food-map/FoodMapRail.vue";
 import VisionAutoResultPanel from "../components/food-map/VisionAutoResultPanel.vue";
 import { useVisionAuto } from "../composables/useVisionAuto";
-import { searchAddresses } from "../services/geocodingService";
+import {
+  extractHouseNumber,
+  resultMatchesHouseNumber,
+  searchAddresses,
+} from "../services/geocodingService";
 import { useFoodSpotStore } from "../stores/foodSpotStore";
 import { useAuthStore } from "../stores/authStore";
 import { useRestaurantStore } from "../stores/restaurantStore";
 import { useUiStore } from "../stores/uiStore";
 import {
+  friendlyFoodMapCategory,
   foodMapDistanceFromCenter,
   foodMapPriceTier,
+  inferFoodMapDistrict,
   normalizeFoodMapDiscovery as normalizeDiscovery,
 } from "../utils/foodMapDiscovery";
 import {
@@ -49,6 +55,7 @@ const categories = [
   "Seafood",
   "Cafe",
   "Dessert",
+  "Restaurant",
   "Other",
 ];
 const categoryLegend = [
@@ -184,7 +191,10 @@ const locationButton = ref(null);
 const addressQuery = ref("");
 const addressResults = ref([]);
 const selectedAddressLabel = ref("");
+const selectedAddressKind = ref("");
+const requestedAddressHouseNumber = ref("");
 const addressSearchError = ref("");
+const addressSearchNotice = ref("");
 const isSearchingAddress = ref(false);
 const optionalDetailsOpen = ref(false);
 const importPanel = ref(null);
@@ -573,7 +583,10 @@ function resetAddressSearch() {
   addressQuery.value = "";
   addressResults.value = [];
   selectedAddressLabel.value = "";
+  selectedAddressKind.value = "";
+  requestedAddressHouseNumber.value = "";
   addressSearchError.value = "";
+  addressSearchNotice.value = "";
   isSearchingAddress.value = false;
 }
 
@@ -855,18 +868,22 @@ function restaurantPopupContent(restaurant) {
 }
 
 function popupContent(spot, community = false) {
+  const displayPlace = normalizeDiscovery(
+    spot,
+    community ? "community" : "personal",
+  );
   const container = document.createElement("div");
   container.className = "food-map-popup";
 
   const category = document.createElement("span");
   category.className = "food-map-popup-kicker";
-  category.textContent = spot.category || "Food place";
+  category.textContent = displayPlace.category;
 
   const name = document.createElement("strong");
-  name.textContent = spot.name;
+  name.textContent = displayPlace.name;
 
   const dish = document.createElement("p");
-  dish.textContent = spot.dish_name || "No dish name added";
+  dish.textContent = displayPlace.dish;
 
   const rating = document.createElement("span");
   rating.className = "food-map-popup-rating";
@@ -874,7 +891,7 @@ function popupContent(spot, community = false) {
 
   const location = document.createElement("span");
   location.className = "food-map-popup-location";
-  location.textContent = spot.district || "Ho Chi Minh City";
+  location.textContent = displayPlace.district;
 
   if (community) {
     container.classList.add("community");
@@ -1134,7 +1151,10 @@ function prefersReducedMotion() {
 async function findAddress() {
   const query = addressQuery.value.trim();
   addressSearchError.value = "";
+  addressSearchNotice.value = "";
   selectedAddressLabel.value = "";
+  selectedAddressKind.value = "";
+  requestedAddressHouseNumber.value = extractHouseNumber(query);
   addressResults.value = [];
 
   addressSearchController?.abort();
@@ -1145,6 +1165,7 @@ async function findAddress() {
   try {
     const results = await searchAddresses(query, {
       signal: controller.signal,
+      token: authStore.token,
     });
     if (controller !== addressSearchController) return;
 
@@ -1152,6 +1173,19 @@ async function findAddress() {
     if (!results.length) {
       addressSearchError.value =
         "No matching address was found. Try adding a ward, district, or city name.";
+      return;
+    }
+
+    const requestedHouseNumber = requestedAddressHouseNumber.value;
+    if (
+      requestedHouseNumber &&
+      !results.some((result) =>
+        resultMatchesHouseNumber(result, requestedHouseNumber),
+      )
+    ) {
+      addressSearchNotice.value =
+        `The providers found the street or a nearby place, but could not verify house number ${requestedHouseNumber}. ` +
+        "Choose the closest result, then adjust the pin before saving.";
     }
   } catch (error) {
     if (error?.name === "AbortError" || controller !== addressSearchController) return;
@@ -1166,7 +1200,7 @@ async function findAddress() {
   }
 }
 
-function chooseAddress(result) {
+async function chooseAddress(result) {
   if (!result || !Number.isFinite(result.latitude) || !Number.isFinite(result.longitude)) {
     return;
   }
@@ -1177,12 +1211,21 @@ function chooseAddress(result) {
   form.latitude = result.latitude.toFixed(7);
   form.longitude = result.longitude.toFixed(7);
   selectedAddressLabel.value = result.label;
-  addressQuery.value = result.shortLabel || result.label;
+  selectedAddressKind.value = result.precision || "";
+  addressQuery.value =
+    result.houseNumber && result.shortLabel
+      ? result.shortLabel
+      : result.shortLabel || result.label;
   addressResults.value = [];
   addressSearchError.value = "";
+  addressSearchNotice.value = "";
+  if (!form.name && result.placeName) {
+    form.name = result.placeName;
+  }
   delete formErrors.coordinates;
   showPreviewMarker(result.latitude, result.longitude);
   stopPicking();
+  setFilterDrawer(true);
 
   if (map) {
     if (prefersReducedMotion()) {
@@ -1191,6 +1234,30 @@ function chooseAddress(result) {
       map.flyTo([result.latitude, result.longitude], 17, { duration: 0.35 });
     }
   }
+
+  await nextTick();
+  document
+    .querySelector(".food-map-location-status")
+    ?.scrollIntoView({ block: "nearest", behavior: "auto" });
+}
+
+function addressResultKind(result) {
+  if (result?.precision === "house") {
+    if (
+      requestedAddressHouseNumber.value &&
+      resultMatchesHouseNumber(result, requestedAddressHouseNumber.value)
+    ) {
+      return result.houseNumber?.includes("/")
+        ? "Exact alley address"
+        : "Exact house number";
+    }
+    return requestedAddressHouseNumber.value
+      ? `Nearby house ${result.houseNumber}`
+      : "House address";
+  }
+  if (result?.precision === "place") return "External place";
+  if (result?.precision === "street") return "Street-level result";
+  return "Nearby area";
 }
 
 async function startPicking() {
@@ -1349,6 +1416,17 @@ async function openAddPlaceFromMap() {
   showPersonalSpots.value = true;
   await openAddForm();
   await modeChange;
+}
+
+async function handleAddPlaceTrigger() {
+  if (sidebarMode.value !== "add") {
+    await openAddPlaceFromMap();
+    return;
+  }
+
+  setFilterDrawer(true);
+  await nextTick();
+  placeNameInput.value?.focus({ preventScroll: true });
 }
 
 async function addFromRecipe() {
@@ -1621,29 +1699,57 @@ function visionDraftFromCandidate(candidate = null) {
     phone: candidate?.phone || null,
     dishNames: [candidate?.dishHint].filter(Boolean),
     locationHints: [candidate?.locationHint].filter(Boolean),
+    district: candidate?.district || null,
     sourceUrl: visionUrl.value.trim() || null,
     lat: candidate?.lat ?? null,
     lng: candidate?.lng ?? null,
     provider: candidate?.provider || null,
     providerPlaceId: candidate?.providerPlaceId || null,
     googleMapsUri: candidate?.googleMapsUri || null,
+    mapUri: candidate?.mapUri || null,
+    distanceKm: candidate?.distanceKm ?? null,
+    reviewRequired: candidate?.reviewRequired === true,
     category: candidate?.category || null,
     categories: Array.isArray(candidate?.categories) ? candidate.categories : [],
   };
 }
 
 function visionDraftPrefill(draft) {
+  const categoryValues = [draft?.category, ...(draft?.categories || [])]
+    .map(friendlyFoodMapCategory)
+    .filter(Boolean);
+  const category =
+    categoryValues.find((value) => categories.includes(value)) ||
+    (categoryValues.includes("Restaurant") ? "Restaurant" : "Other");
+  const district =
+    inferFoodMapDistrict(draft?.district) ||
+    inferFoodMapDistrict(draft?.address) ||
+    "";
+  const provider =
+    String(draft?.provider || "").toLocaleLowerCase("en") === "geoapify"
+      ? "Geoapify + OpenStreetMap"
+      : draft?.provider || "";
+  const mapUri = draft?.mapUri || draft?.googleMapsUri || "";
+  const categoryTags = [...new Set(categoryValues)]
+    .filter((value) => value !== "Food place")
+    .slice(0, 4);
   const notes = [
-    draft?.address ? `Location clue: ${draft.address}` : "",
+    draft?.address ? `Address: ${draft.address}` : "",
     draft?.phone ? `Phone: ${draft.phone}` : "",
-    draft?.locationHints?.length
-      ? `Location hints: ${draft.locationHints.join(", ")}`
+    district ? `Area: ${district}` : "",
+    provider ? `Discovery source: ${provider}` : "",
+    draft?.sourceUrl ? `Original source: ${draft.sourceUrl}` : "",
+    mapUri ? `OpenStreetMap: ${mapUri}` : "",
+    draft?.distanceKm !== null &&
+    draft?.distanceKm !== undefined &&
+    Number.isFinite(Number(draft.distanceKm))
+      ? `Distance when found: ${draft.distanceKm} km`
       : "",
-    draft?.sourceUrl ? `Source: ${draft.sourceUrl}` : "",
-    draft?.provider ? `Place provider: ${draft.provider}` : "",
-    draft?.providerPlaceId ? `Provider place ID: ${draft.providerPlaceId}` : "",
-    draft?.googleMapsUri ? `Google Maps: ${draft.googleMapsUri}` : "",
-    draft?.categories?.length ? `Categories: ${draft.categories.join(", ")}` : "",
+    draft?.dishNames?.[0] ? `Matched dish: ${draft.dishNames[0]}` : "",
+    categoryTags.length ? `Categories: ${categoryTags.join(", ")}` : "",
+    draft?.reviewRequired
+      ? "Verification: Provider result — confirm menu and opening hours before visiting."
+      : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -1651,12 +1757,12 @@ function visionDraftPrefill(draft) {
   return {
     name: draft?.name || "",
     dish_name: draft?.dishNames?.[0] || "",
-    category: draft?.category || draft?.categories?.[0] || "",
-    district: "",
+    category,
+    district,
     latitude: hasVisionCoordinates(draft) ? String(draft.lat) : "",
     longitude: hasVisionCoordinates(draft) ? String(draft.lng) : "",
     notes,
-    tags: "",
+    tags: categoryTags.map((value) => value.toLocaleLowerCase("en")).join(", "),
   };
 }
 
@@ -1850,6 +1956,42 @@ async function sharePlace(place = selectedDiscovery.value) {
 
 function formatPlaceMeta(place) {
   return place.distance || place.price || place.address || place.district;
+}
+
+function formatSavedDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function discoverySourceLinkLabel(url) {
+  const value = String(url || "").toLocaleLowerCase("en");
+  if (value.includes("youtube.com") || value.includes("youtu.be")) {
+    return "Watch original food video";
+  }
+  return "Open discovery source";
+}
+
+function missingPlaceDetails(place) {
+  if (!place) return [];
+  return [
+    !place.image ? "verified photo" : "",
+    !place.openingHours ? "opening hours" : "",
+    !place.phone ? "phone number" : "",
+  ].filter(Boolean);
+}
+
+function placeDisplayTags(place) {
+  if (!place) return [];
+  return [...new Set([
+    ...splitTags(place.raw?.tags),
+    ...(Array.isArray(place.categories) ? place.categories : []),
+  ])].slice(0, 8);
 }
 
 function clearFilters() {
@@ -2069,16 +2211,24 @@ onBeforeUnmount(() => {
     />
 
     <button
-      v-if="!isGuestPreview && sidebarMode !== 'add'"
+      v-if="
+        !isGuestPreview &&
+        !pickingMode &&
+        (sidebarMode !== 'add' || !isFilterDrawerOpen)
+      "
       class="food-map-add-place-trigger"
       type="button"
-      aria-label="Add a place to My Map"
-      @click="openAddPlaceFromMap"
+      :aria-label="
+        sidebarMode === 'add'
+          ? 'Continue editing your unsaved place'
+          : 'Add a place to My Map'
+      "
+      @click="handleAddPlaceTrigger"
     >
       <AppIcon name="map-pin" size="18" />
       <span>
-        <strong>Add place</strong>
-        <small>to My Map</small>
+        <strong>{{ sidebarMode === "add" ? "Continue editing" : "Add place" }}</strong>
+        <small>{{ sidebarMode === "add" ? "unsaved place" : "to My Map" }}</small>
       </span>
     </button>
 
@@ -2790,12 +2940,19 @@ onBeforeUnmount(() => {
                 </button>
               </div>
               <small>
-                Search uses
+                Precise search uses
+                <a
+                  href="https://www.geoapify.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >Geoapify</a>
+                with
                 <a
                   href="https://www.openstreetmap.org/copyright"
                   target="_blank"
                   rel="noopener noreferrer"
-                >OpenStreetMap contributors</a>.
+                >OpenStreetMap</a>
+                fallback.
                 You can still fine-tune the pin afterward.
               </small>
             </div>
@@ -2807,6 +2964,9 @@ onBeforeUnmount(() => {
                   <span>
                     <strong>{{ result.shortLabel }}</strong>
                     <small>{{ result.label }}</small>
+                    <em class="food-map-address-result-kind">
+                      {{ addressResultKind(result) }}
+                    </em>
                   </span>
                 </button>
               </li>
@@ -2814,6 +2974,9 @@ onBeforeUnmount(() => {
 
             <p v-if="addressSearchError" class="food-map-address-error" role="alert">
               {{ addressSearchError }}
+            </p>
+            <p v-if="addressSearchNotice" class="food-map-address-notice" role="status">
+              {{ addressSearchNotice }}
             </p>
 
             <div class="food-map-location-status" aria-live="polite">
@@ -2823,7 +2986,9 @@ onBeforeUnmount(() => {
               />
               <span>
                 <strong>{{
-                  hasFoodSpotCoordinates(form)
+                  selectedAddressKind === "place"
+                    ? "External place ready to review"
+                    : hasFoodSpotCoordinates(form)
                     ? "Location selected"
                     : "Search above or choose the exact point"
                 }}</strong>
@@ -2832,6 +2997,9 @@ onBeforeUnmount(() => {
                   {{ form.latitude }}, {{ form.longitude }}
                 </small>
                 <small v-else>Address search is the fastest option; map pin remains available.</small>
+                <small v-if="selectedAddressKind === 'place'">
+                  Complete the dish and optional details, then save it to My Map.
+                </small>
               </span>
             </div>
             <button ref="locationButton" type="button" class="food-map-pick-secondary" @click="startPicking">
@@ -3125,14 +3293,11 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="taste-detail-rating">
-            <strong>
-              {{
-                selectedDiscovery.rating
-                  ? selectedDiscovery.rating.toFixed(1)
-                  : "New"
-              }}
-              ★
+            <strong v-if="selectedDiscovery.rating">
+              {{ selectedDiscovery.rating.toFixed(1) }} ★
             </strong>
+            <strong v-else class="unrated">Not rated yet</strong>
+            <span v-if="selectedDiscovery.isOwned">Saved to My Map</span>
             <span v-if="selectedDiscovery.price">{{
               selectedDiscovery.price
             }}</span>
@@ -3142,24 +3307,50 @@ onBeforeUnmount(() => {
           </div>
 
           <dl class="taste-detail-facts">
-            <div>
+            <div class="wide">
               <dt><AppIcon name="map-pin" size="17" /> Address</dt>
               <dd>{{ selectedDiscovery.address }}</dd>
+            </div>
+            <div v-if="selectedDiscovery.dish">
+              <dt><AppIcon name="utensils" size="17" /> Dish to try</dt>
+              <dd>{{ selectedDiscovery.dish }}</dd>
+            </div>
+            <div>
+              <dt><AppIcon name="store" size="17" /> Place type</dt>
+              <dd>{{ selectedDiscovery.category }}</dd>
+            </div>
+            <div>
+              <dt><AppIcon name="map-pin" size="17" /> Area</dt>
+              <dd>{{ selectedDiscovery.district }}</dd>
             </div>
             <div v-if="selectedDiscovery.openingHours">
               <dt><AppIcon name="clock" size="17" /> Opening hours</dt>
               <dd>{{ selectedDiscovery.openingHours }}</dd>
             </div>
-            <div>
+            <div v-if="selectedDiscovery.phone">
+              <dt><AppIcon name="store" size="17" /> Phone</dt>
+              <dd>{{ selectedDiscovery.phone }}</dd>
+            </div>
+            <div v-if="formatSavedDate(selectedDiscovery.addedAt)">
+              <dt><AppIcon name="clock" size="17" /> Added to FoodStory</dt>
+              <dd>{{ formatSavedDate(selectedDiscovery.addedAt) }}</dd>
+            </div>
+            <div class="wide">
               <dt><AppIcon name="send" size="17" /> Discovery source</dt>
-              <dd>
+              <dd class="taste-detail-source">
+                <strong>{{ selectedDiscovery.source }}</strong>
                 <a
                   v-if="selectedDiscovery.sourceUrl"
                   :href="selectedDiscovery.sourceUrl"
                   target="_blank"
                   rel="noreferrer"
-                >View verification source</a>
-                <template v-else>{{ selectedDiscovery.source }}</template>
+                >{{ discoverySourceLinkLabel(selectedDiscovery.sourceUrl) }}</a>
+                <a
+                  v-if="selectedDiscovery.mapUrl"
+                  :href="selectedDiscovery.mapUrl"
+                  target="_blank"
+                  rel="noreferrer"
+                >Open on OpenStreetMap</a>
               </dd>
             </div>
           </dl>
@@ -3169,15 +3360,26 @@ onBeforeUnmount(() => {
             <p>{{ selectedDiscovery.description }}</p>
           </section>
 
+          <section
+            v-if="selectedDiscovery.verification || missingPlaceDetails(selectedDiscovery).length"
+            class="taste-detail-coverage"
+          >
+            <span><AppIcon name="check" size="16" /> Listing coverage</span>
+            <strong>Source-backed location details preserved</strong>
+            <p v-if="selectedDiscovery.verification">{{ selectedDiscovery.verification }}</p>
+            <small v-if="missingPlaceDetails(selectedDiscovery).length">
+              Not supplied by this source:
+              {{ missingPlaceDetails(selectedDiscovery).join(", ") }}.
+            </small>
+          </section>
+
           <div
-            v-if="
-              selectedDiscovery.isOwned &&
-              splitTags(selectedDiscovery.raw.tags).length
-            "
+            v-if="placeDisplayTags(selectedDiscovery).length"
             class="food-map-tags"
+            aria-label="Place categories and tags"
           >
             <span
-              v-for="tag in splitTags(selectedDiscovery.raw.tags)"
+              v-for="tag in placeDisplayTags(selectedDiscovery)"
               :key="tag"
             >
               #{{ tag }}
