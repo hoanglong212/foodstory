@@ -172,6 +172,47 @@ function buildDishCandidates(modelResult, metadata) {
   ].slice(0, MAX_CANDIDATES)
 }
 
+function findKnownDishInTitle(title, dishNames) {
+  const explicitPhrase = inferTitleDishPhrase(title)
+  const normalizedPhrase = normalizeDiscoveryText(explicitPhrase)
+  if (!normalizedPhrase) return ''
+  const paddedPhrase = ` ${normalizedPhrase} `
+
+  return uniqueTexts(dishNames, 1_000, 120)
+    .map((dishName) => ({
+      dishName,
+      normalized: normalizeDiscoveryText(dishName),
+    }))
+    .filter(({ normalized }) => (
+      normalized.length >= 4 &&
+      !GENERIC_DISHES.has(normalized) &&
+      paddedPhrase.includes(` ${normalized} `)
+    ))
+    .sort((left, right) => right.normalized.length - left.normalized.length)[0]?.dishName || ''
+}
+
+async function resolveKnownTitleDish(metadata, { database = pool, timeoutMs = 2_500 } = {}) {
+  const title = capText(metadata?.title, 400)
+  if (!inferTitleDishPhrase(title)) return ''
+
+  let timer
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error('Known dish lookup timed out.')
+      error.code = 'dish_catalog_timeout'
+      reject(error)
+    }, Math.max(500, timeoutMs))
+  })
+  const queries = Promise.all([
+    database.execute(`SELECT DISTINCT dish_name FROM food_spots WHERE dish_name IS NOT NULL AND TRIM(dish_name) <> '' LIMIT 500`),
+    database.execute(`SELECT DISTINCT featured_dish AS dish_name FROM restaurants WHERE featured_dish IS NOT NULL AND TRIM(featured_dish) <> '' LIMIT 500`),
+  ])
+
+  const results = await Promise.race([queries, timeout]).finally(() => clearTimeout(timer))
+  const dishNames = results.flatMap(([rows]) => rows.map((row) => row.dish_name))
+  return findKnownDishInTitle(title, dishNames)
+}
+
 function responseText(payload) {
   return (Array.isArray(payload?.candidates?.[0]?.content?.parts)
     ? payload.candidates[0].content.parts
@@ -275,6 +316,7 @@ export async function identifyDishFromVideoSource(
     fetchMetadata = fetchVisionMetadata,
     fetchImage = fetchPublicImageBuffer,
     invokeModel = invokeDishVisionGemini,
+    resolveTitleDish = resolveKnownTitleDish,
   } = {},
 ) {
   const input = normalizeVisionAutoUrl(sourceUrl, { assetTypeHint: 'video' })
@@ -286,6 +328,29 @@ export async function identifyDishFromVideoSource(
 
   const metadata = await fetchMetadata(input.url)
   const thumbnailUrl = `https://i.ytimg.com/vi/${encodeURIComponent(input.videoId)}/hqdefault.jpg`
+  const knownTitleDish = await resolveTitleDish(metadata).catch(() => '')
+  if (knownTitleDish) {
+    const dishCandidates = buildDishCandidates(
+      { titleDishName: knownTitleDish, candidates: [] },
+      metadata,
+    )
+    return {
+      status: 'dish_candidates',
+      source: {
+        type: 'youtube_url',
+        platform: 'youtube',
+        videoId: input.videoId,
+        url: input.url,
+        title: capText(metadata?.title, 400) || null,
+        thumbnailUrl,
+      },
+      dishCandidates,
+      selectedDish: null,
+      originalPlaceKnown: false,
+      restaurants: [],
+      warnings: [],
+    }
+  }
   const image = await fetchImage({ url: thumbnailUrl }, { signal, timeoutMs: 8_000, maxResponseBytes: 3_000_000 })
   if (!image?.buffer) {
     const error = new Error('The public video thumbnail could not be read.')
@@ -431,6 +496,8 @@ export const __visionDishDiscoveryTestUtils = {
   inferTitleDishPhrase,
   titleDishNamedInMetadata,
   buildDishCandidates,
+  findKnownDishInTitle,
+  resolveKnownTitleDish,
   dishMatchScore,
   distanceKm,
 }

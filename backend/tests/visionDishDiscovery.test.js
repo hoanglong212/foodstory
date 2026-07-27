@@ -71,6 +71,7 @@ test('dish discovery promotes a dish explicitly named in the video title over a 
       fetchMetadata: async () => ({
         title: 'Bí mật của món cao lầu Hội An #food #shorts',
       }),
+      resolveTitleDish: async () => '',
       fetchImage: async () => ({ buffer: imageBuffer, contentType: 'image/png' }),
       invokeModel: async () => ({
         titleDishName: 'Cao Lầu',
@@ -97,6 +98,44 @@ test('dish discovery promotes a dish explicitly named in the video title over a 
   )
   assert.equal(result.dishCandidates[1].dishName, 'Bún Bò Huế')
   assert.equal(result.dishCandidates[1].evidenceSource, 'thumbnail')
+})
+
+test('dish discovery uses a known dish named in the title without spending provider quota', async () => {
+  let imageCalls = 0
+  let modelCalls = 0
+  const result = await identifyDishFromVideoSource(
+    { sourceUrl: 'https://www.youtube.com/shorts/AbCdEf12345' },
+    {
+      fetchMetadata: async () => ({
+        title: 'Bí mật của món cao lầu Hội An #food #shorts',
+      }),
+      resolveTitleDish: async () => 'Cao Lầu',
+      fetchImage: async () => {
+        imageCalls += 1
+        return null
+      },
+      invokeModel: async () => {
+        modelCalls += 1
+        throw new Error('must not be called')
+      },
+    },
+  )
+
+  assert.equal(result.status, 'dish_candidates')
+  assert.equal(result.dishCandidates[0].dishName, 'Cao Lầu')
+  assert.equal(result.dishCandidates[0].evidenceSource, 'title')
+  assert.equal(imageCalls, 0)
+  assert.equal(modelCalls, 0)
+})
+
+test('known dish title matching keeps the longest exact catalog name', () => {
+  assert.equal(
+    __visionDishDiscoveryTestUtils.findKnownDishInTitle(
+      'Bí mật của món cao lầu Hội An #food',
+      ['Lẩu', 'Cao Lầu', 'Bún bò Huế'],
+    ),
+    'Cao Lầu',
+  )
 })
 
 test('Gemini dish request uses low-variance generation and asks for an explicit title dish', async () => {
