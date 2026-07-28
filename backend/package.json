@@ -63,6 +63,8 @@
     "test:food-map-social-discovery": "node scripts/testFoodMapSocialDiscoveryCases.js && node scripts/testFoodMapSocialDiscoveryArchitecture.js",
     "test:food-map-social-ocr": "node scripts/testSocialOcrRealImages.js",
     "test:vision-auto": "node scripts/testVisionAutoV2.js",
+    "pilot:vision-dish": "node scripts/runVisionDishPilot.js",
+    "pilot:vision-dish:followup": "node scripts/runVisionDishPilotFollowup.js",
     "test:shorts:track2-v3-complete": "node --test tests/visionAutoTrack2V3Adapter.test.js tests/foodMapDuplicatePlaceEvidence.test.js tests/visionAutoLocationProviderConfig.test.js tests/shorts/shortsTrack2V3InputContract.test.js tests/shorts/shortsTrack2V3TemporalTextEpisode.test.js tests/shorts/shortsTrack2V3TemporalOcrConsensus.test.js tests/shorts/shortsTrack2V3SegmentAwareFusion.test.js tests/shorts/shortsTrack2V3AsrOpportunityWindows.test.js tests/shorts/shortsTrack2V3TextRegionProposal.test.js tests/shorts/shortsTrack2V3LiveCanonicalWiring.test.js tests/shorts/shortsTrack2V3EvidenceRecovery.test.js tests/shorts/shortsTrack2V3OutputClosure.test.js",
     "preflight:track2-v3": "node scripts/preflightTrack2V3.js",
     "verify:track2-v3": "npm run preflight:track2-v3 && npm run test:shorts:track2-v3-complete && npm run test:shorts:track2-v3-tesseract-ocr && npm run test:shorts:track2-v3-evidence-recovery && npm run test:shorts:track2-v3-smart-overlay-ocr-pipeline && npm run test:shorts:track2-v3-rescue-sufficiency && npm run test:shorts:track2-v3-asr && npm run test:shorts:track2-v3-media && npm run test:vision-auto",

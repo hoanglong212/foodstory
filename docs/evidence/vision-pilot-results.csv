@@ -1,0 +1,14 @@
+case_id,video_url,expected_dish,returned_top_1,returned_top_3,top_1_correct,top_3_correct,terminal_state,technical_failure,no_result,review_required,result_status,end_to_end_ms,end_to_end_seconds,http_status,provider_or_media_error
+V01,https://www.youtube.com/watch?v=pT86cqin-Og,phở,Pho,Pho,yes,yes,dish_candidates,no,no,yes,review_required,10769,10.769,200,
+V02,https://www.youtube.com/watch?v=EpRBxau3ou0,phở bò,Pho,Pho,yes,yes,dish_candidates,no,no,yes,review_required,9865,9.865,200,
+V03,https://youtu.be/PGZZHWMedNU,phở gà,,,no,no,http_429,yes,no,no,technical_failure,5495,5.495,429,dish_provider_quota: Dish recognition provider request failed.
+V04,https://www.youtube.com/watch?v=qWK_HYlKrAA,bún bò Huế,,,no,no,http_429,yes,no,no,technical_failure,3164,3.164,429,dish_provider_quota: Dish recognition provider request failed.
+V05,https://www.youtube.com/watch?v=8CaadFo3sw0,gỏi cuốn,Vietnamese Fresh Spring Roll (GOI CUON),Vietnamese Fresh Spring Roll (GOI CUON),yes,yes,dish_candidates,no,no,yes,review_required,3779,3.779,200,
+V06,https://www.youtube.com/watch?v=Dz9r3vNRxPA,bánh mì,,,no,no,http_504,yes,no,no,technical_failure,18546,18.546,504,dish_provider_timeout: Dish recognition timed out.
+V07,https://www.youtube.com/watch?v=iZJzTScgB-c,bún chả,,,no,no,http_429,yes,no,no,technical_failure,3686,3.686,429,dish_provider_quota: Dish recognition provider request failed.
+V08,https://www.youtube.com/watch?v=OHP77Zim3Ko,bánh bèo,,,no,no,http_429,yes,no,no,technical_failure,4521,4.521,429,dish_provider_quota: Dish recognition provider request failed.
+V09,https://www.youtube.com/watch?v=s5xIVRi26t4,bánh bột lọc,,,no,no,http_429,yes,no,no,technical_failure,5138,5.138,429,dish_provider_quota: Dish recognition provider request failed.
+V10,https://www.youtube.com/watch?v=VhquFhlJ5Ds,bánh xèo,VIETNAMESE CREPE- BÁNH XÈO,VIETNAMESE CREPE- BÁNH XÈO,yes,yes,dish_candidates,no,no,yes,review_required,3560,3.560,200,
+V11,https://www.youtube.com/watch?v=P1AXLv3ZF3Q,cơm tấm,,,no,no,http_429,yes,no,no,technical_failure,3807,3.807,429,dish_provider_quota: Dish recognition provider request failed.
+V12,https://www.youtube.com/watch?v=omVaFMmc9pU,bánh tráng nướng,BÁNH TRÁNG NƯỚNG tự làm,BÁNH TRÁNG NƯỚNG tự làm,yes,yes,dish_candidates,no,no,yes,review_required,3842,3.842,200,
+V13,https://www.youtube.com/watch?v=fqiGFA0qkig,mì Quảng,,,no,no,http_429,yes,no,no,technical_failure,4082,4.082,429,dish_provider_quota: Dish recognition provider request failed.

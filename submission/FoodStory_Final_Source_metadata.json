@@ -1,0 +1,21 @@
+{
+  "filename": "FoodStory_Final_Source_04732877.zip",
+  "byte_size": 55496926,
+  "mib_size": 52.925993,
+  "sha256": "3d66a5f34ac2bbc854c0ce4104c89a85a523385b33216bf4cc60b5d0d2d23e1d",
+  "total_entries": 814,
+  "file_entries": 767,
+  "directory_entries": 47,
+  "archive_integrity_status": "PASS",
+  "every_entry_read_status": "PASS",
+  "safe_path_status": "PASS",
+  "sensitive_file_scan_status": "PASS",
+  "secret_scan_status": "PASS",
+  "extraction_status": "PASS",
+  "expected_project_structure_status": "PASS",
+  "authoritative_commit": "0473287788bad6a098f1d2724ec0e3d0c81bd412",
+  "report_input_excluded": true,
+  "findings": [],
+  "read_failures": [],
+  "missing_expected": []
+}

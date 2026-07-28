@@ -1,0 +1,9 @@
+case_id,expected_dish,first_run_top_1,first_run_top_3,first_run_top_1_correct,first_run_top_3_correct,first_run_terminal_state,first_run_http_status,first_run_technical_failure,first_run_no_result,first_run_review_required,first_run_end_to_end_ms,rerun_attempt_count,rerun_top_1,rerun_top_3,rerun_top_1_correct,rerun_top_3_correct,rerun_terminal_state,rerun_http_status,rerun_technical_failure,rerun_no_result,rerun_review_required,rerun_end_to_end_ms_including_backoff,rerun_provider_or_media_error
+V03,phở gà,,,no,no,http_429,429,yes,no,no,5788,1,Pho Ga,Pho Ga | Pho Ga Kho,yes,yes,dish_candidates,200,no,no,yes,11853,
+V04,bún bò Huế,,,no,no,http_429,429,yes,no,no,3771,1,Bun Bo Hue,Bun Bo Hue | Vietnamese Beef Noodle Soup,yes,yes,dish_candidates,200,no,no,yes,9907,
+V06,bánh mì,,,no,no,http_429,429,yes,no,no,4302,1,Banh Mi,Banh Mi | Vietnamese Baguette,yes,yes,dish_candidates,200,no,no,yes,13390,
+V07,bún chả,,,no,no,http_429,429,yes,no,no,4381,1,Bún chả,Bún chả,yes,yes,dish_candidates,200,no,no,yes,8141,
+V08,bánh bèo,,,no,no,http_429,429,yes,no,no,4521,1,Bánh bèo,Bánh bèo,yes,yes,dish_candidates,200,no,no,yes,7962,
+V09,bánh bột lọc,,,no,no,http_429,429,yes,no,no,5138,1,Bánh bột lọc,Bánh bột lọc,yes,yes,dish_candidates,200,no,no,yes,8643,
+V11,cơm tấm,,,no,no,http_429,429,yes,no,no,3807,1,Cơm Tấm Đặc Biệt,Cơm Tấm Đặc Biệt,yes,yes,dish_candidates,200,no,no,yes,11428,
+V13,mì Quảng,,,no,no,http_429,429,yes,no,no,4082,2,Mì Quảng,Mì Quảng,yes,yes,dish_candidates,200,no,no,yes,103582,
