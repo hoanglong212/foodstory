@@ -1,5 +1,9 @@
 import express from 'express'
 import pool from '../db.js'
+import {
+  EXTERNAL_NEWS_CATEGORIES,
+  fetchGuardianNews,
+} from '../services/guardianNewsService.js'
 
 const router = express.Router()
 
@@ -32,12 +36,64 @@ function isValidDateFilter(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value)
 }
 
+function isValidExternalCategory(value) {
+  if (!value || value === 'all') {
+    return true
+  }
+
+  const normalized = String(value).trim().toLowerCase()
+  return EXTERNAL_NEWS_CATEGORIES.some((category) => category.toLowerCase() === normalized)
+}
+
 router.get('/categories', async (req, res, next) => {
   try {
     const [rows] = await pool.execute('SELECT DISTINCT category FROM news ORDER BY category ASC')
     res.json({ categories: rows.map((row) => row.category) })
   } catch (error) {
     next(error)
+  }
+})
+
+router.get('/external/categories', (req, res) => {
+  res.json({ categories: EXTERNAL_NEWS_CATEGORIES })
+})
+
+router.get('/external', async (req, res, next) => {
+  try {
+    const { page, pageSize } = getPagination(req.query)
+    const search = String(req.query.search || '').trim()
+    const category = String(req.query.category || 'all').trim()
+    const date = String(req.query.date || '').trim()
+
+    if (search.length > 120 || category.length > 100) {
+      return res.status(400).json({ error: 'Search and category values are too long.' })
+    }
+
+    if (!isValidDateFilter(date)) {
+      return res.status(400).json({ error: 'Date must use YYYY-MM-DD format.' })
+    }
+
+    if (!isValidExternalCategory(category)) {
+      return res.status(400).json({ error: 'Unsupported external news category.' })
+    }
+
+    const result = await fetchGuardianNews({
+      page,
+      pageSize: Math.min(pageSize, 20),
+      search,
+      category,
+      date,
+    })
+
+    return res.json(result)
+  } catch (error) {
+    if (error?.code?.startsWith('EXTERNAL_NEWS_') && error?.status) {
+      return res.status(error.status).json({
+        error: error.message,
+        code: error.code,
+      })
+    }
+    return next(error)
   }
 })
 
@@ -85,7 +141,10 @@ router.get('/', async (req, res, next) => {
     const totalItems = countRows[0].totalItems
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
 
-    const [items] = await pool.execute(
+    // MySQL 8.4 rejects LIMIT/OFFSET placeholders through the binary prepared
+    // statement protocol used by execute(); query() keeps the values escaped
+    // while using the compatible text protocol.
+    const [items] = await pool.query(
       `SELECT
          id,
          title,

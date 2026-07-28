@@ -43,9 +43,11 @@ router.get('/', async (req, res, next) => {
       params.push(category)
     }
     if (search) {
-      conditions.push('(name LIKE ? OR category LIKE ? OR description LIKE ?)')
+      conditions.push(
+        '(name LIKE ? OR category LIKE ? OR featured_dish LIKE ? OR description LIKE ?)',
+      )
       const pattern = `%${search}%`
-      params.push(pattern, pattern, pattern)
+      params.push(pattern, pattern, pattern, pattern)
     }
     if (minimumRating !== null) {
       conditions.push('avg_rating >= ?')
@@ -54,7 +56,9 @@ router.get('/', async (req, res, next) => {
 
     const [restaurants] = await pool.execute(
       `SELECT id, name, address, district, category,
-              latitude, longitude, avg_rating, price_range, description
+              latitude, longitude, avg_rating, price_range, description,
+              featured_dish, image_url, image_attribution, source_url,
+              DATE_FORMAT(verified_at, '%Y-%m-%d') AS verified_at
        FROM restaurants
        WHERE ${conditions.join(' AND ')}
        ORDER BY avg_rating DESC, id ASC

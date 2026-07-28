@@ -373,7 +373,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="admin-page">
+  <section class="admin-page" :class="{ 'is-light': !uiStore.darkMode }">
     <header class="admin-hero">
       <div>
         <p class="admin-eyebrow">FoodStory Control Center</p>
@@ -394,6 +394,7 @@ onMounted(() => {
           :key="section.id"
           type="button"
           :class="['sidebar-item', { active: activeSection === section.id }]"
+          :aria-pressed="activeSection === section.id"
           @click="setSection(section.id)"
         >
           <AppIcon :name="section.icon" size="18" />
@@ -434,7 +435,7 @@ onMounted(() => {
             </button>
           </div>
 
-          <div v-if="adminStore.error" class="admin-empty">{{ adminStore.error }}</div>
+          <div v-if="adminStore.error" class="admin-empty" role="alert">{{ adminStore.error }}</div>
           <div v-else class="activity-grid">
             <article class="activity-card">
               <header>
@@ -512,8 +513,8 @@ onMounted(() => {
           </div>
 
           <form class="admin-toolbar" @submit.prevent="loadRecipes(1)">
-            <input v-model="recipeFilters.search" type="search" maxlength="120" placeholder="Search recipes..." />
-            <select v-model="recipeFilters.status">
+            <input v-model="recipeFilters.search" type="search" maxlength="120" placeholder="Search recipes..." aria-label="Search recipes" />
+            <select v-model="recipeFilters.status" aria-label="Filter recipes by status">
               <option value="">All statuses</option>
               <option value="approved">Approved</option>
               <option value="pending">Pending</option>
@@ -522,8 +523,9 @@ onMounted(() => {
             <button type="submit">Search</button>
           </form>
 
-          <div class="table-shell">
+          <div class="table-shell" tabindex="0" aria-label="Recipe management table. Scroll horizontally to see all columns.">
             <table class="admin-table">
+              <caption class="sr-only">Recipe management</caption>
               <thead>
                 <tr><th>ID</th><th>Recipe Name</th><th>Category</th><th>Submitted By</th><th>Status</th><th>Rating</th><th>Actions</th></tr>
               </thead>
@@ -545,7 +547,7 @@ onMounted(() => {
                       <button v-if="recipe.status === 'pending'" class="btn-action btn-reject" type="button" :disabled="Boolean(actionId)" @click="startReject(recipe)">Reject</button>
                     </div>
                     <form v-if="rejectingRecipeId === recipe.id" class="reject-form" @submit.prevent="rejectRecipe(recipe)">
-                      <input v-model="rejectionReasons[recipe.id]" maxlength="500" placeholder="Rejection reason..." />
+                      <input v-model="rejectionReasons[recipe.id]" maxlength="500" placeholder="Rejection reason..." :aria-label="`Rejection reason for ${recipe.title}`" />
                       <button type="submit" :disabled="actionId === `reject-${recipe.id}`">Confirm</button>
                       <button type="button" @click="rejectingRecipeId = null">Cancel</button>
                     </form>
@@ -554,18 +556,19 @@ onMounted(() => {
               </tbody>
             </table>
           </div>
-          <nav class="admin-pagination"><button :disabled="recipePagination.currentPage <= 1" @click="loadRecipes(recipePagination.currentPage - 1)">Previous</button><span>Page {{ recipePagination.currentPage }} / {{ recipePagination.totalPages }}</span><button :disabled="recipePagination.currentPage >= recipePagination.totalPages" @click="loadRecipes(recipePagination.currentPage + 1)">Next</button></nav>
+          <nav class="admin-pagination" aria-label="Recipe pages"><button type="button" :disabled="recipePagination.currentPage <= 1" @click="loadRecipes(recipePagination.currentPage - 1)">Previous</button><span>Page {{ recipePagination.currentPage }} / {{ recipePagination.totalPages }}</span><button type="button" :disabled="recipePagination.currentPage >= recipePagination.totalPages" @click="loadRecipes(recipePagination.currentPage + 1)">Next</button></nav>
         </section>
 
         <section v-else-if="activeSection === 'users'" class="admin-section">
           <div class="admin-section-heading"><div><p>Manage</p><h2>Users</h2></div><span>{{ formatNumber(userPagination.totalItems) }} accounts</span></div>
           <form class="admin-toolbar" @submit.prevent="loadUsers(1)">
-            <input v-model="userFilters.search" type="search" maxlength="120" placeholder="Search username or email..." />
-            <select v-model="userFilters.role"><option value="">All roles</option><option value="admin">Admin</option><option value="user">User</option></select>
+            <input v-model="userFilters.search" type="search" maxlength="120" placeholder="Search username or email..." aria-label="Search users" />
+            <select v-model="userFilters.role" aria-label="Filter users by role"><option value="">All roles</option><option value="admin">Admin</option><option value="user">User</option></select>
             <button type="submit">Search</button>
           </form>
-          <div class="table-shell">
+          <div class="table-shell" tabindex="0" aria-label="User management table. Scroll horizontally to see all columns.">
             <table class="admin-table">
+              <caption class="sr-only">User management</caption>
               <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Recipes</th><th>Comments</th><th>Actions</th></tr></thead>
               <tbody>
                 <tr v-if="loading.users"><td colspan="7" class="table-message">Loading...</td></tr>
@@ -579,7 +582,7 @@ onMounted(() => {
                   <td>
                     <div class="user-actions">
                       <button class="btn-action btn-ban" type="button" :disabled="user.id === authStore.user?.id || Boolean(actionId)" @click="toggleBan(user)">{{ user.is_banned ? 'Unban' : 'Ban' }}</button>
-                      <select v-model="roleDrafts[user.id]" :disabled="user.id === authStore.user?.id || Boolean(actionId)"><option value="user">user</option><option value="admin">admin</option></select>
+                      <select v-model="roleDrafts[user.id]" :aria-label="`New role for ${user.username}`" :disabled="user.id === authStore.user?.id || Boolean(actionId)"><option value="user">user</option><option value="admin">admin</option></select>
                       <button class="btn-action btn-edit" type="button" :disabled="user.id === authStore.user?.id || roleDrafts[user.id] === user.role || Boolean(actionId)" @click="changeRole(user)">Change Role</button>
                     </div>
                   </td>
@@ -587,14 +590,15 @@ onMounted(() => {
               </tbody>
             </table>
           </div>
-          <nav class="admin-pagination"><button :disabled="userPagination.currentPage <= 1" @click="loadUsers(userPagination.currentPage - 1)">Previous</button><span>Page {{ userPagination.currentPage }} / {{ userPagination.totalPages }}</span><button :disabled="userPagination.currentPage >= userPagination.totalPages" @click="loadUsers(userPagination.currentPage + 1)">Next</button></nav>
+          <nav class="admin-pagination" aria-label="User pages"><button type="button" :disabled="userPagination.currentPage <= 1" @click="loadUsers(userPagination.currentPage - 1)">Previous</button><span>Page {{ userPagination.currentPage }} / {{ userPagination.totalPages }}</span><button type="button" :disabled="userPagination.currentPage >= userPagination.totalPages" @click="loadUsers(userPagination.currentPage + 1)">Next</button></nav>
         </section>
 
         <section v-else-if="activeSection === 'comments'" class="admin-section">
           <div class="admin-section-heading"><div><p>Manage</p><h2>Comments</h2></div><span>{{ formatNumber(commentPagination.totalItems) }} comments</span></div>
-          <form class="admin-toolbar single" @submit.prevent="loadComments(1)"><input v-model="commentFilters.search" type="search" maxlength="120" placeholder="Search content, user, or recipe..." /><button type="submit">Search</button></form>
-          <div class="table-shell">
+          <form class="admin-toolbar single" @submit.prevent="loadComments(1)"><input v-model="commentFilters.search" type="search" maxlength="120" placeholder="Search content, user, or recipe..." aria-label="Search comments" /><button type="submit">Search</button></form>
+          <div class="table-shell" tabindex="0" aria-label="Comment management table. Scroll horizontally to see all columns.">
             <table class="admin-table">
+              <caption class="sr-only">Comment management</caption>
               <thead><tr><th>ID</th><th>User</th><th>Recipe</th><th>Comment</th><th>Date</th><th>Actions</th></tr></thead>
               <tbody>
                 <tr v-if="loading.comments"><td colspan="6" class="table-message">Loading...</td></tr>
@@ -608,12 +612,12 @@ onMounted(() => {
               </tbody>
             </table>
           </div>
-          <nav class="admin-pagination"><button :disabled="commentPagination.currentPage <= 1" @click="loadComments(commentPagination.currentPage - 1)">Previous</button><span>Page {{ commentPagination.currentPage }} / {{ commentPagination.totalPages }}</span><button :disabled="commentPagination.currentPage >= commentPagination.totalPages" @click="loadComments(commentPagination.currentPage + 1)">Next</button></nav>
+          <nav class="admin-pagination" aria-label="Comment pages"><button type="button" :disabled="commentPagination.currentPage <= 1" @click="loadComments(commentPagination.currentPage - 1)">Previous</button><span>Page {{ commentPagination.currentPage }} / {{ commentPagination.totalPages }}</span><button type="button" :disabled="commentPagination.currentPage >= commentPagination.totalPages" @click="loadComments(commentPagination.currentPage + 1)">Next</button></nav>
         </section>
 
         <section v-else class="admin-section">
           <div class="admin-section-heading"><div><p>Moderation</p><h2>Recipes Pending Review</h2></div><span class="pending-count">{{ formatNumber(pendingPagination.totalItems) }} pending</span></div>
-          <div v-if="loading.pending" class="admin-empty">Loading the moderation queue...</div>
+          <div v-if="loading.pending" class="admin-empty" role="status" aria-live="polite">Loading the moderation queue...</div>
           <div v-else-if="pendingRecipes.length === 0" class="admin-empty">There are no recipes awaiting review.</div>
           <div v-else class="pending-list">
             <article v-for="recipe in pendingRecipes" :key="recipe.id" class="pending-card">
@@ -635,14 +639,14 @@ onMounted(() => {
                   <button class="btn-action btn-edit" type="button" @click="router.push(`/recipes/${recipe.id}/edit`)">View / Edit</button>
                 </div>
                 <form v-if="rejectingRecipeId === recipe.id" class="reject-form pending-reject" @submit.prevent="rejectRecipe(recipe)">
-                  <input v-model="rejectionReasons[recipe.id]" maxlength="500" placeholder="A rejection reason is required..." />
+                  <input v-model="rejectionReasons[recipe.id]" maxlength="500" placeholder="A rejection reason is required..." :aria-label="`Rejection reason for ${recipe.title}`" />
                   <button type="submit" :disabled="actionId === `reject-${recipe.id}`">Confirm rejection</button>
                   <button type="button" @click="rejectingRecipeId = null">Cancel</button>
                 </form>
               </div>
             </article>
           </div>
-          <nav class="admin-pagination"><button :disabled="pendingPagination.currentPage <= 1" @click="loadPending(pendingPagination.currentPage - 1)">Previous</button><span>Page {{ pendingPagination.currentPage }} / {{ pendingPagination.totalPages }}</span><button :disabled="pendingPagination.currentPage >= pendingPagination.totalPages" @click="loadPending(pendingPagination.currentPage + 1)">Next</button></nav>
+          <nav class="admin-pagination" aria-label="Pending recipe pages"><button type="button" :disabled="pendingPagination.currentPage <= 1" @click="loadPending(pendingPagination.currentPage - 1)">Previous</button><span>Page {{ pendingPagination.currentPage }} / {{ pendingPagination.totalPages }}</span><button type="button" :disabled="pendingPagination.currentPage >= pendingPagination.totalPages" @click="loadPending(pendingPagination.currentPage + 1)">Next</button></nav>
         </section>
       </div>
     </div>
@@ -652,7 +656,6 @@ onMounted(() => {
 <style scoped>
 .admin-page {
   min-height: 100svh;
-  padding-top: var(--nav-height);
   color: #e8e8ea;
   background: #0d0d0f;
 }
@@ -707,6 +710,7 @@ button.activity-row:hover { background: #1c1c20; }
 .admin-toolbar input, .admin-toolbar select, .reject-form input, .user-actions select { min-width: 0; min-height: 40px; padding: 0 12px; border: 1px solid #303036; border-radius: 8px; outline: 0; color: #e4e4e7; background: #17171a; }
 .admin-toolbar input:focus, .admin-toolbar select:focus, .reject-form input:focus { border-color: #e53e3e; box-shadow: 0 0 0 3px rgba(229, 62, 62, .1); }
 .table-shell { overflow-x: auto; border: 1px solid #27272b; border-radius: 12px; background: #131315; }
+.table-shell:focus-visible { outline: 2px solid #e85b5b; outline-offset: 3px; }
 .admin-table { width: 100%; min-width: 850px; border-collapse: collapse; }
 .admin-table th { padding: 11px 12px; border-bottom: 1px solid #2b2b2f; color: #777780; background: #1a1a1d; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-align: left; text-transform: uppercase; }
 .admin-table td { padding: 12px; border-bottom: 1px solid #222226; color: #cfcfd3; font-size: 12px; vertical-align: top; }
@@ -763,7 +767,7 @@ button.activity-row:hover { background: #1c1c20; }
   .admin-hero { align-items: flex-start; flex-direction: column; }
   .admin-welcome { width: 100%; }
   .admin-layout { grid-template-columns: 1fr; }
-  .admin-sidebar { position: sticky; top: 0; z-index: 5; display: flex; overflow-x: auto; padding: 8px; border-right: 0; border-bottom: 1px solid #242428; }
+  .admin-sidebar { position: sticky; top: 64px; z-index: 5; display: flex; overflow-x: auto; padding: 8px; border-right: 0; border-bottom: 1px solid #242428; }
   .sidebar-item { width: auto; min-width: max-content; border-bottom: 3px solid transparent; border-left: 0; }
   .sidebar-item.active { border-bottom-color: #e53e3e; border-left-color: transparent; }
   .admin-content { padding: 22px 14px 44px; }
@@ -975,6 +979,106 @@ button.activity-row:hover,
 
 .pending-body dl > div {
   background: var(--admin-surface-soft);
+}
+
+.admin-page.is-light {
+  --admin-bg: #f5f5f6;
+  --admin-surface: #ffffff;
+  --admin-surface-soft: #ececef;
+  --admin-surface-strong: #e3e3e7;
+  --admin-field: #ffffff;
+  --admin-text: #252227;
+  --admin-muted: #6b666e;
+  --admin-muted-strong: #49444c;
+  --admin-border: #d8d6dc;
+  --admin-accent: #b83243;
+  --admin-accent-soft: #f8e8eb;
+  --admin-hover: #f2eff1;
+  --admin-success: #216e46;
+  --admin-success-soft: #e8f5ed;
+  --admin-warning: #815600;
+  --admin-warning-soft: #fff3d6;
+  --admin-danger: #9f2f3d;
+  --admin-danger-soft: #fae9ec;
+  --admin-info: #285f9c;
+  --admin-info-soft: #e8f1fa;
+  --admin-role: #6f3d82;
+  --admin-role-soft: #f1e9f5;
+}
+
+.admin-page.is-light .admin-hero {
+  background: var(--admin-surface-soft);
+}
+
+.admin-page.is-light .admin-welcome,
+.admin-page.is-light .stat-card,
+.admin-page.is-light .activity-card,
+.admin-page.is-light .table-shell,
+.admin-page.is-light .pending-card {
+  box-shadow: none;
+}
+
+.admin-page.is-light .admin-section-heading p {
+  color: var(--admin-muted-strong);
+}
+
+.admin-page.is-light .sidebar-item.active {
+  color: var(--admin-accent);
+  background: var(--admin-accent-soft);
+}
+
+.admin-page.is-light .stat-card:hover {
+  border-color: #aaa5ad;
+  background: #fafafa;
+}
+
+.admin-page.is-light .stat-card.alert,
+.admin-page.is-light .row-banned td {
+  border-color: #e3a8b0;
+  color: var(--admin-danger);
+  background: var(--admin-danger-soft) !important;
+}
+
+.admin-page.is-light .status-pill.approved {
+  color: var(--admin-success);
+  background: var(--admin-success-soft);
+}
+
+.admin-page.is-light .status-pill.pending,
+.admin-page.is-light .btn-ban {
+  color: var(--admin-warning);
+  background: var(--admin-warning-soft);
+  border-color: #d8b86b;
+}
+
+.admin-page.is-light .status-pill.rejected,
+.admin-page.is-light .btn-delete,
+.admin-page.is-light .btn-reject,
+.admin-page.is-light .reject-form button[type="submit"] {
+  color: var(--admin-danger);
+  background: var(--admin-danger-soft);
+  border-color: #dda2aa;
+}
+
+.admin-page.is-light .role-pill.admin {
+  color: var(--admin-role);
+  background: var(--admin-role-soft);
+}
+
+.admin-page.is-light .role-pill.user {
+  color: var(--admin-info);
+  background: var(--admin-info-soft);
+}
+
+.admin-page.is-light .btn-approve {
+  color: var(--admin-success);
+  background: var(--admin-success-soft);
+  border-color: #8fc5a5;
+}
+
+.admin-page.is-light .pending-count,
+.admin-page.is-light .pending-meta span {
+  color: var(--admin-danger) !important;
 }
 
 @media (max-width: 760px) {

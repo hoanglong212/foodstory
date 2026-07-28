@@ -53,7 +53,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vietnamese'),
     'Hanoi Beef Pho',
-    '',
+    '/images/Hanoi%20Beef%20Pho.jpg',
     'Preparation:
 1. Rinse and drain flat rice noodles. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim thinly sliced beef sirloin into even pieces. Pat it dry, season lightly with star anise, cinnamon, fish sauce, and keep it chilled while the broth develops flavor.
@@ -97,7 +97,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vietnamese'),
     'Saigon Lemongrass Chicken Rice',
-    '',
+    '/images/Saigon%20Lemongrass%20Chicken%20Rice.jpg',
     'Preparation:
 1. Cook or warm jasmine rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season boneless chicken thighs with lemongrass, garlic, turmeric. Cut cucumber, carrot, and lettuce into similar-size pieces for even cooking and easy eating.
@@ -139,7 +139,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vietnamese'),
     'Fresh Shrimp Summer Rolls',
-    '',
+    '/images/Fresh%20Shrimp%20Summer%20Rolls.jpg',
     'Preparation:
 1. Wash and dry lettuce, mint, and cucumber thoroughly. Dry greens and vegetables make the dressing cling instead of pooling at the bottom.
 2. Prepare cooked shrimp halves and rice paper wrappers. Cool any hot components before mixing so the salad stays crisp.
@@ -183,7 +183,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vietnamese'),
     'Caramelized Pork Clay Pot',
-    '',
+    '/images/Caramelized%20Pork%20Clay%20Pot.jpg',
     'Preparation:
 1. Cut pork shoulder slices into sturdy portions and dry them well. Season on all sides with fish sauce, black pepper, caramel.
 2. Prepare shallots and green onions and steamed jasmine rice before searing because the braise moves slowly once the pan is hot.
@@ -226,7 +226,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vietnamese'),
     'Turmeric Fish Noodle Bowl',
-    '',
+    '/images/Turmeric%20Fish%20Noodle%20Bowl.jpg',
     'Preparation:
 1. Cook rice vermicelli until just shy of tender. Reserve some cooking water, then rinse or oil the noodles if the style needs separation.
 2. Prepare white fish fillets and dill, scallions, and lettuce in bite-size pieces. Keep the vegetables dry so the sauce will cling.
@@ -268,7 +268,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vietnamese'),
     'Crispy Banh Mi Chicken Sandwich',
-    '',
+    '/images/Crispy%20Banh%20Mi%20Chicken%20Sandwich.jpg',
     'Preparation:
 1. Prepare crispy chicken cutlets first and keep it warm. Toast or warm baguette rolls so it can hold the filling without becoming soggy.
 2. Slice pickled carrot, daikon, cucumber thinly and pat wet ingredients dry. This keeps every bite crisp and prevents the sauce from watering down.
@@ -310,7 +310,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vietnamese'),
     'Vietnamese Coconut Chicken Curry',
-    '',
+    '/images/Vietnamese%20Coconut%20Chicken%20Curry.jpg',
     'Preparation:
 1. Cut bone-in chicken pieces and potato, carrot, and onion into similar-size pieces so they finish cooking together.
 2. Cook or warm warm baguette or rice. Curries are best when the base is ready before the sauce reaches its final texture.
@@ -352,7 +352,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vietnamese'),
     'Garlic Morning Glory Stir Fry',
-    '',
+    '/images/Garlic%20Morning%20Glory%20Stir%20Fry.jpg',
     'Preparation:
 1. Cut morning glory stems into small even pieces so they cook quickly. Pat dry and season with half of fermented bean paste and garlic.
 2. Prepare steamed rice before turning on the pan. Day-old rice or cooled noodles work best because they absorb sauce without clumping.
@@ -394,7 +394,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Korean'),
     'Kimchi Fried Rice with Egg',
-    '',
+    '/images/Kimchi%20Fried%20Rice%20with%20Egg.jpg',
     'Preparation:
 1. Cut chopped napa kimchi into small even pieces so they cook quickly. Pat dry and season with half of soy sauce and sesame oil.
 2. Prepare day-old rice before turning on the pan. Day-old rice or cooled noodles work best because they absorb sauce without clumping.
@@ -436,7 +436,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Korean'),
     'Beef Bulgogi Lettuce Bowls',
-    '',
+    '/images/Beef%20Bulgogi%20Lettuce%20Bowls.jpg',
     'Preparation:
 1. Cook or warm short grain rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season thin sliced beef with garlic, ginger, sesame oil. Cut romaine lettuce and cucumber into similar-size pieces for even cooking and easy eating.
@@ -478,7 +478,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Korean'),
     'Gochujang Tofu Stew',
-    '',
+    '/images/Gochujang%20Tofu%20Stew.jpg',
     'Preparation:
 1. Rinse and drain short grain rice. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim firm tofu cubes into even pieces. Pat it dry, season lightly with gochujang and doenjang, and keep it chilled while the broth develops flavor.
@@ -520,7 +520,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Korean'),
     'Bibimbap Vegetable Rice Bowl',
-    '',
+    '/images/Bibimbap%20Vegetable%20Rice%20Bowl.jpg',
     'Preparation:
 1. Cook or warm short grain rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season fried eggs with sesame oil and soy sauce. Cut spinach, carrot, bean sprouts into similar-size pieces for even cooking and easy eating.
@@ -562,7 +562,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Korean'),
     'Spicy Pork Noodle Stir Fry',
-    '',
+    '/images/Spicy%20Pork%20Noodle%20Stir%20Fry.jpg',
     'Preparation:
 1. Cook wheat noodles until just shy of tender. Reserve some cooking water, then rinse or oil the noodles if the style needs separation.
 2. Prepare thin pork shoulder and cabbage and onion in bite-size pieces. Keep the vegetables dry so the sauce will cling.
@@ -604,7 +604,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Korean'),
     'Soy Garlic Crispy Chicken',
-    '',
+    '/images/Soy%20Garlic%20Crispy%20Chicken.jpg',
     'Preparation:
 1. Cut chicken thigh bites into small even pieces so they cook quickly. Pat dry and season with half of rice flour and black pepper.
 2. Prepare steamed rice before turning on the pan. Day-old rice or cooled noodles work best because they absorb sauce without clumping.
@@ -646,7 +646,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Korean'),
     'Korean Seaweed Beef Soup',
-    '',
+    '/images/Korean%20Seaweed%20Beef%20Soup.jpg',
     'Preparation:
 1. Rinse and drain steamed rice. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim lean beef strips into even pieces. Pat it dry, season lightly with garlic, soy sauce, sesame oil, and keep it chilled while the broth develops flavor.
@@ -688,7 +688,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Korean'),
     'Japchae Glass Noodles',
-    '',
+    '/images/Japchae%20Glass%20Noodles.jpg',
     'Preparation:
 1. Cook sweet potato glass noodles until just shy of tender. Reserve some cooking water, then rinse or oil the noodles if the style needs separation.
 2. Prepare beef strips or tofu and spinach, carrot, mushroom in bite-size pieces. Keep the vegetables dry so the sauce will cling.
@@ -730,7 +730,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Japanese'),
     'Salmon Teriyaki Donburi',
-    '',
+    '/images/Salmon%20Teriyaki%20Donburi.jpg',
     'Preparation:
 1. Cook or warm Japanese rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season salmon fillets with ginger and garlic. Cut broccoli and cucumber into similar-size pieces for even cooking and easy eating.
@@ -772,7 +772,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Japanese'),
     'Chicken Katsu Curry',
-    '',
+    '/images/Chicken%20Katsu%20Curry.jpg',
     'Preparation:
 1. Cut breaded chicken cutlets and potato, carrot, and onion into similar-size pieces so they finish cooking together.
 2. Cook or warm Japanese rice. Curries are best when the base is ready before the sauce reaches its final texture.
@@ -814,7 +814,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Japanese'),
     'Miso Tofu Soup',
-    '',
+    '/images/Miso%20Tofu%20Soup.jpg',
     'Preparation:
 1. Rinse and drain steamed rice. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim silken tofu cubes into even pieces. Pat it dry, season lightly with white miso paste, and keep it chilled while the broth develops flavor.
@@ -856,7 +856,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Japanese'),
     'Tuna Mayo Onigiri Plate',
-    '',
+    '/images/Tuna%20Mayo%20Onigiri%20Plate.jpg',
     'Preparation:
 1. Cook or warm sushi rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season canned tuna with rice vinegar and soy sauce. Cut cucumber and avocado into similar-size pieces for even cooking and easy eating.
@@ -898,7 +898,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Japanese'),
     'Vegetable Yakisoba',
-    '',
+    '/images/Vegetable%20Yakisoba.jpg',
     'Preparation:
 1. Cook yakisoba noodles until just shy of tender. Reserve some cooking water, then rinse or oil the noodles if the style needs separation.
 2. Prepare sliced tofu or pork and cabbage, carrot, onion in bite-size pieces. Keep the vegetables dry so the sauce will cling.
@@ -940,7 +940,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Japanese'),
     'Pork Gyoza Rice Plate',
-    '',
+    '/images/Pork%20Gyoza%20Rice%20Plate.jpg',
     'Preparation:
 1. Prepare pork gyoza, Japanese rice, and shredded cabbage before heating the pan. Skillet recipes move quickly once started.
 2. Season the main ingredient with sesame oil and ginger. Keep ponzu dipping sauce measured and ready.
@@ -982,7 +982,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Japanese'),
     'Soba Noodle Sesame Salad',
-    '',
+    '/images/Soba%20Noodle%20Sesame%20Salad.jpg',
     'Preparation:
 1. Wash and dry cucumber, carrot, radish thoroughly. Dry greens and vegetables make the dressing cling instead of pooling at the bottom.
 2. Prepare edamame and soba noodles. Cool any hot components before mixing so the salad stays crisp.
@@ -1024,7 +1024,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Japanese'),
     'Matcha Chia Pudding',
-    '',
+    '/images/Matcha%20Chia%20Pudding.jpg',
     'Preparation:
 1. Set out chia seeds, oat milk, and berries. Bring chilled dairy or eggs close to room temperature when the recipe uses them.
 2. Measure maple syrup and matcha powder and vanilla accurately. Dessert texture depends on clean measurements and even mixing.
@@ -1066,7 +1066,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Thai'),
     'Chicken Pad Thai',
-    '',
+    '/images/Chicken%20Pad%20Thai.jpg',
     'Preparation:
 1. Cut chicken breast strips into small even pieces so they cook quickly. Pat dry and season with half of palm sugar and chile flakes.
 2. Prepare rice noodles before turning on the pan. Day-old rice or cooled noodles work best because they absorb sauce without clumping.
@@ -1109,7 +1109,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Thai'),
     'Green Curry Vegetables',
-    '',
+    '/images/Green%20Curry%20Vegetables.jpg',
     'Preparation:
 1. Cut firm tofu cubes and eggplant, bamboo shoots, peppers into similar-size pieces so they finish cooking together.
 2. Cook or warm jasmine rice. Curries are best when the base is ready before the sauce reaches its final texture.
@@ -1151,7 +1151,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Thai'),
     'Tom Yum Shrimp Soup',
-    '',
+    '/images/Tom%20Yum%20Shrimp%20Soup.jpg',
     'Preparation:
 1. Rinse and drain jasmine rice. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim shrimp into even pieces. Pat it dry, season lightly with lime leaves, galangal, fish sauce, and keep it chilled while the broth develops flavor.
@@ -1193,7 +1193,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Thai'),
     'Basil Beef Stir Fry',
-    '',
+    '/images/Basil%20Beef%20Stir%20Fry.jpg',
     'Preparation:
 1. Cut ground beef into small even pieces so they cook quickly. Pat dry and season with half of garlic and Thai chile.
 2. Prepare jasmine rice before turning on the pan. Day-old rice or cooled noodles work best because they absorb sauce without clumping.
@@ -1235,7 +1235,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Thai'),
     'Mango Sticky Rice',
-    '',
+    '/images/Mango%20Sticky%20Rice.jpg',
     'Preparation:
 1. Set out ripe mango slices, sticky rice, and coconut cream. Bring chilled dairy or eggs close to room temperature when the recipe uses them.
 2. Measure palm sugar syrup and sea salt and pandan accurately. Dessert texture depends on clean measurements and even mixing.
@@ -1277,7 +1277,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Thai'),
     'Thai Peanut Chicken Salad',
-    '',
+    '/images/Thai%20Peanut%20Chicken%20Salad.jpg',
     'Preparation:
 1. Wash and dry cabbage, carrot, cucumber thoroughly. Dry greens and vegetables make the dressing cling instead of pooling at the bottom.
 2. Prepare grilled chicken breast and rice noodles. Cool any hot components before mixing so the salad stays crisp.
@@ -1319,7 +1319,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Thai'),
     'Pineapple Fried Rice',
-    '',
+    '/images/Pineapple%20Fried%20Rice.jpg',
     'Preparation:
 1. Cut shrimp or tofu into small even pieces so they cook quickly. Pat dry and season with half of curry powder and white pepper.
 2. Prepare day-old jasmine rice before turning on the pan. Day-old rice or cooled noodles work best because they absorb sauce without clumping.
@@ -1361,7 +1361,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Thai'),
     'Coconut Pumpkin Soup',
-    '',
+    '/images/Coconut%20Pumpkin%20Soup.jpg',
     'Preparation:
 1. Rinse and drain jasmine rice. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim roasted pumpkin into even pieces. Pat it dry, season lightly with red curry paste and lime, and keep it chilled while the broth develops flavor.
@@ -1403,7 +1403,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Chinese'),
     'Ginger Scallion Chicken Rice',
-    '',
+    '/images/Ginger%20Scallion%20Chicken%20Rice.jpg',
     'Preparation:
 1. Cook or warm jasmine rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season poached chicken thighs with soy sauce and sesame oil. Cut bok choy into similar-size pieces for even cooking and easy eating.
@@ -1445,7 +1445,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Chinese'),
     'Mapo Tofu with Mushrooms',
-    '',
+    '/images/Mapo%20Tofu%20with%20Mushrooms.jpg',
     'Preparation:
 1. Cut firm tofu cubes into small even pieces so they cook quickly. Pat dry and season with half of Sichuan pepper and garlic.
 2. Prepare steamed rice before turning on the pan. Day-old rice or cooled noodles work best because they absorb sauce without clumping.
@@ -1487,7 +1487,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Chinese'),
     'Beef and Broccoli Stir Fry',
-    '',
+    '/images/Beef%20and%20Broccoli%20Stir%20Fry.jpg',
     'Preparation:
 1. Cut flank steak slices into small even pieces so they cook quickly. Pat dry and season with half of ginger, garlic, cornstarch.
 2. Prepare steamed rice before turning on the pan. Day-old rice or cooled noodles work best because they absorb sauce without clumping.
@@ -1529,7 +1529,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Chinese'),
     'Tomato Egg Noodle Soup',
-    '',
+    '/images/Tomato%20Egg%20Noodle%20Soup.jpg',
     'Preparation:
 1. Rinse and drain wheat noodles. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim eggs into even pieces. Pat it dry, season lightly with white pepper and soy sauce, and keep it chilled while the broth develops flavor.
@@ -1571,7 +1571,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Chinese'),
     'Char Siu Pork Bowls',
-    '',
+    '/images/Char%20Siu%20Pork%20Bowls.jpg',
     'Preparation:
 1. Cook or warm jasmine rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season char siu pork slices with five spice and garlic. Cut steamed gai lan into similar-size pieces for even cooking and easy eating.
@@ -1613,7 +1613,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Chinese'),
     'Vegetable Chow Mein',
-    '',
+    '/images/Vegetable%20Chow%20Mein.jpg',
     'Preparation:
 1. Cook chow mein noodles until just shy of tender. Reserve some cooking water, then rinse or oil the noodles if the style needs separation.
 2. Prepare tofu strips and cabbage, carrot, snow peas in bite-size pieces. Keep the vegetables dry so the sauce will cling.
@@ -1655,7 +1655,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Chinese'),
     'Sesame Cucumber Salad',
-    '',
+    '/images/Sesame%20Cucumber%20Salad.jpg',
     'Preparation:
 1. Wash and dry cilantro and scallions thoroughly. Dry greens and vegetables make the dressing cling instead of pooling at the bottom.
 2. Prepare soft tofu cubes and crisp cucumbers. Cool any hot components before mixing so the salad stays crisp.
@@ -1697,7 +1697,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Chinese'),
     'Pork Wonton Soup',
-    '',
+    '/images/Pork%20Wonton%20Soup.jpg',
     'Preparation:
 1. Rinse and drain egg noodles. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim pork wontons into even pieces. Pat it dry, season lightly with ginger, soy sauce, white pepper, and keep it chilled while the broth develops flavor.
@@ -1739,7 +1739,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Indian'),
     'Butter Chicken Curry',
-    '',
+    '/images/Butter%20Chicken%20Curry.jpg',
     'Preparation:
 1. Cut chicken thigh pieces and tomato and onion puree into similar-size pieces so they finish cooking together.
 2. Cook or warm basmati rice. Curries are best when the base is ready before the sauce reaches its final texture.
@@ -1781,7 +1781,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Indian'),
     'Chickpea Chana Masala',
-    '',
+    '/images/Chickpea%20Chana%20Masala.jpg',
     'Preparation:
 1. Cut cooked chickpeas and tomatoes and onion into similar-size pieces so they finish cooking together.
 2. Cook or warm basmati rice. Curries are best when the base is ready before the sauce reaches its final texture.
@@ -1823,7 +1823,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Indian'),
     'Palak Paneer Rice Bowl',
-    '',
+    '/images/Palak%20Paneer%20Rice%20Bowl.jpg',
     'Preparation:
 1. Cook or warm basmati rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season paneer cubes with garlic, ginger, garam masala. Cut spinach puree into similar-size pieces for even cooking and easy eating.
@@ -1865,7 +1865,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Indian'),
     'Masala Dosa Potato Plate',
-    '',
+    '/images/Masala%20Dosa%20Potato%20Plate.jpg',
     'Preparation:
 1. Prepare spiced potato filling, dosa batter, and onion and curry leaves before heating the pan. Skillet recipes move quickly once started.
 2. Season the main ingredient with mustard seed, turmeric, chile. Keep coconut chutney measured and ready.
@@ -1907,7 +1907,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Indian'),
     'Tandoori Cauliflower Bowls',
-    '',
+    '/images/Tandoori%20Cauliflower%20Bowls.jpg',
     'Preparation:
 1. Soak skewers if using wood. Cut cauliflower florets and cucumber and tomato salad into grill-friendly pieces that will not fall through the grate.
 2. Coat with yogurt mint sauce and tandoori spice and lemon. Let it marinate for at least 15 minutes while the grill preheats.
@@ -1949,7 +1949,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Indian'),
     'Lentil Dal Tadka',
-    '',
+    '/images/Lentil%20Dal%20Tadka.jpg',
     'Preparation:
 1. Rinse and drain basmati rice. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim red lentils into even pieces. Pat it dry, season lightly with turmeric, cumin, garam masala, and keep it chilled while the broth develops flavor.
@@ -1991,7 +1991,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Indian'),
     'Vegetable Biryani',
-    '',
+    '/images/Vegetable%20Biryani.jpg',
     'Preparation:
 1. Cook or warm basmati rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season mixed vegetables with biryani masala and cardamom. Cut onion, peas, and carrots into similar-size pieces for even cooking and easy eating.
@@ -2033,7 +2033,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Indian'),
     'Mango Lassi',
-    '',
+    '/images/Mango%20Lassi.jpg',
     'Preparation:
 1. Prepare ripe mango first. If brewing, steep fully and cool slightly; if blending fruit, remove seeds, tough peel, or fibrous parts.
 2. Chill plain yogurt and serving glasses. Cold ingredients reduce the amount of ice needed and keep the drink from tasting diluted.
@@ -2075,7 +2075,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Italian'),
     'Tomato Basil Spaghetti',
-    '',
+    '/images/Tomato%20Basil%20Spaghetti.jpg',
     'Preparation:
 1. Cook tomato passata until just shy of tender. Reserve some cooking water, then rinse or oil the noodles if the style needs separation.
 2. Prepare spaghetti and cherry tomatoes and basil in bite-size pieces. Keep the vegetables dry so the sauce will cling.
@@ -2117,7 +2117,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Italian'),
     'Chicken Pesto Pasta',
-    '',
+    '/images/Chicken%20Pesto%20Pasta.jpg',
     'Preparation:
 1. Cook short pasta until just shy of tender. Reserve some cooking water, then rinse or oil the noodles if the style needs separation.
 2. Prepare grilled chicken strips and spinach and peas in bite-size pieces. Keep the vegetables dry so the sauce will cling.
@@ -2159,7 +2159,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Italian'),
     'Mushroom Risotto',
-    '',
+    '/images/Mushroom%20Risotto.jpg',
     'Preparation:
 1. Cook or warm arborio rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season mixed mushrooms with white wine and parmesan. Cut shallot and thyme into similar-size pieces for even cooking and easy eating.
@@ -2201,7 +2201,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Italian'),
     'Margherita Flatbread',
-    '',
+    '/images/Margherita%20Flatbread.jpg',
     'Preparation:
 1. Preheat the oven to 190 C / 375 F. Grease the baking dish or line a tray before handling the ingredients.
 2. Cut fresh mozzarella, flatbread bases, and tomatoes and basil into even pieces. Toss with marinara sauce and olive oil and dried oregano.
@@ -2243,7 +2243,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Italian'),
     'Tuscan White Bean Soup',
-    '',
+    '/images/Tuscan%20White%20Bean%20Soup.jpg',
     'Preparation:
 1. Rinse and drain crusty bread. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim cannellini beans into even pieces. Pat it dry, season lightly with rosemary, garlic, fennel seed, and keep it chilled while the broth develops flavor.
@@ -2285,7 +2285,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Italian'),
     'Lemon Shrimp Linguine',
-    '',
+    '/images/Lemon%20Shrimp%20Linguine.jpg',
     'Preparation:
 1. Cook linguine until just shy of tender. Reserve some cooking water, then rinse or oil the noodles if the style needs separation.
 2. Prepare shrimp and zucchini and arugula in bite-size pieces. Keep the vegetables dry so the sauce will cling.
@@ -2327,7 +2327,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Italian'),
     'Caprese Farro Salad',
-    '',
+    '/images/Caprese%20Farro%20Salad.jpg',
     'Preparation:
 1. Wash and dry tomatoes, basil, cucumber thoroughly. Dry greens and vegetables make the dressing cling instead of pooling at the bottom.
 2. Prepare fresh mozzarella pearls and cooked farro. Cool any hot components before mixing so the salad stays crisp.
@@ -2369,7 +2369,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Italian'),
     'Tiramisu Overnight Cups',
-    '',
+    '/images/Tiramisu%20Overnight%20Cups.jpg',
     'Preparation:
 1. Set out ladyfinger pieces, mascarpone yogurt, and espresso. Bring chilled dairy or eggs close to room temperature when the recipe uses them.
 2. Measure maple syrup and cocoa powder and vanilla accurately. Dessert texture depends on clean measurements and even mixing.
@@ -2411,7 +2411,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mexican'),
     'Chicken Tinga Tacos',
-    '',
+    '/images/Chicken%20Tinga%20Tacos.jpg',
     'Preparation:
 1. Prepare shredded chicken, corn tortillas, and onion and cabbage before heating the pan. Skillet recipes move quickly once started.
 2. Season the main ingredient with cumin, oregano, smoked paprika. Keep chipotle tomato sauce measured and ready.
@@ -2453,7 +2453,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mexican'),
     'Beef Taco Rice Bowl',
-    '',
+    '/images/Beef%20Taco%20Rice%20Bowl.jpg',
     'Preparation:
 1. Cook or warm cilantro lime rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season ground beef with taco seasoning. Cut corn, lettuce, tomato into similar-size pieces for even cooking and easy eating.
@@ -2495,7 +2495,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mexican'),
     'Black Bean Enchilada Bake',
-    '',
+    '/images/Black%20Bean%20Enchilada%20Bake.jpg',
     'Preparation:
 1. Preheat the oven to 190 C / 375 F. Grease the baking dish or line a tray before handling the ingredients.
 2. Cut black beans, corn tortillas, and zucchini, corn, onion into even pieces. Toss with enchilada sauce and cumin and chile powder.
@@ -2537,7 +2537,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mexican'),
     'Shrimp Fajita Skillet',
-    '',
+    '/images/Shrimp%20Fajita%20Skillet.jpg',
     'Preparation:
 1. Cut shrimp into small even pieces so they cook quickly. Pat dry and season with half of fajita seasoning.
 2. Prepare warm tortillas before turning on the pan. Day-old rice or cooled noodles work best because they absorb sauce without clumping.
@@ -2579,7 +2579,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mexican'),
     'Pozole Verde Chicken Soup',
-    '',
+    '/images/Pozole%20Verde%20Chicken%20Soup.jpg',
     'Preparation:
 1. Rinse and drain hominy. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim shredded chicken into even pieces. Pat it dry, season lightly with cumin, oregano, garlic, and keep it chilled while the broth develops flavor.
@@ -2621,7 +2621,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mexican'),
     'Street Corn Salad',
-    '',
+    '/images/Street%20Corn%20Salad.jpg',
     'Preparation:
 1. Wash and dry red onion and jalapeno thoroughly. Dry greens and vegetables make the dressing cling instead of pooling at the bottom.
 2. Prepare grilled corn kernels and romaine lettuce. Cool any hot components before mixing so the salad stays crisp.
@@ -2663,7 +2663,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mexican'),
     'Sweet Potato Quesadillas',
-    '',
+    '/images/Sweet%20Potato%20Quesadillas.jpg',
     'Preparation:
 1. Prepare roasted sweet potato, flour tortillas, and black beans and spinach before heating the pan. Skillet recipes move quickly once started.
 2. Season the main ingredient with cumin and garlic powder. Keep chipotle yogurt sauce measured and ready.
@@ -2705,7 +2705,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mexican'),
     'Cinnamon Horchata',
-    '',
+    '/images/Cinnamon%20Horchata.jpg',
     'Preparation:
 1. Prepare long grain rice first. If brewing, steep fully and cool slightly; if blending fruit, remove seeds, tough peel, or fibrous parts.
 2. Chill milk and serving glasses. Cold ingredients reduce the amount of ice needed and keep the drink from tasting diluted.
@@ -2747,7 +2747,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mediterranean'),
     'Greek Chicken Souvlaki Bowls',
-    '',
+    '/images/Greek%20Chicken%20Souvlaki%20Bowls.jpg',
     'Preparation:
 1. Soak skewers if using wood. Cut chicken breast cubes and cucumber, tomato, red onion into grill-friendly pieces that will not fall through the grate.
 2. Coat with tzatziki sauce and oregano, garlic, lemon zest. Let it marinate for at least 15 minutes while the grill preheats.
@@ -2789,7 +2789,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mediterranean'),
     'Falafel Chickpea Salad',
-    '',
+    '/images/Falafel%20Chickpea%20Salad.jpg',
     'Preparation:
 1. Wash and dry cucumber, tomato, radish thoroughly. Dry greens and vegetables make the dressing cling instead of pooling at the bottom.
 2. Prepare baked falafel and mixed greens. Cool any hot components before mixing so the salad stays crisp.
@@ -2831,7 +2831,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mediterranean'),
     'Lemon Herb Salmon Couscous',
-    '',
+    '/images/Lemon%20Herb%20Salmon%20Couscous.jpg',
     'Preparation:
 1. Cook or warm couscous first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season salmon fillets with dill, oregano, garlic. Cut zucchini and tomatoes into similar-size pieces for even cooking and easy eating.
@@ -2873,7 +2873,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mediterranean'),
     'Turkish Lentil Soup',
-    '',
+    '/images/Turkish%20Lentil%20Soup.jpg',
     'Preparation:
 1. Rinse and drain flatbread. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim red lentils into even pieces. Pat it dry, season lightly with cumin, paprika, dried mint, and keep it chilled while the broth develops flavor.
@@ -2915,7 +2915,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mediterranean'),
     'Shakshuka Pepper Skillet',
-    '',
+    '/images/Shakshuka%20Pepper%20Skillet.jpg',
     'Preparation:
 1. Prepare eggs, crusty bread, and bell peppers and tomatoes before heating the pan. Skillet recipes move quickly once started.
 2. Season the main ingredient with cumin, paprika, harissa. Keep spiced tomato sauce measured and ready.
@@ -2957,7 +2957,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mediterranean'),
     'Lamb Kofta Pita Plates',
-    '',
+    '/images/Lamb%20Kofta%20Pita%20Plates.jpg',
     'Preparation:
 1. Soak skewers if using wood. Cut ground lamb kofta and cucumber tomato salad into grill-friendly pieces that will not fall through the grate.
 2. Coat with garlic yogurt sauce and cumin, allspice, coriander. Let it marinate for at least 15 minutes while the grill preheats.
@@ -2999,7 +2999,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mediterranean'),
     'Roasted Vegetable Hummus Bowl',
-    '',
+    '/images/Roasted%20Vegetable%20Hummus%20Bowl.jpg',
     'Preparation:
 1. Cook or warm quinoa first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season hummus with zaatar and garlic. Cut eggplant, pepper, zucchini into similar-size pieces for even cooking and easy eating.
@@ -3041,7 +3041,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Mediterranean'),
     'Baklava Yogurt Parfaits',
-    '',
+    '/images/Baklava%20Yogurt%20Parfaits.jpg',
     'Preparation:
 1. Set out Greek yogurt, crushed phyllo crisps, and honeyed walnuts. Bring chilled dairy or eggs close to room temperature when the recipe uses them.
 2. Measure orange honey syrup and cinnamon and cardamom accurately. Dessert texture depends on clean measurements and even mixing.
@@ -3083,7 +3083,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'American'),
     'Turkey Meatball Pasta',
-    '',
+    '/images/Turkey%20Meatball%20Pasta.jpg',
     'Preparation:
 1. Cook penne pasta until just shy of tender. Reserve some cooking water, then rinse or oil the noodles if the style needs separation.
 2. Prepare turkey meatballs and spinach and bell pepper in bite-size pieces. Keep the vegetables dry so the sauce will cling.
@@ -3125,7 +3125,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'American'),
     'BBQ Chicken Sheet Pan',
-    '',
+    '/images/BBQ%20Chicken%20Sheet%20Pan.jpg',
     'Preparation:
 1. Preheat the oven to 190 C / 375 F. Grease the baking dish or line a tray before handling the ingredients.
 2. Cut chicken drumsticks, baby potatoes, and green beans and onion into even pieces. Toss with barbecue sauce and smoked paprika and garlic powder.
@@ -3167,7 +3167,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'American'),
     'Classic Beef Burger Bowl',
-    '',
+    '/images/Classic%20Beef%20Burger%20Bowl.jpg',
     'Preparation:
 1. Cook or warm roasted potato wedges first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season lean ground beef patties with mustard powder and black pepper. Cut lettuce, tomato, pickles into similar-size pieces for even cooking and easy eating.
@@ -3209,7 +3209,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'American'),
     'Creamy Corn Chowder',
-    '',
+    '/images/Creamy%20Corn%20Chowder.jpg',
     'Preparation:
 1. Rinse and drain diced potatoes. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim sweet corn kernels into even pieces. Pat it dry, season lightly with thyme and smoked paprika, and keep it chilled while the broth develops flavor.
@@ -3251,7 +3251,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'American'),
     'Buffalo Cauliflower Wraps',
-    '',
+    '/images/Buffalo%20Cauliflower%20Wraps.jpg',
     'Preparation:
 1. Prepare cauliflower florets, whole wheat tortillas, and romaine and celery before heating the pan. Skillet recipes move quickly once started.
 2. Season the main ingredient with garlic powder and paprika. Keep buffalo yogurt sauce measured and ready.
@@ -3293,7 +3293,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'American'),
     'Apple Cinnamon Oat Bake',
-    '',
+    '/images/Apple%20Cinnamon%20Oat%20Bake.jpg',
     'Preparation:
 1. Preheat the oven to 190 C / 375 F. Grease the baking dish or line a tray before handling the ingredients.
 2. Cut rolled oats, milk, and apples and raisins into even pieces. Toss with maple syrup and cinnamon and vanilla.
@@ -3335,7 +3335,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'American'),
     'Ranch Chicken Salad',
-    '',
+    '/images/Ranch%20Chicken%20Salad.jpg',
     'Preparation:
 1. Wash and dry corn, tomato, cucumber thoroughly. Dry greens and vegetables make the dressing cling instead of pooling at the bottom.
 2. Prepare grilled chicken breast and romaine lettuce. Cool any hot components before mixing so the salad stays crisp.
@@ -3377,7 +3377,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'American'),
     'Chocolate Chip Skillet Cookie',
-    '',
+    '/images/Chocolate%20Chip%20Skillet%20Cookie.jpg',
     'Preparation:
 1. Set out chocolate chips, all purpose flour, and brown sugar and butter. Bring chilled dairy or eggs close to room temperature when the recipe uses them.
 2. Measure vanilla egg mixture and baking soda and salt accurately. Dessert texture depends on clean measurements and even mixing.
@@ -3419,7 +3419,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vegetarian'),
     'Tofu Quinoa Power Bowl',
-    '',
+    '/images/Tofu%20Quinoa%20Power%20Bowl.jpg',
     'Preparation:
 1. Cook or warm quinoa first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season extra firm tofu cubes with soy sauce and smoked paprika. Cut broccoli, carrot, cabbage into similar-size pieces for even cooking and easy eating.
@@ -3461,7 +3461,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vegetarian'),
     'Lentil Mushroom Shepherd Pie',
-    '',
+    '/images/Lentil%20Mushroom%20Shepherd%20Pie.jpg',
     'Preparation:
 1. Preheat the oven to 190 C / 375 F. Grease the baking dish or line a tray before handling the ingredients.
 2. Cut cooked lentils, mashed potatoes, and mushrooms, peas, carrots into even pieces. Toss with tomato vegetable gravy and thyme, rosemary, garlic.
@@ -3503,7 +3503,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vegetarian'),
     'Chickpea Spinach Curry',
-    '',
+    '/images/Chickpea%20Spinach%20Curry.jpg',
     'Preparation:
 1. Cut cooked chickpeas and spinach and tomato into similar-size pieces so they finish cooking together.
 2. Cook or warm basmati rice. Curries are best when the base is ready before the sauce reaches its final texture.
@@ -3545,7 +3545,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vegetarian'),
     'Roasted Cauliflower Tacos',
-    '',
+    '/images/Roasted%20Cauliflower%20Tacos.jpg',
     'Preparation:
 1. Prepare roasted cauliflower, corn tortillas, and cabbage slaw before heating the pan. Skillet recipes move quickly once started.
 2. Season the main ingredient with chile powder and cumin. Keep avocado crema measured and ready.
@@ -3587,7 +3587,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vegetarian'),
     'Sweet Potato Black Bean Chili',
-    '',
+    '/images/Sweet%20Potato%20Black%20Bean%20Chili.jpg',
     'Preparation:
 1. Rinse and drain sweet potato cubes. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim black beans into even pieces. Pat it dry, season lightly with chile powder, cumin, cocoa, and keep it chilled while the broth develops flavor.
@@ -3629,7 +3629,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vegetarian'),
     'Pesto White Bean Toast',
-    '',
+    '/images/Pesto%20White%20Bean%20Toast.jpg',
     'Preparation:
 1. Prepare white beans first and keep it warm. Toast or warm sourdough slices so it can hold the filling without becoming soggy.
 2. Slice arugula and cherry tomato thinly and pat wet ingredients dry. This keeps every bite crisp and prevents the sauce from watering down.
@@ -3671,7 +3671,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vegetarian'),
     'Zucchini Noodle Primavera',
-    '',
+    '/images/Zucchini%20Noodle%20Primavera.jpg',
     'Preparation:
 1. Cut zucchini noodles into small even pieces so they cook quickly. Pat dry and season with half of Italian herbs and chile flakes.
 2. Prepare white beans before turning on the pan. Day-old rice or cooled noodles work best because they absorb sauce without clumping.
@@ -3713,7 +3713,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Vegetarian'),
     'Sesame Edamame Rice Bowl',
-    '',
+    '/images/Sesame%20Edamame%20Rice%20Bowl.jpg',
     'Preparation:
 1. Cook or warm brown rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season shelled edamame with ginger and rice vinegar. Cut cucumber, carrot, cabbage into similar-size pieces for even cooking and easy eating.
@@ -3755,7 +3755,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Seafood'),
     'Garlic Butter Shrimp Rice',
-    '',
+    '/images/Garlic%20Butter%20Shrimp%20Rice.jpg',
     'Preparation:
 1. Cook or warm jasmine rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season shrimp with lemon zest and paprika. Cut peas and asparagus into similar-size pieces for even cooking and easy eating.
@@ -3797,7 +3797,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Seafood'),
     'Coconut Fish Curry',
-    '',
+    '/images/Coconut%20Fish%20Curry.jpg',
     'Preparation:
 1. Cut white fish chunks and eggplant, tomato, spinach into similar-size pieces so they finish cooking together.
 2. Cook or warm jasmine rice. Curries are best when the base is ready before the sauce reaches its final texture.
@@ -3839,7 +3839,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Seafood'),
     'Tuna Poke Bowl',
-    '',
+    '/images/Tuna%20Poke%20Bowl.jpg',
     'Preparation:
 1. Cook or warm sushi rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season sushi grade tuna cubes with ginger and rice vinegar. Cut avocado, cucumber, edamame into similar-size pieces for even cooking and easy eating.
@@ -3881,7 +3881,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Seafood'),
     'Lemon Dill Cod Bake',
-    '',
+    '/images/Lemon%20Dill%20Cod%20Bake.jpg',
     'Preparation:
 1. Preheat the oven to 190 C / 375 F. Grease the baking dish or line a tray before handling the ingredients.
 2. Cut cod fillets, baby potatoes, and green beans and fennel into even pieces. Toss with lemon dill butter and garlic and black pepper.
@@ -3923,7 +3923,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Seafood'),
     'Crab Corn Fritters',
-    '',
+    '/images/Crab%20Corn%20Fritters.jpg',
     'Preparation:
 1. Prepare lump crab meat, cornmeal batter, and corn kernels and scallions before heating the pan. Skillet recipes move quickly once started.
 2. Season the main ingredient with Old Bay seasoning and pepper. Keep lemon yogurt sauce measured and ready.
@@ -3965,7 +3965,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Seafood'),
     'Mussel Tomato Stew',
-    '',
+    '/images/Mussel%20Tomato%20Stew.jpg',
     'Preparation:
 1. Rinse and drain crusty bread. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim cleaned mussels into even pieces. Pat it dry, season lightly with garlic, thyme, chile flakes, and keep it chilled while the broth develops flavor.
@@ -4007,7 +4007,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Seafood'),
     'Salmon Sushi Bake',
-    '',
+    '/images/Salmon%20Sushi%20Bake.jpg',
     'Preparation:
 1. Preheat the oven to 190 C / 375 F. Grease the baking dish or line a tray before handling the ingredients.
 2. Cut flaked salmon, sushi rice, and cucumber and avocado into even pieces. Toss with spicy mayo and furikake and rice vinegar.
@@ -4049,7 +4049,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Seafood'),
     'Scallop Pea Risotto',
-    '',
+    '/images/Scallop%20Pea%20Risotto.jpg',
     'Preparation:
 1. Cook or warm arborio rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season sea scallops with white wine, lemon, parmesan. Cut peas and asparagus into similar-size pieces for even cooking and easy eating.
@@ -4091,7 +4091,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Breakfast'),
     'Spinach Feta Egg Muffins',
-    '',
+    '/images/Spinach%20Feta%20Egg%20Muffins.jpg',
     'Preparation:
 1. Preheat the oven to 190 C / 375 F. Grease the baking dish or line a tray before handling the ingredients.
 2. Cut eggs, feta cheese, and spinach and bell pepper into even pieces. Toss with milk and garlic powder and black pepper.
@@ -4133,7 +4133,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Breakfast'),
     'Banana Oat Pancakes',
-    '',
+    '/images/Banana%20Oat%20Pancakes.jpg',
     'Preparation:
 1. Prepare ripe bananas, rolled oats, and eggs before heating the pan. Skillet recipes move quickly once started.
 2. Season the main ingredient with cinnamon and baking powder. Keep maple yogurt sauce measured and ready.
@@ -4175,7 +4175,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Breakfast'),
     'Savory Breakfast Burrito',
-    '',
+    '/images/Savory%20Breakfast%20Burrito.jpg',
     'Preparation:
 1. Prepare scrambled eggs, large tortillas, and potato, pepper, onion before heating the pan. Skillet recipes move quickly once started.
 2. Season the main ingredient with cumin and smoked paprika. Keep salsa verde measured and ready.
@@ -4217,7 +4217,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Breakfast'),
     'Berry Yogurt Parfait',
-    '',
+    '/images/Berry%20Yogurt%20Parfait.jpg',
     'Preparation:
 1. Set out Greek yogurt, granola, and mixed berries. Bring chilled dairy or eggs close to room temperature when the recipe uses them.
 2. Measure honey and vanilla and lemon zest accurately. Dessert texture depends on clean measurements and even mixing.
@@ -4259,7 +4259,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Breakfast'),
     'Avocado Egg Toast',
-    '',
+    '/images/Avocado%20Egg%20Toast.jpg',
     'Preparation:
 1. Prepare eggs, whole grain toast, and avocado and tomato before heating the pan. Skillet recipes move quickly once started.
 2. Season the main ingredient with chile flakes and black pepper. Keep lemon herb spread measured and ready.
@@ -4301,7 +4301,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Breakfast'),
     'Smoked Salmon Bagel Plate',
-    '',
+    '/images/Smoked%20Salmon%20Bagel%20Plate.jpg',
     'Preparation:
 1. Prepare smoked salmon first and keep it warm. Toast or warm bagels so it can hold the filling without becoming soggy.
 2. Slice cucumber, tomato, red onion thinly and pat wet ingredients dry. This keeps every bite crisp and prevents the sauce from watering down.
@@ -4343,7 +4343,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Breakfast'),
     'Apple Peanut Butter Overnight Oats',
-    '',
+    '/images/Apple%20Peanut%20Butter%20Overnight%20Oats.jpg',
     'Preparation:
 1. Set out rolled oats, milk, and diced apples. Bring chilled dairy or eggs close to room temperature when the recipe uses them.
 2. Measure peanut butter maple sauce and cinnamon and vanilla accurately. Dessert texture depends on clean measurements and even mixing.
@@ -4385,7 +4385,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Breakfast'),
     'Breakfast Fried Rice',
-    '',
+    '/images/Breakfast%20Fried%20Rice.jpg',
     'Preparation:
 1. Cut eggs and turkey bacon into small even pieces so they cook quickly. Pat dry and season with half of garlic and white pepper.
 2. Prepare day-old rice before turning on the pan. Day-old rice or cooled noodles work best because they absorb sauce without clumping.
@@ -4427,7 +4427,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Dessert'),
     'Dark Chocolate Brownies',
-    '',
+    '/images/Dark%20Chocolate%20Brownies.jpg',
     'Preparation:
 1. Preheat the oven to 190 C / 375 F. Grease the baking dish or line a tray before handling the ingredients.
 2. Cut dark chocolate, all purpose flour, and eggs and butter into even pieces. Toss with cocoa sugar mixture and vanilla and espresso powder.
@@ -4469,7 +4469,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Dessert'),
     'Lemon Blueberry Cheesecake Cups',
-    '',
+    '/images/Lemon%20Blueberry%20Cheesecake%20Cups.jpg',
     'Preparation:
 1. Set out cream cheese, graham crumbs, and blueberries. Bring chilled dairy or eggs close to room temperature when the recipe uses them.
 2. Measure lemon honey syrup and vanilla and lemon zest accurately. Dessert texture depends on clean measurements and even mixing.
@@ -4511,7 +4511,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Dessert'),
     'Coconut Mango Sago',
-    '',
+    '/images/Coconut%20Mango%20Sago.jpg',
     'Preparation:
 1. Set out small tapioca pearls, coconut milk, and ripe mango cubes. Bring chilled dairy or eggs close to room temperature when the recipe uses them.
 2. Measure palm sugar syrup and pandan and salt accurately. Dessert texture depends on clean measurements and even mixing.
@@ -4553,7 +4553,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Dessert'),
     'Strawberry Shortcake Jars',
-    '',
+    '/images/Strawberry%20Shortcake%20Jars.jpg',
     'Preparation:
 1. Set out strawberries, pound cake cubes, and whipped cream. Bring chilled dairy or eggs close to room temperature when the recipe uses them.
 2. Measure vanilla syrup and lemon zest and salt accurately. Dessert texture depends on clean measurements and even mixing.
@@ -4595,7 +4595,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Dessert'),
     'Banana Bread Loaf',
-    '',
+    '/images/Banana%20Bread%20Loaf.jpg',
     'Preparation:
 1. Preheat the oven to 190 C / 375 F. Grease the baking dish or line a tray before handling the ingredients.
 2. Cut ripe bananas, all purpose flour, and eggs and butter into even pieces. Toss with brown sugar and cinnamon and baking soda.
@@ -4637,7 +4637,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Dessert'),
     'Peanut Butter Energy Bites',
-    '',
+    '/images/Peanut%20Butter%20Energy%20Bites.jpg',
     'Preparation:
 1. Set out peanut butter, rolled oats, and mini chocolate chips. Bring chilled dairy or eggs close to room temperature when the recipe uses them.
 2. Measure honey and vanilla and cinnamon accurately. Dessert texture depends on clean measurements and even mixing.
@@ -4679,7 +4679,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Dessert'),
     'Vietnamese Coffee Flan',
-    '',
+    '/images/Vietnamese%20Coffee%20Flan.jpg',
     'Preparation:
 1. Set out eggs, condensed milk, and strong coffee. Bring chilled dairy or eggs close to room temperature when the recipe uses them.
 2. Measure caramel syrup and vanilla and salt accurately. Dessert texture depends on clean measurements and even mixing.
@@ -4721,7 +4721,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Dessert'),
     'Cinnamon Baked Apples',
-    '',
+    '/images/Cinnamon%20Baked%20Apples.jpg',
     'Preparation:
 1. Preheat the oven to 190 C / 375 F. Grease the baking dish or line a tray before handling the ingredients.
 2. Cut firm apples, rolled oats, and raisins and walnuts into even pieces. Toss with maple butter sauce and cinnamon and nutmeg.
@@ -4763,7 +4763,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Drinks'),
     'Honey Kumquat Iced Tea',
-    '',
+    '/images/Honey%20Kumquat%20Iced%20Tea.jpg',
     'Preparation:
 1. Prepare black tea bags first. If brewing, steep fully and cool slightly; if blending fruit, remove seeds, tough peel, or fibrous parts.
 2. Chill cold water and serving glasses. Cold ingredients reduce the amount of ice needed and keep the drink from tasting diluted.
@@ -4805,7 +4805,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Drinks'),
     'Cucumber Mint Limeade',
-    '',
+    '/images/Cucumber%20Mint%20Limeade.jpg',
     'Preparation:
 1. Prepare cucumber first. If brewing, steep fully and cool slightly; if blending fruit, remove seeds, tough peel, or fibrous parts.
 2. Chill sparkling water and serving glasses. Cold ingredients reduce the amount of ice needed and keep the drink from tasting diluted.
@@ -4847,7 +4847,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Drinks'),
     'Matcha Oat Latte',
-    '',
+    '/images/Matcha%20Oat%20Latte.jpg',
     'Preparation:
 1. Prepare matcha powder first. If brewing, steep fully and cool slightly; if blending fruit, remove seeds, tough peel, or fibrous parts.
 2. Chill oat milk and serving glasses. Cold ingredients reduce the amount of ice needed and keep the drink from tasting diluted.
@@ -4889,7 +4889,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Drinks'),
     'Vietnamese Iced Coffee',
-    '',
+    '/images/Vietnamese%20Iced%20Coffee.jpg',
     'Preparation:
 1. Prepare strong brewed coffee first. If brewing, steep fully and cool slightly; if blending fruit, remove seeds, tough peel, or fibrous parts.
 2. Chill crushed ice and serving glasses. Cold ingredients reduce the amount of ice needed and keep the drink from tasting diluted.
@@ -4931,7 +4931,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Drinks'),
     'Watermelon Basil Cooler',
-    '',
+    '/images/Watermelon%20Basil%20Cooler.jpg',
     'Preparation:
 1. Prepare watermelon cubes first. If brewing, steep fully and cool slightly; if blending fruit, remove seeds, tough peel, or fibrous parts.
 2. Chill cold water and serving glasses. Cold ingredients reduce the amount of ice needed and keep the drink from tasting diluted.
@@ -4973,7 +4973,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Drinks'),
     'Ginger Turmeric Tea',
-    '',
+    '/images/Ginger%20Turmeric%20Tea.jpg',
     'Preparation:
 1. Prepare fresh ginger slices first. If brewing, steep fully and cool slightly; if blending fruit, remove seeds, tough peel, or fibrous parts.
 2. Chill hot water and serving glasses. Cold ingredients reduce the amount of ice needed and keep the drink from tasting diluted.
@@ -5015,7 +5015,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Drinks'),
     'Strawberry Yogurt Smoothie',
-    '',
+    '/images/Strawberry%20Yogurt%20Smoothie.jpg',
     'Preparation:
 1. Prepare strawberries first. If brewing, steep fully and cool slightly; if blending fruit, remove seeds, tough peel, or fibrous parts.
 2. Chill plain yogurt and serving glasses. Cold ingredients reduce the amount of ice needed and keep the drink from tasting diluted.
@@ -5057,7 +5057,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Drinks'),
     'Pineapple Coconut Refresher',
-    '',
+    '/images/Pineapple%20Coconut%20Refresher.jpg',
     'Preparation:
 1. Prepare pineapple chunks first. If brewing, steep fully and cool slightly; if blending fruit, remove seeds, tough peel, or fibrous parts.
 2. Chill coconut water and serving glasses. Cold ingredients reduce the amount of ice needed and keep the drink from tasting diluted.
@@ -5099,7 +5099,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Meal Prep'),
     'Sheet Pan Chicken and Vegetables',
-    '',
+    '/images/Sheet%20Pan%20Chicken%20and%20Vegetables.jpg',
     'Preparation:
 1. Preheat the oven to 190 C / 375 F. Grease the baking dish or line a tray before handling the ingredients.
 2. Cut chicken breast pieces, baby potatoes, and broccoli, carrot, pepper into even pieces. Toss with lemon herb marinade and garlic powder and oregano.
@@ -5141,7 +5141,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Meal Prep'),
     'Turkey Quinoa Stuffed Peppers',
-    '',
+    '/images/food-placeholder.jpg',
     'Preparation:
 1. Preheat the oven to 190 C / 375 F. Grease the baking dish or line a tray before handling the ingredients.
 2. Cut ground turkey, quinoa, and bell peppers into even pieces. Toss with tomato salsa sauce and cumin and smoked paprika.
@@ -5183,7 +5183,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Meal Prep'),
     'Garlic Tofu Rice Boxes',
-    '',
+    '/images/food-placeholder.jpg',
     'Preparation:
 1. Cook or warm brown rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season extra firm tofu with ginger and sesame oil. Cut green beans and carrots into similar-size pieces for even cooking and easy eating.
@@ -5225,7 +5225,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Meal Prep'),
     'Beef Burrito Freezer Bowls',
-    '',
+    '/images/food-placeholder.jpg',
     'Preparation:
 1. Cook or warm cilantro lime rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season seasoned ground beef with taco seasoning. Cut black beans, corn, peppers into similar-size pieces for even cooking and easy eating.
@@ -5267,7 +5267,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Meal Prep'),
     'Greek Pasta Salad Boxes',
-    '',
+    '/images/food-placeholder.jpg',
     'Preparation:
 1. Wash and dry cucumber, tomato, olives thoroughly. Dry greens and vegetables make the dressing cling instead of pooling at the bottom.
 2. Prepare chickpeas and short pasta. Cool any hot components before mixing so the salad stays crisp.
@@ -5309,7 +5309,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Meal Prep'),
     'Lentil Soup Batch Pot',
-    '',
+    '/images/food-placeholder.jpg',
     'Preparation:
 1. Rinse and drain diced potatoes. If it needs cooking, prepare it until just tender, rinse briefly, and keep it separate so it will not turn mushy in the bowl.
 2. Trim brown lentils into even pieces. Pat it dry, season lightly with bay leaf, thyme, garlic, and keep it chilled while the broth develops flavor.
@@ -5351,7 +5351,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Meal Prep'),
     'Teriyaki Salmon Lunch Boxes',
-    '',
+    '/images/food-placeholder.jpg',
     'Preparation:
 1. Cook or warm jasmine rice first, then spread it slightly so excess steam escapes and the grains stay separate.
 2. Season salmon fillets with ginger and garlic. Cut broccoli and snap peas into similar-size pieces for even cooking and easy eating.
@@ -5393,7 +5393,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = 'Meal Prep'),
     'Chickpea Couscous Jars',
-    '',
+    '/images/food-placeholder.jpg',
     'Preparation:
 1. Wash and dry cucumber, tomato, spinach thoroughly. Dry greens and vegetables make the dressing cling instead of pooling at the bottom.
 2. Prepare chickpeas and couscous. Cool any hot components before mixing so the salad stays crisp.

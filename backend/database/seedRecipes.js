@@ -2,6 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import pool from '../db.js'
+import { recipeImageUrl } from './recipeImageCatalog.js'
 
 function item(value) {
   return { name: value[0], quantity: value[1] }
@@ -35,7 +36,6 @@ function r(
   }
 }
 
-const seedImageUrl = ''
 
 const styleLabels = {
   soup: 'brothy soup',
@@ -2041,7 +2041,7 @@ VALUES
   (
     (SELECT id FROM categories WHERE name = ${sqlString(recipe.category)}),
     ${sqlString(recipe.title)},
-    ${sqlString(seedImageUrl)},
+    ${sqlString(recipeImageUrl(recipe.title))},
     ${sqlString(buildInstructions(recipe))},
     ${sqlString(descriptionFor(recipe))},
     ${nutrition.calories},
@@ -2095,7 +2095,7 @@ async function seedRecipes() {
         [
           categoryIds.get(recipe.category),
           recipe.title,
-          seedImageUrl,
+          recipeImageUrl(recipe.title),
           buildInstructions(recipe),
           descriptionFor(recipe),
           nutrition.calories,

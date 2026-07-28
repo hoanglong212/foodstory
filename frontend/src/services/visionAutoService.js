@@ -111,7 +111,7 @@ export async function discoverDishFromVideo({ url, signal } = {}) {
   return api.post(
     '/food-map/vision-auto-v2/dish-discovery',
     { sourceUrl },
-    { signal, timeout: 25_000 },
+    { signal, timeout: 40_000 },
   )
 }
 

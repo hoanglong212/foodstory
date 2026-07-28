@@ -32,7 +32,7 @@ async function seedUsers() {
 
   console.log('Seed users created:')
   users.forEach((user) => {
-    console.log(`- ${user.role}: ${user.email} / ${user.password}`)
+    console.log(`- ${user.role}: ${user.email} (password omitted from logs)`)
   })
   await pool.end()
 }

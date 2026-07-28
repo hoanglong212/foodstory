@@ -1,0 +1,998 @@
+diff --git a/backend/database/syncLocalRecipeImages.js b/backend/database/syncLocalRecipeImages.js
+new file mode 100644
+index 0000000..51809de
+--- /dev/null
++++ b/backend/database/syncLocalRecipeImages.js
+@@ -0,0 +1,234 @@
++import fs from 'node:fs/promises'
++import path from 'node:path'
++import { fileURLToPath } from 'node:url'
++import pool from '../db.js'
++
++const WRITE_CHANGES = process.argv.includes('--write')
++const COPY_SOURCE_ASSETS = process.argv.includes('--copy-assets') || WRITE_CHANGES
++const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
++const PROJECT_ROOT = path.resolve(SCRIPT_DIR, '../..')
++const FRONTEND_ROOT = path.join(PROJECT_ROOT, 'frontend')
++const PUBLIC_ROOT = path.join(FRONTEND_ROOT, 'public')
++const TARGET_RECIPE_DIR = path.join(PUBLIC_ROOT, 'images', 'recipes')
++const SEARCH_ROOTS = [
++  path.join(PUBLIC_ROOT, 'images', 'recipes'),
++  path.join(PUBLIC_ROOT, 'images'),
++  path.join(FRONTEND_ROOT, 'src', 'assets', 'recipes'),
++  path.join(FRONTEND_ROOT, 'src', 'assets'),
++]
++const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.avif'])
++const IGNORED_NAMES = new Set(['food-placeholder', 'placeholder', 'logo', 'icon', 'avatar'])
++
++function normalize(value) {
++  return String(value || '')
++    .normalize('NFD')
++    .replace(/[\u0300-\u036f]/g, '')
++    .toLowerCase()
++    .replace(/&/g, ' and ')
++    .replace(/[^a-z0-9]+/g, ' ')
++    .trim()
++}
++
++function slugify(value) {
++  return normalize(value).replace(/\s+/g, '-') || 'recipe'
++}
++
++function compact(value) {
++  return normalize(value).replace(/\s+/g, '')
++}
++
++async function pathExists(target) {
++  try {
++    await fs.access(target)
++    return true
++  } catch {
++    return false
++  }
++}
++
++async function walk(directory) {
++  if (!(await pathExists(directory))) {
++    return []
++  }
++
++  const entries = await fs.readdir(directory, { withFileTypes: true })
++  const results = []
++  for (const entry of entries) {
++    const absolutePath = path.join(directory, entry.name)
++    if (entry.isDirectory()) {
++      results.push(...(await walk(absolutePath)))
++      continue
++    }
++    const extension = path.extname(entry.name).toLowerCase()
++    if (!IMAGE_EXTENSIONS.has(extension)) {
++      continue
++    }
++    const stem = path.basename(entry.name, extension)
++    if (IGNORED_NAMES.has(normalize(stem))) {
++      continue
++    }
++    results.push({ absolutePath, extension, stem, key: compact(stem) })
++  }
++  return results
++}
++
++function currentFileName(imageUrl) {
++  const clean = String(imageUrl || '').replace(/\\/g, '/').split(/[?#]/, 1)[0]
++  return clean.split('/').filter(Boolean).pop() || ''
++}
++
++function matchScore(recipe, file) {
++  const titleKey = compact(recipe.title)
++  const fileKey = file.key.replace(/^\d+/, '')
++  const currentName = currentFileName(recipe.image_url)
++  if (currentName && currentName.toLowerCase() === path.basename(file.absolutePath).toLowerCase()) {
++    return 130
++  }
++  if (fileKey === titleKey) {
++    return 120
++  }
++  if (fileKey.endsWith(titleKey) || titleKey.endsWith(fileKey)) {
++    return Math.min(fileKey.length, titleKey.length) >= 8 ? 105 : 0
++  }
++
++  const titleWords = new Set(normalize(recipe.title).split(' ').filter((word) => word.length >= 3))
++  const fileWords = new Set(normalize(file.stem).split(' ').filter((word) => word.length >= 3))
++  const overlap = [...titleWords].filter((word) => fileWords.has(word)).length
++  const denominator = Math.max(titleWords.size, fileWords.size, 1)
++  const ratio = overlap / denominator
++  return ratio >= 0.8 && overlap >= 2 ? 90 + Math.round(ratio * 10) : 0
++}
++
++function findUniqueMatch(recipe, files) {
++  const ranked = files
++    .map((file) => ({ file, score: matchScore(recipe, file) }))
++    .filter((entry) => entry.score >= 90)
++    .sort((left, right) => right.score - left.score || left.file.absolutePath.localeCompare(right.file.absolutePath))
++
++  if (!ranked.length) {
++    return null
++  }
++  if (ranked[1] && ranked[1].score === ranked[0].score) {
++    return { ambiguous: true, matches: ranked.filter((entry) => entry.score === ranked[0].score) }
++  }
++  return ranked[0]
++}
++
++function isInside(child, parent) {
++  const relative = path.relative(parent, child)
++  return relative && !relative.startsWith('..') && !path.isAbsolute(relative)
++}
++
++async function publicUrlFor(recipe, file) {
++  if (isInside(file.absolutePath, PUBLIC_ROOT)) {
++    return `/${path.relative(PUBLIC_ROOT, file.absolutePath).replace(/\\/g, '/')}`
++  }
++
++  if (!COPY_SOURCE_ASSETS) {
++    return null
++  }
++
++  await fs.mkdir(TARGET_RECIPE_DIR, { recursive: true })
++  const targetName = `${slugify(recipe.title)}${file.extension}`
++  const targetPath = path.join(TARGET_RECIPE_DIR, targetName)
++  if (!(await pathExists(targetPath))) {
++    await fs.copyFile(file.absolutePath, targetPath)
++  }
++  return `/images/recipes/${targetName}`
++}
++
++async function main() {
++  const uniqueFiles = new Map()
++  for (const root of SEARCH_ROOTS) {
++    for (const file of await walk(root)) {
++      uniqueFiles.set(path.resolve(file.absolutePath).toLowerCase(), file)
++    }
++  }
++  const files = [...uniqueFiles.values()]
++  const [recipes] = await pool.execute(
++    'SELECT id, title, image_url FROM recipes ORDER BY id ASC',
++  )
++
++  console.log(`Found ${files.length} local image files and ${recipes.length} recipes.`)
++  console.log(WRITE_CHANGES ? 'WRITE MODE: matching image_url values will be updated.' : 'DRY RUN: no database values will change.')
++
++  const updates = []
++  const missing = []
++  const ambiguous = []
++
++  for (const recipe of recipes) {
++    const match = findUniqueMatch(recipe, files)
++    if (!match) {
++      missing.push(recipe)
++      continue
++    }
++    if (match.ambiguous) {
++      ambiguous.push({ recipe, matches: match.matches })
++      continue
++    }
++
++    const imageUrl = await publicUrlFor(recipe, match.file)
++    if (!imageUrl) {
++      missing.push(recipe)
++      continue
++    }
++    updates.push({ recipe, imageUrl, file: match.file, score: match.score })
++  }
++
++  if (WRITE_CHANGES && updates.length) {
++    const connection = await pool.getConnection()
++    try {
++      await connection.beginTransaction()
++      for (const update of updates) {
++        await connection.execute('UPDATE recipes SET image_url = ? WHERE id = ?', [update.imageUrl, update.recipe.id])
++      }
++      await connection.commit()
++    } catch (error) {
++      await connection.rollback()
++      throw error
++    } finally {
++      connection.release()
++    }
++  }
++
++  updates.forEach((update) => {
++    const action = WRITE_CHANGES ? 'updated' : 'would update'
++    console.log(`[${action}] #${update.recipe.id} ${update.recipe.title}`)
++    console.log(`  ${update.recipe.image_url || '(blank)'} -> ${update.imageUrl}`)
++  })
++
++  ambiguous.forEach((item) => {
++    console.log(`[ambiguous] #${item.recipe.id} ${item.recipe.title}`)
++    item.matches.forEach((match) => console.log(`  ${match.file.absolutePath}`))
++  })
++
++  missing.forEach((recipe) => {
++    console.log(`[no local match] #${recipe.id} ${recipe.title}`)
++  })
++
++  const duplicateMap = new Map()
++  for (const update of updates) {
++    duplicateMap.set(update.imageUrl, (duplicateMap.get(update.imageUrl) || 0) + 1)
++  }
++  const duplicates = [...duplicateMap.entries()].filter(([, count]) => count > 1)
++
++  console.log('')
++  console.log(JSON.stringify({
++    mode: WRITE_CHANGES ? 'write' : 'dry-run',
++    localFiles: files.length,
++    recipes: recipes.length,
++    matched: updates.length,
++    ambiguous: ambiguous.length,
++    unmatched: missing.length,
++    duplicateTargets: duplicates.length,
++  }, null, 2))
++}
++
++main()
++  .catch((error) => {
++    console.error('Failed to synchronize recipe images:', error)
++    process.exitCode = 1
++  })
++  .finally(async () => {
++    await pool.end()
++  })
+diff --git a/frontend/src/components/RecipeCard.vue b/frontend/src/components/RecipeCard.vue
+index 2cdd30c..d77f407 100644
+--- a/frontend/src/components/RecipeCard.vue
++++ b/frontend/src/components/RecipeCard.vue
+@@ -1,165 +1,161 @@
+-<script setup>
+-import { computed } from 'vue'
+-import { RouterLink } from 'vue-router'
+-import AppIcon from './AppIcon.vue'
+-
+-const FALLBACK_IMAGE = '/images/food-placeholder.jpg'
+-
+-const props = defineProps({
+-  recipe: {
+-    type: Object,
+-    required: true,
+-  },
+-  isDeleting: {
+-    type: Boolean,
+-    default: false,
+-  },
+-})
+-
+-const emit = defineEmits(['delete'])
+-
+-const imageSrc = computed(() => String(props.recipe.image_url || '').trim() || FALLBACK_IMAGE)
+-const ratingLabel = computed(() => {
+-  const average = Number(props.recipe.avg_rating || props.recipe.average_rating || 0)
+-  return average > 0 ? average.toFixed(1) : 'New'
+-})
+-
+-const ratingCount = computed(() =>
+-  Math.max(Number(props.recipe.rating_count || props.recipe.total_ratings || 0), 0),
+-)
+-const ratingMeta = computed(() => {
+-  if (!ratingCount.value) {
+-    return 'New recipe'
+-  }
+-
+-  return `${ratingLabel.value} from ${ratingCount.value} ${ratingCount.value === 1 ? 'rating' : 'ratings'}`
+-})
+-const shortDescription = computed(() => {
+-  const text = String(props.recipe.description || props.recipe.blog_intro || '').trim()
+-  if (!text) {
+-    return `A ${String(props.recipe.category_name || 'FoodStory').toLowerCase()} recipe with clear steps, ingredients, and nutrition details.`
+-  }
+-
+-  return text.length > 138 ? `${text.slice(0, 138).trim()}...` : text
+-})
+-const totalTime = computed(() => {
+-  const total = firstPresent(props.recipe.total_time, props.recipe.totalTime)
+-  if (total) {
+-    return formatDuration(total)
+-  }
+-
+-  const prep = numericDuration(props.recipe.prep_time || props.recipe.prepTime)
+-  const cook = numericDuration(props.recipe.cook_time || props.recipe.cookTime)
+-  if (prep || cook) {
+-    return `${prep + cook} min`
+-  }
+-
+-  return 'Read recipe'
+-})
+-const dateLabel = computed(() => {
+-  const value = props.recipe.created_at || props.recipe.createdAt || props.recipe.updated_at
+-  if (!value) {
+-    return ''
+-  }
+-
+-  const date = new Date(value)
+-  if (Number.isNaN(date.getTime())) {
+-    return ''
+-  }
+-
+-  return new Intl.DateTimeFormat('en-AU', {
+-    month: 'short',
+-    day: 'numeric',
+-  }).format(date)
+-})
+-const metaParts = computed(() =>
+-  ['FoodStory Kitchen', dateLabel.value, totalTime.value, ratingMeta.value].filter(Boolean),
+-)
+-
+-function firstPresent(...values) {
+-  const value = values.find((item) => item !== null && item !== undefined && String(item).trim())
+-  return value === undefined ? '' : String(value).trim()
+-}
+-
+-function numericDuration(value) {
+-  const number = Number.parseInt(String(value || '').replace(/[^\d]/g, ''), 10)
+-  return Number.isFinite(number) ? number : 0
+-}
+-
+-function formatDuration(value) {
+-  const number = Number(value)
+-  return Number.isFinite(number) && number > 0 ? `${number} min` : String(value)
+-}
+-
+-function useFallbackImage(event) {
+-  if (event.target.src.endsWith(FALLBACK_IMAGE)) {
+-    return
+-  }
+-  event.target.src = FALLBACK_IMAGE
+-}
+-</script>
+-
+-<template>
+-  <article class="recipe-card magazine-recipe-card h-100">
+-    <RouterLink
+-      :to="{ name: 'recipe-detail', params: { id: recipe.id } }"
+-      class="recipe-card-media"
+-      :aria-label="`Open ${recipe.title}`"
+-    >
+-      <img
+-        :src="imageSrc"
+-        :alt="`Photo of ${recipe.title}`"
+-        loading="lazy"
+-        decoding="async"
+-        @error="useFallbackImage"
+-      />
+-    </RouterLink>
+-
+-    <div class="recipe-body">
+-      <div class="recipe-card-topline">
+-        <span class="category-label">
+-          {{ recipe.category_name }}
+-        </span>
+-      </div>
+-
+-      <h2 class="recipe-card-title">
+-        <RouterLink :to="{ name: 'recipe-detail', params: { id: recipe.id } }">
+-          {{ recipe.title }}
+-        </RouterLink>
+-      </h2>
+-
+-      <p class="recipe-card-description">{{ shortDescription }}</p>
+-
+-      <p class="recipe-card-meta-line">
+-        <AppIcon name="star" size="15" />
+-        <span>{{ metaParts.join(' / ') }}</span>
+-      </p>
+-
+-      <div class="recipe-card-actions">
+-        <RouterLink class="text-link" :to="{ name: 'recipe-detail', params: { id: recipe.id } }">
+-          <span>View recipe</span>
+-          <AppIcon name="arrow-right" size="16" />
+-        </RouterLink>
+-
+-        <div v-permission="'admin'" class="admin-actions">
+-          <RouterLink
+-            class="icon-link"
+-            :to="{ name: 'recipe-edit', params: { id: recipe.id } }"
+-            :aria-label="`Edit ${recipe.title}`"
+-          >
+-            <AppIcon name="pen" size="16" />
+-          </RouterLink>
+-          <button
+-            class="icon-link danger"
+-            type="button"
+-            :aria-label="isDeleting ? `Deleting ${recipe.title}` : `Delete ${recipe.title}`"
+-            :disabled="isDeleting"
+-            @click="emit('delete', recipe)"
+-          >
+-            <AppIcon name="trash" size="16" />
+-          </button>
+-        </div>
+-      </div>
+-    </div>
+-  </article>
+-</template>
++<script setup>
++import { computed } from 'vue'
++import { RouterLink } from 'vue-router'
++import AppIcon from './AppIcon.vue'
++import { advanceRecipeImage, getRecipeImageSource } from '../utils/recipeImage'
++
++const props = defineProps({
++  recipe: {
++    type: Object,
++    required: true,
++  },
++  isDeleting: {
++    type: Boolean,
++    default: false,
++  },
++})
++
++const emit = defineEmits(['delete'])
++
++const imageSrc = computed(() => getRecipeImageSource(props.recipe))
++const ratingLabel = computed(() => {
++  const average = Number(props.recipe.avg_rating || props.recipe.average_rating || 0)
++  return average > 0 ? average.toFixed(1) : 'New'
++})
++
++const ratingCount = computed(() =>
++  Math.max(Number(props.recipe.rating_count || props.recipe.total_ratings || 0), 0),
++)
++const ratingMeta = computed(() => {
++  if (!ratingCount.value) {
++    return 'New recipe'
++  }
++
++  return `${ratingLabel.value} from ${ratingCount.value} ${ratingCount.value === 1 ? 'rating' : 'ratings'}`
++})
++const shortDescription = computed(() => {
++  const text = String(props.recipe.description || props.recipe.blog_intro || '').trim()
++  if (!text) {
++    return `A ${String(props.recipe.category_name || 'FoodStory').toLowerCase()} recipe with clear steps, ingredients, and nutrition details.`
++  }
++
++  return text.length > 138 ? `${text.slice(0, 138).trim()}...` : text
++})
++const totalTime = computed(() => {
++  const total = firstPresent(props.recipe.total_time, props.recipe.totalTime)
++  if (total) {
++    return formatDuration(total)
++  }
++
++  const prep = numericDuration(props.recipe.prep_time || props.recipe.prepTime)
++  const cook = numericDuration(props.recipe.cook_time || props.recipe.cookTime)
++  if (prep || cook) {
++    return `${prep + cook} min`
++  }
++
++  return 'Read recipe'
++})
++const dateLabel = computed(() => {
++  const value = props.recipe.created_at || props.recipe.createdAt || props.recipe.updated_at
++  if (!value) {
++    return ''
++  }
++
++  const date = new Date(value)
++  if (Number.isNaN(date.getTime())) {
++    return ''
++  }
++
++  return new Intl.DateTimeFormat('en-AU', {
++    month: 'short',
++    day: 'numeric',
++  }).format(date)
++})
++const metaParts = computed(() =>
++  ['FoodStory Kitchen', dateLabel.value, totalTime.value, ratingMeta.value].filter(Boolean),
++)
++
++function firstPresent(...values) {
++  const value = values.find((item) => item !== null && item !== undefined && String(item).trim())
++  return value === undefined ? '' : String(value).trim()
++}
++
++function numericDuration(value) {
++  const number = Number.parseInt(String(value || '').replace(/[^\d]/g, ''), 10)
++  return Number.isFinite(number) ? number : 0
++}
++
++function formatDuration(value) {
++  const number = Number(value)
++  return Number.isFinite(number) && number > 0 ? `${number} min` : String(value)
++}
++
++function useFallbackImage(event) {
++  advanceRecipeImage(event, props.recipe)
++}
++</script>
++
++<template>
++  <article class="recipe-card magazine-recipe-card h-100">
++    <RouterLink
++      :to="{ name: 'recipe-detail', params: { id: recipe.id } }"
++      class="recipe-card-media"
++      :aria-label="`Open ${recipe.title}`"
++    >
++      <img
++        :src="imageSrc"
++        :alt="`Photo of ${recipe.title}`"
++        loading="lazy"
++        decoding="async"
++        @error="useFallbackImage"
++      />
++    </RouterLink>
++
++    <div class="recipe-body">
++      <div class="recipe-card-topline">
++        <span class="category-label">
++          {{ recipe.category_name }}
++        </span>
++      </div>
++
++      <h2 class="recipe-card-title">
++        <RouterLink :to="{ name: 'recipe-detail', params: { id: recipe.id } }">
++          {{ recipe.title }}
++        </RouterLink>
++      </h2>
++
++      <p class="recipe-card-description">{{ shortDescription }}</p>
++
++      <p class="recipe-card-meta-line">
++        <AppIcon name="star" size="15" />
++        <span>{{ metaParts.join(' / ') }}</span>
++      </p>
++
++      <div class="recipe-card-actions">
++        <RouterLink class="text-link" :to="{ name: 'recipe-detail', params: { id: recipe.id } }">
++          <span>View recipe</span>
++          <AppIcon name="arrow-right" size="16" />
++        </RouterLink>
++
++        <div v-permission="'admin'" class="admin-actions">
++          <RouterLink
++            class="icon-link"
++            :to="{ name: 'recipe-edit', params: { id: recipe.id } }"
++            :aria-label="`Edit ${recipe.title}`"
++          >
++            <AppIcon name="pen" size="16" />
++          </RouterLink>
++          <button
++            class="icon-link danger"
++            type="button"
++            :aria-label="isDeleting ? `Deleting ${recipe.title}` : `Delete ${recipe.title}`"
++            :disabled="isDeleting"
++            @click="emit('delete', recipe)"
++          >
++            <AppIcon name="trash" size="16" />
++          </button>
++        </div>
++      </div>
++    </div>
++  </article>
++</template>
+diff --git a/frontend/src/utils/recipeImage.js b/frontend/src/utils/recipeImage.js
+new file mode 100644
+index 0000000..4f34ff3
+--- /dev/null
++++ b/frontend/src/utils/recipeImage.js
+@@ -0,0 +1,186 @@
++const IMAGE_EXTENSIONS = ['jpg', 'webp', 'png', 'jpeg', 'avif']
++const PUBLIC_IMAGE_DIRS = ['/images/recipes', '/images']
++const SOURCE_IMAGE_DIRS = ['/src/assets/recipes', '/src/assets']
++
++function firstPresent(...values) {
++  const value = values.find((item) => item !== null && item !== undefined && String(item).trim())
++  return value === undefined ? '' : String(value).trim()
++}
++
++function hashText(value) {
++  return [...String(value || 'FoodStory')].reduce(
++    (hash, character) => (hash * 31 + character.charCodeAt(0)) >>> 0,
++    0,
++  )
++}
++
++function unique(values) {
++  return values.filter((value, index, items) => value && items.indexOf(value) === index)
++}
++
++function removeWrappingQuotes(value) {
++  return String(value || '')
++    .trim()
++    .replace(/^['"]|['"]$/g, '')
++}
++
++export function slugifyRecipeTitle(value) {
++  return String(value || 'recipe')
++    .normalize('NFD')
++    .replace(/[\u0300-\u036f]/g, '')
++    .toLowerCase()
++    .replace(/&/g, ' and ')
++    .replace(/[^a-z0-9]+/g, '-')
++    .replace(/^-+|-+$/g, '') || 'recipe'
++}
++
++export function normalizeRecipeImagePath(value) {
++  const raw = removeWrappingQuotes(value)
++  if (!raw) {
++    return ''
++  }
++
++  if (/^(?:data:|blob:|https?:\/\/)/i.test(raw)) {
++    return raw
++  }
++
++  let normalized = raw.replace(/\\/g, '/').replace(/\/+/g, '/')
++
++  const publicMarker = normalized.toLowerCase().lastIndexOf('/public/')
++  if (publicMarker >= 0) {
++    normalized = normalized.slice(publicMarker + '/public'.length)
++  }
++
++  const frontendPublicMarker = normalized.toLowerCase().indexOf('frontend/public/')
++  if (frontendPublicMarker >= 0) {
++    normalized = normalized.slice(frontendPublicMarker + 'frontend/public'.length)
++  }
++
++  const sourceMarker = normalized.toLowerCase().lastIndexOf('/src/assets/')
++  if (sourceMarker >= 0) {
++    normalized = normalized.slice(sourceMarker)
++  }
++
++  normalized = normalized
++    .replace(/^\.?\//, '/')
++    .replace(/^frontend\//i, '/')
++    .replace(/^public\//i, '/')
++
++  if (/^images\//i.test(normalized) || /^assets\//i.test(normalized) || /^src\//i.test(normalized)) {
++    normalized = `/${normalized}`
++  }
++
++  if (!normalized.startsWith('/')) {
++    normalized = `/${normalized}`
++  }
++
++  return normalized.replace(/\/+/g, '/')
++}
++
++function fileNameFromPath(value) {
++  const normalized = removeWrappingQuotes(value).replace(/\\/g, '/')
++  const cleanPath = normalized.split(/[?#]/, 1)[0]
++  return cleanPath.split('/').filter(Boolean).pop() || ''
++}
++
++function localCandidatesFromFileName(fileName) {
++  if (!fileName || !/\.[a-z0-9]{2,5}$/i.test(fileName)) {
++    return []
++  }
++
++  return [...PUBLIC_IMAGE_DIRS, ...SOURCE_IMAGE_DIRS].map((directory) => `${directory}/${fileName}`)
++}
++
++function titleCandidates(recipe) {
++  const slug = slugifyRecipeTitle(firstPresent(recipe?.title, recipe?.name))
++  return PUBLIC_IMAGE_DIRS.flatMap((directory) =>
++    IMAGE_EXTENSIONS.map((extension) => `${directory}/${slug}.${extension}`),
++  )
++}
++
++export function createRecipePlaceholder(recipe) {
++  const title = firstPresent(recipe?.title, recipe?.name, 'FoodStory Recipe')
++  const category = firstPresent(recipe?.category_name, recipe?.categoryName, 'Recipe')
++  const initials = title
++    .split(/\s+/)
++    .filter(Boolean)
++    .slice(0, 2)
++    .map((word) => word[0]?.toUpperCase())
++    .join('') || 'FS'
++  const seed = hashText(`${title}:${category}`)
++  const hue = 18 + (seed % 38)
++  const secondHue = 72 + (seed % 32)
++  const safeTitle = title.replace(/[<>&'"]/g, '')
++  const safeCategory = category.replace(/[<>&'"]/g, '')
++  const svg = `
++    <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
++      <defs>
++        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
++          <stop offset="0" stop-color="hsl(${hue} 72% 90%)"/>
++          <stop offset="1" stop-color="hsl(${secondHue} 55% 86%)"/>
++        </linearGradient>
++      </defs>
++      <rect width="1200" height="800" fill="url(#g)"/>
++      <circle cx="600" cy="315" r="142" fill="rgba(255,255,255,.68)"/>
++      <text x="600" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="112" font-weight="700" fill="#6f4b35">${initials}</text>
++      <text x="600" y="535" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#3f342e">${safeTitle.slice(0, 38)}</text>
++      <text x="600" y="595" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#66564d">${safeCategory}</text>
++    </svg>`
++
++  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
++}
++
++export function getRecipeImageCandidates(recipe) {
++  const rawSource = firstPresent(
++    recipe?.image_url,
++    recipe?.imageUrl,
++    recipe?.image,
++    recipe?.photo_url,
++    recipe?.photoUrl,
++  )
++  const normalizedSource = normalizeRecipeImagePath(rawSource)
++  const fileName = fileNameFromPath(rawSource)
++  const fileNameCandidates = localCandidatesFromFileName(fileName)
++  const slugCandidates = titleCandidates(recipe)
++  const sourceIsRemote = /^https?:\/\//i.test(normalizedSource)
++
++  return unique([
++    ...(sourceIsRemote ? slugCandidates : []),
++    ...(sourceIsRemote ? fileNameCandidates : []),
++    normalizedSource,
++    ...(sourceIsRemote ? [] : fileNameCandidates),
++    ...(sourceIsRemote ? [] : slugCandidates),
++    createRecipePlaceholder(recipe),
++  ])
++}
++
++export function getRecipeImageSource(recipe) {
++  return getRecipeImageCandidates(recipe)[0]
++}
++
++export function getRecipeBackgroundImage(recipe) {
++  const explicitSource = normalizeRecipeImagePath(
++    firstPresent(recipe?.image_url, recipe?.imageUrl, recipe?.image, recipe?.photo_url),
++  )
++  return explicitSource || createRecipePlaceholder(recipe)
++}
++
++export function advanceRecipeImage(event, recipe) {
++  const image = event?.currentTarget || event?.target
++  if (!image) {
++    return
++  }
++
++  const candidates = getRecipeImageCandidates(recipe)
++  const currentIndex = Number.parseInt(image.dataset.recipeImageIndex || '0', 10)
++  const nextIndex = Number.isFinite(currentIndex) ? currentIndex + 1 : 1
++
++  if (nextIndex >= candidates.length) {
++    image.onerror = null
++    image.src = createRecipePlaceholder(recipe)
++    return
++  }
++
++  image.dataset.recipeImageIndex = String(nextIndex)
++  image.src = candidates[nextIndex]
++}
+diff --git a/frontend/src/views/RecipeDetail.vue b/frontend/src/views/RecipeDetail.vue
+index f49553b..57622a5 100644
+--- a/frontend/src/views/RecipeDetail.vue
++++ b/frontend/src/views/RecipeDetail.vue
+@@ -13,8 +13,8 @@ import { useFavoriteStore } from '../stores/favoriteStore'
+ import { useRatingStore } from '../stores/ratingStore'
+ import { useRecipeStore } from '../stores/recipeStore'
+ import { useUiStore } from '../stores/uiStore'
++import { advanceRecipeImage, getRecipeImageSource } from '../utils/recipeImage'
+ 
+-const FALLBACK_IMAGE = '/images/food-placeholder.jpg'
+ 
+ const route = useRoute()
+ const router = useRouter()
+@@ -63,7 +63,7 @@ const moderationStatus = computed(() => recipe.value?.status || 'approved')
+ const isAwaitingModeration = computed(() => moderationStatus.value === 'pending')
+ const isRejected = computed(() => moderationStatus.value === 'rejected')
+ const categoryLabel = computed(() => firstPresent(recipe.value?.category_name) || 'Recipe')
+-const heroImage = computed(() => firstPresent(recipe.value?.image_url) || FALLBACK_IMAGE)
++const heroImage = computed(() => getRecipeImageSource(recipe.value))
+ const averageRating = computed(() => safeNumber(recipe.value?.avg_rating || recipe.value?.average_rating))
+ const ratingCount = computed(() =>
+   Math.max(Math.round(safeNumber(recipe.value?.rating_count || recipe.value?.total_ratings)), 0),
+@@ -325,7 +325,7 @@ function relatedRecipeDescription(item) {
+ }
+ 
+ function relatedRecipeImage(item) {
+-  return firstPresent(item?.image_url, item?.imageUrl) || FALLBACK_IMAGE
++  return getRecipeImageSource(item)
+ }
+ 
+ function relatedRecipeMeta(item) {
+@@ -395,11 +395,8 @@ function splitInstructions(value) {
+   return sentenceSteps && sentenceSteps.length > 1 ? sentenceSteps : [text]
+ }
+ 
+-function handleImageError(event) {
+-  if (event.target.src.endsWith(FALLBACK_IMAGE)) {
+-    return
+-  }
+-  event.target.src = FALLBACK_IMAGE
++function handleImageError(event, item = recipe.value) {
++  advanceRecipeImage(event, item)
+ }
+ 
+ function clearSuccessMessage() {
+@@ -1105,7 +1102,7 @@ watch(
+           :alt="`Photo of ${recipe.title}`"
+           decoding="async"
+           fetchpriority="high"
+-          @error="handleImageError"
++          @error="handleImageError($event, recipe)"
+         />
+       </figure>
+ 
+@@ -1475,7 +1472,7 @@ watch(
+                     :alt="`Photo of ${related.title}`"
+                     loading="lazy"
+                     decoding="async"
+-                    @error="handleImageError"
++                    @error="handleImageError($event, related)"
+                   />
+                 </figure>
+                 <div>
+diff --git a/frontend/src/views/Recipes.vue b/frontend/src/views/Recipes.vue
+index 4a48c18..3b7dec0 100644
+--- a/frontend/src/views/Recipes.vue
++++ b/frontend/src/views/Recipes.vue
+@@ -8,6 +8,7 @@ import { useAuthStore } from '../stores/authStore'
+ import { useFavoriteStore } from '../stores/favoriteStore'
+ import { useRecipeStore } from '../stores/recipeStore'
+ import { useUiStore } from '../stores/uiStore'
++import { advanceRecipeImage, getRecipeBackgroundImage, getRecipeImageSource } from '../utils/recipeImage'
+ 
+ const recipeStore = useRecipeStore()
+ const favoriteStore = useFavoriteStore()
+@@ -26,34 +27,6 @@ const searchInput = ref(null)
+ let filterTimer = 0
+ let suppressNextFilterFetch = false
+ 
+-const FALLBACK_IMAGES = [
+-  'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=78',
+-  'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=1200&q=78',
+-  'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=1200&q=78',
+-  'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=78',
+-  'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=1200&q=78',
+-  'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=1200&q=78',
+-  'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1200&q=78',
+-  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=78',
+-]
+-
+-const CATEGORY_IMAGE_MAP = {
+-  American: 'https://images.unsplash.com/photo-1520072959219-c595dc870360?auto=format&fit=crop&w=1200&q=78',
+-  Breakfast: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1200&q=78',
+-  Dessert: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=1200&q=78',
+-  Drinks: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=1200&q=78',
+-  Italian: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=1200&q=78',
+-  Japanese: 'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?auto=format&fit=crop&w=1200&q=78',
+-  Korean: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?auto=format&fit=crop&w=1200&q=78',
+-  Meal: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=78',
+-  Mediterranean: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=78',
+-  Mexican: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=1200&q=78',
+-  Seafood: 'https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=1200&q=78',
+-  Thai: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&w=1200&q=78',
+-  Vegetarian: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1200&q=78',
+-  Vietnamese: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=1200&q=78',
+-}
+-
+ const quickFilterChips = [
+   { label: 'Quick & Easy', icon: 'sparkles', tag: 'Quick Meal', search: 'quick', sort: 'fastest' },
+   { label: 'Healthy', icon: 'leaf', tag: 'Healthy', search: 'healthy', sort: 'lightest' },
+@@ -449,48 +422,12 @@ function sortLabel(value) {
+   )
+ }
+ 
+-function fallbackVisual(recipe) {
+-  const category = firstPresent(recipe?.category_name)
+-  const text = searchableRecipeText(recipe)
+-  if (text.includes('dessert') || text.includes('cookie') || text.includes('cake')) {
+-    return CATEGORY_IMAGE_MAP.Dessert
+-  }
+-  if (text.includes('drink') || text.includes('smoothie') || text.includes('coffee')) {
+-    return CATEGORY_IMAGE_MAP.Drinks
+-  }
+-  if (text.includes('salad') || text.includes('healthy') || text.includes('fresh')) {
+-    return CATEGORY_IMAGE_MAP.Vegetarian
+-  }
+-  if (text.includes('pasta') || text.includes('risotto') || text.includes('italian')) {
+-    return CATEGORY_IMAGE_MAP.Italian
+-  }
+-  if (text.includes('taco') || text.includes('mexican')) {
+-    return CATEGORY_IMAGE_MAP.Mexican
+-  }
+-  if (text.includes('salmon') || text.includes('shrimp') || text.includes('fish')) {
+-    return CATEGORY_IMAGE_MAP.Seafood
+-  }
+-
+-  if (CATEGORY_IMAGE_MAP[category]) {
+-    return CATEGORY_IMAGE_MAP[category]
+-  }
+-  if (category.startsWith('Meal')) {
+-    return CATEGORY_IMAGE_MAP.Meal
+-  }
+-
+-  return FALLBACK_IMAGES[hashText(recipe?.title) % FALLBACK_IMAGES.length]
+-}
+-
+ function imageSrc(recipe) {
+-  return firstPresent(recipe?.image_url, recipe?.imageUrl) || fallbackVisual(recipe)
++  return getRecipeImageSource(recipe)
+ }
+ 
+-function useFallbackImage(event) {
+-  if (event.target.dataset.fallbackApplied === 'true') {
+-    return
+-  }
+-  event.target.dataset.fallbackApplied = 'true'
+-  event.target.src = FALLBACK_IMAGES[0]
++function useFallbackImage(event, recipe) {
++  advanceRecipeImage(event, recipe)
+ }
+ 
+ function resolveCategoryName(name) {
+@@ -806,7 +743,7 @@ async function deleteRecipe(recipe) {
+             alt=""
+             loading="eager"
+             decoding="async"
+-            @error="useFallbackImage"
++            @error="useFallbackImage($event, bigRightNow[0])"
+           />
+           <img
+             v-if="!isSearchMode && healthyChoices[0]"
+@@ -815,7 +752,7 @@ async function deleteRecipe(recipe) {
+             alt=""
+             loading="eager"
+             decoding="async"
+-            @error="useFallbackImage"
++            @error="useFallbackImage($event, healthyChoices[0])"
+           />
+ 
+           <div class="recipe-hero-copy">
+@@ -1044,7 +981,7 @@ async function deleteRecipe(recipe) {
+                 :alt="`Photo of ${featuredRecipe.title}`"
+                 loading="eager"
+                 decoding="async"
+-                @error="useFallbackImage"
++                @error="useFallbackImage($event, featuredRecipe)"
+               />
+             </RouterLink>
+             <div class="feature-copy-panel">
+@@ -1111,7 +1048,7 @@ async function deleteRecipe(recipe) {
+                     :alt="`Photo of ${recipe.title}`"
+                     loading="lazy"
+                     decoding="async"
+-                    @error="useFallbackImage"
++                    @error="useFallbackImage($event, recipe)"
+                   />
+                   <span>
+                     <strong>{{ recipe.title }}</strong>
+@@ -1159,7 +1096,7 @@ async function deleteRecipe(recipe) {
+                     :alt="`Photo of ${recipe.title}`"
+                     loading="lazy"
+                     decoding="async"
+-                    @error="useFallbackImage"
++                    @error="useFallbackImage($event, recipe)"
+                   />
+                   <span>
+                     <strong>{{ recipe.title }}</strong>
+@@ -1208,7 +1145,7 @@ async function deleteRecipe(recipe) {
+                       :alt="`Photo of ${recipe.title}`"
+                       loading="lazy"
+                       decoding="async"
+-                      @error="useFallbackImage"
++                      @error="useFallbackImage($event, recipe)"
+                     />
+                   </figure>
+                   <div>
+@@ -1297,7 +1234,7 @@ async function deleteRecipe(recipe) {
+               alt=""
+               loading="lazy"
+               decoding="async"
+-              @error="useFallbackImage"
++              @error="useFallbackImage($event, topic.recipe)"
+             />
+             <span>{{ topic.label }}</span>
+             <small>{{ topic.countText }}</small>
+@@ -1310,7 +1247,7 @@ async function deleteRecipe(recipe) {
+ 
+         <section
+           class="back-to-top-card"
+-          :style="{ '--rail-image': `url(${imageSrc(todayPicks[0] || featuredRecipe)})` }"
++          :style="{ '--rail-image': `url(${getRecipeBackgroundImage(todayPicks[0] || featuredRecipe)})` }"
+         >
+           <button type="button" aria-label="Back to top" @click="jumpToTop">
+             <AppIcon name="arrow-right" size="25" />

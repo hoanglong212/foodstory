@@ -20,6 +20,11 @@ const GENERIC_DISHES = new Set([
 const DISH_RESPONSE_SCHEMA = {
   type: 'object',
   properties: {
+    titleDishName: {
+      type: 'string',
+      nullable: true,
+      description: 'The specific dish explicitly named in the public video title, without locations or hashtags.',
+    },
     candidates: {
       type: 'array',
       maxItems: MAX_CANDIDATES,
@@ -36,7 +41,7 @@ const DISH_RESPONSE_SCHEMA = {
       },
     },
   },
-  required: ['candidates'],
+  required: ['titleDishName', 'candidates'],
 }
 
 function capText(value, maxLength) {
@@ -78,12 +83,141 @@ function sanitizeCandidates(values) {
         confidence: Math.round(Math.min(1, Math.max(0, confidence)) * 1000) / 1000,
         aliases: uniqueTexts(candidate?.aliases, 6, 120),
         visualEvidence: uniqueTexts(candidate?.visualEvidence, 4, 160),
+        evidenceSource: 'thumbnail',
+        evidenceLabel: 'Thumbnail evidence',
         reviewRequired: true,
       }
     })
     .filter(Boolean)
     .sort((left, right) => right.confidence - left.confidence)
     .slice(0, MAX_CANDIDATES)
+}
+
+function inferTitleDishPhrase(title) {
+  const source = capText(String(title || '').split('#')[0], 400)
+    .replace(/\s+(?:\||[-–—])\s+.*$/u, '')
+    .trim()
+  if (!source) return ''
+
+  const patterns = [
+    /(?:^|\s)(?:món|mon)\s+(.+)$/iu,
+    /(?:^|\s)(?:cách làm|cach lam)\s+(.+)$/iu,
+    /(?:^|\s)(?:how to make|recipe(?:\s+for)?|making)\s*:?\s+(.+)$/iu,
+  ]
+  const match = patterns.map((pattern) => source.match(pattern)).find(Boolean)
+  let phrase = capText(match?.[1], 120)
+    .replace(/\s+(?:tại|ở|from|in)\s+.+$/iu, '')
+    .trim()
+  if (/^\p{Ll}/u.test(phrase)) {
+    phrase = phrase
+      .replace(/\s+\p{Lu}[\p{L}\p{M}'’-]*(?:\s+\p{Lu}[\p{L}\p{M}'’-]*){0,3}$/u, '')
+      .trim()
+  }
+  const normalized = normalizeDiscoveryText(phrase)
+  const wordCount = normalized.split(' ').filter(Boolean).length
+  if (!normalized || GENERIC_DISHES.has(normalized) || wordCount > 10) return ''
+  return phrase
+}
+
+function titleDishNamedInMetadata(modelResult, metadata) {
+  const title = capText(metadata?.title, 400)
+  const normalizedTitle = normalizeDiscoveryText(title)
+  const modelTitleDish = capText(modelResult?.titleDishName, 120)
+  const normalizedModelDish = normalizeDiscoveryText(modelTitleDish)
+
+  if (
+    normalizedModelDish &&
+    !GENERIC_DISHES.has(normalizedModelDish) &&
+    normalizedTitle.includes(normalizedModelDish)
+  ) {
+    return modelTitleDish
+  }
+
+  return inferTitleDishPhrase(title)
+}
+
+function candidateMatchesDish(candidate, dishName) {
+  const normalizedDish = normalizeDiscoveryText(dishName)
+  if (!normalizedDish) return false
+  return [candidate?.dishName, ...(candidate?.aliases || [])].some((value) => {
+    const normalizedValue = normalizeDiscoveryText(value)
+    return (
+      normalizedValue === normalizedDish ||
+      normalizedValue.includes(normalizedDish) ||
+      normalizedDish.includes(normalizedValue)
+    )
+  })
+}
+
+function buildDishCandidates(modelResult, metadata) {
+  const visualCandidates = sanitizeCandidates(modelResult?.candidates)
+  const titleDishName = titleDishNamedInMetadata(modelResult, metadata)
+  if (!titleDishName) return visualCandidates
+
+  const matchingIndex = visualCandidates.findIndex((candidate) =>
+    candidateMatchesDish(candidate, titleDishName),
+  )
+  const matchingCandidate = matchingIndex >= 0 ? visualCandidates[matchingIndex] : null
+  const normalized = normalizeDiscoveryText(titleDishName)
+  const titleCandidate = {
+    id: `dish:title:${normalized.replace(/\s+/gu, '-')}`,
+    dishName: titleDishName,
+    cuisine: matchingCandidate?.cuisine || null,
+    confidence: Math.max(0.9, Number(matchingCandidate?.confidence) || 0),
+    aliases: matchingCandidate?.aliases || [],
+    visualEvidence: matchingCandidate?.visualEvidence?.length
+      ? matchingCandidate.visualEvidence
+      : ['Named explicitly in the public video title'],
+    evidenceSource: matchingCandidate ? 'title_and_thumbnail' : 'title',
+    evidenceLabel: matchingCandidate ? 'Title and thumbnail evidence' : 'Title evidence',
+    reviewRequired: true,
+  }
+
+  return [
+    titleCandidate,
+    ...visualCandidates.filter((_, index) => index !== matchingIndex),
+  ].slice(0, MAX_CANDIDATES)
+}
+
+function findKnownDishInTitle(title, dishNames) {
+  const explicitPhrase = inferTitleDishPhrase(title)
+  const normalizedPhrase = normalizeDiscoveryText(explicitPhrase)
+  if (!normalizedPhrase) return ''
+  const paddedPhrase = ` ${normalizedPhrase} `
+
+  return uniqueTexts(dishNames, 1_000, 120)
+    .map((dishName) => ({
+      dishName,
+      normalized: normalizeDiscoveryText(dishName),
+    }))
+    .filter(({ normalized }) => (
+      normalized.length >= 4 &&
+      !GENERIC_DISHES.has(normalized) &&
+      paddedPhrase.includes(` ${normalized} `)
+    ))
+    .sort((left, right) => right.normalized.length - left.normalized.length)[0]?.dishName || ''
+}
+
+async function resolveKnownTitleDish(metadata, { database = pool, timeoutMs = 2_500 } = {}) {
+  const title = capText(metadata?.title, 400)
+  if (!inferTitleDishPhrase(title)) return ''
+
+  let timer
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error('Known dish lookup timed out.')
+      error.code = 'dish_catalog_timeout'
+      reject(error)
+    }, Math.max(500, timeoutMs))
+  })
+  const queries = Promise.all([
+    database.execute(`SELECT DISTINCT dish_name FROM food_spots WHERE dish_name IS NOT NULL AND TRIM(dish_name) <> '' LIMIT 500`),
+    database.execute(`SELECT DISTINCT featured_dish AS dish_name FROM restaurants WHERE featured_dish IS NOT NULL AND TRIM(featured_dish) <> '' LIMIT 500`),
+  ])
+
+  const results = await Promise.race([queries, timeout]).finally(() => clearTimeout(timer))
+  const dishNames = results.flatMap(([rows]) => rows.map((row) => row.dish_name))
+  return findKnownDishInTitle(title, dishNames) || inferTitleDishPhrase(title)
 }
 
 function responseText(payload) {
@@ -120,7 +254,9 @@ export async function invokeDishVisionGemini({
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`
     const prompt = [
       'Identify up to three specific dishes visibly supported by this food-video thumbnail.',
-      'Use the title only as secondary context. Do not identify or infer a restaurant, address, city, or original filming location.',
+      'First extract titleDishName when the public video title explicitly names a specific dish. Remove locations, presenter names, and hashtags from that field.',
+      'When titleDishName is present and the thumbnail does not clearly contradict its food category, candidate 1 must be that dish. Do not replace it with a visually similar noodle soup.',
+      'Use the thumbnail to validate or add alternatives. Do not identify or infer a restaurant, address, city, or original filming location.',
       'Prefer a specific dish name over a broad cuisine. Return no candidates when the image is not sufficient.',
       metadata?.title ? `Public video title: ${capText(metadata.title, 400)}` : '',
     ].filter(Boolean).join('\n')
@@ -142,6 +278,8 @@ export async function invokeDishVisionGemini({
         generationConfig: {
           responseMimeType: 'application/json',
           responseSchema: DISH_RESPONSE_SCHEMA,
+          temperature: 0,
+          topP: 0.1,
           maxOutputTokens: 4_096,
         },
       }),
@@ -185,6 +323,7 @@ export async function identifyDishFromVideoSource(
     fetchMetadata = fetchVisionMetadata,
     fetchImage = fetchPublicImageBuffer,
     invokeModel = invokeDishVisionGemini,
+    resolveTitleDish = resolveKnownTitleDish,
   } = {},
 ) {
   const input = normalizeVisionAutoUrl(sourceUrl, { assetTypeHint: 'video' })
@@ -196,6 +335,30 @@ export async function identifyDishFromVideoSource(
 
   const metadata = await fetchMetadata(input.url)
   const thumbnailUrl = `https://i.ytimg.com/vi/${encodeURIComponent(input.videoId)}/hqdefault.jpg`
+  const knownTitleDish = await resolveTitleDish(metadata)
+    .catch(() => inferTitleDishPhrase(metadata?.title))
+  if (knownTitleDish) {
+    const dishCandidates = buildDishCandidates(
+      { titleDishName: knownTitleDish, candidates: [] },
+      metadata,
+    )
+    return {
+      status: 'dish_candidates',
+      source: {
+        type: 'youtube_url',
+        platform: 'youtube',
+        videoId: input.videoId,
+        url: input.url,
+        title: capText(metadata?.title, 400) || null,
+        thumbnailUrl,
+      },
+      dishCandidates,
+      selectedDish: null,
+      originalPlaceKnown: false,
+      restaurants: [],
+      warnings: [],
+    }
+  }
   const image = await fetchImage({ url: thumbnailUrl }, { signal, timeoutMs: 8_000, maxResponseBytes: 3_000_000 })
   if (!image?.buffer) {
     const error = new Error('The public video thumbnail could not be read.')
@@ -208,7 +371,7 @@ export async function identifyDishFromVideoSource(
     .jpeg({ quality: 84 })
     .toBuffer()
   const modelResult = await invokeModel({ imageBuffer, metadata, signal })
-  const dishCandidates = sanitizeCandidates(modelResult?.candidates)
+  const dishCandidates = buildDishCandidates(modelResult, metadata)
 
   return {
     status: dishCandidates.length ? 'dish_candidates' : 'dish_not_identified',
@@ -271,7 +434,7 @@ async function loadLocalPlaces(database = pool, timeoutMs = 6_000) {
     }, Math.max(1_000, timeoutMs))
   })
   const queries = Promise.all([
-    database.execute(`SELECT id, name, address, district, category, latitude, longitude, avg_rating, price_range, description FROM restaurants WHERE latitude IS NOT NULL AND longitude IS NOT NULL LIMIT 500`),
+    database.execute(`SELECT id, name, address, district, category, latitude, longitude, avg_rating, price_range, description, featured_dish, image_url, source_url, DATE_FORMAT(verified_at, '%Y-%m-%d') AS verified_at FROM restaurants WHERE latitude IS NOT NULL AND longitude IS NOT NULL LIMIT 500`),
     database.execute(`SELECT id, name, dish_name, category, district, latitude, longitude, rating FROM food_spots WHERE latitude IS NOT NULL AND longitude IS NOT NULL LIMIT 500`),
   ])
   const [[restaurants], [spots]] = await Promise.race([queries, timeout]).finally(() => clearTimeout(timer))
@@ -338,6 +501,11 @@ export async function searchLocalPlacesForDish(
 
 export const __visionDishDiscoveryTestUtils = {
   sanitizeCandidates,
+  inferTitleDishPhrase,
+  titleDishNamedInMetadata,
+  buildDishCandidates,
+  findKnownDishInTitle,
+  resolveKnownTitleDish,
   dishMatchScore,
   distanceKm,
 }

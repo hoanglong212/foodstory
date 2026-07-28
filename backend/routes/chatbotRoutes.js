@@ -3,6 +3,8 @@ import { askFoodStoryChatbot } from '../services/foodStoryChatbotService.js'
 import { optionalAuth } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
+const MAX_MESSAGE_LENGTH = 800
+const MAX_CONVERSATION_MEMORY_LENGTH = 4_000
 
 router.post('/ask', optionalAuth, async (req, res) => {
   try {
@@ -11,7 +13,9 @@ router.post('/ask', optionalAuth, async (req, res) => {
       lastRecipeId = null,
       lastRecipeTitle = null,
       lastRestaurantId = null,
+      recipeSearchFilters = null,
       conversationHistory = [],
+      conversationMemory = '',
     } = req.body
 
     if (typeof message !== 'string' || !message.trim()) {
@@ -19,12 +23,35 @@ router.post('/ask', optionalAuth, async (req, res) => {
         message: 'Message is required',
       })
     }
+    if (message.trim().length > MAX_MESSAGE_LENGTH) {
+      return res.status(400).json({
+        message: `Message cannot exceed ${MAX_MESSAGE_LENGTH} characters`,
+      })
+    }
+    if (
+      typeof conversationMemory !== 'string' ||
+      conversationMemory.length > MAX_CONVERSATION_MEMORY_LENGTH
+    ) {
+      return res.status(400).json({
+        message: `Conversation memory cannot exceed ${MAX_CONVERSATION_MEMORY_LENGTH} characters`,
+      })
+    }
+    if (
+      recipeSearchFilters !== null &&
+      (typeof recipeSearchFilters !== 'object' || Array.isArray(recipeSearchFilters))
+    ) {
+      return res.status(400).json({
+        message: 'Recipe search filters must be an object',
+      })
+    }
 
     const result = await askFoodStoryChatbot(message, {
       lastRecipeId,
       lastRecipeTitle,
       lastRestaurantId,
+      recipeSearchFilters,
       conversationHistory,
+      conversationMemory,
       userId: req.user?.id || null,
     })
 

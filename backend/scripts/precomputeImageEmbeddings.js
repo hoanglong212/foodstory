@@ -1,5 +1,6 @@
 import axios from 'axios'
 import pool from '../db.js'
+import { getAiServiceHeaders } from '../services/aiServiceAuth.js'
 
 const AI_SERVICE_URL =
   process.env.AI_SERVICE_URL || process.env.FASTAPI_URL || 'http://127.0.0.1:8000'
@@ -152,12 +153,12 @@ async function precomputeRecipes() {
           : axios.post(
               `${AI_SERVICE_URL}/embed-image-url`,
               { url: recipe.image_url },
-              { timeout: REQUEST_TIMEOUT_MS },
+              { headers: getAiServiceHeaders(), timeout: REQUEST_TIMEOUT_MS },
             ),
         axios.post(
           `${AI_SERVICE_URL}/embed-clip-text`,
           { text: sourceText },
-          { timeout: REQUEST_TIMEOUT_MS },
+          { headers: getAiServiceHeaders(), timeout: REQUEST_TIMEOUT_MS },
         ),
       ])
 
@@ -213,7 +214,7 @@ async function precomputeRestaurants() {
       const response = await axios.post(
         `${AI_SERVICE_URL}/embed-clip-text`,
         { text: sourceText },
-        { timeout: REQUEST_TIMEOUT_MS },
+        { headers: getAiServiceHeaders(), timeout: REQUEST_TIMEOUT_MS },
       )
 
       await saveClipEmbedding({

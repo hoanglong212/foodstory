@@ -1,0 +1,1119 @@
+{
+  "schemaVersion": 1,
+  "status": "completed",
+  "note": "Small formative pilot only; not a representative population-level benchmark.",
+  "run": {
+    "commit": "0473287788bad6a098f1d2724ec0e3d0c81bd412",
+    "branch": "codex/render-deployment",
+    "startedAt": "2026-07-28T04:23:44.222Z",
+    "finishedAt": "2026-07-28T04:25:28.274Z",
+    "command": "\"C:\\\\Program Files\\\\nodejs\\\\node.exe\" \"C:\\\\COS30043\\\\foodstory\\\\backend\\\\scripts\\\\runVisionDishPilot.js\"",
+    "workingDirectory": "C:\\COS30043\\foodstory\\backend",
+    "endpoint": "http://127.0.0.1:3000/api/food-map/vision-auto-v2/dish-discovery",
+    "groundTruthPath": "docs/evidence/vision-pilot-cases.csv",
+    "delayMs": 3000,
+    "timeoutMs": 60000,
+    "sequential": true,
+    "worktreeDirtyAtStart": true,
+    "environment": {
+      "node": "v24.11.0",
+      "platform": "win32",
+      "arch": "x64",
+      "osRelease": "10.0.26200",
+      "timeZone": "Asia/Saigon"
+    }
+  },
+  "cases": [
+    {
+      "caseId": "V01",
+      "videoUrl": "https://www.youtube.com/watch?v=pT86cqin-Og",
+      "expectedDish": "phở",
+      "returnedTop1": "Pho",
+      "returnedTop3": [
+        "Pho"
+      ],
+      "top1Correct": true,
+      "top3Correct": true,
+      "terminalState": "dish_candidates",
+      "technicalFailure": false,
+      "noResult": false,
+      "reviewRequired": true,
+      "resultStatus": "review_required",
+      "endToEndMs": 10769,
+      "endToEndSeconds": 10.769,
+      "httpStatus": 200,
+      "providerOrMediaError": "",
+      "raw": {
+        "request": {
+          "method": "POST",
+          "body": {
+            "sourceUrl": "https://www.youtube.com/watch?v=pT86cqin-Og"
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "contentType": "application/json; charset=utf-8",
+          "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"pT86cqin-Og\",\"url\":\"https://www.youtube.com/shorts/pT86cqin-Og\",\"title\":\"Pho Le, Nguyen Trai Street, Ho Chi Minh City - Best Restaurants in Nguyen Trai Street\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/pT86cqin-Og/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:pho\",\"dishName\":\"Pho\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Vietnamese Noodle Soup\",\"Phở\"],\"visualEvidence\":[\"bowl of noodle soup\",\"flat rice noodles\",\"sliced beef\",\"herbs and bean sprouts\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+          "parsedBody": {
+            "status": "dish_candidates",
+            "source": {
+              "type": "youtube_url",
+              "platform": "youtube",
+              "videoId": "pT86cqin-Og",
+              "url": "https://www.youtube.com/shorts/pT86cqin-Og",
+              "title": "Pho Le, Nguyen Trai Street, Ho Chi Minh City - Best Restaurants in Nguyen Trai Street",
+              "thumbnailUrl": "https://i.ytimg.com/vi/pT86cqin-Og/hqdefault.jpg"
+            },
+            "dishCandidates": [
+              {
+                "id": "dish:title:pho",
+                "dishName": "Pho",
+                "cuisine": "Vietnamese",
+                "confidence": 1,
+                "aliases": [
+                  "Vietnamese Noodle Soup",
+                  "Phở"
+                ],
+                "visualEvidence": [
+                  "bowl of noodle soup",
+                  "flat rice noodles",
+                  "sliced beef",
+                  "herbs and bean sprouts"
+                ],
+                "evidenceSource": "title_and_thumbnail",
+                "evidenceLabel": "Title and thumbnail evidence",
+                "reviewRequired": true
+              }
+            ],
+            "selectedDish": null,
+            "originalPlaceKnown": false,
+            "restaurants": [],
+            "warnings": []
+          }
+        },
+        "transportError": null
+      }
+    },
+    {
+      "caseId": "V02",
+      "videoUrl": "https://www.youtube.com/watch?v=EpRBxau3ou0",
+      "expectedDish": "phở bò",
+      "returnedTop1": "Pho",
+      "returnedTop3": [
+        "Pho"
+      ],
+      "top1Correct": true,
+      "top3Correct": true,
+      "terminalState": "dish_candidates",
+      "technicalFailure": false,
+      "noResult": false,
+      "reviewRequired": true,
+      "resultStatus": "review_required",
+      "endToEndMs": 9865,
+      "endToEndSeconds": 9.865,
+      "httpStatus": 200,
+      "providerOrMediaError": "",
+      "raw": {
+        "request": {
+          "method": "POST",
+          "body": {
+            "sourceUrl": "https://www.youtube.com/watch?v=EpRBxau3ou0"
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "contentType": "application/json; charset=utf-8",
+          "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"EpRBxau3ou0\",\"url\":\"https://www.youtube.com/shorts/EpRBxau3ou0\",\"title\":\"BEST-EVER PHO RECIPE | Helen's Recipes\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/EpRBxau3ou0/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:pho\",\"dishName\":\"Pho\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Vietnamese Noodle Soup\",\"Phở Bò\"],\"visualEvidence\":[\"bowl of beef noodle soup\",\"rice noodles\",\"thinly sliced beef\",\"green onions\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+          "parsedBody": {
+            "status": "dish_candidates",
+            "source": {
+              "type": "youtube_url",
+              "platform": "youtube",
+              "videoId": "EpRBxau3ou0",
+              "url": "https://www.youtube.com/shorts/EpRBxau3ou0",
+              "title": "BEST-EVER PHO RECIPE | Helen's Recipes",
+              "thumbnailUrl": "https://i.ytimg.com/vi/EpRBxau3ou0/hqdefault.jpg"
+            },
+            "dishCandidates": [
+              {
+                "id": "dish:title:pho",
+                "dishName": "Pho",
+                "cuisine": "Vietnamese",
+                "confidence": 1,
+                "aliases": [
+                  "Vietnamese Noodle Soup",
+                  "Phở Bò"
+                ],
+                "visualEvidence": [
+                  "bowl of beef noodle soup",
+                  "rice noodles",
+                  "thinly sliced beef",
+                  "green onions"
+                ],
+                "evidenceSource": "title_and_thumbnail",
+                "evidenceLabel": "Title and thumbnail evidence",
+                "reviewRequired": true
+              }
+            ],
+            "selectedDish": null,
+            "originalPlaceKnown": false,
+            "restaurants": [],
+            "warnings": []
+          }
+        },
+        "transportError": null
+      }
+    },
+    {
+      "caseId": "V03",
+      "videoUrl": "https://youtu.be/PGZZHWMedNU",
+      "expectedDish": "phở gà",
+      "returnedTop1": "",
+      "returnedTop3": [],
+      "top1Correct": false,
+      "top3Correct": false,
+      "terminalState": "http_429",
+      "technicalFailure": true,
+      "noResult": false,
+      "reviewRequired": false,
+      "resultStatus": "technical_failure",
+      "endToEndMs": 5495,
+      "endToEndSeconds": 5.495,
+      "httpStatus": 429,
+      "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+      "raw": {
+        "request": {
+          "method": "POST",
+          "body": {
+            "sourceUrl": "https://youtu.be/PGZZHWMedNU"
+          }
+        },
+        "response": {
+          "status": 429,
+          "statusText": "Too Many Requests",
+          "contentType": "application/json; charset=utf-8",
+          "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+          "parsedBody": {
+            "error": "Dish recognition provider request failed.",
+            "code": "dish_provider_quota"
+          }
+        },
+        "transportError": null
+      },
+      "attempts": [
+        {
+          "attemptedAt": "2026-07-28T04:25:28.274Z",
+          "caseId": "V03",
+          "videoUrl": "https://youtu.be/PGZZHWMedNU",
+          "expectedDish": "phở gà",
+          "returnedTop1": "",
+          "returnedTop3": [],
+          "top1Correct": false,
+          "top3Correct": false,
+          "terminalState": "http_429",
+          "technicalFailure": true,
+          "noResult": false,
+          "reviewRequired": false,
+          "resultStatus": "technical_failure",
+          "endToEndMs": 5788,
+          "endToEndSeconds": 5.788,
+          "httpStatus": 429,
+          "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://youtu.be/PGZZHWMedNU"
+              }
+            },
+            "response": {
+              "status": 429,
+              "statusText": "Too Many Requests",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+              "parsedBody": {
+                "error": "Dish recognition provider request failed.",
+                "code": "dish_provider_quota"
+              }
+            },
+            "transportError": null
+          }
+        },
+        {
+          "attemptedAt": "2026-07-28T05:08:56.257Z",
+          "caseId": "V03",
+          "videoUrl": "https://youtu.be/PGZZHWMedNU",
+          "expectedDish": "phở gà",
+          "returnedTop1": "",
+          "returnedTop3": [],
+          "top1Correct": false,
+          "top3Correct": false,
+          "terminalState": "http_429",
+          "technicalFailure": true,
+          "noResult": false,
+          "reviewRequired": false,
+          "resultStatus": "technical_failure",
+          "endToEndMs": 5347,
+          "endToEndSeconds": 5.347,
+          "httpStatus": 429,
+          "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://youtu.be/PGZZHWMedNU"
+              }
+            },
+            "response": {
+              "status": 429,
+              "statusText": "Too Many Requests",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+              "parsedBody": {
+                "error": "Dish recognition provider request failed.",
+                "code": "dish_provider_quota"
+              }
+            },
+            "transportError": null
+          }
+        },
+        {
+          "attemptedAt": "2026-07-28T05:25:25.934Z",
+          "caseId": "V03",
+          "videoUrl": "https://youtu.be/PGZZHWMedNU",
+          "expectedDish": "phở gà",
+          "returnedTop1": "",
+          "returnedTop3": [],
+          "top1Correct": false,
+          "top3Correct": false,
+          "terminalState": "http_429",
+          "technicalFailure": true,
+          "noResult": false,
+          "reviewRequired": false,
+          "resultStatus": "technical_failure",
+          "endToEndMs": 5495,
+          "endToEndSeconds": 5.495,
+          "httpStatus": 429,
+          "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://youtu.be/PGZZHWMedNU"
+              }
+            },
+            "response": {
+              "status": 429,
+              "statusText": "Too Many Requests",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+              "parsedBody": {
+                "error": "Dish recognition provider request failed.",
+                "code": "dish_provider_quota"
+              }
+            },
+            "transportError": null
+          }
+        }
+      ]
+    },
+    {
+      "caseId": "V04",
+      "videoUrl": "https://www.youtube.com/watch?v=qWK_HYlKrAA",
+      "expectedDish": "bún bò Huế",
+      "returnedTop1": "",
+      "returnedTop3": [],
+      "top1Correct": false,
+      "top3Correct": false,
+      "terminalState": "http_429",
+      "technicalFailure": true,
+      "noResult": false,
+      "reviewRequired": false,
+      "resultStatus": "technical_failure",
+      "endToEndMs": 3164,
+      "endToEndSeconds": 3.164,
+      "httpStatus": 429,
+      "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+      "raw": {
+        "request": {
+          "method": "POST",
+          "body": {
+            "sourceUrl": "https://www.youtube.com/watch?v=qWK_HYlKrAA"
+          }
+        },
+        "response": {
+          "status": 429,
+          "statusText": "Too Many Requests",
+          "contentType": "application/json; charset=utf-8",
+          "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+          "parsedBody": {
+            "error": "Dish recognition provider request failed.",
+            "code": "dish_provider_quota"
+          }
+        },
+        "transportError": null
+      },
+      "attempts": [
+        {
+          "attemptedAt": "2026-07-28T04:25:28.274Z",
+          "caseId": "V04",
+          "videoUrl": "https://www.youtube.com/watch?v=qWK_HYlKrAA",
+          "expectedDish": "bún bò Huế",
+          "returnedTop1": "",
+          "returnedTop3": [],
+          "top1Correct": false,
+          "top3Correct": false,
+          "terminalState": "http_429",
+          "technicalFailure": true,
+          "noResult": false,
+          "reviewRequired": false,
+          "resultStatus": "technical_failure",
+          "endToEndMs": 3771,
+          "endToEndSeconds": 3.771,
+          "httpStatus": 429,
+          "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://www.youtube.com/watch?v=qWK_HYlKrAA"
+              }
+            },
+            "response": {
+              "status": 429,
+              "statusText": "Too Many Requests",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+              "parsedBody": {
+                "error": "Dish recognition provider request failed.",
+                "code": "dish_provider_quota"
+              }
+            },
+            "transportError": null
+          }
+        },
+        {
+          "attemptedAt": "2026-07-28T05:10:11.736Z",
+          "caseId": "V04",
+          "videoUrl": "https://www.youtube.com/watch?v=qWK_HYlKrAA",
+          "expectedDish": "bún bò Huế",
+          "returnedTop1": "",
+          "returnedTop3": [],
+          "top1Correct": false,
+          "top3Correct": false,
+          "terminalState": "http_429",
+          "technicalFailure": true,
+          "noResult": false,
+          "reviewRequired": false,
+          "resultStatus": "technical_failure",
+          "endToEndMs": 3164,
+          "endToEndSeconds": 3.164,
+          "httpStatus": 429,
+          "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://www.youtube.com/watch?v=qWK_HYlKrAA"
+              }
+            },
+            "response": {
+              "status": 429,
+              "statusText": "Too Many Requests",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+              "parsedBody": {
+                "error": "Dish recognition provider request failed.",
+                "code": "dish_provider_quota"
+              }
+            },
+            "transportError": null
+          }
+        }
+      ]
+    },
+    {
+      "caseId": "V05",
+      "videoUrl": "https://www.youtube.com/watch?v=8CaadFo3sw0",
+      "expectedDish": "gỏi cuốn",
+      "returnedTop1": "Vietnamese Fresh Spring Roll (GOI CUON)",
+      "returnedTop3": [
+        "Vietnamese Fresh Spring Roll (GOI CUON)"
+      ],
+      "top1Correct": true,
+      "top3Correct": true,
+      "terminalState": "dish_candidates",
+      "technicalFailure": false,
+      "noResult": false,
+      "reviewRequired": true,
+      "resultStatus": "review_required",
+      "endToEndMs": 3779,
+      "endToEndSeconds": 3.779,
+      "httpStatus": 200,
+      "providerOrMediaError": "",
+      "raw": {
+        "request": {
+          "method": "POST",
+          "body": {
+            "sourceUrl": "https://www.youtube.com/watch?v=8CaadFo3sw0"
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "contentType": "application/json; charset=utf-8",
+          "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"8CaadFo3sw0\",\"url\":\"https://www.youtube.com/shorts/8CaadFo3sw0\",\"title\":\"How to make Vietnamese Fresh Spring Roll (GOI CUON) | Helen's Recipes\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/8CaadFo3sw0/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:vietnamese-fresh-spring-roll-goi-cuon\",\"dishName\":\"Vietnamese Fresh Spring Roll (GOI CUON)\",\"cuisine\":null,\"confidence\":0.9,\"aliases\":[],\"visualEvidence\":[\"Named explicitly in the public video title\"],\"evidenceSource\":\"title\",\"evidenceLabel\":\"Title evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+          "parsedBody": {
+            "status": "dish_candidates",
+            "source": {
+              "type": "youtube_url",
+              "platform": "youtube",
+              "videoId": "8CaadFo3sw0",
+              "url": "https://www.youtube.com/shorts/8CaadFo3sw0",
+              "title": "How to make Vietnamese Fresh Spring Roll (GOI CUON) | Helen's Recipes",
+              "thumbnailUrl": "https://i.ytimg.com/vi/8CaadFo3sw0/hqdefault.jpg"
+            },
+            "dishCandidates": [
+              {
+                "id": "dish:title:vietnamese-fresh-spring-roll-goi-cuon",
+                "dishName": "Vietnamese Fresh Spring Roll (GOI CUON)",
+                "cuisine": null,
+                "confidence": 0.9,
+                "aliases": [],
+                "visualEvidence": [
+                  "Named explicitly in the public video title"
+                ],
+                "evidenceSource": "title",
+                "evidenceLabel": "Title evidence",
+                "reviewRequired": true
+              }
+            ],
+            "selectedDish": null,
+            "originalPlaceKnown": false,
+            "restaurants": [],
+            "warnings": []
+          }
+        },
+        "transportError": null
+      }
+    },
+    {
+      "caseId": "V06",
+      "videoUrl": "https://www.youtube.com/watch?v=Dz9r3vNRxPA",
+      "expectedDish": "bánh mì",
+      "returnedTop1": "",
+      "returnedTop3": [],
+      "top1Correct": false,
+      "top3Correct": false,
+      "terminalState": "http_504",
+      "technicalFailure": true,
+      "noResult": false,
+      "reviewRequired": false,
+      "resultStatus": "technical_failure",
+      "endToEndMs": 18546,
+      "endToEndSeconds": 18.546,
+      "httpStatus": 504,
+      "providerOrMediaError": "dish_provider_timeout: Dish recognition timed out.",
+      "raw": {
+        "request": {
+          "method": "POST",
+          "body": {
+            "sourceUrl": "https://www.youtube.com/watch?v=Dz9r3vNRxPA"
+          }
+        },
+        "response": {
+          "status": 504,
+          "statusText": "Gateway Timeout",
+          "contentType": "application/json; charset=utf-8",
+          "rawBody": "{\"error\":\"Dish recognition timed out.\",\"code\":\"dish_provider_timeout\"}",
+          "parsedBody": {
+            "error": "Dish recognition timed out.",
+            "code": "dish_provider_timeout"
+          }
+        },
+        "transportError": null
+      },
+      "attempts": [
+        {
+          "attemptedAt": "2026-07-28T04:25:28.274Z",
+          "caseId": "V06",
+          "videoUrl": "https://www.youtube.com/watch?v=Dz9r3vNRxPA",
+          "expectedDish": "bánh mì",
+          "returnedTop1": "",
+          "returnedTop3": [],
+          "top1Correct": false,
+          "top3Correct": false,
+          "terminalState": "http_429",
+          "technicalFailure": true,
+          "noResult": false,
+          "reviewRequired": false,
+          "resultStatus": "technical_failure",
+          "endToEndMs": 4302,
+          "endToEndSeconds": 4.302,
+          "httpStatus": 429,
+          "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://www.youtube.com/watch?v=Dz9r3vNRxPA"
+              }
+            },
+            "response": {
+              "status": 429,
+              "statusText": "Too Many Requests",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+              "parsedBody": {
+                "error": "Dish recognition provider request failed.",
+                "code": "dish_provider_quota"
+              }
+            },
+            "transportError": null
+          }
+        },
+        {
+          "attemptedAt": "2026-07-28T05:11:24.917Z",
+          "caseId": "V06",
+          "videoUrl": "https://www.youtube.com/watch?v=Dz9r3vNRxPA",
+          "expectedDish": "bánh mì",
+          "returnedTop1": "",
+          "returnedTop3": [],
+          "top1Correct": false,
+          "top3Correct": false,
+          "terminalState": "http_504",
+          "technicalFailure": true,
+          "noResult": false,
+          "reviewRequired": false,
+          "resultStatus": "technical_failure",
+          "endToEndMs": 18546,
+          "endToEndSeconds": 18.546,
+          "httpStatus": 504,
+          "providerOrMediaError": "dish_provider_timeout: Dish recognition timed out.",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://www.youtube.com/watch?v=Dz9r3vNRxPA"
+              }
+            },
+            "response": {
+              "status": 504,
+              "statusText": "Gateway Timeout",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"error\":\"Dish recognition timed out.\",\"code\":\"dish_provider_timeout\"}",
+              "parsedBody": {
+                "error": "Dish recognition timed out.",
+                "code": "dish_provider_timeout"
+              }
+            },
+            "transportError": null
+          }
+        }
+      ]
+    },
+    {
+      "caseId": "V07",
+      "videoUrl": "https://www.youtube.com/watch?v=iZJzTScgB-c",
+      "expectedDish": "bún chả",
+      "returnedTop1": "",
+      "returnedTop3": [],
+      "top1Correct": false,
+      "top3Correct": false,
+      "terminalState": "http_429",
+      "technicalFailure": true,
+      "noResult": false,
+      "reviewRequired": false,
+      "resultStatus": "technical_failure",
+      "endToEndMs": 3686,
+      "endToEndSeconds": 3.686,
+      "httpStatus": 429,
+      "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+      "raw": {
+        "request": {
+          "method": "POST",
+          "body": {
+            "sourceUrl": "https://www.youtube.com/watch?v=iZJzTScgB-c"
+          }
+        },
+        "response": {
+          "status": 429,
+          "statusText": "Too Many Requests",
+          "contentType": "application/json; charset=utf-8",
+          "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+          "parsedBody": {
+            "error": "Dish recognition provider request failed.",
+            "code": "dish_provider_quota"
+          }
+        },
+        "transportError": null
+      },
+      "attempts": [
+        {
+          "attemptedAt": "2026-07-28T04:25:28.274Z",
+          "caseId": "V07",
+          "videoUrl": "https://www.youtube.com/watch?v=iZJzTScgB-c",
+          "expectedDish": "bún chả",
+          "returnedTop1": "",
+          "returnedTop3": [],
+          "top1Correct": false,
+          "top3Correct": false,
+          "terminalState": "http_429",
+          "technicalFailure": true,
+          "noResult": false,
+          "reviewRequired": false,
+          "resultStatus": "technical_failure",
+          "endToEndMs": 4381,
+          "endToEndSeconds": 4.381,
+          "httpStatus": 429,
+          "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://www.youtube.com/watch?v=iZJzTScgB-c"
+              }
+            },
+            "response": {
+              "status": 429,
+              "statusText": "Too Many Requests",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+              "parsedBody": {
+                "error": "Dish recognition provider request failed.",
+                "code": "dish_provider_quota"
+              }
+            },
+            "transportError": null
+          }
+        },
+        {
+          "attemptedAt": "2026-07-28T05:12:53.488Z",
+          "caseId": "V07",
+          "videoUrl": "https://www.youtube.com/watch?v=iZJzTScgB-c",
+          "expectedDish": "bún chả",
+          "returnedTop1": "",
+          "returnedTop3": [],
+          "top1Correct": false,
+          "top3Correct": false,
+          "terminalState": "http_429",
+          "technicalFailure": true,
+          "noResult": false,
+          "reviewRequired": false,
+          "resultStatus": "technical_failure",
+          "endToEndMs": 3686,
+          "endToEndSeconds": 3.686,
+          "httpStatus": 429,
+          "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://www.youtube.com/watch?v=iZJzTScgB-c"
+              }
+            },
+            "response": {
+              "status": 429,
+              "statusText": "Too Many Requests",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+              "parsedBody": {
+                "error": "Dish recognition provider request failed.",
+                "code": "dish_provider_quota"
+              }
+            },
+            "transportError": null
+          }
+        }
+      ]
+    },
+    {
+      "caseId": "V08",
+      "videoUrl": "https://www.youtube.com/watch?v=OHP77Zim3Ko",
+      "expectedDish": "bánh bèo",
+      "returnedTop1": "",
+      "returnedTop3": [],
+      "top1Correct": false,
+      "top3Correct": false,
+      "terminalState": "http_429",
+      "technicalFailure": true,
+      "noResult": false,
+      "reviewRequired": false,
+      "resultStatus": "technical_failure",
+      "endToEndMs": 4521,
+      "endToEndSeconds": 4.521,
+      "httpStatus": 429,
+      "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+      "raw": {
+        "request": {
+          "method": "POST",
+          "body": {
+            "sourceUrl": "https://www.youtube.com/watch?v=OHP77Zim3Ko"
+          }
+        },
+        "response": {
+          "status": 429,
+          "statusText": "Too Many Requests",
+          "contentType": "application/json; charset=utf-8",
+          "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+          "parsedBody": {
+            "error": "Dish recognition provider request failed.",
+            "code": "dish_provider_quota"
+          }
+        },
+        "transportError": null
+      }
+    },
+    {
+      "caseId": "V09",
+      "videoUrl": "https://www.youtube.com/watch?v=s5xIVRi26t4",
+      "expectedDish": "bánh bột lọc",
+      "returnedTop1": "",
+      "returnedTop3": [],
+      "top1Correct": false,
+      "top3Correct": false,
+      "terminalState": "http_429",
+      "technicalFailure": true,
+      "noResult": false,
+      "reviewRequired": false,
+      "resultStatus": "technical_failure",
+      "endToEndMs": 5138,
+      "endToEndSeconds": 5.138,
+      "httpStatus": 429,
+      "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+      "raw": {
+        "request": {
+          "method": "POST",
+          "body": {
+            "sourceUrl": "https://www.youtube.com/watch?v=s5xIVRi26t4"
+          }
+        },
+        "response": {
+          "status": 429,
+          "statusText": "Too Many Requests",
+          "contentType": "application/json; charset=utf-8",
+          "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+          "parsedBody": {
+            "error": "Dish recognition provider request failed.",
+            "code": "dish_provider_quota"
+          }
+        },
+        "transportError": null
+      }
+    },
+    {
+      "caseId": "V10",
+      "videoUrl": "https://www.youtube.com/watch?v=VhquFhlJ5Ds",
+      "expectedDish": "bánh xèo",
+      "returnedTop1": "VIETNAMESE CREPE- BÁNH XÈO",
+      "returnedTop3": [
+        "VIETNAMESE CREPE- BÁNH XÈO"
+      ],
+      "top1Correct": true,
+      "top3Correct": true,
+      "terminalState": "dish_candidates",
+      "technicalFailure": false,
+      "noResult": false,
+      "reviewRequired": true,
+      "resultStatus": "review_required",
+      "endToEndMs": 3560,
+      "endToEndSeconds": 3.56,
+      "httpStatus": 200,
+      "providerOrMediaError": "",
+      "raw": {
+        "request": {
+          "method": "POST",
+          "body": {
+            "sourceUrl": "https://www.youtube.com/watch?v=VhquFhlJ5Ds"
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "contentType": "application/json; charset=utf-8",
+          "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"VhquFhlJ5Ds\",\"url\":\"https://www.youtube.com/shorts/VhquFhlJ5Ds\",\"title\":\"How to make VIETNAMESE CREPE- BÁNH XÈO\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/VhquFhlJ5Ds/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:vietnamese-crepe-banh-xeo\",\"dishName\":\"VIETNAMESE CREPE- BÁNH XÈO\",\"cuisine\":null,\"confidence\":0.9,\"aliases\":[],\"visualEvidence\":[\"Named explicitly in the public video title\"],\"evidenceSource\":\"title\",\"evidenceLabel\":\"Title evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+          "parsedBody": {
+            "status": "dish_candidates",
+            "source": {
+              "type": "youtube_url",
+              "platform": "youtube",
+              "videoId": "VhquFhlJ5Ds",
+              "url": "https://www.youtube.com/shorts/VhquFhlJ5Ds",
+              "title": "How to make VIETNAMESE CREPE- BÁNH XÈO",
+              "thumbnailUrl": "https://i.ytimg.com/vi/VhquFhlJ5Ds/hqdefault.jpg"
+            },
+            "dishCandidates": [
+              {
+                "id": "dish:title:vietnamese-crepe-banh-xeo",
+                "dishName": "VIETNAMESE CREPE- BÁNH XÈO",
+                "cuisine": null,
+                "confidence": 0.9,
+                "aliases": [],
+                "visualEvidence": [
+                  "Named explicitly in the public video title"
+                ],
+                "evidenceSource": "title",
+                "evidenceLabel": "Title evidence",
+                "reviewRequired": true
+              }
+            ],
+            "selectedDish": null,
+            "originalPlaceKnown": false,
+            "restaurants": [],
+            "warnings": []
+          }
+        },
+        "transportError": null
+      }
+    },
+    {
+      "caseId": "V11",
+      "videoUrl": "https://www.youtube.com/watch?v=P1AXLv3ZF3Q",
+      "expectedDish": "cơm tấm",
+      "returnedTop1": "",
+      "returnedTop3": [],
+      "top1Correct": false,
+      "top3Correct": false,
+      "terminalState": "http_429",
+      "technicalFailure": true,
+      "noResult": false,
+      "reviewRequired": false,
+      "resultStatus": "technical_failure",
+      "endToEndMs": 3807,
+      "endToEndSeconds": 3.807,
+      "httpStatus": 429,
+      "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+      "raw": {
+        "request": {
+          "method": "POST",
+          "body": {
+            "sourceUrl": "https://www.youtube.com/watch?v=P1AXLv3ZF3Q"
+          }
+        },
+        "response": {
+          "status": 429,
+          "statusText": "Too Many Requests",
+          "contentType": "application/json; charset=utf-8",
+          "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+          "parsedBody": {
+            "error": "Dish recognition provider request failed.",
+            "code": "dish_provider_quota"
+          }
+        },
+        "transportError": null
+      }
+    },
+    {
+      "caseId": "V12",
+      "videoUrl": "https://www.youtube.com/watch?v=omVaFMmc9pU",
+      "expectedDish": "bánh tráng nướng",
+      "returnedTop1": "BÁNH TRÁNG NƯỚNG tự làm",
+      "returnedTop3": [
+        "BÁNH TRÁNG NƯỚNG tự làm"
+      ],
+      "top1Correct": true,
+      "top3Correct": true,
+      "terminalState": "dish_candidates",
+      "technicalFailure": false,
+      "noResult": false,
+      "reviewRequired": true,
+      "resultStatus": "review_required",
+      "endToEndMs": 3842,
+      "endToEndSeconds": 3.842,
+      "httpStatus": 200,
+      "providerOrMediaError": "",
+      "raw": {
+        "request": {
+          "method": "POST",
+          "body": {
+            "sourceUrl": "https://www.youtube.com/watch?v=omVaFMmc9pU"
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "contentType": "application/json; charset=utf-8",
+          "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"omVaFMmc9pU\",\"url\":\"https://www.youtube.com/shorts/omVaFMmc9pU\",\"title\":\"Cách làm BÁNH TRÁNG NƯỚNG tự làm tại nhà ngon tuyệt!\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/omVaFMmc9pU/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:banh-trang-nuong-tu-lam\",\"dishName\":\"BÁNH TRÁNG NƯỚNG tự làm\",\"cuisine\":null,\"confidence\":0.9,\"aliases\":[],\"visualEvidence\":[\"Named explicitly in the public video title\"],\"evidenceSource\":\"title\",\"evidenceLabel\":\"Title evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+          "parsedBody": {
+            "status": "dish_candidates",
+            "source": {
+              "type": "youtube_url",
+              "platform": "youtube",
+              "videoId": "omVaFMmc9pU",
+              "url": "https://www.youtube.com/shorts/omVaFMmc9pU",
+              "title": "Cách làm BÁNH TRÁNG NƯỚNG tự làm tại nhà ngon tuyệt!",
+              "thumbnailUrl": "https://i.ytimg.com/vi/omVaFMmc9pU/hqdefault.jpg"
+            },
+            "dishCandidates": [
+              {
+                "id": "dish:title:banh-trang-nuong-tu-lam",
+                "dishName": "BÁNH TRÁNG NƯỚNG tự làm",
+                "cuisine": null,
+                "confidence": 0.9,
+                "aliases": [],
+                "visualEvidence": [
+                  "Named explicitly in the public video title"
+                ],
+                "evidenceSource": "title",
+                "evidenceLabel": "Title evidence",
+                "reviewRequired": true
+              }
+            ],
+            "selectedDish": null,
+            "originalPlaceKnown": false,
+            "restaurants": [],
+            "warnings": []
+          }
+        },
+        "transportError": null
+      }
+    },
+    {
+      "caseId": "V13",
+      "videoUrl": "https://www.youtube.com/watch?v=fqiGFA0qkig",
+      "expectedDish": "mì Quảng",
+      "returnedTop1": "",
+      "returnedTop3": [],
+      "top1Correct": false,
+      "top3Correct": false,
+      "terminalState": "http_429",
+      "technicalFailure": true,
+      "noResult": false,
+      "reviewRequired": false,
+      "resultStatus": "technical_failure",
+      "endToEndMs": 4082,
+      "endToEndSeconds": 4.082,
+      "httpStatus": 429,
+      "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed.",
+      "raw": {
+        "request": {
+          "method": "POST",
+          "body": {
+            "sourceUrl": "https://www.youtube.com/watch?v=fqiGFA0qkig"
+          }
+        },
+        "response": {
+          "status": 429,
+          "statusText": "Too Many Requests",
+          "contentType": "application/json; charset=utf-8",
+          "rawBody": "{\"error\":\"Dish recognition provider request failed.\",\"code\":\"dish_provider_quota\"}",
+          "parsedBody": {
+            "error": "Dish recognition provider request failed.",
+            "code": "dish_provider_quota"
+          }
+        },
+        "transportError": null
+      }
+    }
+  ],
+  "metrics": {
+    "sampleSize": 13,
+    "top1Correct": 5,
+    "top1DishAccuracyPercent": 38.46,
+    "top3Correct": 5,
+    "top3DishAccuracyPercent": 38.46,
+    "noResult": 0,
+    "noResultRatePercent": 0,
+    "reviewRequired": 5,
+    "reviewRequiredRatePercent": 38.46,
+    "technicalFailure": 8,
+    "technicalFailureRatePercent": 61.54,
+    "medianEndToEndMs": 4082,
+    "maximumEndToEndMs": 18546
+  },
+  "derivedEvidenceRevisions": [
+    {
+      "timestamp": "2026-07-28T04:28:27.121Z",
+      "reason": "Corrected the harness matcher to accept the complete ground-truth token phrase inside a returned dish name or alias.",
+      "previousMetrics": {
+        "sampleSize": 13,
+        "top1Correct": 2,
+        "top1DishAccuracyPercent": 15.38,
+        "top3Correct": 2,
+        "top3DishAccuracyPercent": 15.38,
+        "noResult": 0,
+        "noResultRatePercent": 0,
+        "reviewRequired": 5,
+        "reviewRequiredRatePercent": 38.46,
+        "technicalFailure": 8,
+        "technicalFailureRatePercent": 61.54,
+        "medianEndToEndMs": 4302,
+        "maximumEndToEndMs": 10769
+      }
+    }
+  ],
+  "retryRuns": [
+    {
+      "status": "stopped_provider_quota",
+      "commit": "0473287788bad6a098f1d2724ec0e3d0c81bd412",
+      "branch": "codex/render-deployment",
+      "startedAt": "2026-07-28T05:08:56.211Z",
+      "finishedAt": "2026-07-28T05:14:06.919Z",
+      "command": "\"C:\\\\Program Files\\\\nodejs\\\\node.exe\" \"C:\\\\COS30043\\\\foodstory\\\\backend\\\\scripts\\\\runVisionDishPilot.js\" \"--retry-technical-failures\" \"--quota-backoff-ms\" \"70000\" \"--max-attempts\" \"1\"",
+      "workingDirectory": "C:\\COS30043\\foodstory\\backend",
+      "endpoint": "http://127.0.0.1:3000/api/food-map/vision-auto-v2/dish-discovery",
+      "targetCaseIds": [
+        "V03",
+        "V04",
+        "V06",
+        "V07",
+        "V08",
+        "V09",
+        "V11",
+        "V13"
+      ],
+      "quotaBackoffMs": 70000,
+      "maxAttempts": 1,
+      "timeoutMs": 60000,
+      "sequential": true,
+      "worktreeDirtyAtStart": true,
+      "environment": {
+        "node": "v24.11.0",
+        "platform": "win32",
+        "arch": "x64",
+        "osRelease": "10.0.26200",
+        "timeZone": "Asia/Saigon"
+      },
+      "stopReason": "4 quota-safe attempt(s), separated by the configured backoff, still returned HTTP 429.",
+      "attemptedCaseIds": [
+        "V03",
+        "V04",
+        "V06",
+        "V07"
+      ],
+      "unattemptedCaseIds": [
+        "V08",
+        "V09",
+        "V11",
+        "V13"
+      ]
+    },
+    {
+      "status": "completed",
+      "commit": "0473287788bad6a098f1d2724ec0e3d0c81bd412",
+      "branch": "codex/render-deployment",
+      "startedAt": "2026-07-28T05:25:25.878Z",
+      "finishedAt": "2026-07-28T05:25:31.468Z",
+      "command": "\"C:\\\\Program Files\\\\nodejs\\\\node.exe\" \"C:\\\\COS30043\\\\foodstory\\\\backend\\\\scripts\\\\runVisionDishPilot.js\" \"--retry-technical-failures\" \"--retry-case-id\" \"V03\" \"--max-attempts\" \"1\" \"--quota-backoff-ms\" \"70000\"",
+      "workingDirectory": "C:\\COS30043\\foodstory\\backend",
+      "endpoint": "http://127.0.0.1:3000/api/food-map/vision-auto-v2/dish-discovery",
+      "targetCaseIds": [
+        "V03"
+      ],
+      "quotaBackoffMs": 70000,
+      "maxAttempts": 1,
+      "timeoutMs": 60000,
+      "sequential": true,
+      "worktreeDirtyAtStart": true,
+      "environment": {
+        "node": "v24.11.0",
+        "platform": "win32",
+        "arch": "x64",
+        "osRelease": "10.0.26200",
+        "timeZone": "Asia/Saigon"
+      }
+    }
+  ]
+}

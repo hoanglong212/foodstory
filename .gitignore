@@ -22,6 +22,9 @@ frontend/node_modules/
 ai-service/.venv/
 **/__pycache__/
 **/*pycache*/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 *.pyc
 *.pyo
 *.pyd
@@ -31,6 +34,9 @@ dist/
 dist-ssr/
 artifacts/
 backend/artifacts/
+coverage/
+htmlcov/
+.coverage
 
 # Logs
 logs/
@@ -47,6 +53,10 @@ lerna-debug.log*
 tmp/
 temp/
 backend/tmp/
+backend/downloads/
+backend/frames/
+backend/audio/
+downloads/
 backend/_patch_backups/
 backend/.track2v3-backup-*/
 *_tmp.mjs
@@ -94,8 +104,10 @@ backend/secrets/
 *.service-account.json
 *service-account*.json
 google-vision-service-account.json
+*credentials*.json
 
 
 .agents/
 
 .codex/
+.impeccable/

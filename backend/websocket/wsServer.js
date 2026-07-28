@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken'
 import { WebSocket, WebSocketServer } from 'ws'
+import pool from '../db.js'
 
 const HEARTBEAT_INTERVAL_MS = 30_000
 const SUBSCRIPTION_TIMEOUT_MS = 10_000
@@ -60,7 +61,7 @@ export function initWebSocketServer(server) {
       rejectConnection(socket)
     }, SUBSCRIPTION_TIMEOUT_MS)
 
-    socket.once('message', (message) => {
+    socket.once('message', async (message) => {
       clearTimeout(subscriptionTimeout)
 
       try {
@@ -72,6 +73,15 @@ export function initWebSocketServer(server) {
 
         const payload = jwt.verify(subscription.token, process.env.JWT_SECRET)
         if (!payload?.id) {
+          rejectConnection(socket)
+          return
+        }
+
+        const [users] = await pool.execute(
+          'SELECT id, is_banned FROM users WHERE id = ? LIMIT 1',
+          [payload.id],
+        )
+        if (!users[0] || users[0].is_banned) {
           rejectConnection(socket)
           return
         }

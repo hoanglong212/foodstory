@@ -1,6 +1,7 @@
 import axios from 'axios'
 import FormData from 'form-data'
 import pool from '../db.js'
+import { getAiServiceHeaders } from './aiServiceAuth.js'
 
 export const AI_SERVICE_URL =
   process.env.AI_SERVICE_URL || process.env.FASTAPI_URL || 'http://127.0.0.1:8000'
@@ -202,7 +203,7 @@ export async function embedUploadedImage(file) {
 
   try {
     const response = await axios.post(`${AI_SERVICE_URL}/embed-image`, form, {
-      headers: form.getHeaders(),
+      headers: getAiServiceHeaders(form.getHeaders()),
       maxBodyLength: MAX_IMAGE_BYTES + 64 * 1024,
       timeout: IMAGE_REQUEST_TIMEOUT_MS,
     })
@@ -217,7 +218,7 @@ export async function embedImageUrl(imageUrl) {
     const response = await axios.post(
       `${AI_SERVICE_URL}/embed-image-url`,
       { url: imageUrl },
-      { timeout: IMAGE_REQUEST_TIMEOUT_MS },
+      { headers: getAiServiceHeaders(), timeout: IMAGE_REQUEST_TIMEOUT_MS },
     )
     return response.data
   } catch (error) {
@@ -232,7 +233,7 @@ export async function embedClipHint(hint) {
     const response = await axios.post(
       `${AI_SERVICE_URL}/embed-clip-text`,
       { text: hint },
-      { timeout: IMAGE_REQUEST_TIMEOUT_MS },
+      { headers: getAiServiceHeaders(), timeout: IMAGE_REQUEST_TIMEOUT_MS },
     )
     return response.data.embedding
   } catch (error) {

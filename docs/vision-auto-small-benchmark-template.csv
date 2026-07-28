@@ -1,0 +1,1 @@
+case_id,video_url_or_file,ground_truth_dish,expected_location_if_known,top_candidate,candidate_rank,outcome,processing_seconds,notes

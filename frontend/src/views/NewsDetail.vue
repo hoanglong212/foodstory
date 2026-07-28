@@ -37,6 +37,7 @@ async function loadNewsItem(newsId = route.params.id) {
       return
     }
     newsItem.value = response.data.item
+    document.title = `${newsItem.value.title} | FoodStory`
   } catch (error) {
     if (error.code === 'ERR_CANCELED' || !isAlive) {
       return
@@ -73,7 +74,7 @@ onBeforeUnmount(() => {
       <span>Back to News</span>
     </RouterLink>
 
-    <p v-if="isLoading" class="status-panel">Loading news...</p>
+    <p v-if="isLoading" class="status-panel" role="status" aria-live="polite">Loading news...</p>
     <p v-else-if="errorMessage" class="form-error" role="alert">{{ errorMessage }}</p>
 
     <div v-else-if="newsItem" class="news-detail-card">

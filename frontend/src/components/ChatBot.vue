@@ -4,6 +4,10 @@ import { useRoute, useRouter } from 'vue-router'
 import AppIcon from './AppIcon.vue'
 import api from '../services/api'
 import { useAuthStore } from '../stores/authStore'
+import {
+  buildConversationMemory,
+  CHAT_MEMORY_LIMITS,
+} from '../utils/chatConversationMemory'
 
 const authStore = useAuthStore()
 const route = useRoute()
@@ -16,14 +20,17 @@ const isLoading = ref(false)
 const isSearchingImage = ref(false)
 const hasUnread = ref(false)
 const messagesElement = ref(null)
+const inputElement = ref(null)
+const launcherElement = ref(null)
 const lastRecipeId = ref(null)
 const lastRecipeTitle = ref(null)
 const lastRestaurantId = ref(null)
+const recipeSearchFilters = ref(null)
 const imagePreviewUrls = new Set()
 const isBusy = computed(() => isLoading.value || isSearchingImage.value)
 const CHAT_HISTORY_VERSION = 2
-const MAX_STORED_MESSAGES = 40
-const MAX_CONTEXT_MESSAGES = 12
+const MAX_STORED_MESSAGES = 80
+const MAX_CONTEXT_MESSAGES = CHAT_MEMORY_LIMITS.recentMessageCount
 
 function chatStorageKey() {
   return `foodstory:foodbot:${CHAT_HISTORY_VERSION}:${authStore.user?.id || 'guest'}`
@@ -33,17 +40,44 @@ function greetingMessage() {
   return {
     role: 'bot',
     content:
-      'Hello! I am FoodBot, a FoodStory assistant grounded in our recipe and restaurant data.',
+      'Hi! I’m FoodBot. Ask in English or Tiếng Việt about recipes, places to eat, FoodStory features, or your saved food data.',
     type: 'greeting',
     retrievalStatus: null,
     confidence: 0,
     results: [],
     sources: [],
     suggestions: [
-      'Where can I eat banh mi in District 1?',
-      'What can I cook with bread and milk?',
+      'Tìm quán bánh mì ở Quận 1',
       'Tôi có trứng và sữa thì làm món gì?',
+      'Food Map hoạt động thế nào?',
     ],
+  }
+}
+
+function normalizedRecipeSearchFilters(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const numberOrNull = (input) => {
+    if (input === null || input === undefined || input === '') return null
+    const parsed = Number(input)
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+  }
+  const allowedSorts = new Set([
+    'popular',
+    'rating',
+    'fastest',
+    'lightest',
+    'protein',
+    'saved',
+  ])
+  return {
+    query: typeof value.query === 'string' ? value.query.slice(0, 80) || null : null,
+    category: typeof value.category === 'string' ? value.category.slice(0, 80) || null : null,
+    tag: typeof value.tag === 'string' ? value.tag.slice(0, 80) || null : null,
+    maxCalories: numberOrNull(value.maxCalories),
+    minRating: numberOrNull(value.minRating),
+    maxTotalTime: numberOrNull(value.maxTotalTime),
+    minProtein: numberOrNull(value.minProtein),
+    sort: allowedSorts.has(value.sort) ? value.sort : 'popular',
   }
 }
 
@@ -51,6 +85,7 @@ function storableMessage(message = {}) {
   return {
     role: message.role === 'user' ? 'user' : 'bot',
     content: String(message.content || '').slice(0, 4000),
+    retryText: String(message.retryText || '').slice(0, 800),
     type: message.type || null,
     intent: message.intent || null,
     retrievalStatus: message.retrievalStatus || null,
@@ -61,6 +96,7 @@ function storableMessage(message = {}) {
     suggestions: Array.isArray(message.suggestions)
       ? message.suggestions.slice(0, 4)
       : [],
+    recipeSearchFilters: normalizedRecipeSearchFilters(message.recipeSearchFilters),
   }
 }
 
@@ -76,6 +112,7 @@ function persistConversation() {
           lastRecipeId: lastRecipeId.value,
           lastRecipeTitle: lastRecipeTitle.value,
           lastRestaurantId: lastRestaurantId.value,
+          recipeSearchFilters: recipeSearchFilters.value,
         },
       }),
     )
@@ -95,6 +132,9 @@ function restoreConversation() {
     lastRecipeId.value = stored.context?.lastRecipeId || null
     lastRecipeTitle.value = stored.context?.lastRecipeTitle || null
     lastRestaurantId.value = stored.context?.lastRestaurantId || null
+    recipeSearchFilters.value = normalizedRecipeSearchFilters(
+      stored.context?.recipeSearchFilters,
+    )
     return messages.value.length > 0
   } catch {
     return false
@@ -104,7 +144,12 @@ function restoreConversation() {
 function conversationHistoryForApi() {
   return messages.value
     .slice(0, -1)
-    .filter((message) => ['user', 'bot'].includes(message.role) && message.content)
+    .filter(
+      (message) =>
+        ['user', 'bot'].includes(message.role) &&
+        message.content &&
+        message.type !== 'error',
+    )
     .slice(-MAX_CONTEXT_MESSAGES)
     .map((message) => ({
       role: message.role === 'bot' ? 'assistant' : 'user',
@@ -114,6 +159,16 @@ function conversationHistoryForApi() {
     }))
 }
 
+function conversationMemoryForApi() {
+  return buildConversationMemory(
+    messages.value.slice(0, -1).filter((message) => message.type !== 'error'),
+    {
+      recentMessageCount: MAX_CONTEXT_MESSAGES,
+      maxChars: CHAT_MEMORY_LIMITS.maxChars,
+    },
+  )
+}
+
 function startNewConversation() {
   imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url))
   imagePreviewUrls.clear()
@@ -121,6 +176,7 @@ function startNewConversation() {
   lastRecipeId.value = null
   lastRecipeTitle.value = null
   lastRestaurantId.value = null
+  recipeSearchFilters.value = null
   hasUnread.value = false
   persistConversation()
   nextTick(scrollToBottom)
@@ -138,10 +194,103 @@ async function openChat() {
   hasUnread.value = false
   await nextTick()
   scrollToBottom()
+  inputElement.value?.focus()
 }
 
-function closeChat() {
+async function closeChat() {
   isOpen.value = false
+  await nextTick()
+  launcherElement.value?.focus()
+}
+
+function handleDialogKeydown(event) {
+  if (event.key === 'Escape') closeChat()
+}
+
+function handleComposerKeydown(event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault()
+    sendMessage()
+  }
+}
+
+function resultImage(result = {}) {
+  return (
+    result.image_url ||
+    result.imageUrl ||
+    result.image ||
+    result.thumbnail ||
+    '/images/food-placeholder.jpg'
+  )
+}
+
+function responseLabel(message = {}) {
+  if (message.type === 'greeting') return 'Ready to help'
+  if (message.retrievalStatus === 'external_sources') return 'Researched on the web'
+  if (message.type === 'website_live_data') return 'Live FoodStory data'
+  if (message.retrievalStatus === 'general_knowledge') {
+    return message.type === 'general_knowledge'
+      ? 'Answered with Groq knowledge'
+      : 'Groq cooking guidance'
+  }
+  if (message.sources?.length) return 'Grounded in FoodStory'
+  if (message.type === 'error') return 'Needs attention'
+  return null
+}
+
+function displayMessageContent(value) {
+  return String(value || '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*\*/g, '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\s*[-*]\s+/gm, '• ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+function messageLooksVietnamese(message = {}) {
+  const value = String(message.content || '').toLowerCase()
+  return (
+    /[ăâđêôơưà-ỹ]/u.test(value) ||
+    /\b(?:tôi|minh|món|công thức|nguyên liệu|foodstory chưa)\b/u.test(value)
+  )
+}
+
+function ingredientMatchLabel(result = {}, message = {}) {
+  if (result.match_coverage === null || result.match_coverage === undefined) {
+    return ''
+  }
+  const matched = Number(result.matched_ingredient_count || 0)
+  const requested = Number(result.requested_ingredient_count || 0)
+  if (!matched || !requested) return ''
+  const exact = Number(result.match_coverage) >= 0.999
+  if (messageLooksVietnamese(message)) {
+    return exact
+      ? `Đủ ${matched}/${requested} nguyên liệu`
+      : `Khớp ${matched}/${requested} nguyên liệu`
+  }
+  return exact
+    ? `All ${matched}/${requested} ingredients`
+    : `Matches ${matched}/${requested} ingredients`
+}
+
+function sourceSummary(message = {}) {
+  const count = Number(message.sources?.length || 0)
+  const hasExternalSources = message.sources?.some(
+    (source) => source.sourceType === 'external',
+  )
+  const label = hasExternalSources ? 'Web source' : 'FoodStory source'
+  return `${label}${count === 1 ? '' : 's'} · ${count}`
+}
+
+function sourceAriaLabel(message = {}) {
+  const count = Number(message.sources?.length || 0)
+  const sourceKind = message.sources?.some(
+    (source) => source.sourceType === 'external',
+  )
+    ? 'web'
+    : 'FoodStory'
+  return `${count} ${sourceKind} source${count === 1 ? '' : 's'}`
 }
 
 function resultKind(message, result) {
@@ -182,6 +331,35 @@ function openRecipe(result) {
   router.push(`/recipes/${result.id}`)
 }
 
+function openRecipeCollection(filters = {}) {
+  const normalized = normalizedRecipeSearchFilters(filters)
+  closeChat()
+  router.push({
+    path: '/recipes',
+    query: {
+      search: normalized?.query || undefined,
+      category: normalized?.category || undefined,
+      tag: normalized?.tag || undefined,
+      sort: normalized?.sort || undefined,
+    },
+  })
+}
+
+function inspirationIngredients(result = {}) {
+  return Array.isArray(result.ingredients)
+    ? result.ingredients
+        .map((item) => item?.name)
+        .filter(Boolean)
+        .slice(0, 5)
+        .join(', ')
+    : ''
+}
+
+function openDailyInspiration() {
+  closeChat()
+  router.push({ path: '/', hash: '#daily-inspiration' })
+}
+
 function openVisionRecipe(result) {
   closeChat()
   router.push(`/recipes/${result.source_id}`)
@@ -204,6 +382,8 @@ function sourceTypeLabel(type) {
   if (type === 'restaurant') return 'Restaurant'
   if (type === 'recipe') return 'Recipe'
   if (type === 'food_spot') return 'Food spot'
+  if (type === 'website') return 'FoodStory guide'
+  if (type === 'external') return 'Web source'
   return 'FoodStory source'
 }
 
@@ -212,6 +392,8 @@ function sourceActionLabel(source) {
   if (source.sourceType === 'restaurant' || source.sourceType === 'food_spot') {
     return 'View on map'
   }
+  if (source.sourceType === 'website') return 'Open page'
+  if (source.sourceType === 'external') return 'Open source'
   return 'Open'
 }
 
@@ -239,6 +421,23 @@ function warningText(status) {
 function openSource(source = {}) {
   closeChat()
 
+  if (source.sourceType === 'external' && source.url) {
+    try {
+      const url = new URL(source.url)
+      if (['http:', 'https:'].includes(url.protocol)) {
+        window.open(url.toString(), '_blank', 'noopener,noreferrer')
+      }
+    } catch {
+      // Invalid external URLs are ignored instead of being opened.
+    }
+    return
+  }
+
+  if (source.sourceType === 'website' && source.path) {
+    router.push(source.path)
+    return
+  }
+
   if (source.sourceType === 'recipe') {
     router.push(`/recipes/${source.sourceId}`)
     return
@@ -260,6 +459,9 @@ function updateRecentContext(data = {}) {
     lastRecipeId.value = data.conversationContext.lastRecipeId || null
     lastRecipeTitle.value = data.conversationContext.lastRecipeTitle || null
     lastRestaurantId.value = data.conversationContext.lastRestaurantId || null
+    recipeSearchFilters.value = normalizedRecipeSearchFilters(
+      data.conversationContext.recipeSearchFilters,
+    )
     return
   }
   if (!['structured', 'grounded_rag'].includes(data.mode)) return
@@ -282,6 +484,11 @@ function updateRecentContext(data = {}) {
 async function handleSuggestion(suggestion, message) {
   const normalized = suggestion.toLocaleLowerCase('en')
   const firstResult = message.results?.[0]
+
+  if (normalized === 'try again' && message.retryText) {
+    await sendMessage(message.retryText)
+    return
+  }
 
   if (normalized.includes('log in') || normalized.includes('login')) {
     openLogin()
@@ -329,7 +536,9 @@ async function sendMessage(text = inputText.value) {
       lastRecipeId: lastRecipeId.value,
       lastRecipeTitle: lastRecipeTitle.value,
       lastRestaurantId: lastRestaurantId.value,
+      recipeSearchFilters: recipeSearchFilters.value,
       conversationHistory: conversationHistoryForApi(),
+      conversationMemory: conversationMemoryForApi(),
     })
 
     const data = response.data
@@ -346,6 +555,7 @@ async function sendMessage(text = inputText.value) {
       sources: data.sources || [],
       results: data.results || [],
       suggestions: data.suggestions || [],
+      recipeSearchFilters: normalizedRecipeSearchFilters(data.recipeSearchFilters),
     })
     persistConversation()
 
@@ -356,6 +566,7 @@ async function sendMessage(text = inputText.value) {
     messages.value.push({
       role: 'bot',
       content: 'Sorry, FoodStory Assistant is currently unavailable.',
+      retryText: content,
       type: 'error',
       retrievalStatus: 'error',
       systemMessage: error?.response?.data?.message || error.message,
@@ -461,13 +672,18 @@ onBeforeUnmount(() => {
   <div class="chatbot-root">
     <button
       v-if="!isOpen"
+      ref="launcherElement"
       class="chat-bubble-btn"
       type="button"
       aria-label="Open FoodBot"
       :aria-expanded="isOpen"
       @click="openChat"
     >
-      <AppIcon name="message" size="25" />
+      <span class="launcher-icon"><AppIcon name="message" size="21" /></span>
+      <span class="launcher-copy">
+        <strong>Ask FoodBot</strong>
+        <small>Recipes, places &amp; FoodStory help</small>
+      </span>
       <span v-if="hasUnread" class="unread-dot" aria-hidden="true"></span>
     </button>
 
@@ -476,6 +692,8 @@ onBeforeUnmount(() => {
       class="chat-window"
       role="dialog"
       aria-label="FoodBot"
+      aria-modal="true"
+      @keydown="handleDialogKeydown"
     >
       <header class="chat-header">
         <span class="chat-header-title">
@@ -484,7 +702,7 @@ onBeforeUnmount(() => {
           </span>
           <span>
             <strong>FoodBot</strong>
-            <small>FoodStory food assistant</small>
+            <small><i aria-hidden="true"></i> FoodStory concierge</small>
           </span>
         </span>
         <span class="chat-header-actions">
@@ -495,7 +713,8 @@ onBeforeUnmount(() => {
             title="Start new conversation"
             @click="startNewConversation"
           >
-            New
+            <AppIcon name="sparkles" size="15" />
+            <span>New chat</span>
           </button>
           <button
             type="button"
@@ -508,14 +727,20 @@ onBeforeUnmount(() => {
         </span>
       </header>
 
-      <div ref="messagesElement" class="chat-messages" aria-live="polite">
+      <div
+        ref="messagesElement"
+        class="chat-messages"
+        role="log"
+        aria-live="polite"
+        :aria-busy="isBusy"
+      >
         <div
           v-for="(message, messageIndex) in messages"
           :key="messageIndex"
           :class="['message-row', `message-${message.role}`]"
         >
           <div :class="message.role === 'bot' ? 'msg-bot' : 'msg-user'">
-            <span>{{ message.content }}</span>
+            <span>{{ displayMessageContent(message.content) }}</span>
             <img
               v-if="message.imagePreview"
               :src="message.imagePreview"
@@ -523,6 +748,17 @@ onBeforeUnmount(() => {
               class="chat-image-preview"
             />
           </div>
+
+          <p
+            v-if="message.role === 'bot' && responseLabel(message)"
+            class="response-label"
+          >
+            <AppIcon
+              :name="message.sources?.length ? 'check' : 'sparkles'"
+              size="12"
+            />
+            {{ responseLabel(message) }}
+          </p>
 
           <div
             v-if="message.role === 'bot' && warningText(message.retrievalStatus)"
@@ -627,22 +863,63 @@ onBeforeUnmount(() => {
               <template v-else-if="resultKind(message, result) === 'recipe'">
                 <div class="recipe-result-layout">
                   <img
-                    :src="result.image_url || '/images/food-placeholder.jpg'"
+                    :src="resultImage(result)"
                     :alt="result.title"
                     @error="$event.currentTarget.src = '/images/food-placeholder.jpg'"
                   />
                   <div>
-                    <span class="result-badge">{{ result.category || 'Recipe' }}</span>
+                    <div class="result-card-topline">
+                      <span class="result-badge">{{ result.category || 'Recipe' }}</span>
+                      <span
+                        v-if="ingredientMatchLabel(result, message)"
+                        :class="[
+                          'ingredient-match-badge',
+                          { partial: Number(result.match_coverage) < 0.999 },
+                        ]"
+                      >
+                        {{ ingredientMatchLabel(result, message) }}
+                      </span>
+                    </div>
                     <h3>{{ result.title }}</h3>
                     <p class="recipe-result-meta">
                       <span><AppIcon name="clock" size="13" /> {{ recipeTime(result) }}</span>
                       <span><AppIcon name="users" size="13" /> {{ result.servings || '?' }} servings</span>
+                      <span v-if="result.calories">{{ result.calories }} kcal</span>
+                      <span v-if="result.protein">{{ result.protein }}g protein</span>
                     </p>
-                    <p class="result-rating">{{ ratingLabel(result.avg_rating) }}</p>
+                    <p class="result-rating">
+                      {{ ratingLabel(result.avg_rating) }}
+                      <span v-if="result.rating_count"> · {{ result.rating_count }} rating{{ result.rating_count === 1 ? '' : 's' }}</span>
+                    </p>
                   </div>
                 </div>
                 <button type="button" class="result-action" @click="openRecipe(result)">
                   View recipe
+                  <AppIcon name="arrow-right" size="14" />
+                </button>
+              </template>
+
+              <template v-else-if="resultKind(message, result) === 'inspiration'">
+                <div class="recipe-result-layout">
+                  <img
+                    :src="resultImage(result)"
+                    :alt="`Daily Inspiration: ${result.title}`"
+                    @error="$event.currentTarget.src = '/images/food-placeholder.jpg'"
+                  />
+                  <div>
+                    <div class="result-card-topline">
+                      <span class="result-badge">Daily Inspiration</span>
+                      <span class="result-rating">{{ result.area || 'Global' }}</span>
+                    </div>
+                    <h3>{{ result.title }}</h3>
+                    <p>{{ result.category || 'Meal' }}</p>
+                    <p v-if="inspirationIngredients(result)" class="inspiration-ingredients">
+                      {{ inspirationIngredients(result) }}
+                    </p>
+                  </div>
+                </div>
+                <button type="button" class="result-action" @click="openDailyInspiration">
+                  View on Home
                   <AppIcon name="arrow-right" size="14" />
                 </button>
               </template>
@@ -666,17 +943,27 @@ onBeforeUnmount(() => {
             </article>
           </div>
 
-          <div
+          <button
+            v-if="message.role === 'bot' && message.results?.length && message.recipeSearchFilters"
+            type="button"
+            class="filter-results-action"
+            @click="openRecipeCollection(message.recipeSearchFilters)"
+          >
+            <AppIcon name="filter" size="14" />
+            Browse this collection in Recipes
+            <AppIcon name="arrow-right" size="14" />
+          </button>
+
+          <details
             v-if="message.role === 'bot' && message.sources?.length"
             class="source-list"
-            :aria-label="`${message.sources.length} FoodStory sources`"
+            :aria-label="sourceAriaLabel(message)"
+            :open="message.retrievalStatus === 'external_sources'"
           >
-            <div class="source-list-title">
-              FoodStory sources
-              <span v-if="message.confidence">
-                · {{ confidenceLabel(message.confidence) }}
-              </span>
-            </div>
+            <summary class="source-list-title">
+              <span><AppIcon name="book-open" size="14" /> {{ sourceSummary(message) }}</span>
+              <span v-if="message.confidence">Best {{ confidenceLabel(message.confidence) }}</span>
+            </summary>
 
             <article
               v-for="source in message.sources"
@@ -686,14 +973,11 @@ onBeforeUnmount(() => {
               <div class="source-card-main">
                 <span class="source-badge">{{ sourceTypeLabel(source.sourceType) }}</span>
                 <h3>{{ source.title }}</h3>
-                <p>
-                  Score {{ Number(source.score || 0).toFixed(3) }}
-                  <span v-if="source.matchLevel"> · {{ source.matchLevel }}</span>
-                </p>
+                <p>{{ source.matchLevel || confidenceLabel(source.score) }}</p>
               </div>
 
               <button
-                v-if="source.sourceType === 'recipe' || source.sourceType === 'restaurant' || source.sourceType === 'food_spot'"
+                v-if="source.sourceType === 'recipe' || source.sourceType === 'restaurant' || source.sourceType === 'food_spot' || source.sourceType === 'website' || source.sourceType === 'external'"
                 type="button"
                 class="source-action"
                 @click="openSource(source)"
@@ -702,7 +986,7 @@ onBeforeUnmount(() => {
                 <AppIcon name="arrow-right" size="13" />
               </button>
             </article>
-          </div>
+          </details>
 
           <div v-if="message.role === 'bot' && message.suggestions?.length" class="suggestions">
             <button
@@ -723,21 +1007,24 @@ onBeforeUnmount(() => {
             <span class="typing-indicator" aria-hidden="true">
               <span></span><span></span><span></span>
             </span>
+            <span>{{ isSearchingImage ? 'Looking for visual matches...' : 'Checking recipes and places...' }}</span>
           </div>
         </div>
       </div>
 
       <form class="chat-input-area" @submit.prevent="sendMessage()">
         <label class="sr-only" for="foodbot-input">Enter a question for FoodBot</label>
-        <input
+        <textarea
           id="foodbot-input"
+          ref="inputElement"
           v-model="inputText"
-          type="text"
+          rows="1"
           maxlength="500"
           autocomplete="off"
-          placeholder="Ask FoodBot..."
+          placeholder="Ask about a recipe, a place, or FoodStory..."
           :disabled="isBusy"
-        />
+          @keydown="handleComposerKeydown"
+        ></textarea>
         <label
           class="camera-btn"
           :class="{ disabled: isBusy }"
@@ -759,6 +1046,7 @@ onBeforeUnmount(() => {
         >
           <AppIcon name="send" size="19" />
         </button>
+        <p class="composer-hint">Enter to send &middot; Shift + Enter for a new line</p>
       </form>
     </section>
   </div>
@@ -1148,6 +1436,34 @@ onBeforeUnmount(() => {
   color: #fff;
 }
 
+.filter-results-action {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid #45454a;
+  border-radius: 10px;
+  color: #f4f4f5;
+  background: #2a2a2e;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.filter-results-action:hover {
+  border-color: #e53e3e;
+  background: #303035;
+}
+
+.filter-results-action:focus-visible {
+  outline: 2px solid #ff7676;
+  outline-offset: 2px;
+}
+
 .recipe-result-layout {
   display: grid;
   grid-template-columns: 70px minmax(0, 1fr);
@@ -1456,3 +1772,5 @@ onBeforeUnmount(() => {
 }
 
 </style>
+
+<style scoped src="./ChatBotRedesign.css"></style>

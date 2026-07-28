@@ -8,6 +8,12 @@ import { useAuthStore } from '../stores/authStore'
 import { useFavoriteStore } from '../stores/favoriteStore'
 import { useRecipeStore } from '../stores/recipeStore'
 import { useUiStore } from '../stores/uiStore'
+import { advanceRecipeImage, getRecipeBackgroundImage, getRecipeImageSource } from '../utils/recipeImage'
+import {
+  buildRecipeFilterQuery,
+  normalizeRecipeFilterQuery,
+  recipeFilterStatesEqual,
+} from '../utils/recipeFilterQuery'
 
 const recipeStore = useRecipeStore()
 const favoriteStore = useFavoriteStore()
@@ -20,39 +26,15 @@ const deletingRecipeId = ref(null)
 const favoriteBusyIds = ref([])
 const showAdvancedFilters = ref(false)
 const showAllCategories = ref(false)
-const sortBy = ref('newest')
+const initialFilterState = normalizeRecipeFilterQuery(route.query)
+recipeStore.searchQuery = initialFilterState.search
+recipeStore.filters.category = initialFilterState.category
+recipeStore.filters.tag = initialFilterState.tag
+const sortBy = ref(initialFilterState.sort)
 const searchInput = ref(null)
 
 let filterTimer = 0
 let suppressNextFilterFetch = false
-
-const FALLBACK_IMAGES = [
-  'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=78',
-  'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=1200&q=78',
-  'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=1200&q=78',
-  'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=78',
-  'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=1200&q=78',
-  'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=1200&q=78',
-  'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1200&q=78',
-  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=78',
-]
-
-const CATEGORY_IMAGE_MAP = {
-  American: 'https://images.unsplash.com/photo-1520072959219-c595dc870360?auto=format&fit=crop&w=1200&q=78',
-  Breakfast: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1200&q=78',
-  Dessert: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=1200&q=78',
-  Drinks: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=1200&q=78',
-  Italian: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=1200&q=78',
-  Japanese: 'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?auto=format&fit=crop&w=1200&q=78',
-  Korean: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?auto=format&fit=crop&w=1200&q=78',
-  Meal: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=78',
-  Mediterranean: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=78',
-  Mexican: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=1200&q=78',
-  Seafood: 'https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=1200&q=78',
-  Thai: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&w=1200&q=78',
-  Vegetarian: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1200&q=78',
-  Vietnamese: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=1200&q=78',
-}
 
 const quickFilterChips = [
   { label: 'Quick & Easy', icon: 'sparkles', tag: 'Quick Meal', search: 'quick', sort: 'fastest' },
@@ -89,6 +71,11 @@ const discoveryRecipes = computed(() =>
 )
 const popularRecipes = computed(() => sortRecipes(discoveryRecipes.value, 'popular'))
 const allRecipes = computed(() => sortRecipes(recipeStore.recipeList || []))
+const isSearchMode = computed(() => Boolean(recipeStore.searchQuery.trim()))
+const hasSearchResults = computed(() => allRecipes.value.length > 0)
+const searchResultCount = computed(() =>
+  Math.max(Number(recipeStore.pagination.totalItems || 0), allRecipes.value.length),
+)
 const categoryChips = computed(() => recipeStore.categories || [])
 const activeCategory = computed(() => recipeStore.filters.category || 'all')
 const visibleCategories = computed(() =>
@@ -127,7 +114,11 @@ const studentPicks = computed(() => {
     )
   })
 
-  return fillSection(sortRecipes(preferred, 'fastest'), popularRecipes.value, 3)
+  return fillSection(
+    sortRecipes(preferred, 'fastest'),
+    isResultFocusedMode.value ? [] : popularRecipes.value,
+    3,
+  )
 })
 const healthyChoices = computed(() => {
   const preferred = discoveryRecipes.value.filter((recipe) => {
@@ -142,7 +133,11 @@ const healthyChoices = computed(() => {
     )
   })
 
-  return fillSection(sortRecipes(preferred, 'protein'), popularRecipes.value.slice(3), 3)
+  return fillSection(
+    sortRecipes(preferred, 'protein'),
+    isResultFocusedMode.value ? [] : popularRecipes.value.slice(3),
+    3,
+  )
 })
 const todayPicks = computed(() => fillSection(popularRecipes.value.slice(1), discoveryRecipes.value, 3))
 const trendingTopics = computed(() => {
@@ -191,6 +186,13 @@ const activeFilterSummary = computed(() => {
   }
   return pieces
 })
+const hasActiveSearch = computed(() => Boolean(recipeStore.searchQuery.trim()))
+const hasActiveStructuredFilter = computed(
+  () => recipeStore.filters.category !== 'all' || recipeStore.filters.tag !== 'all',
+)
+const isResultFocusedMode = computed(
+  () => hasActiveSearch.value || hasActiveStructuredFilter.value,
+)
 
 function scheduleRecipeFetch() {
   window.clearTimeout(filterTimer)
@@ -199,12 +201,30 @@ function scheduleRecipeFetch() {
   }, 280)
 }
 
-onMounted(() => {
-  if (typeof route.query.category === 'string' && route.query.category.trim()) {
-    suppressNextFilterFetch = true
-    recipeStore.filters.category = route.query.category.trim()
+function currentFilterState() {
+  return {
+    search: recipeStore.searchQuery,
+    category: recipeStore.filters.category,
+    tag: recipeStore.filters.tag,
+    sort: sortBy.value,
+  }
+}
+
+function syncRecipeFilterQuery() {
+  const nextQuery = buildRecipeFilterQuery(currentFilterState())
+  const queryKeys = ['search', 'category', 'tag', 'sort']
+  const routeIsCanonical = queryKeys.every(
+    (key) => (typeof route.query[key] === 'string' ? route.query[key] : '') === (nextQuery[key] || ''),
+  )
+  if (routeIsCanonical) {
+    return
   }
 
+  router.replace({ query: nextQuery }).catch(() => {})
+}
+
+onMounted(() => {
+  syncRecipeFilterQuery()
   loadRecipeIndex({ includeMeta: true })
 
   if (authStore.isLoggedIn) {
@@ -213,14 +233,40 @@ onMounted(() => {
 })
 
 watch(
-  () => [recipeStore.searchQuery, recipeStore.filters.category, recipeStore.filters.tag],
+  () => [
+    recipeStore.searchQuery,
+    recipeStore.filters.category,
+    recipeStore.filters.tag,
+    sortBy.value,
+  ],
   () => {
     if (suppressNextFilterFetch) {
       suppressNextFilterFetch = false
       return
     }
+    recipeStore.pagination.currentPage = 1
+    syncRecipeFilterQuery()
     scheduleRecipeFetch()
   },
+)
+
+watch(
+  () => route.query,
+  (query) => {
+    const nextFilters = normalizeRecipeFilterQuery(query)
+    if (recipeFilterStatesEqual(nextFilters, currentFilterState())) {
+      return
+    }
+
+    suppressNextFilterFetch = true
+    recipeStore.searchQuery = nextFilters.search
+    recipeStore.filters.category = nextFilters.category
+    recipeStore.filters.tag = nextFilters.tag
+    sortBy.value = nextFilters.sort
+    recipeStore.pagination.currentPage = 1
+    scheduleRecipeFetch()
+  },
+  { deep: true },
 )
 
 watch(
@@ -239,10 +285,23 @@ onBeforeUnmount(() => {
 })
 
 async function loadRecipeIndex(options = {}) {
-  await recipeStore.fetchRecipes(options.page || 1, { includeMeta: options.includeMeta === true })
+  const requests = [
+    recipeStore.fetchRecipes(options.page || 1, {
+      includeMeta: options.includeMeta === true,
+      sort: sortBy.value,
+    }),
+  ]
   if (options.refreshDiscovery !== false) {
-    recipeStore.fetchRecipeArchive({ reset: true, pageSize: 120, maxPages: 1 })
+    requests.push(
+      recipeStore.fetchRecipeArchive({
+        reset: true,
+        pageSize: 120,
+        maxPages: 1,
+        sort: sortBy.value,
+      }),
+    )
   }
+  await Promise.all(requests)
 }
 
 function fillSection(preferred, fallback, count) {
@@ -394,10 +453,10 @@ function sortRecipes(recipes, overrideSort = sortBy.value) {
       return Number(right.avg_rating || right.average_rating || 0) - Number(left.avg_rating || left.average_rating || 0)
     }
     if (overrideSort === 'fastest') {
-      return totalMinutes(left) - totalMinutes(right)
+      return comparePositiveAscending(totalMinutes(left), totalMinutes(right))
     }
     if (overrideSort === 'lightest') {
-      return Number(left.calories || 9999) - Number(right.calories || 9999)
+      return comparePositiveAscending(Number(left.calories || 0), Number(right.calories || 0))
     }
     if (overrideSort === 'protein') {
       return Number(right.protein || 0) - Number(left.protein || 0)
@@ -413,6 +472,15 @@ function sortRecipes(recipes, overrideSort = sortBy.value) {
 
     return safeDate(right.created_at || right.updated_at) - safeDate(left.created_at || left.updated_at)
   })
+}
+
+function comparePositiveAscending(left, right) {
+  const leftKnown = Number.isFinite(left) && left > 0
+  const rightKnown = Number.isFinite(right) && right > 0
+  if (leftKnown !== rightKnown) {
+    return leftKnown ? -1 : 1
+  }
+  return leftKnown ? left - right : 0
 }
 
 function safeDate(value) {
@@ -444,48 +512,12 @@ function sortLabel(value) {
   )
 }
 
-function fallbackVisual(recipe) {
-  const category = firstPresent(recipe?.category_name)
-  const text = searchableRecipeText(recipe)
-  if (text.includes('dessert') || text.includes('cookie') || text.includes('cake')) {
-    return CATEGORY_IMAGE_MAP.Dessert
-  }
-  if (text.includes('drink') || text.includes('smoothie') || text.includes('coffee')) {
-    return CATEGORY_IMAGE_MAP.Drinks
-  }
-  if (text.includes('salad') || text.includes('healthy') || text.includes('fresh')) {
-    return CATEGORY_IMAGE_MAP.Vegetarian
-  }
-  if (text.includes('pasta') || text.includes('risotto') || text.includes('italian')) {
-    return CATEGORY_IMAGE_MAP.Italian
-  }
-  if (text.includes('taco') || text.includes('mexican')) {
-    return CATEGORY_IMAGE_MAP.Mexican
-  }
-  if (text.includes('salmon') || text.includes('shrimp') || text.includes('fish')) {
-    return CATEGORY_IMAGE_MAP.Seafood
-  }
-
-  if (CATEGORY_IMAGE_MAP[category]) {
-    return CATEGORY_IMAGE_MAP[category]
-  }
-  if (category.startsWith('Meal')) {
-    return CATEGORY_IMAGE_MAP.Meal
-  }
-
-  return FALLBACK_IMAGES[hashText(recipe?.title) % FALLBACK_IMAGES.length]
-}
-
 function imageSrc(recipe) {
-  return firstPresent(recipe?.image_url, recipe?.imageUrl) || fallbackVisual(recipe)
+  return getRecipeImageSource(recipe)
 }
 
-function useFallbackImage(event) {
-  if (event.target.dataset.fallbackApplied === 'true') {
-    return
-  }
-  event.target.dataset.fallbackApplied = 'true'
-  event.target.src = FALLBACK_IMAGES[0]
+function useFallbackImage(event, recipe) {
+  advanceRecipeImage(event, recipe)
 }
 
 function resolveCategoryName(name) {
@@ -565,18 +597,45 @@ function clearAllFilters() {
   recipeStore.resetFilters()
 }
 
+function handleSearchInput(event) {
+  const nextQuery = String(event?.currentTarget?.value || '')
+  recipeStore.searchQuery = nextQuery
+
+  if (!nextQuery.trim()) return
+
+  recipeStore.filters.category = 'all'
+  recipeStore.filters.tag = 'all'
+  recipeStore.pagination.currentPage = 1
+  sortBy.value = 'newest'
+  showAdvancedFilters.value = false
+}
+
+function clearSearchQuery() {
+  recipeStore.searchQuery = ''
+  recipeStore.pagination.currentPage = 1
+  nextTick(() => searchInput.value?.focus())
+}
+
+function preferredScrollBehavior() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ? 'auto' : 'smooth'
+}
+
 async function goToPage(page) {
   const nextPage = Math.min(Math.max(page, 1), recipeStore.pagination.totalPages)
   await loadRecipeIndex({ page: nextPage, refreshDiscovery: false })
-  document.getElementById('all-recipes')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  document
+    .getElementById(isSearchMode.value ? 'search-results' : 'all-recipes')
+    ?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' })
 }
 
 function jumpToTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  window.scrollTo({ top: 0, behavior: preferredScrollBehavior() })
 }
 
 function scrollToSection(id) {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  document
+    .getElementById(id)
+    ?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' })
 }
 
 async function focusRecipeSearch() {
@@ -730,7 +789,7 @@ async function deleteRecipe(recipe) {
 
 <template>
   <section class="recipe-reference-page" aria-label="FoodStory recipe discovery">
-    <div class="recipe-reference-layout">
+    <div class="recipe-reference-layout" :class="{ 'is-searching': isSearchMode }">
       <aside class="recipe-left-sidebar" aria-label="Recipe navigation">
         <nav class="recipe-sidebar-nav" aria-label="Primary recipe navigation">
           <template v-for="item in sidebarNav" :key="item.label">
@@ -778,30 +837,33 @@ async function deleteRecipe(recipe) {
         </section>
       </aside>
 
-      <main class="recipe-reference-main">
+      <div class="recipe-reference-main">
         <header id="discover" class="recipe-reference-hero">
           <img
-            v-if="bigRightNow[0]"
+            v-if="!isSearchMode && bigRightNow[0]"
             class="recipe-hero-ornament ornament-left"
             :src="imageSrc(bigRightNow[0])"
             alt=""
             loading="eager"
             decoding="async"
-            @error="useFallbackImage"
+            @error="useFallbackImage($event, bigRightNow[0])"
           />
           <img
-            v-if="healthyChoices[0]"
+            v-if="!isSearchMode && healthyChoices[0]"
             class="recipe-hero-ornament ornament-right"
             :src="imageSrc(healthyChoices[0])"
             alt=""
             loading="eager"
             decoding="async"
-            @error="useFallbackImage"
+            @error="useFallbackImage($event, healthyChoices[0])"
           />
 
           <div class="recipe-hero-copy">
-            <h1>Our Very Best Recipes</h1>
-            <p>Tried, tested and loved by our community of home cooks.</p>
+            <h1>{{ isSearchMode ? 'Recipe Search' : 'Our Very Best Recipes' }}</h1>
+            <p v-if="isSearchMode">
+              Showing focused results for “{{ recipeStore.searchQuery.trim() }}” without unrelated collections.
+            </p>
+            <p v-else>Tried, tested and loved by our community of home cooks.</p>
           </div>
 
           <RouterLink
@@ -824,15 +886,16 @@ async function deleteRecipe(recipe) {
               <span class="sr-only">Search recipes</span>
               <input
                 ref="searchInput"
-                v-model="recipeStore.searchQuery"
+                :value="recipeStore.searchQuery"
                 type="search"
                 placeholder="Search recipes, ingredients, cuisines..."
+                @input="handleSearchInput"
               />
               <AppIcon name="search" size="24" />
             </label>
           </form>
 
-          <div class="recipe-reference-chips" aria-label="Quick recipe filters">
+          <div v-if="!isSearchMode" class="recipe-reference-chips" aria-label="Quick recipe filters">
             <button
               v-for="chip in quickFilterChips"
               :key="chip.label"
@@ -845,7 +908,7 @@ async function deleteRecipe(recipe) {
             </button>
           </div>
 
-          <div class="recipe-filter-tools">
+          <div v-if="!isSearchMode" class="recipe-filter-tools">
             <button
               type="button"
               :aria-expanded="showAdvancedFilters"
@@ -865,7 +928,7 @@ async function deleteRecipe(recipe) {
           </div>
 
           <Transition name="recipe-filter-panel">
-            <div v-if="showAdvancedFilters" class="recipe-advanced-panel">
+            <div v-if="!isSearchMode && showAdvancedFilters" class="recipe-advanced-panel">
               <label>
                 <span>Category</span>
                 <select v-model="recipeStore.filters.category">
@@ -927,7 +990,7 @@ async function deleteRecipe(recipe) {
             </div>
           </Transition>
 
-          <div v-if="activeFilterSummary.length" class="active-filter-summary">
+          <div v-if="!isSearchMode && activeFilterSummary.length" class="active-filter-summary">
             <span v-for="item in activeFilterSummary" :key="item">{{ item }}</span>
           </div>
         </header>
@@ -935,14 +998,86 @@ async function deleteRecipe(recipe) {
         <div v-if="recipeStore.isLoading" class="recipe-reference-loading" aria-label="Loading recipes">
           <SkeletonCard v-for="index in 6" :key="index" />
         </div>
-        <p v-else-if="recipeStore.error" class="form-error" role="alert">{{ recipeStore.error }}</p>
+        <div v-else-if="recipeStore.error" class="form-error recipe-state-card" role="alert">
+          <p>{{ recipeStore.error }}</p>
+          <button type="button" @click="retryRecipeIndex">Try again</button>
+        </div>
 
         <template v-else>
-          <p v-if="!hasRecipes" class="empty-state">
-            No recipes match your search and filters.
+          <section v-if="isSearchMode" id="search-results" class="reference-section recipe-search-results">
+            <div class="reference-section-title with-subtitle recipe-search-results-heading">
+              <div>
+                <p class="recipe-kicker">Focused results</p>
+                <h2>Results for “{{ recipeStore.searchQuery.trim() }}”</h2>
+                <p>
+                  {{ searchResultCount }} {{ searchResultCount === 1 ? 'recipe' : 'recipes' }} found.
+                  Collections and trending suggestions are hidden while you search.
+                </p>
+              </div>
+              <button type="button" @click="clearSearchQuery">
+                <AppIcon name="x" size="15" />
+                <span>Clear search</span>
+              </button>
+            </div>
+
+            <div v-if="hasSearchResults" class="reference-all-grid recipe-search-grid">
+              <RecipeCard
+                v-for="item in allRecipes"
+                :key="`search-${item.id}`"
+                :recipe="{ ...item, image_url: imageSrc(item) }"
+                :is-deleting="deletingRecipeId === item.id"
+                @delete="deleteRecipe"
+              />
+            </div>
+
+            <div v-else class="recipe-search-empty empty-state">
+              <AppIcon name="search" size="30" />
+              <h3>No matching recipes</h3>
+              <p>Try a broader dish name, ingredient, or cuisine.</p>
+              <button type="button" class="recipe-solid-button" @click="clearSearchQuery">
+                Browse all recipes
+              </button>
+            </div>
+
+            <nav
+              v-if="hasSearchResults && recipeStore.pagination.totalItems > recipeStore.pagination.pageSize"
+              class="pagination reference-pagination"
+              aria-label="Recipe search pagination"
+            >
+              <button
+                type="button"
+                :disabled="recipeStore.pagination.currentPage === 1"
+                @click="goToPage(recipeStore.pagination.currentPage - 1)"
+              >
+                <AppIcon name="arrow-left" size="16" />
+                <span>Previous</span>
+              </button>
+              <button
+                v-for="page in pageNumbers"
+                :key="`search-page-${page}`"
+                type="button"
+                :class="{ active: page === recipeStore.pagination.currentPage }"
+                :aria-current="page === recipeStore.pagination.currentPage ? 'page' : undefined"
+                @click="goToPage(page)"
+              >
+                {{ page }}
+              </button>
+              <button
+                type="button"
+                :disabled="recipeStore.pagination.currentPage === recipeStore.pagination.totalPages"
+                @click="goToPage(recipeStore.pagination.currentPage + 1)"
+              >
+                <span>Next</span>
+                <AppIcon name="arrow-right" size="16" />
+              </button>
+            </nav>
+          </section>
+
+          <p v-else-if="!hasRecipes" class="empty-state">
+            No recipes match your filters.
           </p>
 
-          <section v-if="featuredRecipe" id="featured" class="recipe-feature-banner">
+          <section v-if="!isSearchMode && featuredRecipe" id="featured" class="recipe-feature-banner">
             <RouterLink
               class="feature-image-panel"
               :to="{ name: 'recipe-detail', params: { id: featuredRecipe.id } }"
@@ -953,7 +1088,7 @@ async function deleteRecipe(recipe) {
                 :alt="`Photo of ${featuredRecipe.title}`"
                 loading="eager"
                 decoding="async"
-                @error="useFallbackImage"
+                @error="useFallbackImage($event, featuredRecipe)"
               />
             </RouterLink>
             <div class="feature-copy-panel">
@@ -999,7 +1134,7 @@ async function deleteRecipe(recipe) {
             </div>
           </section>
 
-          <section v-if="bigRightNow.length" id="big-right-now" class="reference-section">
+          <section v-if="!isSearchMode && bigRightNow.length" id="big-right-now" class="reference-section">
             <div class="reference-section-title">
               <h2>Big Right Now</h2>
               <button type="button" @click="setSortAndShow('popular')">
@@ -1020,7 +1155,7 @@ async function deleteRecipe(recipe) {
                     :alt="`Photo of ${recipe.title}`"
                     loading="lazy"
                     decoding="async"
-                    @error="useFallbackImage"
+                    @error="useFallbackImage($event, recipe)"
                   />
                   <span>
                     <strong>{{ recipe.title }}</strong>
@@ -1041,7 +1176,7 @@ async function deleteRecipe(recipe) {
             </div>
           </section>
 
-          <section v-if="studentPicks.length" id="student-picks" class="reference-section">
+          <section v-if="!isSearchMode && studentPicks.length" id="student-picks" class="reference-section">
             <div class="reference-section-title with-subtitle">
               <div>
                 <h2>
@@ -1068,7 +1203,7 @@ async function deleteRecipe(recipe) {
                     :alt="`Photo of ${recipe.title}`"
                     loading="lazy"
                     decoding="async"
-                    @error="useFallbackImage"
+                    @error="useFallbackImage($event, recipe)"
                   />
                   <span>
                     <strong>{{ recipe.title }}</strong>
@@ -1089,7 +1224,7 @@ async function deleteRecipe(recipe) {
             </div>
           </section>
 
-          <section v-if="healthyChoices.length" id="healthy-choices" class="reference-section">
+          <section v-if="!isSearchMode && healthyChoices.length" id="healthy-choices" class="reference-section">
             <div class="reference-section-title with-subtitle">
               <div>
                 <h2>
@@ -1117,7 +1252,7 @@ async function deleteRecipe(recipe) {
                       :alt="`Photo of ${recipe.title}`"
                       loading="lazy"
                       decoding="async"
-                      @error="useFallbackImage"
+                      @error="useFallbackImage($event, recipe)"
                     />
                   </figure>
                   <div>
@@ -1131,11 +1266,17 @@ async function deleteRecipe(recipe) {
             </div>
           </section>
 
-          <section v-if="allRecipes.length" id="all-recipes" class="reference-section all-recipes-reference">
+          <section v-if="!isSearchMode && allRecipes.length" id="all-recipes" class="reference-section all-recipes-reference">
             <div class="reference-section-title with-subtitle">
               <div>
-                <h2>All Recipes</h2>
-                <p>Browse a page-sized archive without dumping the entire database.</p>
+                <h2>{{ isResultFocusedMode ? 'Search Results' : 'All Recipes' }}</h2>
+                <p>
+                  {{
+                    isResultFocusedMode
+                      ? 'Showing recipes that match your current search and filters.'
+                      : 'Browse a page-sized archive without dumping the entire database.'
+                  }}
+                </p>
               </div>
               <span>
                 Page {{ recipeStore.pagination.currentPage }} of {{ recipeStore.pagination.totalPages }}
@@ -1187,9 +1328,9 @@ async function deleteRecipe(recipe) {
             </nav>
           </section>
         </template>
-      </main>
+      </div>
 
-      <aside class="recipe-right-rail" aria-label="Trending recipes">
+      <aside v-if="!isSearchMode" class="recipe-right-rail" aria-label="Trending recipes">
         <section v-if="trendingTopics.length" class="trending-card">
           <h2>
             <AppIcon name="trending-up" size="18" />
@@ -1206,7 +1347,7 @@ async function deleteRecipe(recipe) {
               alt=""
               loading="lazy"
               decoding="async"
-              @error="useFallbackImage"
+              @error="useFallbackImage($event, topic.recipe)"
             />
             <span>{{ topic.label }}</span>
             <small>{{ topic.countText }}</small>
@@ -1218,8 +1359,9 @@ async function deleteRecipe(recipe) {
         </section>
 
         <section
+          v-if="!isResultFocusedMode"
           class="back-to-top-card"
-          :style="{ '--rail-image': `url(${imageSrc(todayPicks[0] || featuredRecipe)})` }"
+          :style="{ '--rail-image': `url(${getRecipeBackgroundImage(todayPicks[0] || featuredRecipe)})` }"
         >
           <button type="button" aria-label="Back to top" @click="jumpToTop">
             <AppIcon name="arrow-right" size="25" />
@@ -1231,3 +1373,18 @@ async function deleteRecipe(recipe) {
     </div>
   </section>
 </template>
+
+<style scoped>
+.recipe-reference-page.results-focused .recipe-reference-hero {
+  gap: 14px;
+}
+
+.recipe-reference-page.results-focused .recipe-filter-tools,
+.recipe-reference-page.results-focused .active-filter-summary {
+  justify-content: flex-start;
+}
+
+.recipe-reference-page.results-focused .recipe-right-rail {
+  gap: 0;
+}
+</style>

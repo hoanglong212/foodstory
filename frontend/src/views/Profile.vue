@@ -213,7 +213,7 @@ watch(
         </RouterLink>
       </div>
 
-      <p v-if="favoriteStore.isLoading" class="status-panel">Loading favorites...</p>
+      <p v-if="favoriteStore.isLoading" class="status-panel" role="status" aria-live="polite">Loading favorites...</p>
       <p v-else-if="favoriteStore.error" class="form-error" role="alert">
         {{ favoriteStore.error }}
       </p>
@@ -243,7 +243,7 @@ watch(
         </RouterLink>
       </div>
 
-      <p v-if="checklistStore.isLoading" class="status-panel">Loading checklists...</p>
+      <p v-if="checklistStore.isLoading" class="status-panel" role="status" aria-live="polite">Loading checklists...</p>
       <p v-else-if="checklistStore.error" class="form-error" role="alert">
         {{ checklistStore.error }}
       </p>
@@ -258,10 +258,11 @@ watch(
           class="checklist-summary-item"
         >
           <img
-            :src="checklist.image_url"
+            :src="checklist.image_url || '/images/food-placeholder.jpg'"
             :alt="`Photo of ${checklist.recipe_title}`"
             loading="lazy"
             decoding="async"
+            @error="$event.currentTarget.src = '/images/food-placeholder.jpg'"
           />
           <div>
             <span class="category-label">
@@ -298,7 +299,7 @@ watch(
         </RouterLink>
       </div>
 
-      <p v-if="commentsLoading" class="status-panel">Loading comments...</p>
+      <p v-if="commentsLoading" class="status-panel" role="status" aria-live="polite">Loading comments...</p>
       <p v-else-if="commentsError" class="form-error" role="alert">
         {{ commentsError }}
       </p>

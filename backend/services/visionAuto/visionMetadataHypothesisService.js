@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process'
 import pool from '../../db.js'
+import { fetchYouTubeOEmbedMetadata } from '../socialUrlProviders/youtubeUrlProvider.js'
 
 const fold = (value = '') => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 const tokens = (value) => new Set(fold(value).split(' ').filter((v) => v.length > 1))
@@ -23,9 +24,32 @@ export function decideVisionMetadataFastPath({ metadata, localPlace } = {}) {
   // frames instead of turning a metadata-only guess into a terminal result.
   return { terminal: false, recipeLike: isStrongRecipeMetadata(metadata) }
 }
-export function fetchVisionMetadata(url, { timeoutMs = 8000, exec = execFile } = {}) {
+export async function fetchVisionMetadata(
+  url,
+  {
+    timeoutMs = 8000,
+    exec = execFile,
+    fetchOEmbed = fetchYouTubeOEmbedMetadata,
+  } = {},
+) {
   const outputTemplate = '{"title":%(title)j,"description":%(description)j,"thumbnail":%(thumbnail)j,"duration":%(duration)j}'
-  return new Promise((resolve) => exec('yt-dlp', ['--skip-download','--no-warnings','--socket-timeout','6','--retries','0','--print',outputTemplate,url], { timeout: timeoutMs, windowsHide:true, maxBuffer: 64*1024 }, (error, stdout) => { if(error)return resolve(null); try { const p=JSON.parse(String(stdout).trim()); resolve({title:String(p.title||'').slice(0,400),description:String(p.description||'').slice(0,1000),thumbnail:Boolean(p.thumbnail),duration:Number(p.duration)||null}) } catch { resolve(null) } }))
+  const ytDlpMetadata = await new Promise((resolve) => exec('yt-dlp', ['--skip-download','--no-warnings','--socket-timeout','6','--retries','0','--print',outputTemplate,url], { timeout: timeoutMs, windowsHide:true, maxBuffer: 64*1024 }, (error, stdout) => { if(error)return resolve(null); try { const p=JSON.parse(String(stdout).trim()); resolve({title:String(p.title||'').slice(0,400),description:String(p.description||'').slice(0,1000),thumbnail:Boolean(p.thumbnail),duration:Number(p.duration)||null}) } catch { resolve(null) } }))
+  if (ytDlpMetadata?.title) return ytDlpMetadata
+
+  try {
+    const oembed = await fetchOEmbed(url, {
+      timeoutMs: Math.min(6_000, Math.max(500, Number(timeoutMs) || 8_000)),
+    })
+    if (!oembed?.title) return ytDlpMetadata
+    return {
+      title: String(oembed.title).slice(0, 400),
+      description: ytDlpMetadata?.description || '',
+      thumbnail: Boolean(ytDlpMetadata?.thumbnail || oembed.thumbnailUrl),
+      duration: ytDlpMetadata?.duration || null,
+    }
+  } catch {
+    return ytDlpMetadata
+  }
 }
 export async function resolveMetadataLocalPlace(metadata, { database = pool } = {}) {
   const title = String(metadata?.title || '').trim(); if(!title || unsafeSinglePlaceIntent(title)) return null

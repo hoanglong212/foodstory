@@ -1,0 +1,14 @@
+case_id,video_url,expected_dish,notes
+V01,https://www.youtube.com/watch?v=pT86cqin-Og,phở,Previously used FoodStory positive fixture; verify the dish remains clearly visible before running the pilot.
+V02,https://www.youtube.com/watch?v=EpRBxau3ou0,phở bò,Ground truth assigned from the creator-published video title and description.
+V03,https://youtu.be/PGZZHWMedNU,phở gà,Ground truth assigned from the creator-published video title and description.
+V04,https://www.youtube.com/watch?v=qWK_HYlKrAA,bún bò Huế,Ground truth assigned from the creator-published video title and description.
+V05,https://www.youtube.com/watch?v=8CaadFo3sw0,gỏi cuốn,Ground truth assigned from the creator-published video title and description.
+V06,https://www.youtube.com/watch?v=Dz9r3vNRxPA,bánh mì,Video focuses on the Vietnamese baguette; keep only if the pilot accepts bánh mì bread as the dish label.
+V07,https://www.youtube.com/watch?v=iZJzTScgB-c,bún chả,Ground truth assigned from the creator-published video title and description.
+V08,https://www.youtube.com/watch?v=OHP77Zim3Ko,bánh bèo,Ground truth assigned from the creator-published video title and description.
+V09,https://www.youtube.com/watch?v=s5xIVRi26t4,bánh bột lọc,Ground truth assigned from the creator-published video title and description.
+V10,https://www.youtube.com/watch?v=VhquFhlJ5Ds,bánh xèo,Ground truth assigned from the creator-published video title and description.
+V11,https://www.youtube.com/watch?v=P1AXLv3ZF3Q,cơm tấm,Ground truth assigned from the creator-published video title and description.
+V12,https://www.youtube.com/watch?v=omVaFMmc9pU,bánh tráng nướng,Ground truth assigned from the creator-published video title and description.
+V13,https://www.youtube.com/watch?v=fqiGFA0qkig,mì Quảng,Ground truth assigned from the creator-published video title and description.

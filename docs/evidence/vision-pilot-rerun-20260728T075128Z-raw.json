@@ -1,0 +1,1629 @@
+{
+  "schemaVersion": 1,
+  "kind": "controlled_stage3_429_followup",
+  "status": "completed",
+  "stopReason": null,
+  "run": {
+    "runId": "20260728T075128Z",
+    "commit": "0473287788bad6a098f1d2724ec0e3d0c81bd412",
+    "branch": "codex/render-deployment",
+    "startedAt": "2026-07-28T07:51:28.890Z",
+    "finishedAt": "2026-07-28T08:06:37.815Z",
+    "command": "\"C:\\\\Program Files\\\\nodejs\\\\node.exe\" \"C:\\\\COS30043\\\\foodstory\\\\backend\\\\scripts\\\\runVisionDishPilotFollowup.js\" \"--between-case-delay-ms\" \"90000\" \"--initial-backoff-ms\" \"75000\" \"--max-attempts\" \"3\" \"--stop-after-quota-failures\" \"3\"",
+    "workingDirectory": "C:\\COS30043\\foodstory\\backend",
+    "endpoint": "http://127.0.0.1:3000/api/food-map/vision-auto-v2/dish-discovery",
+    "targetCaseIds": [
+      "V03",
+      "V04",
+      "V06",
+      "V07",
+      "V08",
+      "V09",
+      "V11",
+      "V13"
+    ],
+    "sequential": true,
+    "betweenCaseDelayMs": 90000,
+    "initialBackoffMs": 75000,
+    "maxAttempts": 3,
+    "stopAfterQuotaFailures": 3,
+    "timeoutMs": 60000,
+    "worktreeDirtyAtStart": true,
+    "environment": {
+      "node": "v24.11.0",
+      "platform": "win32",
+      "arch": "x64",
+      "osRelease": "10.0.26200",
+      "timeZone": "Asia/Saigon"
+    }
+  },
+  "combinationProtocol": {
+    "selection": "none",
+    "firstRunObservation": "first preserved attempt for each original case",
+    "rerunObservation": "last attempt in this controlled rerun",
+    "accuracyDenominator": "all eight requested cases",
+    "latency": "per-case rerun wall time including request time and exponential-backoff waits"
+  },
+  "originalEvidence": {
+    "unchanged": true,
+    "before": [
+      {
+        "path": "docs/evidence/vision-pilot-cases.csv",
+        "bytes": 1883,
+        "sha256": "7dea6b6c17c14a1b2d7b01183c628a4d1b78c2f78d2a0564a98ec1030b41af90"
+      },
+      {
+        "path": "docs/evidence/vision-pilot-raw.json",
+        "bytes": 42076,
+        "sha256": "4ae61f85133361f65a584771fc8d2275b1cf38fd6f3332eb2386c45ecbccca3c"
+      },
+      {
+        "path": "docs/evidence/vision-pilot-results.csv",
+        "bytes": 2525,
+        "sha256": "1e0fce4cc0246823720d26e100346b256315ac3364c77fe571e536c61064e3e6"
+      },
+      {
+        "path": "docs/evidence/vision-pilot-summary.md",
+        "bytes": 5131,
+        "sha256": "b9ddb559c2d291d4d85ffcf065c72fbd80b3a1f47957041f11fbd1da72b1f2f7"
+      }
+    ],
+    "after": [
+      {
+        "path": "docs/evidence/vision-pilot-cases.csv",
+        "bytes": 1883,
+        "sha256": "7dea6b6c17c14a1b2d7b01183c628a4d1b78c2f78d2a0564a98ec1030b41af90"
+      },
+      {
+        "path": "docs/evidence/vision-pilot-raw.json",
+        "bytes": 42076,
+        "sha256": "4ae61f85133361f65a584771fc8d2275b1cf38fd6f3332eb2386c45ecbccca3c"
+      },
+      {
+        "path": "docs/evidence/vision-pilot-results.csv",
+        "bytes": 2525,
+        "sha256": "1e0fce4cc0246823720d26e100346b256315ac3364c77fe571e536c61064e3e6"
+      },
+      {
+        "path": "docs/evidence/vision-pilot-summary.md",
+        "bytes": 5131,
+        "sha256": "b9ddb559c2d291d4d85ffcf065c72fbd80b3a1f47957041f11fbd1da72b1f2f7"
+      }
+    ]
+  },
+  "outputPaths": {
+    "raw": "docs/evidence/vision-pilot-rerun-20260728T075128Z-raw.json",
+    "results": "docs/evidence/vision-pilot-rerun-20260728T075128Z-results.csv",
+    "summary": "docs/evidence/vision-pilot-rerun-20260728T075128Z-summary.md"
+  },
+  "cases": [
+    {
+      "caseId": "V03",
+      "videoUrl": "https://youtu.be/PGZZHWMedNU",
+      "expectedDish": "phở gà",
+      "firstRun": {
+        "returnedTop1": "",
+        "returnedTop3": [],
+        "top1Correct": false,
+        "top3Correct": false,
+        "terminalState": "http_429",
+        "technicalFailure": true,
+        "noResult": false,
+        "reviewRequired": false,
+        "resultStatus": "technical_failure",
+        "endToEndMs": 5788,
+        "httpStatus": 429,
+        "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed."
+      },
+      "rerun": {
+        "attempts": [
+          {
+            "caseId": "V03",
+            "videoUrl": "https://youtu.be/PGZZHWMedNU",
+            "expectedDish": "phở gà",
+            "returnedTop1": "Pho Ga",
+            "returnedTop3": [
+              "Pho Ga",
+              "Pho Ga Kho"
+            ],
+            "top1Correct": true,
+            "top3Correct": true,
+            "terminalState": "dish_candidates",
+            "technicalFailure": false,
+            "noResult": false,
+            "reviewRequired": true,
+            "resultStatus": "review_required",
+            "endToEndMs": 11848,
+            "endToEndSeconds": 11.848,
+            "httpStatus": 200,
+            "providerOrMediaError": "",
+            "raw": {
+              "request": {
+                "method": "POST",
+                "body": {
+                  "sourceUrl": "https://youtu.be/PGZZHWMedNU"
+                }
+              },
+              "response": {
+                "status": 200,
+                "statusText": "OK",
+                "contentType": "application/json; charset=utf-8",
+                "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"PGZZHWMedNU\",\"url\":\"https://www.youtube.com/shorts/PGZZHWMedNU\",\"title\":\"PHO GA 2 WAYS (Vietnamese Chicken Noodle Soup)\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/PGZZHWMedNU/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:pho-ga\",\"dishName\":\"Pho Ga\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Vietnamese Chicken Noodle Soup\",\"Chicken Pho\"],\"visualEvidence\":[\"bowl of chicken noodle soup\",\"sliced chicken\",\"rice noodles\",\"clear broth with herbs\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true},{\"id\":\"dish:2:pho-ga-kho\",\"dishName\":\"Pho Ga Kho\",\"cuisine\":\"Vietnamese\",\"confidence\":0.9,\"aliases\":[\"Dry Chicken Pho\",\"Chicken Pho (dry version)\"],\"visualEvidence\":[\"bowl of chicken noodles without broth\",\"sliced chicken\",\"rice noodles\",\"peanuts and fried shallots as topping\"],\"evidenceSource\":\"thumbnail\",\"evidenceLabel\":\"Thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+                "parsedBody": {
+                  "status": "dish_candidates",
+                  "source": {
+                    "type": "youtube_url",
+                    "platform": "youtube",
+                    "videoId": "PGZZHWMedNU",
+                    "url": "https://www.youtube.com/shorts/PGZZHWMedNU",
+                    "title": "PHO GA 2 WAYS (Vietnamese Chicken Noodle Soup)",
+                    "thumbnailUrl": "https://i.ytimg.com/vi/PGZZHWMedNU/hqdefault.jpg"
+                  },
+                  "dishCandidates": [
+                    {
+                      "id": "dish:title:pho-ga",
+                      "dishName": "Pho Ga",
+                      "cuisine": "Vietnamese",
+                      "confidence": 1,
+                      "aliases": [
+                        "Vietnamese Chicken Noodle Soup",
+                        "Chicken Pho"
+                      ],
+                      "visualEvidence": [
+                        "bowl of chicken noodle soup",
+                        "sliced chicken",
+                        "rice noodles",
+                        "clear broth with herbs"
+                      ],
+                      "evidenceSource": "title_and_thumbnail",
+                      "evidenceLabel": "Title and thumbnail evidence",
+                      "reviewRequired": true
+                    },
+                    {
+                      "id": "dish:2:pho-ga-kho",
+                      "dishName": "Pho Ga Kho",
+                      "cuisine": "Vietnamese",
+                      "confidence": 0.9,
+                      "aliases": [
+                        "Dry Chicken Pho",
+                        "Chicken Pho (dry version)"
+                      ],
+                      "visualEvidence": [
+                        "bowl of chicken noodles without broth",
+                        "sliced chicken",
+                        "rice noodles",
+                        "peanuts and fried shallots as topping"
+                      ],
+                      "evidenceSource": "thumbnail",
+                      "evidenceLabel": "Thumbnail evidence",
+                      "reviewRequired": true
+                    }
+                  ],
+                  "selectedDish": null,
+                  "originalPlaceKnown": false,
+                  "restaurants": [],
+                  "warnings": []
+                }
+              },
+              "transportError": null
+            },
+            "attemptedAt": "2026-07-28T07:51:29.065Z"
+          }
+        ],
+        "terminalObservation": {
+          "caseId": "V03",
+          "videoUrl": "https://youtu.be/PGZZHWMedNU",
+          "expectedDish": "phở gà",
+          "returnedTop1": "Pho Ga",
+          "returnedTop3": [
+            "Pho Ga",
+            "Pho Ga Kho"
+          ],
+          "top1Correct": true,
+          "top3Correct": true,
+          "terminalState": "dish_candidates",
+          "technicalFailure": false,
+          "noResult": false,
+          "reviewRequired": true,
+          "resultStatus": "review_required",
+          "endToEndMs": 11848,
+          "endToEndSeconds": 11.848,
+          "httpStatus": 200,
+          "providerOrMediaError": "",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://youtu.be/PGZZHWMedNU"
+              }
+            },
+            "response": {
+              "status": 200,
+              "statusText": "OK",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"PGZZHWMedNU\",\"url\":\"https://www.youtube.com/shorts/PGZZHWMedNU\",\"title\":\"PHO GA 2 WAYS (Vietnamese Chicken Noodle Soup)\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/PGZZHWMedNU/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:pho-ga\",\"dishName\":\"Pho Ga\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Vietnamese Chicken Noodle Soup\",\"Chicken Pho\"],\"visualEvidence\":[\"bowl of chicken noodle soup\",\"sliced chicken\",\"rice noodles\",\"clear broth with herbs\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true},{\"id\":\"dish:2:pho-ga-kho\",\"dishName\":\"Pho Ga Kho\",\"cuisine\":\"Vietnamese\",\"confidence\":0.9,\"aliases\":[\"Dry Chicken Pho\",\"Chicken Pho (dry version)\"],\"visualEvidence\":[\"bowl of chicken noodles without broth\",\"sliced chicken\",\"rice noodles\",\"peanuts and fried shallots as topping\"],\"evidenceSource\":\"thumbnail\",\"evidenceLabel\":\"Thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+              "parsedBody": {
+                "status": "dish_candidates",
+                "source": {
+                  "type": "youtube_url",
+                  "platform": "youtube",
+                  "videoId": "PGZZHWMedNU",
+                  "url": "https://www.youtube.com/shorts/PGZZHWMedNU",
+                  "title": "PHO GA 2 WAYS (Vietnamese Chicken Noodle Soup)",
+                  "thumbnailUrl": "https://i.ytimg.com/vi/PGZZHWMedNU/hqdefault.jpg"
+                },
+                "dishCandidates": [
+                  {
+                    "id": "dish:title:pho-ga",
+                    "dishName": "Pho Ga",
+                    "cuisine": "Vietnamese",
+                    "confidence": 1,
+                    "aliases": [
+                      "Vietnamese Chicken Noodle Soup",
+                      "Chicken Pho"
+                    ],
+                    "visualEvidence": [
+                      "bowl of chicken noodle soup",
+                      "sliced chicken",
+                      "rice noodles",
+                      "clear broth with herbs"
+                    ],
+                    "evidenceSource": "title_and_thumbnail",
+                    "evidenceLabel": "Title and thumbnail evidence",
+                    "reviewRequired": true
+                  },
+                  {
+                    "id": "dish:2:pho-ga-kho",
+                    "dishName": "Pho Ga Kho",
+                    "cuisine": "Vietnamese",
+                    "confidence": 0.9,
+                    "aliases": [
+                      "Dry Chicken Pho",
+                      "Chicken Pho (dry version)"
+                    ],
+                    "visualEvidence": [
+                      "bowl of chicken noodles without broth",
+                      "sliced chicken",
+                      "rice noodles",
+                      "peanuts and fried shallots as topping"
+                    ],
+                    "evidenceSource": "thumbnail",
+                    "evidenceLabel": "Thumbnail evidence",
+                    "reviewRequired": true
+                  }
+                ],
+                "selectedDish": null,
+                "originalPlaceKnown": false,
+                "restaurants": [],
+                "warnings": []
+              }
+            },
+            "transportError": null
+          },
+          "attemptedAt": "2026-07-28T07:51:29.065Z"
+        },
+        "endToEndMs": 11853
+      }
+    },
+    {
+      "caseId": "V04",
+      "videoUrl": "https://www.youtube.com/watch?v=qWK_HYlKrAA",
+      "expectedDish": "bún bò Huế",
+      "firstRun": {
+        "returnedTop1": "",
+        "returnedTop3": [],
+        "top1Correct": false,
+        "top3Correct": false,
+        "terminalState": "http_429",
+        "technicalFailure": true,
+        "noResult": false,
+        "reviewRequired": false,
+        "resultStatus": "technical_failure",
+        "endToEndMs": 3771,
+        "httpStatus": 429,
+        "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed."
+      },
+      "rerun": {
+        "attempts": [
+          {
+            "caseId": "V04",
+            "videoUrl": "https://www.youtube.com/watch?v=qWK_HYlKrAA",
+            "expectedDish": "bún bò Huế",
+            "returnedTop1": "Bun Bo Hue",
+            "returnedTop3": [
+              "Bun Bo Hue",
+              "Vietnamese Beef Noodle Soup"
+            ],
+            "top1Correct": true,
+            "top3Correct": true,
+            "terminalState": "dish_candidates",
+            "technicalFailure": false,
+            "noResult": false,
+            "reviewRequired": true,
+            "resultStatus": "review_required",
+            "endToEndMs": 9905,
+            "endToEndSeconds": 9.905,
+            "httpStatus": 200,
+            "providerOrMediaError": "",
+            "raw": {
+              "request": {
+                "method": "POST",
+                "body": {
+                  "sourceUrl": "https://www.youtube.com/watch?v=qWK_HYlKrAA"
+                }
+              },
+              "response": {
+                "status": 200,
+                "statusText": "OK",
+                "contentType": "application/json; charset=utf-8",
+                "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"qWK_HYlKrAA\",\"url\":\"https://www.youtube.com/shorts/qWK_HYlKrAA\",\"title\":\"BUN BO HUE - Vietnamese Spicy Beef Noodle Soup | Helen's Recipes\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/qWK_HYlKrAA/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:bun-bo-hue\",\"dishName\":\"Bun Bo Hue\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Vietnamese Spicy Beef Noodle Soup\",\"Spicy Beef Noodle Soup\",\"Bún Bò Huế\"],\"visualEvidence\":[\"bowl of noodle soup\",\"thick round noodles\",\"reddish broth\",\"beef slices/chunks in broth with onions and cilantro/green onions on top of noodles and broth with a large piece of meat (likely pork hock or beef shank) in the\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true},{\"id\":\"dish:2:vietnamese-beef-noodle-soup\",\"dishName\":\"Vietnamese Beef Noodle Soup\",\"cuisine\":\"Vietnamese\",\"confidence\":0.9,\"aliases\":[\"Bún Bò\",\"Spicy Beef Noodle Soup\"],\"visualEvidence\":[\"bowl of noodle soup\",\"beef slices\",\"reddish broth\",\"noodles\"],\"evidenceSource\":\"thumbnail\",\"evidenceLabel\":\"Thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+                "parsedBody": {
+                  "status": "dish_candidates",
+                  "source": {
+                    "type": "youtube_url",
+                    "platform": "youtube",
+                    "videoId": "qWK_HYlKrAA",
+                    "url": "https://www.youtube.com/shorts/qWK_HYlKrAA",
+                    "title": "BUN BO HUE - Vietnamese Spicy Beef Noodle Soup | Helen's Recipes",
+                    "thumbnailUrl": "https://i.ytimg.com/vi/qWK_HYlKrAA/hqdefault.jpg"
+                  },
+                  "dishCandidates": [
+                    {
+                      "id": "dish:title:bun-bo-hue",
+                      "dishName": "Bun Bo Hue",
+                      "cuisine": "Vietnamese",
+                      "confidence": 1,
+                      "aliases": [
+                        "Vietnamese Spicy Beef Noodle Soup",
+                        "Spicy Beef Noodle Soup",
+                        "Bún Bò Huế"
+                      ],
+                      "visualEvidence": [
+                        "bowl of noodle soup",
+                        "thick round noodles",
+                        "reddish broth",
+                        "beef slices/chunks in broth with onions and cilantro/green onions on top of noodles and broth with a large piece of meat (likely pork hock or beef shank) in the"
+                      ],
+                      "evidenceSource": "title_and_thumbnail",
+                      "evidenceLabel": "Title and thumbnail evidence",
+                      "reviewRequired": true
+                    },
+                    {
+                      "id": "dish:2:vietnamese-beef-noodle-soup",
+                      "dishName": "Vietnamese Beef Noodle Soup",
+                      "cuisine": "Vietnamese",
+                      "confidence": 0.9,
+                      "aliases": [
+                        "Bún Bò",
+                        "Spicy Beef Noodle Soup"
+                      ],
+                      "visualEvidence": [
+                        "bowl of noodle soup",
+                        "beef slices",
+                        "reddish broth",
+                        "noodles"
+                      ],
+                      "evidenceSource": "thumbnail",
+                      "evidenceLabel": "Thumbnail evidence",
+                      "reviewRequired": true
+                    }
+                  ],
+                  "selectedDish": null,
+                  "originalPlaceKnown": false,
+                  "restaurants": [],
+                  "warnings": []
+                }
+              },
+              "transportError": null
+            },
+            "attemptedAt": "2026-07-28T07:53:10.925Z"
+          }
+        ],
+        "terminalObservation": {
+          "caseId": "V04",
+          "videoUrl": "https://www.youtube.com/watch?v=qWK_HYlKrAA",
+          "expectedDish": "bún bò Huế",
+          "returnedTop1": "Bun Bo Hue",
+          "returnedTop3": [
+            "Bun Bo Hue",
+            "Vietnamese Beef Noodle Soup"
+          ],
+          "top1Correct": true,
+          "top3Correct": true,
+          "terminalState": "dish_candidates",
+          "technicalFailure": false,
+          "noResult": false,
+          "reviewRequired": true,
+          "resultStatus": "review_required",
+          "endToEndMs": 9905,
+          "endToEndSeconds": 9.905,
+          "httpStatus": 200,
+          "providerOrMediaError": "",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://www.youtube.com/watch?v=qWK_HYlKrAA"
+              }
+            },
+            "response": {
+              "status": 200,
+              "statusText": "OK",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"qWK_HYlKrAA\",\"url\":\"https://www.youtube.com/shorts/qWK_HYlKrAA\",\"title\":\"BUN BO HUE - Vietnamese Spicy Beef Noodle Soup | Helen's Recipes\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/qWK_HYlKrAA/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:bun-bo-hue\",\"dishName\":\"Bun Bo Hue\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Vietnamese Spicy Beef Noodle Soup\",\"Spicy Beef Noodle Soup\",\"Bún Bò Huế\"],\"visualEvidence\":[\"bowl of noodle soup\",\"thick round noodles\",\"reddish broth\",\"beef slices/chunks in broth with onions and cilantro/green onions on top of noodles and broth with a large piece of meat (likely pork hock or beef shank) in the\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true},{\"id\":\"dish:2:vietnamese-beef-noodle-soup\",\"dishName\":\"Vietnamese Beef Noodle Soup\",\"cuisine\":\"Vietnamese\",\"confidence\":0.9,\"aliases\":[\"Bún Bò\",\"Spicy Beef Noodle Soup\"],\"visualEvidence\":[\"bowl of noodle soup\",\"beef slices\",\"reddish broth\",\"noodles\"],\"evidenceSource\":\"thumbnail\",\"evidenceLabel\":\"Thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+              "parsedBody": {
+                "status": "dish_candidates",
+                "source": {
+                  "type": "youtube_url",
+                  "platform": "youtube",
+                  "videoId": "qWK_HYlKrAA",
+                  "url": "https://www.youtube.com/shorts/qWK_HYlKrAA",
+                  "title": "BUN BO HUE - Vietnamese Spicy Beef Noodle Soup | Helen's Recipes",
+                  "thumbnailUrl": "https://i.ytimg.com/vi/qWK_HYlKrAA/hqdefault.jpg"
+                },
+                "dishCandidates": [
+                  {
+                    "id": "dish:title:bun-bo-hue",
+                    "dishName": "Bun Bo Hue",
+                    "cuisine": "Vietnamese",
+                    "confidence": 1,
+                    "aliases": [
+                      "Vietnamese Spicy Beef Noodle Soup",
+                      "Spicy Beef Noodle Soup",
+                      "Bún Bò Huế"
+                    ],
+                    "visualEvidence": [
+                      "bowl of noodle soup",
+                      "thick round noodles",
+                      "reddish broth",
+                      "beef slices/chunks in broth with onions and cilantro/green onions on top of noodles and broth with a large piece of meat (likely pork hock or beef shank) in the"
+                    ],
+                    "evidenceSource": "title_and_thumbnail",
+                    "evidenceLabel": "Title and thumbnail evidence",
+                    "reviewRequired": true
+                  },
+                  {
+                    "id": "dish:2:vietnamese-beef-noodle-soup",
+                    "dishName": "Vietnamese Beef Noodle Soup",
+                    "cuisine": "Vietnamese",
+                    "confidence": 0.9,
+                    "aliases": [
+                      "Bún Bò",
+                      "Spicy Beef Noodle Soup"
+                    ],
+                    "visualEvidence": [
+                      "bowl of noodle soup",
+                      "beef slices",
+                      "reddish broth",
+                      "noodles"
+                    ],
+                    "evidenceSource": "thumbnail",
+                    "evidenceLabel": "Thumbnail evidence",
+                    "reviewRequired": true
+                  }
+                ],
+                "selectedDish": null,
+                "originalPlaceKnown": false,
+                "restaurants": [],
+                "warnings": []
+              }
+            },
+            "transportError": null
+          },
+          "attemptedAt": "2026-07-28T07:53:10.925Z"
+        },
+        "endToEndMs": 9907
+      }
+    },
+    {
+      "caseId": "V06",
+      "videoUrl": "https://www.youtube.com/watch?v=Dz9r3vNRxPA",
+      "expectedDish": "bánh mì",
+      "firstRun": {
+        "returnedTop1": "",
+        "returnedTop3": [],
+        "top1Correct": false,
+        "top3Correct": false,
+        "terminalState": "http_429",
+        "technicalFailure": true,
+        "noResult": false,
+        "reviewRequired": false,
+        "resultStatus": "technical_failure",
+        "endToEndMs": 4302,
+        "httpStatus": 429,
+        "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed."
+      },
+      "rerun": {
+        "attempts": [
+          {
+            "caseId": "V06",
+            "videoUrl": "https://www.youtube.com/watch?v=Dz9r3vNRxPA",
+            "expectedDish": "bánh mì",
+            "returnedTop1": "Banh Mi",
+            "returnedTop3": [
+              "Banh Mi",
+              "Vietnamese Baguette"
+            ],
+            "top1Correct": true,
+            "top3Correct": true,
+            "terminalState": "dish_candidates",
+            "technicalFailure": false,
+            "noResult": false,
+            "reviewRequired": true,
+            "resultStatus": "review_required",
+            "endToEndMs": 13388,
+            "endToEndSeconds": 13.388,
+            "httpStatus": 200,
+            "providerOrMediaError": "",
+            "raw": {
+              "request": {
+                "method": "POST",
+                "body": {
+                  "sourceUrl": "https://www.youtube.com/watch?v=Dz9r3vNRxPA"
+                }
+              },
+              "response": {
+                "status": 200,
+                "statusText": "OK",
+                "contentType": "application/json; charset=utf-8",
+                "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"Dz9r3vNRxPA\",\"url\":\"https://www.youtube.com/shorts/Dz9r3vNRxPA\",\"title\":\"Banh Mi - Vietnamese Baguette Recipe | Helen's Recipes\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/Dz9r3vNRxPA/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:banh-mi\",\"dishName\":\"Banh Mi\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Vietnamese Sandwich\"],\"visualEvidence\":[\"baguette\",\"bread\",\"baked goods\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true},{\"id\":\"dish:2:vietnamese-baguette\",\"dishName\":\"Vietnamese Baguette\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Banh Mi bread\",\"Vietnamese bread roll\"],\"visualEvidence\":[\"baguette\",\"bread\",\"baked goods\"],\"evidenceSource\":\"thumbnail\",\"evidenceLabel\":\"Thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+                "parsedBody": {
+                  "status": "dish_candidates",
+                  "source": {
+                    "type": "youtube_url",
+                    "platform": "youtube",
+                    "videoId": "Dz9r3vNRxPA",
+                    "url": "https://www.youtube.com/shorts/Dz9r3vNRxPA",
+                    "title": "Banh Mi - Vietnamese Baguette Recipe | Helen's Recipes",
+                    "thumbnailUrl": "https://i.ytimg.com/vi/Dz9r3vNRxPA/hqdefault.jpg"
+                  },
+                  "dishCandidates": [
+                    {
+                      "id": "dish:title:banh-mi",
+                      "dishName": "Banh Mi",
+                      "cuisine": "Vietnamese",
+                      "confidence": 1,
+                      "aliases": [
+                        "Vietnamese Sandwich"
+                      ],
+                      "visualEvidence": [
+                        "baguette",
+                        "bread",
+                        "baked goods"
+                      ],
+                      "evidenceSource": "title_and_thumbnail",
+                      "evidenceLabel": "Title and thumbnail evidence",
+                      "reviewRequired": true
+                    },
+                    {
+                      "id": "dish:2:vietnamese-baguette",
+                      "dishName": "Vietnamese Baguette",
+                      "cuisine": "Vietnamese",
+                      "confidence": 1,
+                      "aliases": [
+                        "Banh Mi bread",
+                        "Vietnamese bread roll"
+                      ],
+                      "visualEvidence": [
+                        "baguette",
+                        "bread",
+                        "baked goods"
+                      ],
+                      "evidenceSource": "thumbnail",
+                      "evidenceLabel": "Thumbnail evidence",
+                      "reviewRequired": true
+                    }
+                  ],
+                  "selectedDish": null,
+                  "originalPlaceKnown": false,
+                  "restaurants": [],
+                  "warnings": []
+                }
+              },
+              "transportError": null
+            },
+            "attemptedAt": "2026-07-28T07:54:50.835Z"
+          }
+        ],
+        "terminalObservation": {
+          "caseId": "V06",
+          "videoUrl": "https://www.youtube.com/watch?v=Dz9r3vNRxPA",
+          "expectedDish": "bánh mì",
+          "returnedTop1": "Banh Mi",
+          "returnedTop3": [
+            "Banh Mi",
+            "Vietnamese Baguette"
+          ],
+          "top1Correct": true,
+          "top3Correct": true,
+          "terminalState": "dish_candidates",
+          "technicalFailure": false,
+          "noResult": false,
+          "reviewRequired": true,
+          "resultStatus": "review_required",
+          "endToEndMs": 13388,
+          "endToEndSeconds": 13.388,
+          "httpStatus": 200,
+          "providerOrMediaError": "",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://www.youtube.com/watch?v=Dz9r3vNRxPA"
+              }
+            },
+            "response": {
+              "status": 200,
+              "statusText": "OK",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"Dz9r3vNRxPA\",\"url\":\"https://www.youtube.com/shorts/Dz9r3vNRxPA\",\"title\":\"Banh Mi - Vietnamese Baguette Recipe | Helen's Recipes\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/Dz9r3vNRxPA/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:banh-mi\",\"dishName\":\"Banh Mi\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Vietnamese Sandwich\"],\"visualEvidence\":[\"baguette\",\"bread\",\"baked goods\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true},{\"id\":\"dish:2:vietnamese-baguette\",\"dishName\":\"Vietnamese Baguette\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Banh Mi bread\",\"Vietnamese bread roll\"],\"visualEvidence\":[\"baguette\",\"bread\",\"baked goods\"],\"evidenceSource\":\"thumbnail\",\"evidenceLabel\":\"Thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+              "parsedBody": {
+                "status": "dish_candidates",
+                "source": {
+                  "type": "youtube_url",
+                  "platform": "youtube",
+                  "videoId": "Dz9r3vNRxPA",
+                  "url": "https://www.youtube.com/shorts/Dz9r3vNRxPA",
+                  "title": "Banh Mi - Vietnamese Baguette Recipe | Helen's Recipes",
+                  "thumbnailUrl": "https://i.ytimg.com/vi/Dz9r3vNRxPA/hqdefault.jpg"
+                },
+                "dishCandidates": [
+                  {
+                    "id": "dish:title:banh-mi",
+                    "dishName": "Banh Mi",
+                    "cuisine": "Vietnamese",
+                    "confidence": 1,
+                    "aliases": [
+                      "Vietnamese Sandwich"
+                    ],
+                    "visualEvidence": [
+                      "baguette",
+                      "bread",
+                      "baked goods"
+                    ],
+                    "evidenceSource": "title_and_thumbnail",
+                    "evidenceLabel": "Title and thumbnail evidence",
+                    "reviewRequired": true
+                  },
+                  {
+                    "id": "dish:2:vietnamese-baguette",
+                    "dishName": "Vietnamese Baguette",
+                    "cuisine": "Vietnamese",
+                    "confidence": 1,
+                    "aliases": [
+                      "Banh Mi bread",
+                      "Vietnamese bread roll"
+                    ],
+                    "visualEvidence": [
+                      "baguette",
+                      "bread",
+                      "baked goods"
+                    ],
+                    "evidenceSource": "thumbnail",
+                    "evidenceLabel": "Thumbnail evidence",
+                    "reviewRequired": true
+                  }
+                ],
+                "selectedDish": null,
+                "originalPlaceKnown": false,
+                "restaurants": [],
+                "warnings": []
+              }
+            },
+            "transportError": null
+          },
+          "attemptedAt": "2026-07-28T07:54:50.835Z"
+        },
+        "endToEndMs": 13390
+      }
+    },
+    {
+      "caseId": "V07",
+      "videoUrl": "https://www.youtube.com/watch?v=iZJzTScgB-c",
+      "expectedDish": "bún chả",
+      "firstRun": {
+        "returnedTop1": "",
+        "returnedTop3": [],
+        "top1Correct": false,
+        "top3Correct": false,
+        "terminalState": "http_429",
+        "technicalFailure": true,
+        "noResult": false,
+        "reviewRequired": false,
+        "resultStatus": "technical_failure",
+        "endToEndMs": 4381,
+        "httpStatus": 429,
+        "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed."
+      },
+      "rerun": {
+        "attempts": [
+          {
+            "caseId": "V07",
+            "videoUrl": "https://www.youtube.com/watch?v=iZJzTScgB-c",
+            "expectedDish": "bún chả",
+            "returnedTop1": "Bún chả",
+            "returnedTop3": [
+              "Bún chả"
+            ],
+            "top1Correct": true,
+            "top3Correct": true,
+            "terminalState": "dish_candidates",
+            "technicalFailure": false,
+            "noResult": false,
+            "reviewRequired": true,
+            "resultStatus": "review_required",
+            "endToEndMs": 8138,
+            "endToEndSeconds": 8.138,
+            "httpStatus": 200,
+            "providerOrMediaError": "",
+            "raw": {
+              "request": {
+                "method": "POST",
+                "body": {
+                  "sourceUrl": "https://www.youtube.com/watch?v=iZJzTScgB-c"
+                }
+              },
+              "response": {
+                "status": 200,
+                "statusText": "OK",
+                "contentType": "application/json; charset=utf-8",
+                "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"iZJzTScgB-c\",\"url\":\"https://www.youtube.com/shorts/iZJzTScgB-c\",\"title\":\"Bún chả - Vietnamese Grilled Pork with Vermicelli Recipe | Helen's Recipes\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/iZJzTScgB-c/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:bun-cha\",\"dishName\":\"Bún chả\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Vietnamese Grilled Pork with Vermicelli\",\"Grilled Pork with Vermicelli\"],\"visualEvidence\":[\"grilled pork patties\",\"grilled pork slices\",\"pickled vegetables\",\"fresh herbs\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+                "parsedBody": {
+                  "status": "dish_candidates",
+                  "source": {
+                    "type": "youtube_url",
+                    "platform": "youtube",
+                    "videoId": "iZJzTScgB-c",
+                    "url": "https://www.youtube.com/shorts/iZJzTScgB-c",
+                    "title": "Bún chả - Vietnamese Grilled Pork with Vermicelli Recipe | Helen's Recipes",
+                    "thumbnailUrl": "https://i.ytimg.com/vi/iZJzTScgB-c/hqdefault.jpg"
+                  },
+                  "dishCandidates": [
+                    {
+                      "id": "dish:title:bun-cha",
+                      "dishName": "Bún chả",
+                      "cuisine": "Vietnamese",
+                      "confidence": 1,
+                      "aliases": [
+                        "Vietnamese Grilled Pork with Vermicelli",
+                        "Grilled Pork with Vermicelli"
+                      ],
+                      "visualEvidence": [
+                        "grilled pork patties",
+                        "grilled pork slices",
+                        "pickled vegetables",
+                        "fresh herbs"
+                      ],
+                      "evidenceSource": "title_and_thumbnail",
+                      "evidenceLabel": "Title and thumbnail evidence",
+                      "reviewRequired": true
+                    }
+                  ],
+                  "selectedDish": null,
+                  "originalPlaceKnown": false,
+                  "restaurants": [],
+                  "warnings": []
+                }
+              },
+              "transportError": null
+            },
+            "attemptedAt": "2026-07-28T07:56:34.231Z"
+          }
+        ],
+        "terminalObservation": {
+          "caseId": "V07",
+          "videoUrl": "https://www.youtube.com/watch?v=iZJzTScgB-c",
+          "expectedDish": "bún chả",
+          "returnedTop1": "Bún chả",
+          "returnedTop3": [
+            "Bún chả"
+          ],
+          "top1Correct": true,
+          "top3Correct": true,
+          "terminalState": "dish_candidates",
+          "technicalFailure": false,
+          "noResult": false,
+          "reviewRequired": true,
+          "resultStatus": "review_required",
+          "endToEndMs": 8138,
+          "endToEndSeconds": 8.138,
+          "httpStatus": 200,
+          "providerOrMediaError": "",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://www.youtube.com/watch?v=iZJzTScgB-c"
+              }
+            },
+            "response": {
+              "status": 200,
+              "statusText": "OK",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"iZJzTScgB-c\",\"url\":\"https://www.youtube.com/shorts/iZJzTScgB-c\",\"title\":\"Bún chả - Vietnamese Grilled Pork with Vermicelli Recipe | Helen's Recipes\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/iZJzTScgB-c/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:bun-cha\",\"dishName\":\"Bún chả\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Vietnamese Grilled Pork with Vermicelli\",\"Grilled Pork with Vermicelli\"],\"visualEvidence\":[\"grilled pork patties\",\"grilled pork slices\",\"pickled vegetables\",\"fresh herbs\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+              "parsedBody": {
+                "status": "dish_candidates",
+                "source": {
+                  "type": "youtube_url",
+                  "platform": "youtube",
+                  "videoId": "iZJzTScgB-c",
+                  "url": "https://www.youtube.com/shorts/iZJzTScgB-c",
+                  "title": "Bún chả - Vietnamese Grilled Pork with Vermicelli Recipe | Helen's Recipes",
+                  "thumbnailUrl": "https://i.ytimg.com/vi/iZJzTScgB-c/hqdefault.jpg"
+                },
+                "dishCandidates": [
+                  {
+                    "id": "dish:title:bun-cha",
+                    "dishName": "Bún chả",
+                    "cuisine": "Vietnamese",
+                    "confidence": 1,
+                    "aliases": [
+                      "Vietnamese Grilled Pork with Vermicelli",
+                      "Grilled Pork with Vermicelli"
+                    ],
+                    "visualEvidence": [
+                      "grilled pork patties",
+                      "grilled pork slices",
+                      "pickled vegetables",
+                      "fresh herbs"
+                    ],
+                    "evidenceSource": "title_and_thumbnail",
+                    "evidenceLabel": "Title and thumbnail evidence",
+                    "reviewRequired": true
+                  }
+                ],
+                "selectedDish": null,
+                "originalPlaceKnown": false,
+                "restaurants": [],
+                "warnings": []
+              }
+            },
+            "transportError": null
+          },
+          "attemptedAt": "2026-07-28T07:56:34.231Z"
+        },
+        "endToEndMs": 8141
+      }
+    },
+    {
+      "caseId": "V08",
+      "videoUrl": "https://www.youtube.com/watch?v=OHP77Zim3Ko",
+      "expectedDish": "bánh bèo",
+      "firstRun": {
+        "returnedTop1": "",
+        "returnedTop3": [],
+        "top1Correct": false,
+        "top3Correct": false,
+        "terminalState": "http_429",
+        "technicalFailure": true,
+        "noResult": false,
+        "reviewRequired": false,
+        "resultStatus": "technical_failure",
+        "endToEndMs": 4521,
+        "httpStatus": 429,
+        "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed."
+      },
+      "rerun": {
+        "attempts": [
+          {
+            "caseId": "V08",
+            "videoUrl": "https://www.youtube.com/watch?v=OHP77Zim3Ko",
+            "expectedDish": "bánh bèo",
+            "returnedTop1": "Bánh bèo",
+            "returnedTop3": [
+              "Bánh bèo"
+            ],
+            "top1Correct": true,
+            "top3Correct": true,
+            "terminalState": "dish_candidates",
+            "technicalFailure": false,
+            "noResult": false,
+            "reviewRequired": true,
+            "resultStatus": "review_required",
+            "endToEndMs": 7959,
+            "endToEndSeconds": 7.959,
+            "httpStatus": 200,
+            "providerOrMediaError": "",
+            "raw": {
+              "request": {
+                "method": "POST",
+                "body": {
+                  "sourceUrl": "https://www.youtube.com/watch?v=OHP77Zim3Ko"
+                }
+              },
+              "response": {
+                "status": 200,
+                "statusText": "OK",
+                "contentType": "application/json; charset=utf-8",
+                "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"OHP77Zim3Ko\",\"url\":\"https://www.youtube.com/shorts/OHP77Zim3Ko\",\"title\":\"Bánh bèo - Vietnamese Savory Steamed Rice Cake (Water Fern Cake) | Helen's Recipes\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/OHP77Zim3Ko/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:banh-beo\",\"dishName\":\"Bánh bèo\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Vietnamese Savory Steamed Rice Cake\",\"Water Fern Cake\"],\"visualEvidence\":[\"small steamed rice cakes\",\"topped with crispy pork rinds\",\"served with dipping sauce\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+                "parsedBody": {
+                  "status": "dish_candidates",
+                  "source": {
+                    "type": "youtube_url",
+                    "platform": "youtube",
+                    "videoId": "OHP77Zim3Ko",
+                    "url": "https://www.youtube.com/shorts/OHP77Zim3Ko",
+                    "title": "Bánh bèo - Vietnamese Savory Steamed Rice Cake (Water Fern Cake) | Helen's Recipes",
+                    "thumbnailUrl": "https://i.ytimg.com/vi/OHP77Zim3Ko/hqdefault.jpg"
+                  },
+                  "dishCandidates": [
+                    {
+                      "id": "dish:title:banh-beo",
+                      "dishName": "Bánh bèo",
+                      "cuisine": "Vietnamese",
+                      "confidence": 1,
+                      "aliases": [
+                        "Vietnamese Savory Steamed Rice Cake",
+                        "Water Fern Cake"
+                      ],
+                      "visualEvidence": [
+                        "small steamed rice cakes",
+                        "topped with crispy pork rinds",
+                        "served with dipping sauce"
+                      ],
+                      "evidenceSource": "title_and_thumbnail",
+                      "evidenceLabel": "Title and thumbnail evidence",
+                      "reviewRequired": true
+                    }
+                  ],
+                  "selectedDish": null,
+                  "originalPlaceKnown": false,
+                  "restaurants": [],
+                  "warnings": []
+                }
+              },
+              "transportError": null
+            },
+            "attemptedAt": "2026-07-28T07:58:12.380Z"
+          }
+        ],
+        "terminalObservation": {
+          "caseId": "V08",
+          "videoUrl": "https://www.youtube.com/watch?v=OHP77Zim3Ko",
+          "expectedDish": "bánh bèo",
+          "returnedTop1": "Bánh bèo",
+          "returnedTop3": [
+            "Bánh bèo"
+          ],
+          "top1Correct": true,
+          "top3Correct": true,
+          "terminalState": "dish_candidates",
+          "technicalFailure": false,
+          "noResult": false,
+          "reviewRequired": true,
+          "resultStatus": "review_required",
+          "endToEndMs": 7959,
+          "endToEndSeconds": 7.959,
+          "httpStatus": 200,
+          "providerOrMediaError": "",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://www.youtube.com/watch?v=OHP77Zim3Ko"
+              }
+            },
+            "response": {
+              "status": 200,
+              "statusText": "OK",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"OHP77Zim3Ko\",\"url\":\"https://www.youtube.com/shorts/OHP77Zim3Ko\",\"title\":\"Bánh bèo - Vietnamese Savory Steamed Rice Cake (Water Fern Cake) | Helen's Recipes\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/OHP77Zim3Ko/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:banh-beo\",\"dishName\":\"Bánh bèo\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Vietnamese Savory Steamed Rice Cake\",\"Water Fern Cake\"],\"visualEvidence\":[\"small steamed rice cakes\",\"topped with crispy pork rinds\",\"served with dipping sauce\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+              "parsedBody": {
+                "status": "dish_candidates",
+                "source": {
+                  "type": "youtube_url",
+                  "platform": "youtube",
+                  "videoId": "OHP77Zim3Ko",
+                  "url": "https://www.youtube.com/shorts/OHP77Zim3Ko",
+                  "title": "Bánh bèo - Vietnamese Savory Steamed Rice Cake (Water Fern Cake) | Helen's Recipes",
+                  "thumbnailUrl": "https://i.ytimg.com/vi/OHP77Zim3Ko/hqdefault.jpg"
+                },
+                "dishCandidates": [
+                  {
+                    "id": "dish:title:banh-beo",
+                    "dishName": "Bánh bèo",
+                    "cuisine": "Vietnamese",
+                    "confidence": 1,
+                    "aliases": [
+                      "Vietnamese Savory Steamed Rice Cake",
+                      "Water Fern Cake"
+                    ],
+                    "visualEvidence": [
+                      "small steamed rice cakes",
+                      "topped with crispy pork rinds",
+                      "served with dipping sauce"
+                    ],
+                    "evidenceSource": "title_and_thumbnail",
+                    "evidenceLabel": "Title and thumbnail evidence",
+                    "reviewRequired": true
+                  }
+                ],
+                "selectedDish": null,
+                "originalPlaceKnown": false,
+                "restaurants": [],
+                "warnings": []
+              }
+            },
+            "transportError": null
+          },
+          "attemptedAt": "2026-07-28T07:58:12.380Z"
+        },
+        "endToEndMs": 7962
+      }
+    },
+    {
+      "caseId": "V09",
+      "videoUrl": "https://www.youtube.com/watch?v=s5xIVRi26t4",
+      "expectedDish": "bánh bột lọc",
+      "firstRun": {
+        "returnedTop1": "",
+        "returnedTop3": [],
+        "top1Correct": false,
+        "top3Correct": false,
+        "terminalState": "http_429",
+        "technicalFailure": true,
+        "noResult": false,
+        "reviewRequired": false,
+        "resultStatus": "technical_failure",
+        "endToEndMs": 5138,
+        "httpStatus": 429,
+        "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed."
+      },
+      "rerun": {
+        "attempts": [
+          {
+            "caseId": "V09",
+            "videoUrl": "https://www.youtube.com/watch?v=s5xIVRi26t4",
+            "expectedDish": "bánh bột lọc",
+            "returnedTop1": "Bánh bột lọc",
+            "returnedTop3": [
+              "Bánh bột lọc"
+            ],
+            "top1Correct": true,
+            "top3Correct": true,
+            "terminalState": "dish_candidates",
+            "technicalFailure": false,
+            "noResult": false,
+            "reviewRequired": true,
+            "resultStatus": "review_required",
+            "endToEndMs": 8639,
+            "endToEndSeconds": 8.639,
+            "httpStatus": 200,
+            "providerOrMediaError": "",
+            "raw": {
+              "request": {
+                "method": "POST",
+                "body": {
+                  "sourceUrl": "https://www.youtube.com/watch?v=s5xIVRi26t4"
+                }
+              },
+              "response": {
+                "status": 200,
+                "statusText": "OK",
+                "contentType": "application/json; charset=utf-8",
+                "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"s5xIVRi26t4\",\"url\":\"https://www.youtube.com/shorts/s5xIVRi26t4\",\"title\":\"Bánh bột lọc - Vietnamese clear shrimp & pork dumpling | Helen's Recipes\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/s5xIVRi26t4/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:banh-bot-loc\",\"dishName\":\"Bánh bột lọc\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Vietnamese clear shrimp & pork dumpling\",\"tapioca dumpling\",\"banh bot loc\"],\"visualEvidence\":[\"translucent dumplings\",\"shrimp\",\"pork\",\"green onions as garnish\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+                "parsedBody": {
+                  "status": "dish_candidates",
+                  "source": {
+                    "type": "youtube_url",
+                    "platform": "youtube",
+                    "videoId": "s5xIVRi26t4",
+                    "url": "https://www.youtube.com/shorts/s5xIVRi26t4",
+                    "title": "Bánh bột lọc - Vietnamese clear shrimp & pork dumpling | Helen's Recipes",
+                    "thumbnailUrl": "https://i.ytimg.com/vi/s5xIVRi26t4/hqdefault.jpg"
+                  },
+                  "dishCandidates": [
+                    {
+                      "id": "dish:title:banh-bot-loc",
+                      "dishName": "Bánh bột lọc",
+                      "cuisine": "Vietnamese",
+                      "confidence": 1,
+                      "aliases": [
+                        "Vietnamese clear shrimp & pork dumpling",
+                        "tapioca dumpling",
+                        "banh bot loc"
+                      ],
+                      "visualEvidence": [
+                        "translucent dumplings",
+                        "shrimp",
+                        "pork",
+                        "green onions as garnish"
+                      ],
+                      "evidenceSource": "title_and_thumbnail",
+                      "evidenceLabel": "Title and thumbnail evidence",
+                      "reviewRequired": true
+                    }
+                  ],
+                  "selectedDish": null,
+                  "originalPlaceKnown": false,
+                  "restaurants": [],
+                  "warnings": []
+                }
+              },
+              "transportError": null
+            },
+            "attemptedAt": "2026-07-28T07:59:50.345Z"
+          }
+        ],
+        "terminalObservation": {
+          "caseId": "V09",
+          "videoUrl": "https://www.youtube.com/watch?v=s5xIVRi26t4",
+          "expectedDish": "bánh bột lọc",
+          "returnedTop1": "Bánh bột lọc",
+          "returnedTop3": [
+            "Bánh bột lọc"
+          ],
+          "top1Correct": true,
+          "top3Correct": true,
+          "terminalState": "dish_candidates",
+          "technicalFailure": false,
+          "noResult": false,
+          "reviewRequired": true,
+          "resultStatus": "review_required",
+          "endToEndMs": 8639,
+          "endToEndSeconds": 8.639,
+          "httpStatus": 200,
+          "providerOrMediaError": "",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://www.youtube.com/watch?v=s5xIVRi26t4"
+              }
+            },
+            "response": {
+              "status": 200,
+              "statusText": "OK",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"s5xIVRi26t4\",\"url\":\"https://www.youtube.com/shorts/s5xIVRi26t4\",\"title\":\"Bánh bột lọc - Vietnamese clear shrimp & pork dumpling | Helen's Recipes\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/s5xIVRi26t4/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:banh-bot-loc\",\"dishName\":\"Bánh bột lọc\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Vietnamese clear shrimp & pork dumpling\",\"tapioca dumpling\",\"banh bot loc\"],\"visualEvidence\":[\"translucent dumplings\",\"shrimp\",\"pork\",\"green onions as garnish\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+              "parsedBody": {
+                "status": "dish_candidates",
+                "source": {
+                  "type": "youtube_url",
+                  "platform": "youtube",
+                  "videoId": "s5xIVRi26t4",
+                  "url": "https://www.youtube.com/shorts/s5xIVRi26t4",
+                  "title": "Bánh bột lọc - Vietnamese clear shrimp & pork dumpling | Helen's Recipes",
+                  "thumbnailUrl": "https://i.ytimg.com/vi/s5xIVRi26t4/hqdefault.jpg"
+                },
+                "dishCandidates": [
+                  {
+                    "id": "dish:title:banh-bot-loc",
+                    "dishName": "Bánh bột lọc",
+                    "cuisine": "Vietnamese",
+                    "confidence": 1,
+                    "aliases": [
+                      "Vietnamese clear shrimp & pork dumpling",
+                      "tapioca dumpling",
+                      "banh bot loc"
+                    ],
+                    "visualEvidence": [
+                      "translucent dumplings",
+                      "shrimp",
+                      "pork",
+                      "green onions as garnish"
+                    ],
+                    "evidenceSource": "title_and_thumbnail",
+                    "evidenceLabel": "Title and thumbnail evidence",
+                    "reviewRequired": true
+                  }
+                ],
+                "selectedDish": null,
+                "originalPlaceKnown": false,
+                "restaurants": [],
+                "warnings": []
+              }
+            },
+            "transportError": null
+          },
+          "attemptedAt": "2026-07-28T07:59:50.345Z"
+        },
+        "endToEndMs": 8643
+      }
+    },
+    {
+      "caseId": "V11",
+      "videoUrl": "https://www.youtube.com/watch?v=P1AXLv3ZF3Q",
+      "expectedDish": "cơm tấm",
+      "firstRun": {
+        "returnedTop1": "",
+        "returnedTop3": [],
+        "top1Correct": false,
+        "top3Correct": false,
+        "terminalState": "http_429",
+        "technicalFailure": true,
+        "noResult": false,
+        "reviewRequired": false,
+        "resultStatus": "technical_failure",
+        "endToEndMs": 3807,
+        "httpStatus": 429,
+        "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed."
+      },
+      "rerun": {
+        "attempts": [
+          {
+            "caseId": "V11",
+            "videoUrl": "https://www.youtube.com/watch?v=P1AXLv3ZF3Q",
+            "expectedDish": "cơm tấm",
+            "returnedTop1": "Cơm Tấm Đặc Biệt",
+            "returnedTop3": [
+              "Cơm Tấm Đặc Biệt"
+            ],
+            "top1Correct": true,
+            "top3Correct": true,
+            "terminalState": "dish_candidates",
+            "technicalFailure": false,
+            "noResult": false,
+            "reviewRequired": true,
+            "resultStatus": "review_required",
+            "endToEndMs": 11425,
+            "endToEndSeconds": 11.425,
+            "httpStatus": 200,
+            "providerOrMediaError": "",
+            "raw": {
+              "request": {
+                "method": "POST",
+                "body": {
+                  "sourceUrl": "https://www.youtube.com/watch?v=P1AXLv3ZF3Q"
+                }
+              },
+              "response": {
+                "status": 200,
+                "statusText": "OK",
+                "contentType": "application/json; charset=utf-8",
+                "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"P1AXLv3ZF3Q\",\"url\":\"https://www.youtube.com/shorts/P1AXLv3ZF3Q\",\"title\":\"CƠM TẤM ĐẶC BIỆT - Breaking Down Broken Rice\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/P1AXLv3ZF3Q/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:com-tam-ac-biet\",\"dishName\":\"Cơm Tấm Đặc Biệt\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Cơm Tấm\",\"Broken Rice\",\"Special Broken Rice\"],\"visualEvidence\":[\"Plate with rice and various toppings\",\"Text 'CƠM TẤM ĐẶC BIỆT' on screen\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+                "parsedBody": {
+                  "status": "dish_candidates",
+                  "source": {
+                    "type": "youtube_url",
+                    "platform": "youtube",
+                    "videoId": "P1AXLv3ZF3Q",
+                    "url": "https://www.youtube.com/shorts/P1AXLv3ZF3Q",
+                    "title": "CƠM TẤM ĐẶC BIỆT - Breaking Down Broken Rice",
+                    "thumbnailUrl": "https://i.ytimg.com/vi/P1AXLv3ZF3Q/hqdefault.jpg"
+                  },
+                  "dishCandidates": [
+                    {
+                      "id": "dish:title:com-tam-ac-biet",
+                      "dishName": "Cơm Tấm Đặc Biệt",
+                      "cuisine": "Vietnamese",
+                      "confidence": 1,
+                      "aliases": [
+                        "Cơm Tấm",
+                        "Broken Rice",
+                        "Special Broken Rice"
+                      ],
+                      "visualEvidence": [
+                        "Plate with rice and various toppings",
+                        "Text 'CƠM TẤM ĐẶC BIỆT' on screen"
+                      ],
+                      "evidenceSource": "title_and_thumbnail",
+                      "evidenceLabel": "Title and thumbnail evidence",
+                      "reviewRequired": true
+                    }
+                  ],
+                  "selectedDish": null,
+                  "originalPlaceKnown": false,
+                  "restaurants": [],
+                  "warnings": []
+                }
+              },
+              "transportError": null
+            },
+            "attemptedAt": "2026-07-28T08:01:28.998Z"
+          }
+        ],
+        "terminalObservation": {
+          "caseId": "V11",
+          "videoUrl": "https://www.youtube.com/watch?v=P1AXLv3ZF3Q",
+          "expectedDish": "cơm tấm",
+          "returnedTop1": "Cơm Tấm Đặc Biệt",
+          "returnedTop3": [
+            "Cơm Tấm Đặc Biệt"
+          ],
+          "top1Correct": true,
+          "top3Correct": true,
+          "terminalState": "dish_candidates",
+          "technicalFailure": false,
+          "noResult": false,
+          "reviewRequired": true,
+          "resultStatus": "review_required",
+          "endToEndMs": 11425,
+          "endToEndSeconds": 11.425,
+          "httpStatus": 200,
+          "providerOrMediaError": "",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://www.youtube.com/watch?v=P1AXLv3ZF3Q"
+              }
+            },
+            "response": {
+              "status": 200,
+              "statusText": "OK",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"P1AXLv3ZF3Q\",\"url\":\"https://www.youtube.com/shorts/P1AXLv3ZF3Q\",\"title\":\"CƠM TẤM ĐẶC BIỆT - Breaking Down Broken Rice\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/P1AXLv3ZF3Q/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:com-tam-ac-biet\",\"dishName\":\"Cơm Tấm Đặc Biệt\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Cơm Tấm\",\"Broken Rice\",\"Special Broken Rice\"],\"visualEvidence\":[\"Plate with rice and various toppings\",\"Text 'CƠM TẤM ĐẶC BIỆT' on screen\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+              "parsedBody": {
+                "status": "dish_candidates",
+                "source": {
+                  "type": "youtube_url",
+                  "platform": "youtube",
+                  "videoId": "P1AXLv3ZF3Q",
+                  "url": "https://www.youtube.com/shorts/P1AXLv3ZF3Q",
+                  "title": "CƠM TẤM ĐẶC BIỆT - Breaking Down Broken Rice",
+                  "thumbnailUrl": "https://i.ytimg.com/vi/P1AXLv3ZF3Q/hqdefault.jpg"
+                },
+                "dishCandidates": [
+                  {
+                    "id": "dish:title:com-tam-ac-biet",
+                    "dishName": "Cơm Tấm Đặc Biệt",
+                    "cuisine": "Vietnamese",
+                    "confidence": 1,
+                    "aliases": [
+                      "Cơm Tấm",
+                      "Broken Rice",
+                      "Special Broken Rice"
+                    ],
+                    "visualEvidence": [
+                      "Plate with rice and various toppings",
+                      "Text 'CƠM TẤM ĐẶC BIỆT' on screen"
+                    ],
+                    "evidenceSource": "title_and_thumbnail",
+                    "evidenceLabel": "Title and thumbnail evidence",
+                    "reviewRequired": true
+                  }
+                ],
+                "selectedDish": null,
+                "originalPlaceKnown": false,
+                "restaurants": [],
+                "warnings": []
+              }
+            },
+            "transportError": null
+          },
+          "attemptedAt": "2026-07-28T08:01:28.998Z"
+        },
+        "endToEndMs": 11428
+      }
+    },
+    {
+      "caseId": "V13",
+      "videoUrl": "https://www.youtube.com/watch?v=fqiGFA0qkig",
+      "expectedDish": "mì Quảng",
+      "firstRun": {
+        "returnedTop1": "",
+        "returnedTop3": [],
+        "top1Correct": false,
+        "top3Correct": false,
+        "terminalState": "http_429",
+        "technicalFailure": true,
+        "noResult": false,
+        "reviewRequired": false,
+        "resultStatus": "technical_failure",
+        "endToEndMs": 4082,
+        "httpStatus": 429,
+        "providerOrMediaError": "dish_provider_quota: Dish recognition provider request failed."
+      },
+      "rerun": {
+        "attempts": [
+          {
+            "caseId": "V13",
+            "videoUrl": "https://www.youtube.com/watch?v=fqiGFA0qkig",
+            "expectedDish": "mì Quảng",
+            "returnedTop1": "",
+            "returnedTop3": [],
+            "top1Correct": false,
+            "top3Correct": false,
+            "terminalState": "http_504",
+            "technicalFailure": true,
+            "noResult": false,
+            "reviewRequired": false,
+            "resultStatus": "technical_failure",
+            "endToEndMs": 19313,
+            "endToEndSeconds": 19.313,
+            "httpStatus": 504,
+            "providerOrMediaError": "dish_provider_timeout: Dish recognition timed out.",
+            "raw": {
+              "request": {
+                "method": "POST",
+                "body": {
+                  "sourceUrl": "https://www.youtube.com/watch?v=fqiGFA0qkig"
+                }
+              },
+              "response": {
+                "status": 504,
+                "statusText": "Gateway Timeout",
+                "contentType": "application/json; charset=utf-8",
+                "rawBody": "{\"error\":\"Dish recognition timed out.\",\"code\":\"dish_provider_timeout\"}",
+                "parsedBody": {
+                  "error": "Dish recognition timed out.",
+                  "code": "dish_provider_timeout"
+                }
+              },
+              "transportError": null
+            },
+            "attemptedAt": "2026-07-28T08:03:10.433Z"
+          },
+          {
+            "caseId": "V13",
+            "videoUrl": "https://www.youtube.com/watch?v=fqiGFA0qkig",
+            "expectedDish": "mì Quảng",
+            "returnedTop1": "Mì Quảng",
+            "returnedTop3": [
+              "Mì Quảng"
+            ],
+            "top1Correct": true,
+            "top3Correct": true,
+            "terminalState": "dish_candidates",
+            "technicalFailure": false,
+            "noResult": false,
+            "reviewRequired": true,
+            "resultStatus": "review_required",
+            "endToEndMs": 9266,
+            "endToEndSeconds": 9.266,
+            "httpStatus": 200,
+            "providerOrMediaError": "",
+            "raw": {
+              "request": {
+                "method": "POST",
+                "body": {
+                  "sourceUrl": "https://www.youtube.com/watch?v=fqiGFA0qkig"
+                }
+              },
+              "response": {
+                "status": 200,
+                "statusText": "OK",
+                "contentType": "application/json; charset=utf-8",
+                "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"fqiGFA0qkig\",\"url\":\"https://www.youtube.com/shorts/fqiGFA0qkig\",\"title\":\"Mì Quảng - ĐẶC BIỆT - NGON Như Tiệm\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/fqiGFA0qkig/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:mi-quang\",\"dishName\":\"Mì Quảng\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Quang Noodles\",\"My Quang\"],\"visualEvidence\":[\"Yellow flat noodles\",\"Shrimp in broth\",\"Quail eggs\",\"Fresh herbs and vegetables\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+                "parsedBody": {
+                  "status": "dish_candidates",
+                  "source": {
+                    "type": "youtube_url",
+                    "platform": "youtube",
+                    "videoId": "fqiGFA0qkig",
+                    "url": "https://www.youtube.com/shorts/fqiGFA0qkig",
+                    "title": "Mì Quảng - ĐẶC BIỆT - NGON Như Tiệm",
+                    "thumbnailUrl": "https://i.ytimg.com/vi/fqiGFA0qkig/hqdefault.jpg"
+                  },
+                  "dishCandidates": [
+                    {
+                      "id": "dish:title:mi-quang",
+                      "dishName": "Mì Quảng",
+                      "cuisine": "Vietnamese",
+                      "confidence": 1,
+                      "aliases": [
+                        "Quang Noodles",
+                        "My Quang"
+                      ],
+                      "visualEvidence": [
+                        "Yellow flat noodles",
+                        "Shrimp in broth",
+                        "Quail eggs",
+                        "Fresh herbs and vegetables"
+                      ],
+                      "evidenceSource": "title_and_thumbnail",
+                      "evidenceLabel": "Title and thumbnail evidence",
+                      "reviewRequired": true
+                    }
+                  ],
+                  "selectedDish": null,
+                  "originalPlaceKnown": false,
+                  "restaurants": [],
+                  "warnings": []
+                }
+              },
+              "transportError": null
+            },
+            "attemptedAt": "2026-07-28T08:06:28.540Z"
+          }
+        ],
+        "terminalObservation": {
+          "caseId": "V13",
+          "videoUrl": "https://www.youtube.com/watch?v=fqiGFA0qkig",
+          "expectedDish": "mì Quảng",
+          "returnedTop1": "Mì Quảng",
+          "returnedTop3": [
+            "Mì Quảng"
+          ],
+          "top1Correct": true,
+          "top3Correct": true,
+          "terminalState": "dish_candidates",
+          "technicalFailure": false,
+          "noResult": false,
+          "reviewRequired": true,
+          "resultStatus": "review_required",
+          "endToEndMs": 9266,
+          "endToEndSeconds": 9.266,
+          "httpStatus": 200,
+          "providerOrMediaError": "",
+          "raw": {
+            "request": {
+              "method": "POST",
+              "body": {
+                "sourceUrl": "https://www.youtube.com/watch?v=fqiGFA0qkig"
+              }
+            },
+            "response": {
+              "status": 200,
+              "statusText": "OK",
+              "contentType": "application/json; charset=utf-8",
+              "rawBody": "{\"status\":\"dish_candidates\",\"source\":{\"type\":\"youtube_url\",\"platform\":\"youtube\",\"videoId\":\"fqiGFA0qkig\",\"url\":\"https://www.youtube.com/shorts/fqiGFA0qkig\",\"title\":\"Mì Quảng - ĐẶC BIỆT - NGON Như Tiệm\",\"thumbnailUrl\":\"https://i.ytimg.com/vi/fqiGFA0qkig/hqdefault.jpg\"},\"dishCandidates\":[{\"id\":\"dish:title:mi-quang\",\"dishName\":\"Mì Quảng\",\"cuisine\":\"Vietnamese\",\"confidence\":1,\"aliases\":[\"Quang Noodles\",\"My Quang\"],\"visualEvidence\":[\"Yellow flat noodles\",\"Shrimp in broth\",\"Quail eggs\",\"Fresh herbs and vegetables\"],\"evidenceSource\":\"title_and_thumbnail\",\"evidenceLabel\":\"Title and thumbnail evidence\",\"reviewRequired\":true}],\"selectedDish\":null,\"originalPlaceKnown\":false,\"restaurants\":[],\"warnings\":[]}",
+              "parsedBody": {
+                "status": "dish_candidates",
+                "source": {
+                  "type": "youtube_url",
+                  "platform": "youtube",
+                  "videoId": "fqiGFA0qkig",
+                  "url": "https://www.youtube.com/shorts/fqiGFA0qkig",
+                  "title": "Mì Quảng - ĐẶC BIỆT - NGON Như Tiệm",
+                  "thumbnailUrl": "https://i.ytimg.com/vi/fqiGFA0qkig/hqdefault.jpg"
+                },
+                "dishCandidates": [
+                  {
+                    "id": "dish:title:mi-quang",
+                    "dishName": "Mì Quảng",
+                    "cuisine": "Vietnamese",
+                    "confidence": 1,
+                    "aliases": [
+                      "Quang Noodles",
+                      "My Quang"
+                    ],
+                    "visualEvidence": [
+                      "Yellow flat noodles",
+                      "Shrimp in broth",
+                      "Quail eggs",
+                      "Fresh herbs and vegetables"
+                    ],
+                    "evidenceSource": "title_and_thumbnail",
+                    "evidenceLabel": "Title and thumbnail evidence",
+                    "reviewRequired": true
+                  }
+                ],
+                "selectedDish": null,
+                "originalPlaceKnown": false,
+                "restaurants": [],
+                "warnings": []
+              }
+            },
+            "transportError": null
+          },
+          "attemptedAt": "2026-07-28T08:06:28.540Z"
+        },
+        "endToEndMs": 103582
+      }
+    }
+  ],
+  "metrics": {
+    "requestedCases": 8,
+    "attemptedCases": 8,
+    "unattemptedCases": 0,
+    "completedProviderResponses": 8,
+    "top1Correct": 8,
+    "top1AccuracyPercent": 100,
+    "top3Correct": 8,
+    "top3AccuracyPercent": 100,
+    "remainingHttp429": 0,
+    "remainingHttp429RatePercent": 0,
+    "noResult": 0,
+    "noResultRatePercent": 0,
+    "reviewRequired": 8,
+    "reviewRequiredRatePercent": 100,
+    "medianEndToEndMs": 10667.5,
+    "maximumEndToEndMs": 103582
+  },
+  "resumeRuns": [
+    {
+      "status": "completed",
+      "startedAt": "2026-07-28T08:05:13.522Z",
+      "finishedAt": "2026-07-28T08:06:37.815Z",
+      "command": "\"C:\\\\Program Files\\\\nodejs\\\\node.exe\" \"C:\\\\COS30043\\\\foodstory\\\\backend\\\\scripts\\\\runVisionDishPilotFollowup.js\" \"--resume-run-id\" \"20260728T075128Z\" \"--initial-backoff-ms\" \"75000\" \"--max-attempts\" \"3\" \"--stop-after-quota-failures\" \"3\"",
+      "targetCaseIds": [
+        "V13"
+      ],
+      "initialBackoffMs": 75000,
+      "maxAttempts": 3,
+      "timeoutMs": 60000
+    }
+  ]
+}

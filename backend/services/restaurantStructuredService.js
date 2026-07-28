@@ -11,7 +11,12 @@ const RESTAURANT_SELECT = `
     longitude,
     avg_rating,
     price_range,
-    description
+    description,
+    featured_dish,
+    image_url,
+    image_attribution,
+    source_url,
+    DATE_FORMAT(verified_at, '%Y-%m-%d') AS verified_at
   FROM restaurants
 `
 
@@ -36,7 +41,7 @@ function tokenOverlapScore(query, candidate) {
 
 function searchableRestaurantText(restaurant) {
   return normalizeText(
-    `${restaurant.name} ${restaurant.category} ${restaurant.description}`
+    `${restaurant.name} ${restaurant.category} ${restaurant.featured_dish} ${restaurant.description}`
   )
 }
 
@@ -124,7 +129,8 @@ export async function searchRestaurants(entities, limit = 3) {
         ? normalizeText(restaurant.district) === normalizeText(district)
         : true
       const priceMatched = priceRange
-        ? normalizeText(restaurant.price_range) === normalizeText(priceRange)
+        ? normalizeText(restaurant.price_range) ===
+          normalizeText(String(priceRange).replaceAll('$', '₫'))
         : true
       const matchesAllConstraints =
         categoryMatched && districtMatched && priceMatched

@@ -18,6 +18,11 @@ const totalPages = ref(1)
 const totalItems = ref(0)
 const isLoading = ref(false)
 const errorMessage = ref('')
+const provider = ref({
+  name: 'The Guardian Open Platform',
+  homepage: 'https://open-platform.theguardian.com/',
+})
+const isCachedResponse = ref(false)
 let hasLoadedInitialNews = false
 let shouldRefetchAfterCategoryNormalization = false
 let searchTimer = 0
@@ -38,7 +43,15 @@ function normalizeCategory(value) {
 }
 
 function getDateParts(value) {
-  const date = new Date(`${value}T00:00:00`)
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return {
+      day: '--',
+      month: 'DATE',
+      year: '',
+    }
+  }
+
   const month = String(date.getMonth() + 1).padStart(2, '0')
 
   return {
@@ -50,7 +63,7 @@ function getDateParts(value) {
 
 const displayNews = computed(() => {
   return newsItems.value.map((item) => {
-    const date = item.published_date || item.date
+    const date = item.published_date || item.date || item.published_at
     return {
       ...item,
       date,
@@ -61,10 +74,34 @@ const displayNews = computed(() => {
 })
 
 const pageNumbers = computed(() => {
-  return Array.from({ length: totalPages.value }, (_, index) => index + 1)
+  const maximumVisiblePages = 7
+  if (totalPages.value <= maximumVisiblePages) {
+    return Array.from({ length: totalPages.value }, (_, index) => index + 1)
+  }
+
+  const halfWindow = Math.floor(maximumVisiblePages / 2)
+  let start = Math.max(1, currentPage.value - halfWindow)
+  let end = Math.min(totalPages.value, start + maximumVisiblePages - 1)
+
+  if (end - start + 1 < maximumVisiblePages) {
+    start = Math.max(1, end - maximumVisiblePages + 1)
+  }
+
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index)
 })
 
-const popularTags = ['northern food', 'southern food', 'recipes', 'beef noodle soup', 'coffee', 'hot pot']
+const popularTags = ['street food', 'seasonal recipes', 'restaurant reviews', 'coffee', 'sustainable food', 'global cuisine']
+const isProviderConfigurationError = computed(() =>
+  /api key|not configured|configuration|guardian|service unavailable|503/i.test(errorMessage.value),
+)
+const newsErrorTitle = computed(() =>
+  isProviderConfigurationError.value ? 'Live news is not configured yet' : 'News is temporarily unavailable',
+)
+const newsErrorDescription = computed(() =>
+  isProviderConfigurationError.value
+    ? 'The recipe experience remains available while the external news provider is being configured.'
+    : 'Try again in a moment or continue exploring FoodStory recipes.',
+)
 
 async function fetchNews(page = currentPage.value) {
   if (!isAlive) {
@@ -77,8 +114,9 @@ async function fetchNews(page = currentPage.value) {
   const requestId = ++newsRequestId
   isLoading.value = true
   errorMessage.value = ''
+
   try {
-    const response = await api.get('/news', {
+    const response = await api.get('/news/external', {
       signal: newsRequestController.signal,
       params: {
         page,
@@ -89,20 +127,26 @@ async function fetchNews(page = currentPage.value) {
         includeCategories: includeCategories ? '1' : '0',
       },
     })
+
     if (!isAlive || requestId !== newsRequestId) {
       return
     }
-    newsItems.value = response.data.items
+
+    newsItems.value = response.data.items || []
     categories.value = response.data.categories || categories.value
+    provider.value = response.data.provider || provider.value
+    isCachedResponse.value = Boolean(response.data.cached)
+
     const normalizedCategory = normalizeCategory(selectedCategory.value)
     if (normalizedCategory !== selectedCategory.value) {
       selectedCategory.value = normalizedCategory
       shouldRefetchAfterCategoryNormalization = !hasLoadedInitialNews
       return
     }
-    currentPage.value = response.data.currentPage
-    totalPages.value = response.data.totalPages
-    totalItems.value = response.data.totalItems
+
+    currentPage.value = Number(response.data.currentPage || page)
+    totalPages.value = Math.max(1, Number(response.data.totalPages || 1))
+    totalItems.value = Math.max(0, Number(response.data.totalItems || 0))
   } catch (error) {
     if (error.code === 'ERR_CANCELED') {
       return
@@ -110,7 +154,10 @@ async function fetchNews(page = currentPage.value) {
     if (!isAlive) {
       return
     }
-    errorMessage.value = getApiError(error, 'Unable to load news.')
+    errorMessage.value = getApiError(
+      error,
+      'Unable to load live food news. Check the Guardian API configuration and try again.',
+    )
   } finally {
     if (isAlive && requestId === newsRequestId) {
       isLoading.value = false
@@ -130,6 +177,15 @@ function goToPage(page) {
   window.clearTimeout(searchTimer)
   const nextPage = Math.min(Math.max(page, 1), totalPages.value)
   fetchNews(nextPage)
+}
+
+function retryNews() {
+  window.clearTimeout(searchTimer)
+  fetchNews(currentPage.value || 1)
+}
+
+function handleImageError(event) {
+  event.currentTarget.hidden = true
 }
 
 watch(
@@ -194,9 +250,18 @@ onBeforeUnmount(() => {
   <section class="news-page page-pad">
     <div class="section-heading">
       <p class="eyebrow">FoodStory News</p>
-      <h1>Food News</h1>
+      <h1>Live Food News</h1>
       <p>
-        Find articles by date, title, content, or category from the API/MySQL database.
+        Explore current food journalism, recipes, restaurant stories, drinks, sustainability,
+        and global cuisine through a secure external API integration.
+      </p>
+      <p class="news-provider-note">
+        <AppIcon name="newspaper" size="16" />
+        <span>Articles supplied by</span>
+        <a :href="provider.homepage" target="_blank" rel="noopener noreferrer">
+          {{ provider.name }}
+        </a>
+        <span v-if="isCachedResponse" class="cache-badge">cached response</span>
       </p>
     </div>
 
@@ -209,7 +274,7 @@ onBeforeUnmount(() => {
         <input
           v-model="keyword"
           type="search"
-          placeholder="Search by title, content, date, or category..."
+          placeholder="Search food news by keyword..."
         />
       </label>
       <label>
@@ -234,36 +299,78 @@ onBeforeUnmount(() => {
     </form>
 
     <div class="news-layout">
-      <section class="news-list" aria-live="polite">
+      <section class="news-list" aria-live="polite" :aria-busy="isLoading">
         <div v-if="isLoading" class="news-skeleton-list" aria-label="Loading news">
           <SkeletonCard v-for="index in 5" :key="index" variant="row" />
         </div>
-        <p v-else-if="errorMessage" class="form-error" role="alert">{{ errorMessage }}</p>
+        <section v-else-if="errorMessage" class="news-unavailable-card" role="alert">
+          <span class="news-unavailable-icon" aria-hidden="true">
+            <AppIcon name="newspaper" size="28" />
+          </span>
+          <div>
+            <p class="eyebrow">External provider status</p>
+            <h2>{{ newsErrorTitle }}</h2>
+            <p>{{ newsErrorDescription }}</p>
+            <details>
+              <summary>Technical detail</summary>
+              <p>{{ errorMessage }}</p>
+            </details>
+            <div class="news-unavailable-actions">
+              <button class="btn btn-primary" type="button" @click="retryNews">
+                Try again
+              </button>
+              <RouterLink class="btn btn-outline" to="/recipes">Browse recipes</RouterLink>
+            </div>
+          </div>
+        </section>
 
         <template v-else>
-          <article v-for="item in displayNews" :key="item.id" class="news-card">
+          <article v-for="item in displayNews" :key="item.id" class="news-card external-news-card">
             <time :datetime="item.date">
               <strong>{{ item.day }}</strong>
               <span>{{ item.month }}</span>
               <small>{{ item.year }}</small>
             </time>
-            <div>
+
+            <div class="external-news-content">
+              <img
+                v-if="item.thumbnail"
+                class="news-thumbnail"
+                :src="item.thumbnail"
+                :alt="`Illustration for ${item.title}`"
+                loading="lazy"
+                referrerpolicy="no-referrer"
+                @error="handleImageError"
+              />
+
               <span class="category-label">
                 <AppIcon name="tags" size="14" />
                 {{ item.category }}
               </span>
               <h2>{{ item.title }}</h2>
+
+              <p class="news-source-meta">
+                <span>{{ item.source }}</span>
+                <span v-if="item.author">• {{ item.author }}</span>
+              </p>
+
               <p>{{ item.content }}</p>
-              <RouterLink :to="{ name: 'news-detail', params: { id: item.id } }">
-                <span>Read more</span>
+              <a
+                v-if="item.url"
+                :href="item.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                :aria-label="`Read ${item.title} on ${item.source}`"
+              >
+                <span>Read original article</span>
                 <AppIcon name="arrow-right" size="16" />
-              </RouterLink>
+              </a>
             </div>
           </article>
         </template>
 
         <p v-if="!isLoading && !errorMessage && totalItems === 0" class="empty-state">
-          No matching articles found.
+          No matching external articles were found. Try a broader keyword or remove a filter.
         </p>
 
         <nav v-if="totalItems > 0" class="pagination" aria-label="News pagination">
@@ -320,3 +427,126 @@ onBeforeUnmount(() => {
     </div>
   </section>
 </template>
+
+<style scoped>
+.news-provider-note {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.news-provider-note a {
+  color: var(--accent);
+  font-weight: 850;
+}
+
+.cache-badge {
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.external-news-content {
+  min-width: 0;
+}
+
+.news-thumbnail {
+  float: right;
+  width: min(190px, 36%);
+  aspect-ratio: 4 / 3;
+  margin: 0 0 14px 20px;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 10px 24px rgba(44, 31, 21, 0.12);
+}
+
+.news-source-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: -2px 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.news-unavailable-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  padding: clamp(22px, 4vw, 34px);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--card-border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--panel) 94%, var(--accent) 6%);
+  box-shadow: var(--shadow);
+}
+
+.news-unavailable-icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.news-unavailable-card > div {
+  display: grid;
+  gap: 10px;
+}
+
+.news-unavailable-card h2,
+.news-unavailable-card p {
+  margin: 0;
+}
+
+.news-unavailable-card details {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.news-unavailable-card summary {
+  width: fit-content;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.news-unavailable-card details p {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--panel-strong);
+}
+
+.news-unavailable-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .news-unavailable-card {
+    grid-template-columns: 1fr;
+  }
+
+  .news-unavailable-actions .btn {
+    width: 100%;
+  }
+
+  .news-thumbnail {
+    float: none;
+    width: 100%;
+    margin: 0 0 16px;
+  }
+}
+</style>

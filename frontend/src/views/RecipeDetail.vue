@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
 import NutritionChart from '../components/NutritionChart.vue'
@@ -13,8 +13,8 @@ import { useFavoriteStore } from '../stores/favoriteStore'
 import { useRatingStore } from '../stores/ratingStore'
 import { useRecipeStore } from '../stores/recipeStore'
 import { useUiStore } from '../stores/uiStore'
+import { advanceRecipeImage, getRecipeImageSource } from '../utils/recipeImage'
 
-const FALLBACK_IMAGE = '/images/food-placeholder.jpg'
 
 const route = useRoute()
 const router = useRouter()
@@ -43,8 +43,18 @@ const togglingChecklistItemId = ref(null)
 const isDeletingRecipe = ref(false)
 const savingCommentId = ref(null)
 const deletingCommentId = ref(null)
+const INITIAL_VISIBLE_COMMENTS = 3
+const COMMENT_PAGE_SIZE = 5
+const visibleCommentCount = ref(INITIAL_VISIBLE_COMMENTS)
+const activeSection = ref('overview')
+const expandedSections = reactive({
+  ingredients: false,
+  instructions: false,
+  nutrition: false,
+})
 let isAlive = true
 let actionSuccessTimer = 0
+let sectionObserver = null
 
 const ratingButtons = [1, 2, 3, 4, 5]
 const recipe = computed(() => recipeStore.selectedRecipe)
@@ -53,7 +63,7 @@ const moderationStatus = computed(() => recipe.value?.status || 'approved')
 const isAwaitingModeration = computed(() => moderationStatus.value === 'pending')
 const isRejected = computed(() => moderationStatus.value === 'rejected')
 const categoryLabel = computed(() => firstPresent(recipe.value?.category_name) || 'Recipe')
-const heroImage = computed(() => firstPresent(recipe.value?.image_url) || FALLBACK_IMAGE)
+const heroImage = computed(() => getRecipeImageSource(recipe.value))
 const averageRating = computed(() => safeNumber(recipe.value?.avg_rating || recipe.value?.average_rating))
 const ratingCount = computed(() =>
   Math.max(Math.round(safeNumber(recipe.value?.rating_count || recipe.value?.total_ratings)), 0),
@@ -110,6 +120,24 @@ const ingredientItems = computed(() => {
 })
 const hasIngredients = computed(() => ingredientItems.value.length > 0)
 const relatedRecipes = computed(() => recipe.value?.related_recipes || recipe.value?.relatedRecipes || [])
+const recipeComments = computed(() =>
+  Array.isArray(recipe.value?.comments) ? recipe.value.comments : [],
+)
+const visibleComments = computed(() => recipeComments.value.slice(0, visibleCommentCount.value))
+const hiddenCommentCount = computed(() =>
+  Math.max(recipeComments.value.length - visibleComments.value.length, 0),
+)
+const pageSections = computed(() => [
+  { id: 'overview', label: 'Overview', icon: 'book-open' },
+  { id: 'ingredients', label: 'Ingredients', icon: 'leaf', disclosure: 'ingredients' },
+  { id: 'instructions', label: 'Instructions', icon: 'utensils', disclosure: 'instructions' },
+  { id: 'nutrition', label: 'Nutrition', icon: 'bowl', disclosure: 'nutrition' },
+  { id: 'ratings', label: 'Ratings', icon: 'star' },
+  { id: 'reviews', label: 'Comments', icon: 'message' },
+  ...(relatedRecipes.value.length
+    ? [{ id: 'more-recipes', label: 'More recipes', icon: 'sparkles' }]
+    : []),
+])
 const checklistTotal = computed(() =>
   checklistStore.activeChecklist ? checklistStore.items.length : ingredientItems.value.length,
 )
@@ -297,7 +325,7 @@ function relatedRecipeDescription(item) {
 }
 
 function relatedRecipeImage(item) {
-  return firstPresent(item?.image_url, item?.imageUrl) || FALLBACK_IMAGE
+  return getRecipeImageSource(item)
 }
 
 function relatedRecipeMeta(item) {
@@ -367,11 +395,8 @@ function splitInstructions(value) {
   return sentenceSteps && sentenceSteps.length > 1 ? sentenceSteps : [text]
 }
 
-function handleImageError(event) {
-  if (event.target.src.endsWith(FALLBACK_IMAGE)) {
-    return
-  }
-  event.target.src = FALLBACK_IMAGE
+function handleImageError(event, item = recipe.value) {
+  advanceRecipeImage(event, item)
 }
 
 function clearSuccessMessage() {
@@ -493,6 +518,72 @@ function isCommentUpdated(comment) {
   return new Date(comment.updated_at).getTime() !== new Date(comment.created_at).getTime()
 }
 
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true
+}
+
+function toggleContentSection(section) {
+  if (!(section in expandedSections)) return
+  expandedSections[section] = !expandedSections[section]
+}
+
+async function navigateToSection(section) {
+  if (section.disclosure) {
+    expandedSections[section.disclosure] = true
+  }
+
+  await nextTick()
+  document.getElementById(section.id)?.scrollIntoView({
+    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    block: 'start',
+  })
+  activeSection.value = section.id
+}
+
+function teardownSectionObserver() {
+  sectionObserver?.disconnect()
+  sectionObserver = null
+}
+
+function setupSectionObserver() {
+  teardownSectionObserver()
+  if (typeof IntersectionObserver === 'undefined') return
+
+  const sectionElements = pageSections.value
+    .map((section) => document.getElementById(section.id))
+    .filter(Boolean)
+
+  sectionObserver = new IntersectionObserver(
+    (entries) => {
+      const visibleEntry = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0]
+
+      if (visibleEntry?.target?.id) {
+        activeSection.value = visibleEntry.target.id
+      }
+    },
+    {
+      rootMargin: '-18% 0px -68% 0px',
+      threshold: [0.05, 0.2, 0.5],
+    },
+  )
+
+  sectionElements.forEach((element) => sectionObserver.observe(element))
+}
+
+function loadMoreComments() {
+  visibleCommentCount.value = Math.min(
+    visibleCommentCount.value + COMMENT_PAGE_SIZE,
+    recipeComments.value.length,
+  )
+}
+
+function collapseComments() {
+  visibleCommentCount.value = INITIAL_VISIBLE_COMMENTS
+  navigateToSection({ id: 'reviews' })
+}
+
 async function loadRecipe(recipeId = route.params.id) {
   actionError.value = ''
   clearSuccessMessage()
@@ -502,6 +593,8 @@ async function loadRecipe(recipeId = route.params.id) {
     if (!isAlive || !loadedRecipe) {
       return
     }
+
+    document.title = `${loadedRecipe.title} | FoodStory`
 
     commentStore.comments
       .filter((comment) => Number(comment.recipe_id) === Number(loadedRecipe.id))
@@ -528,6 +621,16 @@ async function loadRecipe(recipeId = route.params.id) {
     if (authStore.isLoggedIn) {
       checklistStore.fetchChecklist(recipeId)
     }
+
+    visibleCommentCount.value = INITIAL_VISIBLE_COMMENTS
+    activeSection.value = 'overview'
+    Object.assign(expandedSections, {
+      ingredients: false,
+      instructions: false,
+      nutrition: false,
+    })
+    await nextTick()
+    setupSectionObserver()
   } catch {
     // Store owns the visible error state.
   }
@@ -838,6 +941,7 @@ onMounted(() => loadRecipe())
 onBeforeUnmount(() => {
   isAlive = false
   clearSuccessMessage()
+  teardownSectionObserver()
   checklistStore.setChecklist(null)
 })
 
@@ -903,6 +1007,7 @@ watch(
             <span>{{ ratingCount }} ratings</span>
           </div>
           <div
+            v-if="authStore.isLoggedIn"
             class="recipe-live-status"
             :class="{
               connected: isConnected,
@@ -998,7 +1103,7 @@ watch(
           :alt="`Photo of ${recipe.title}`"
           decoding="async"
           fetchpriority="high"
-          @error="handleImageError"
+          @error="handleImageError($event, recipe)"
         />
       </figure>
 
@@ -1009,9 +1114,23 @@ watch(
         </div>
       </section>
 
+      <nav class="recipe-mobile-toc" aria-label="Recipe page sections">
+        <button
+          v-for="section in pageSections"
+          :key="`mobile-${section.id}`"
+          type="button"
+          :class="{ active: activeSection === section.id }"
+          :aria-current="activeSection === section.id ? 'location' : undefined"
+          @click="navigateToSection(section)"
+        >
+          <AppIcon :name="section.icon" size="15" />
+          <span>{{ section.label }}</span>
+        </button>
+      </nav>
+
       <div class="recipe-detail-content">
-        <main class="recipe-detail-main-column">
-          <section class="recipe-blog-section">
+        <article class="recipe-detail-main-column">
+          <section id="overview" class="recipe-blog-section recipe-overview-section">
             <div class="recipe-card-heading">
               <span class="recipe-card-heading-icon">
                 <AppIcon name="utensils" size="21" />
@@ -1024,7 +1143,7 @@ watch(
             <p class="recipe-editorial-copy">{{ blogIntro }}</p>
           </section>
 
-          <section class="recipe-blog-section">
+          <section class="recipe-blog-section recipe-love-section">
             <div class="recipe-card-heading">
               <span class="recipe-card-heading-icon green">
                 <AppIcon name="heart" size="21" />
@@ -1042,33 +1161,6 @@ watch(
             </ul>
           </section>
 
-          <section class="recipe-blog-section">
-            <div class="recipe-section-heading split">
-              <div class="recipe-card-heading">
-                <span class="recipe-card-heading-icon gold">
-                  <AppIcon name="leaf" size="21" />
-                </span>
-                <div>
-                  <p class="section-kicker">Key ingredients</p>
-                  <h2>Key Ingredients</h2>
-                </div>
-              </div>
-              <span class="section-count">{{ ingredientItems.length }} items</span>
-            </div>
-            <ul v-if="hasIngredients" class="ingredient-list recipe-key-ingredients">
-              <li v-for="ingredient in ingredientItems.slice(0, 8)" :key="ingredient.key">
-                <span class="recipe-ingredient-icon">
-                  <AppIcon name="leaf" size="16" />
-                </span>
-                <span class="recipe-ingredient-copy">
-                  <strong>{{ ingredient.name }}</strong>
-                  <small>{{ ingredient.quantity || 'as needed' }}</small>
-                </span>
-              </li>
-            </ul>
-            <p v-else class="empty-state">No ingredients have been added yet.</p>
-          </section>
-
           <section id="recipe-card" class="recipe-card-print magazine-print-card" aria-labelledby="recipe-card-title">
             <div class="recipe-card-print-header">
               <p class="section-kicker">Recipe card</p>
@@ -1083,24 +1175,73 @@ watch(
               </div>
             </dl>
 
-            <div class="recipe-card-columns">
-              <section>
-                <h3>Ingredients</h3>
-                <ul class="recipe-card-ingredients">
-                  <li v-for="ingredient in ingredientItems" :key="`card-${ingredient.key}`">
-                    <strong>{{ ingredient.quantity || 'as needed' }}</strong>
-                    <span>{{ ingredient.name }}</span>
-                  </li>
-                </ul>
+            <div class="recipe-content-accordions">
+              <section
+                id="ingredients"
+                class="recipe-content-disclosure"
+                :class="{ open: expandedSections.ingredients }"
+              >
+                <button
+                  type="button"
+                  class="recipe-disclosure-trigger"
+                  :aria-expanded="expandedSections.ingredients"
+                  aria-controls="recipe-ingredients-content"
+                  @click="toggleContentSection('ingredients')"
+                >
+                  <span class="recipe-disclosure-title">
+                    <AppIcon name="leaf" size="19" />
+                    <span>
+                      <strong>Ingredients</strong>
+                      <small>{{ ingredientItems.length }} items</small>
+                    </span>
+                  </span>
+                  <span class="recipe-disclosure-action">
+                    {{ expandedSections.ingredients ? 'Hide' : 'Show' }}
+                    <AppIcon name="arrow-right" size="17" />
+                  </span>
+                </button>
+                <div v-show="expandedSections.ingredients" id="recipe-ingredients-content" class="recipe-disclosure-content">
+                  <ul v-if="hasIngredients" class="recipe-card-ingredients">
+                    <li v-for="ingredient in ingredientItems" :key="`card-${ingredient.key}`">
+                      <strong>{{ ingredient.quantity || 'as needed' }}</strong>
+                      <span>{{ ingredient.name }}</span>
+                    </li>
+                  </ul>
+                  <p v-else class="empty-state">No ingredients have been added yet.</p>
+                </div>
               </section>
 
-              <section id="instructions">
-                <h3>Instructions</h3>
-                <ol class="recipe-card-instructions">
-                  <li v-for="(step, index) in instructionSteps" :key="`card-step-${index}`">
-                    {{ step }}
-                  </li>
-                </ol>
+              <section
+                id="instructions"
+                class="recipe-content-disclosure"
+                :class="{ open: expandedSections.instructions }"
+              >
+                <button
+                  type="button"
+                  class="recipe-disclosure-trigger"
+                  :aria-expanded="expandedSections.instructions"
+                  aria-controls="recipe-instructions-content"
+                  @click="toggleContentSection('instructions')"
+                >
+                  <span class="recipe-disclosure-title">
+                    <AppIcon name="utensils" size="19" />
+                    <span>
+                      <strong>Instructions</strong>
+                      <small>{{ instructionSteps.length }} steps</small>
+                    </span>
+                  </span>
+                  <span class="recipe-disclosure-action">
+                    {{ expandedSections.instructions ? 'Hide' : 'Show' }}
+                    <AppIcon name="arrow-right" size="17" />
+                  </span>
+                </button>
+                <div v-show="expandedSections.instructions" id="recipe-instructions-content" class="recipe-disclosure-content">
+                  <ol class="recipe-card-instructions">
+                    <li v-for="(step, index) in instructionSteps" :key="`card-step-${index}`">
+                      {{ step }}
+                    </li>
+                  </ol>
+                </div>
               </section>
             </div>
 
@@ -1116,47 +1257,65 @@ watch(
             </div>
           </section>
 
-          <section id="nutrition" class="recipe-blog-section recipe-nutrition-section">
-            <div class="recipe-section-heading split">
-              <div>
-                <p class="section-kicker">Nutrition</p>
-                <h2>Nutrition Snapshot</h2>
-              </div>
-              <span class="section-count">{{ formatNumber(recipe.calories) }} calories</span>
-            </div>
+          <section
+            id="nutrition"
+            class="recipe-blog-section recipe-nutrition-section recipe-content-disclosure"
+            :class="{ open: expandedSections.nutrition }"
+          >
+            <button
+              type="button"
+              class="recipe-disclosure-trigger recipe-nutrition-trigger"
+              :aria-expanded="expandedSections.nutrition"
+              aria-controls="recipe-nutrition-content"
+              @click="toggleContentSection('nutrition')"
+            >
+              <span class="recipe-disclosure-title">
+                <AppIcon name="bowl" size="20" />
+                <span>
+                  <small class="section-kicker">Nutrition</small>
+                  <strong>Nutrition Snapshot</strong>
+                </span>
+              </span>
+              <span class="recipe-disclosure-action">
+                {{ formatNumber(recipe.calories) }} calories
+                <AppIcon name="arrow-right" size="17" />
+              </span>
+            </button>
 
-            <div class="recipe-nutrition-panel">
-              <div class="recipe-nutrition-copy">
-                <div class="recipe-calorie-highlight">
-                  <span>Calories</span>
-                  <strong>{{ formatNumber(recipe.calories) }}</strong>
-                  <p>Per serving estimate based on the current recipe data.</p>
+            <div v-show="expandedSections.nutrition" id="recipe-nutrition-content" class="recipe-disclosure-content">
+              <div class="recipe-nutrition-panel">
+                <div class="recipe-nutrition-copy">
+                  <div class="recipe-calorie-highlight">
+                    <span>Calories</span>
+                    <strong>{{ formatNumber(recipe.calories) }}</strong>
+                    <p>Per serving estimate based on the current recipe data.</p>
+                  </div>
+
+                  <dl class="recipe-nutrition-stats">
+                    <div
+                      v-for="item in nutritionItems"
+                      :key="item.label"
+                      :class="item.className"
+                    >
+                      <dt>{{ item.label }}</dt>
+                      <dd>{{ item.value }}</dd>
+                    </div>
+                  </dl>
                 </div>
 
-                <dl class="recipe-nutrition-stats">
-                  <div
-                    v-for="item in nutritionItems"
-                    :key="item.label"
-                    :class="item.className"
-                  >
-                    <dt>{{ item.label }}</dt>
-                    <dd>{{ item.value }}</dd>
-                  </div>
-                </dl>
-              </div>
-
-              <div class="recipe-nutrition-chart-card">
-                <NutritionChart
-                  :calories="recipe.calories"
-                  :protein="recipe.protein"
-                  :carbs="recipe.carbs"
-                  :fat="recipe.fat"
-                />
+                <div class="recipe-nutrition-chart-card">
+                  <NutritionChart
+                    :calories="recipe.calories"
+                    :protein="recipe.protein"
+                    :carbs="recipe.carbs"
+                    :fat="recipe.fat"
+                  />
+                </div>
               </div>
             </div>
           </section>
 
-          <section class="recipe-blog-section rating-section">
+          <section id="ratings" class="recipe-blog-section rating-section">
             <div class="recipe-section-heading split">
               <div>
                 <p class="section-kicker">Community score</p>
@@ -1243,7 +1402,7 @@ watch(
               <p v-if="(recipe.comments || []).length === 0" class="empty-state">
                 No comments yet. Be the first to share a cooking note.
               </p>
-              <article v-for="comment in recipe.comments || []" :key="comment.id" class="comment-item">
+              <article v-for="comment in visibleComments" :key="comment.id" class="comment-item">
                 <header>
                   <div>
                     <strong>{{ comment.username || comment.user_name || 'FoodStory cook' }}</strong>
@@ -1276,6 +1435,21 @@ watch(
                 </div>
               </article>
             </div>
+
+            <div v-if="recipeComments.length > INITIAL_VISIBLE_COMMENTS" class="comment-list-controls">
+              <button v-if="hiddenCommentCount" class="btn btn-outline" type="button" @click="loadMoreComments">
+                Show {{ Math.min(COMMENT_PAGE_SIZE, hiddenCommentCount) }} more
+                <span>({{ hiddenCommentCount }} remaining)</span>
+              </button>
+              <button
+                v-else
+                class="comment-collapse-button"
+                type="button"
+                @click="collapseComments"
+              >
+                Collapse comments
+              </button>
+            </div>
           </section>
 
           <section v-if="relatedRecipes.length" id="more-recipes" class="recipe-blog-section recipe-more-recipes-section">
@@ -1299,7 +1473,7 @@ watch(
                     :alt="`Photo of ${related.title}`"
                     loading="lazy"
                     decoding="async"
-                    @error="handleImageError"
+                    @error="handleImageError($event, related)"
                   />
                 </figure>
                 <div>
@@ -1315,25 +1489,32 @@ watch(
             </div>
           </section>
 
-        </main>
+        </article>
 
         <aside class="recipe-detail-sidebar">
-          <section class="recipe-side-card">
+          <section class="recipe-side-card recipe-toc-card">
             <div class="recipe-side-heading">
               <span class="recipe-side-heading-icon">
                 <AppIcon name="book-open" size="18" />
               </span>
-              <p class="section-kicker">On this page</p>
+              <div>
+                <p class="section-kicker">On this page</p>
+                <h2>Recipe guide</h2>
+              </div>
             </div>
-            <nav>
-              <a href="#recipe-card"><AppIcon name="book-open" size="16" /><span>Recipe card</span></a>
-              <a href="#instructions"><AppIcon name="utensils" size="16" /><span>Instructions</span></a>
-              <a href="#nutrition"><AppIcon name="bowl" size="16" /><span>Nutrition</span></a>
-              <a href="#reviews"><AppIcon name="message" size="16" /><span>Comments</span></a>
-              <a v-if="relatedRecipes.length" href="#more-recipes">
-                <AppIcon name="sparkles" size="16" />
-                <span>More recipes</span>
-              </a>
+            <nav aria-label="Recipe page sections">
+              <button
+                v-for="section in pageSections"
+                :key="section.id"
+                type="button"
+                :class="{ active: activeSection === section.id }"
+                :aria-current="activeSection === section.id ? 'location' : undefined"
+                @click="navigateToSection(section)"
+              >
+                <AppIcon :name="section.icon" size="16" />
+                <span>{{ section.label }}</span>
+                <AppIcon name="arrow-right" size="14" />
+              </button>
             </nav>
           </section>
 
@@ -1360,7 +1541,9 @@ watch(
                 aria-valuemin="0"
                 aria-valuemax="100"
               >
-                <span :style="{ width: `${checklistProgress}%` }"></span>
+                <span
+                  :style="{ transform: `scaleX(${checklistProgress / 100})` }"
+                ></span>
               </div>
             </div>
             <p v-if="!authStore.isLoggedIn">
@@ -1371,7 +1554,12 @@ watch(
             <p v-else-if="!checklistStore.activeChecklist" class="muted-copy">
               Generate a checklist to tick off ingredients while shopping or cooking.
             </p>
-            <ul v-else class="checklist-list recipe-live-checklist">
+            <ul
+              v-else
+              class="checklist-list recipe-live-checklist"
+              tabindex="0"
+              aria-label="Ingredient checklist. Scroll within this list to review every item."
+            >
               <li v-for="item in checklistStore.items" :key="item.id">
                 <label>
                   <input

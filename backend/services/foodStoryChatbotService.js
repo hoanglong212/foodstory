@@ -1,14 +1,35 @@
 import { retrieveRelevantDocumentsWithDebug } from './aiRetrievalService.js'
-import { generateFoodStoryAnswer } from './groqService.js'
-import { routeFoodStoryQuery } from './foodStoryQueryRouter.js'
+import {
+  generateFoodStoryAnswer,
+  generateGeneralCustomerAnswer,
+  generateGeneralKnowledgeAnswer,
+  generateExternalFoodAnswer,
+} from './groqService.js'
+import {
+  normalizeRecipeSearchFilters,
+  routeFoodStoryQuery,
+} from './foodStoryQueryRouter.js'
 import { resolveFoodStorySemanticRoute } from './foodStorySemanticRouterService.js'
+import { answerWebsiteKnowledgeQuestion } from './foodStoryWebsiteKnowledgeService.js'
+import {
+  answerFoodStoryProductDataQuestion,
+  detectFoodStoryProductDataIntent,
+} from './foodStoryProductDataService.js'
 import { handleRecipeStructuredQuery } from './recipeStructuredService.js'
 import { handleRestaurantStructuredQuery } from './restaurantStructuredService.js'
 import { handleUserFoodDataQuery } from './userFoodDataService.js'
 import {
+  buildContextualCustomerQuestion,
+  buildLocalCustomerCareAnswer,
+  isExternalFoodQuestion,
+  isGeneralCulinaryQuestion,
+  isPrivateFoodStoryQuestion,
+} from './foodStoryCustomerConversationService.js'
+import {
   buildAppHelpResponse,
   buildRecipeStructuredResponse,
   buildRestaurantStructuredResponse,
+  buildRetrievalPresentationResults,
   buildRetrievalSources,
   buildUserFoodDataResponse,
   createChatbotResponse,
@@ -18,6 +39,7 @@ const CHATBOT_TOP_K = 3
 const MINIMUM_GROQ_SCORE = 0.5
 const GROQ_ELIGIBLE_STATUSES = new Set(['matched', 'partial_match'])
 const RECIPE_STRUCTURED_INTENTS = new Set([
+  'recipe_filter_search',
   'recipe_by_ingredients',
   'recipe_ingredients',
   'recipe_ingredient_quantity',
@@ -40,30 +62,130 @@ const USER_STRUCTURED_INTENTS = new Set([
   'user_checklists',
   'user_food_spots',
 ])
+const RECIPE_GROQ_FALLBACK_STATUSES = new Set([
+  'recipe_not_found',
+  'no_results',
+  'ingredients_not_found',
+  'nutrition_not_found',
+  'time_not_found',
+  'unsupported',
+])
+
+export function recipeResultNeedsGroqFallback(result = {}) {
+  if (result.kind === 'recipe_filter_search') return result.status === 'no_results'
+  if (
+    result.kind === 'ingredient_recommendation' &&
+    !result.results?.length &&
+    result.status !== 'no_ingredients'
+  ) {
+    return true
+  }
+  return RECIPE_GROQ_FALLBACK_STATUSES.has(result.status)
+}
+
+async function buildGroqKnowledgeFallback(
+  question,
+  route,
+  context = {},
+  { culinary = false } = {}
+) {
+  const vietnamese = route.entities.responseLanguage === 'vi'
+  const answer = culinary
+    ? await generateGeneralCustomerAnswer({
+        question,
+        responseLanguage: route.entities.responseLanguage,
+        conversationHistory: context.conversationHistory,
+        conversationMemory: context.conversationMemory,
+        activeRecipeTitle: context.lastRecipeTitle,
+      })
+    : await generateGeneralKnowledgeAnswer({
+        question,
+        responseLanguage: route.entities.responseLanguage,
+        conversationHistory: context.conversationHistory,
+        conversationMemory: context.conversationMemory,
+      })
+
+  return createChatbotResponse({
+    answer,
+    mode: culinary ? 'general_guidance' : 'general_knowledge',
+    intent: culinary
+      ? 'general_culinary_guidance'
+      : 'general_knowledge_fallback',
+    retrievalStatus: 'general_knowledge',
+    confidence: culinary ? 0.65 : 0.55,
+    message:
+      'FoodStory had no verified answer; Groq general model knowledge was used without claiming it as FoodStory or live web data.',
+    sources: [],
+    results: [],
+    suggestions: culinary
+      ? vietnamese
+        ? ['Tìm công thức phù hợp', 'Cách thay thế nguyên liệu']
+        : ['Find a matching recipe', 'Ask about an ingredient swap']
+      : [],
+    groqCalled: true,
+  })
+}
+
+async function buildExternalFoodResponse(question, route, context = {}) {
+  const researched = await generateExternalFoodAnswer({
+    question,
+    responseLanguage: route.entities.responseLanguage,
+    conversationHistory: context.conversationHistory,
+    conversationMemory: context.conversationMemory,
+  })
+  const vietnamese = route.entities.responseLanguage === 'vi'
+
+  return createChatbotResponse({
+    answer: researched.answer,
+    mode: 'external_web',
+    intent: 'external_food_research',
+    retrievalStatus: 'external_sources',
+    confidence: researched.sources[0]?.score || 0.7,
+    message:
+      'FoodStory did not have enough verified local data, so FoodBot researched the web and exposed the sources used.',
+    sources: researched.sources,
+    results: [],
+    suggestions: vietnamese
+      ? ['Chá»‰ dÃ¹ng dá»¯ liá»‡u FoodStory', 'Kiá»ƒm tra thÃªm nguá»“n khÃ¡c']
+      : ['Use only FoodStory data', 'Cross-check more sources'],
+    groqCalled: true,
+  })
+}
 
 function finish(response, context = {}) {
-  console.log('[Chatbot] mode:', response.mode)
-  console.log('[Chatbot] Groq called:', response.groqCalled)
-  const recipeSource = response.sources?.find(
+  const { clearRecipeContext = false, ...publicResponse } = response
+  console.log('[Chatbot] mode:', publicResponse.mode)
+  console.log('[Chatbot] Groq called:', publicResponse.groqCalled)
+  const recipeSource = publicResponse.sources?.find(
     (source) => source.sourceType === 'recipe' && normalizeOptionalId(source.sourceId)
   )
-  const restaurantSource = response.sources?.find(
+  const restaurantSource = publicResponse.sources?.find(
     (source) =>
       source.sourceType === 'restaurant' && normalizeOptionalId(source.sourceId)
   )
   return {
-    ...response,
+    ...publicResponse,
     conversationContext: {
       lastRecipeId:
-        normalizeOptionalId(recipeSource?.sourceId) || context.lastRecipeId || null,
+        clearRecipeContext
+          ? null
+          : normalizeOptionalId(recipeSource?.sourceId) || context.lastRecipeId || null,
       lastRecipeTitle:
-        (typeof recipeSource?.title === 'string' && recipeSource.title.trim()) ||
-        context.lastRecipeTitle ||
-        null,
+        clearRecipeContext
+          ? null
+          : (typeof recipeSource?.title === 'string' && recipeSource.title.trim()) ||
+            context.lastRecipeTitle ||
+            null,
       lastRestaurantId:
         normalizeOptionalId(restaurantSource?.sourceId) ||
         context.lastRestaurantId ||
         null,
+      recipeSearchFilters: Object.prototype.hasOwnProperty.call(
+        publicResponse,
+        'recipeSearchFilters'
+      )
+        ? publicResponse.recipeSearchFilters
+        : context.recipeSearchFilters || null,
     },
   }
 }
@@ -77,7 +199,7 @@ function normalizeOptionalId(value) {
 function normalizeConversationHistory(value) {
   if (!Array.isArray(value)) return []
   return value
-    .slice(-12)
+    .slice(-8)
     .map((entry) => {
       const role = entry?.role === 'assistant' || entry?.role === 'bot'
         ? 'assistant'
@@ -85,7 +207,7 @@ function normalizeConversationHistory(value) {
           ? 'user'
           : null
       const content = typeof entry?.content === 'string'
-        ? entry.content.trim().slice(0, 600)
+        ? entry.content.trim().slice(0, 320)
         : ''
       if (!role || !content) return null
       const sources = Array.isArray(entry.sources)
@@ -112,6 +234,14 @@ function normalizeConversationHistory(value) {
     .filter(Boolean)
 }
 
+function normalizeConversationMemory(value) {
+  if (typeof value !== 'string') return ''
+  return value
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
+    .trim()
+    .slice(0, 4_000)
+}
+
 function deriveContextFromHistory(history) {
   const context = {
     lastRecipeId: null,
@@ -120,8 +250,16 @@ function deriveContextFromHistory(history) {
     pendingIntent: null,
   }
   let checkedLatestAssistant = false
+  let olderRecipeContextBlocked = false
   for (let index = history.length - 1; index >= 0; index -= 1) {
     const entry = history[index]
+    if (
+      entry.role === 'assistant' &&
+      entry.intent === 'general_culinary_guidance' &&
+      !context.lastRecipeId
+    ) {
+      olderRecipeContextBlocked = true
+    }
     if (!checkedLatestAssistant && entry.role === 'assistant') {
       checkedLatestAssistant = true
       const normalizedContent = entry.content
@@ -138,7 +276,11 @@ function deriveContextFromHistory(history) {
       }
     }
     for (const source of entry.sources || []) {
-      if (!context.lastRecipeId && source.sourceType === 'recipe') {
+      if (
+        !olderRecipeContextBlocked &&
+        !context.lastRecipeId &&
+        source.sourceType === 'recipe'
+      ) {
         context.lastRecipeId = source.sourceId
         context.lastRecipeTitle = source.title
       }
@@ -149,6 +291,12 @@ function deriveContextFromHistory(history) {
     if (context.lastRecipeId && context.lastRestaurantId && context.pendingIntent) break
   }
   return context
+}
+
+function latestAssistantIntent(history = []) {
+  return [...history]
+    .reverse()
+    .find((entry) => entry.role === 'assistant' && entry.intent)?.intent || null
 }
 
 async function handleStructuredRestaurant(route, context) {
@@ -162,12 +310,28 @@ async function handleStructuredRestaurant(route, context) {
     return response
   }
 
+  try {
+    return await buildExternalFoodResponse(
+      context.question,
+      route,
+      context
+    )
+  } catch (error) {
+    console.error('[Chatbot] external restaurant research failed:', error.message)
+  }
+
   // SQL decides whether an exact factual match exists. Local semantic retrieval
   // is used only to improve the clearly labelled alternatives.
-  const retrieval = await retrieveRelevantDocumentsWithDebug(
-    context.question,
-    CHATBOT_TOP_K
-  )
+  let retrieval
+  try {
+    retrieval = await retrieveRelevantDocumentsWithDebug(
+      context.question,
+      CHATBOT_TOP_K
+    )
+  } catch (error) {
+    console.error('[Chatbot] restaurant retrieval failed:', error.message)
+    return response
+  }
   if (!retrieval.results.length) return response
   const alternatives = retrieval.results
     .map((item) => {
@@ -191,17 +355,70 @@ async function handleStructuredRestaurant(route, context) {
 
 async function handleRetrievalRoute(question, route, context = {}) {
   const vietnamese = route.entities.responseLanguage === 'vi'
-  const retrieval = await retrieveRelevantDocumentsWithDebug(
-    question,
-    CHATBOT_TOP_K
-  )
+  if (isExternalFoodQuestion(question)) {
+    try {
+      return await buildExternalFoodResponse(question, route, context)
+    } catch (error) {
+      console.error('[Chatbot] external research failed:', error.message)
+    }
+  }
+
+  let retrieval
+  try {
+    retrieval = await retrieveRelevantDocumentsWithDebug(
+      question,
+      CHATBOT_TOP_K
+    )
+  } catch (error) {
+    console.error('[Chatbot] retrieval failed:', error.message)
+
+    if (!isPrivateFoodStoryQuestion(question)) {
+      try {
+        return await buildGroqKnowledgeFallback(question, route, context, {
+          culinary:
+            route.intent === 'recipe_recommendation' ||
+            isGeneralCulinaryQuestion(question),
+        })
+      } catch (fallbackError) {
+        console.error(
+          '[Chatbot] retrieval failure Groq fallback failed:',
+          fallbackError.message
+        )
+      }
+    }
+
+    return createChatbotResponse({
+      answer: vietnamese
+        ? 'Dịch vụ tìm kiếm công thức đang tạm thời gián đoạn. Vui lòng thử lại sau.'
+        : 'Recipe search is temporarily unavailable. Please try again shortly.',
+      mode: 'no_data',
+      intent: route.intent,
+      retrievalStatus: 'unavailable',
+      confidence: 0,
+      message: 'FoodStory retrieval is temporarily unavailable.',
+      sources: [],
+      results: [],
+      groqCalled: false,
+    })
+  }
   const bestScore = retrieval.results[0]?.score || 0
   const sources = buildRetrievalSources(retrieval.results)
+  const results = buildRetrievalPresentationResults(retrieval.results)
 
   console.log('[Chatbot] retrieval status:', retrieval.status)
   console.log('[Chatbot] top score:', retrieval.results?.[0]?.score)
 
   if (retrieval.status === 'no_exact_constraint_match') {
+    if (!isPrivateFoodStoryQuestion(question)) {
+      try {
+        return await buildGroqKnowledgeFallback(question, route, context, {
+          culinary: isGeneralCulinaryQuestion(question),
+        })
+      } catch (error) {
+        console.error('[Chatbot] no-exact-match Groq fallback failed:', error.message)
+      }
+    }
+
     return createChatbotResponse({
       answer:
         vietnamese
@@ -213,6 +430,7 @@ async function handleRetrievalRoute(question, route, context = {}) {
       confidence: bestScore,
       message: retrieval.message,
       sources,
+      results,
       groqCalled: false,
     })
   }
@@ -224,6 +442,16 @@ async function handleRetrievalRoute(question, route, context = {}) {
     bestScore < MINIMUM_GROQ_SCORE
 
   if (shouldSkipGroq) {
+    if (!isPrivateFoodStoryQuestion(question)) {
+      try {
+        return await buildGroqKnowledgeFallback(question, route, context, {
+          culinary: isGeneralCulinaryQuestion(question),
+        })
+      } catch (error) {
+        console.error('[Chatbot] general knowledge fallback failed:', error.message)
+      }
+    }
+
     return createChatbotResponse({
       answer: vietnamese
         ? 'Tôi chưa có đủ dữ liệu FoodStory đáng tin cậy để trả lời chắc chắn.'
@@ -234,6 +462,7 @@ async function handleRetrievalRoute(question, route, context = {}) {
       confidence: bestScore,
       message: retrieval.message,
       sources,
+      results,
       groqCalled: false,
     })
   }
@@ -244,6 +473,7 @@ async function handleRetrievalRoute(question, route, context = {}) {
       contexts: retrieval.results,
       responseLanguage: route.entities.responseLanguage,
       conversationHistory: context.conversationHistory,
+      conversationMemory: context.conversationMemory,
     })
 
     return createChatbotResponse({
@@ -254,6 +484,7 @@ async function handleRetrievalRoute(question, route, context = {}) {
       confidence: bestScore,
       message: retrieval.message,
       sources,
+      results,
       groqCalled: true,
     })
   } catch (error) {
@@ -273,6 +504,7 @@ async function handleRetrievalRoute(question, route, context = {}) {
       confidence: bestScore,
       message: 'Retrieval succeeded, but grounded answer generation failed.',
       sources,
+      results,
       groqCalled: true,
     })
   }
@@ -285,6 +517,9 @@ export async function askFoodStoryChatbot(question, context = {}) {
 
   const conversationHistory = normalizeConversationHistory(
     context.conversationHistory
+  )
+  const conversationMemory = normalizeConversationMemory(
+    context.conversationMemory
   )
   const historyContext = deriveContextFromHistory(conversationHistory)
   const normalizedContext = {
@@ -302,11 +537,134 @@ export async function askFoodStoryChatbot(question, context = {}) {
       context.pendingIntent === 'recipe_serving_scale'
         ? context.pendingIntent
         : historyContext.pendingIntent,
+    recipeSearchFilters:
+      context.recipeSearchFilters && typeof context.recipeSearchFilters === 'object'
+        ? normalizeRecipeSearchFilters(context.recipeSearchFilters)
+        : null,
     conversationHistory,
+    conversationMemory,
   }
-  const deterministicRoute = routeFoodStoryQuery(question, normalizedContext)
-  const semanticResolution = await resolveFoodStorySemanticRoute(
+  const routingQuestion = buildContextualCustomerQuestion(
     question,
+    conversationHistory
+  )
+  const deterministicRoute = routeFoodStoryQuery(
+    routingQuestion,
+    normalizedContext
+  )
+  const customerCareAnswer = buildLocalCustomerCareAnswer(
+    question,
+    deterministicRoute.entities.responseLanguage
+  )
+
+  if (customerCareAnswer) {
+    return finish(
+      createChatbotResponse({
+        answer: customerCareAnswer.answer,
+        mode: 'customer_care',
+        intent: 'customer_recovery',
+        retrievalStatus: 'not_used',
+        confidence: 0.92,
+        message: 'Handled locally without an external model call.',
+        sources: [],
+        results: [],
+        suggestions: customerCareAnswer.suggestions,
+        groqCalled: false,
+      }),
+      normalizedContext
+    )
+  }
+
+  const previousIntent = latestAssistantIntent(conversationHistory)
+  const productDataIntent = detectFoodStoryProductDataIntent(routingQuestion, {
+    previousIntent,
+  })
+  if (productDataIntent) {
+    try {
+      const productDataAnswer = await answerFoodStoryProductDataQuestion(
+        routingQuestion,
+        deterministicRoute.entities.responseLanguage,
+        { previousIntent }
+      )
+      if (productDataAnswer) {
+        return finish(
+          createChatbotResponse({
+            answer: productDataAnswer.answer,
+            mode: 'website_live_data',
+            intent: productDataAnswer.intent,
+            retrievalStatus: 'matched',
+            confidence: productDataAnswer.confidence,
+            message:
+              'Answered from the same live FoodStory data used by the website.',
+            sources: productDataAnswer.sources,
+            results: productDataAnswer.results,
+            suggestions: productDataAnswer.suggestions,
+            groqCalled: false,
+          }),
+          normalizedContext
+        )
+      }
+    } catch (error) {
+      console.error('[Chatbot] live website data failed:', error.message)
+      const vietnamese = deterministicRoute.entities.responseLanguage === 'vi'
+      return finish(
+        createChatbotResponse({
+          answer: vietnamese
+            ? 'Dữ liệu trực tiếp của FoodStory hiện tạm thời không khả dụng. Tôi sẽ không dùng Groq để đoán con số hoặc nội dung đang hiển thị.'
+            : 'FoodStory live data is temporarily unavailable. I will not use Groq to guess a catalog count or what the website is currently showing.',
+          mode: 'no_data',
+          intent: productDataIntent,
+          retrievalStatus: 'data_unavailable',
+          confidence: 0,
+          message: 'The live product-data query failed closed.',
+          sources: [],
+          results: [],
+          groqCalled: false,
+        }),
+        normalizedContext
+      )
+    }
+  }
+
+  const privateRequest = isPrivateFoodStoryQuestion(routingQuestion)
+  const websiteAnswer = privateRequest
+    ? null
+    : answerWebsiteKnowledgeQuestion(routingQuestion, deterministicRoute)
+
+  if (websiteAnswer) {
+    return finish(
+      createChatbotResponse({
+        answer: websiteAnswer.answer,
+        mode: 'website_knowledge',
+        intent: 'app_help',
+        retrievalStatus: websiteAnswer.status,
+        confidence: websiteAnswer.confidence,
+        message: 'Answered from the verified FoodStory feature and navigation catalog.',
+        sources: websiteAnswer.sources,
+        suggestions: websiteAnswer.suggestions,
+        groqCalled: false,
+      }),
+      normalizedContext
+    )
+  }
+
+  if (isExternalFoodQuestion(routingQuestion)) {
+    try {
+      return finish(
+        await buildExternalFoodResponse(
+          routingQuestion,
+          deterministicRoute,
+          normalizedContext
+        ),
+        normalizedContext
+      )
+    } catch (error) {
+      console.error('[Chatbot] explicit external research failed:', error.message)
+    }
+  }
+
+  const semanticResolution = await resolveFoodStorySemanticRoute(
+    routingQuestion,
     deterministicRoute,
     normalizedContext
   )
@@ -350,22 +708,87 @@ export async function askFoodStoryChatbot(question, context = {}) {
 
   if (RECIPE_STRUCTURED_INTENTS.has(route.intent)) {
     const result = await handleRecipeStructuredQuery(route, normalizedContext)
+
+    if (
+      recipeResultNeedsGroqFallback(result) &&
+      !isPrivateFoodStoryQuestion(routingQuestion)
+    ) {
+      try {
+        const response = await buildGroqKnowledgeFallback(
+          routingQuestion,
+          route,
+          normalizedContext,
+          { culinary: true }
+        )
+        return finish(
+          {
+            ...response,
+            answer:
+              result.kind === 'recipe_filter_search'
+                ? route.entities.responseLanguage === 'vi'
+                  ? `FoodStory không tìm thấy công thức phù hợp trong database. Sau đây là gợi ý nấu ăn tổng quát từ Groq, không phải dữ liệu FoodStory:\n\n${response.answer}`
+                  : `FoodStory did not find a matching recipe in its database. Here is general cooking guidance from Groq, not FoodStory data:\n\n${response.answer}`
+                : response.answer,
+            recipeSearchFilters:
+              result.kind === 'recipe_filter_search'
+                ? result.filters
+                : response.recipeSearchFilters,
+            clearRecipeContext: result.status === 'recipe_not_found',
+          },
+          normalizedContext
+        )
+      } catch (error) {
+        console.error('[Chatbot] recipe Groq fallback failed:', error.message)
+      }
+    }
+
     return finish(buildRecipeStructuredResponse(result, route), normalizedContext)
   }
 
   if (RESTAURANT_STRUCTURED_INTENTS.has(route.intent)) {
     const response = await handleStructuredRestaurant(route, {
       ...normalizedContext,
-      question,
+      question: routingQuestion,
     })
     return finish(response, normalizedContext)
   }
 
   if (route.shouldUseRetrieval) {
     return finish(
-      await handleRetrievalRoute(question, route, normalizedContext),
+      await handleRetrievalRoute(routingQuestion, route, normalizedContext),
       normalizedContext
     )
+  }
+
+  if (isExternalFoodQuestion(routingQuestion)) {
+    try {
+      return finish(
+        await buildExternalFoodResponse(
+          routingQuestion,
+          route,
+          normalizedContext
+        ),
+        normalizedContext
+      )
+    } catch (error) {
+      console.error('[Chatbot] external research failed:', error.message)
+    }
+  }
+
+  if (!isPrivateFoodStoryQuestion(routingQuestion)) {
+    try {
+      return finish(
+        await buildGroqKnowledgeFallback(
+          routingQuestion,
+          route,
+          normalizedContext,
+          { culinary: isGeneralCulinaryQuestion(routingQuestion) }
+        ),
+        normalizedContext
+      )
+    } catch (error) {
+      console.error('[Chatbot] final Groq fallback failed:', error.message)
+    }
   }
 
   return finish(
@@ -374,12 +797,17 @@ export async function askFoodStoryChatbot(question, context = {}) {
         route.entities.responseLanguage === 'vi'
           ? 'Tôi có thể giúp về công thức, nguyên liệu, dinh dưỡng, thời gian nấu, nhà hàng và Food Map. Bạn hãy nói rõ hơn điều cần tìm.'
           : 'I can help with FoodStory recipes, ingredients, nutrition, cooking times, restaurants, and the food map. Please make the request more specific.',
-      mode: 'fallback',
+      mode: 'clarification',
       intent: route.intent,
       retrievalStatus: 'not_used',
       confidence: route.confidence,
       message: 'The query router could not identify a reliable FoodStory action.',
       sources: [],
+      results: [],
+      suggestions:
+        route.entities.responseLanguage === 'vi'
+          ? ['Gợi ý món tối', 'Tìm quán ăn', 'Food Map hoạt động thế nào?']
+          : ['Suggest a dinner recipe', 'Find a place to eat', 'How does Food Map work?'],
       groqCalled: false,
     }),
     normalizedContext

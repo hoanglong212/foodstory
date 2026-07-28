@@ -93,4 +93,29 @@ describe('Vision Auto metadata-first hypothesis', () => {
       duration: 30,
     })
   })
+
+  it('falls back to public YouTube oEmbed when yt-dlp is blocked', async () => {
+    let fallbackCalls = 0
+    const metadata = await fetchVisionMetadata('https://www.youtube.com/shorts/kSu3fdZ2Ua8', {
+      exec(_command, _args, _options, callback) {
+        callback(new Error('Video unavailable from this hosting IP'))
+      },
+      async fetchOEmbed(url) {
+        fallbackCalls += 1
+        assert.equal(url, 'https://www.youtube.com/shorts/kSu3fdZ2Ua8')
+        return {
+          title: 'Bí mật của món cao lầu Hội An #food #shorts',
+          thumbnailUrl: 'https://i.ytimg.com/vi/kSu3fdZ2Ua8/hqdefault.jpg',
+        }
+      },
+    })
+
+    assert.equal(fallbackCalls, 1)
+    assert.deepEqual(metadata, {
+      title: 'Bí mật của món cao lầu Hội An #food #shorts',
+      description: '',
+      thumbnail: true,
+      duration: null,
+    })
+  })
 })

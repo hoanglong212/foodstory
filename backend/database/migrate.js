@@ -5,6 +5,8 @@ import pool from '../db.js'
 import { migrateAdminDashboard } from './migrateAdminDashboard.js'
 import { migrateLegacyEnglishData } from './migrateLegacyEnglishData.js'
 import { migrateRecipeMetadata } from './migrateRecipeMetadata.js'
+import { migrateVerifiedRestaurantCatalog } from './migrateVerifiedRestaurantCatalog.js'
+import { migrateExpandedRecipeCatalog } from './migrateExpandedRecipeCatalog.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -130,6 +132,8 @@ async function migrate() {
   await migrateRecipeMetadata()
   await runSqlMigrations()
   await migrateLegacyEnglishData()
+  await migrateVerifiedRestaurantCatalog()
+  await migrateExpandedRecipeCatalog()
   console.log('Database migrations completed.')
 }
 
