@@ -298,7 +298,6 @@
   .category-grid,
   .team-grid,
   .search-panel,
-  .name-grid,
   .footer-grid {
     grid-template-columns: 1fr;
   }

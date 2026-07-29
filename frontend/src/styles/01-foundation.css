@@ -1427,9 +1427,7 @@ body:has(.food-map-page) .site-footer {
 }
 
 .news-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-content: start;
 }
 
 .news-card {
@@ -1707,9 +1705,7 @@ body:has(.food-map-page) .site-footer {
 }
 
 .name-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  align-items: start;
 }
 
 .welcome-message {

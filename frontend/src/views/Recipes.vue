@@ -1020,14 +1020,18 @@ async function deleteRecipe(recipe) {
               </button>
             </div>
 
-            <div v-if="hasSearchResults" class="reference-all-grid recipe-search-grid">
-              <RecipeCard
+            <div v-if="hasSearchResults" class="reference-all-grid recipe-search-grid row g-3">
+              <div
                 v-for="item in allRecipes"
                 :key="`search-${item.id}`"
-                :recipe="{ ...item, image_url: imageSrc(item) }"
-                :is-deleting="deletingRecipeId === item.id"
-                @delete="deleteRecipe"
-              />
+                class="col-12 col-md-6 col-lg-4"
+              >
+                <RecipeCard
+                  :recipe="{ ...item, image_url: imageSrc(item) }"
+                  :is-deleting="deletingRecipeId === item.id"
+                  @delete="deleteRecipe"
+                />
+              </div>
             </div>
 
             <div v-else class="recipe-search-empty empty-state">
@@ -1191,36 +1195,38 @@ async function deleteRecipe(recipe) {
               </button>
             </div>
 
-            <div class="student-picks-grid">
-              <article
+            <div class="student-picks-grid row g-3">
+              <div
                 v-for="recipe in studentPicks"
                 :key="`student-${recipe.id}`"
-                class="student-pick-card"
+                class="col-12 col-md-6 col-lg-4"
               >
-                <RouterLink :to="{ name: 'recipe-detail', params: { id: recipe.id } }">
-                  <img
-                    :src="imageSrc(recipe)"
-                    :alt="`Photo of ${recipe.title}`"
-                    loading="lazy"
-                    decoding="async"
-                    @error="useFallbackImage($event, recipe)"
-                  />
-                  <span>
-                    <strong>{{ recipe.title }}</strong>
-                    <small>{{ recipeMeta(recipe) }}</small>
-                  </span>
-                </RouterLink>
-                <button
-                  type="button"
-                  :class="{ saved: isRecipeFavorite(recipe) }"
-                  :disabled="isFavoriteBusy(recipe)"
-                  :aria-pressed="isRecipeFavorite(recipe)"
-                  :aria-label="isRecipeFavorite(recipe) ? 'Remove from favorites' : 'Save recipe'"
-                  @click="toggleFavorite(recipe)"
-                >
-                  <AppIcon name="bookmark" size="17" />
-                </button>
-              </article>
+                <article class="student-pick-card">
+                  <RouterLink :to="{ name: 'recipe-detail', params: { id: recipe.id } }">
+                    <img
+                      :src="imageSrc(recipe)"
+                      :alt="`Photo of ${recipe.title}`"
+                      loading="lazy"
+                      decoding="async"
+                      @error="useFallbackImage($event, recipe)"
+                    />
+                    <span>
+                      <strong>{{ recipe.title }}</strong>
+                      <small>{{ recipeMeta(recipe) }}</small>
+                    </span>
+                  </RouterLink>
+                  <button
+                    type="button"
+                    :class="{ saved: isRecipeFavorite(recipe) }"
+                    :disabled="isFavoriteBusy(recipe)"
+                    :aria-pressed="isRecipeFavorite(recipe)"
+                    :aria-label="isRecipeFavorite(recipe) ? 'Remove from favorites' : 'Save recipe'"
+                    @click="toggleFavorite(recipe)"
+                  >
+                    <AppIcon name="bookmark" size="17" />
+                  </button>
+                </article>
+              </div>
             </div>
           </section>
 
@@ -1239,30 +1245,32 @@ async function deleteRecipe(recipe) {
               </button>
             </div>
 
-            <div class="healthy-choice-grid">
-              <article
+            <div class="healthy-choice-grid row g-3">
+              <div
                 v-for="recipe in healthyChoices"
                 :key="`healthy-${recipe.id}`"
-                class="healthy-choice-card"
+                class="col-12 col-md-6 col-lg-4"
               >
-                <RouterLink :to="{ name: 'recipe-detail', params: { id: recipe.id } }">
-                  <figure>
-                    <img
-                      :src="imageSrc(recipe)"
-                      :alt="`Photo of ${recipe.title}`"
-                      loading="lazy"
-                      decoding="async"
-                      @error="useFallbackImage($event, recipe)"
-                    />
-                  </figure>
-                  <div>
-                    <span>{{ recipe.category_name || 'Healthy' }}</span>
-                    <h3>{{ recipe.title }}</h3>
-                    <p>{{ recipeDescription(recipe, 94) }}</p>
-                    <small>{{ recipe.protein || 'N/A' }}g protein / {{ recipe.calories || 'N/A' }} cal</small>
-                  </div>
-                </RouterLink>
-              </article>
+                <article class="healthy-choice-card">
+                  <RouterLink :to="{ name: 'recipe-detail', params: { id: recipe.id } }">
+                    <figure>
+                      <img
+                        :src="imageSrc(recipe)"
+                        :alt="`Photo of ${recipe.title}`"
+                        loading="lazy"
+                        decoding="async"
+                        @error="useFallbackImage($event, recipe)"
+                      />
+                    </figure>
+                    <div>
+                      <span>{{ recipe.category_name || 'Healthy' }}</span>
+                      <h3>{{ recipe.title }}</h3>
+                      <p>{{ recipeDescription(recipe, 94) }}</p>
+                      <small>{{ recipe.protein || 'N/A' }}g protein / {{ recipe.calories || 'N/A' }} cal</small>
+                    </div>
+                  </RouterLink>
+                </article>
+              </div>
             </div>
           </section>
 
@@ -1284,14 +1292,18 @@ async function deleteRecipe(recipe) {
               </span>
             </div>
 
-            <div class="reference-all-grid">
-              <RecipeCard
+            <div class="reference-all-grid row g-3">
+              <div
                 v-for="recipe in allRecipes"
                 :key="`all-${recipe.id}`"
-                :recipe="{ ...recipe, image_url: imageSrc(recipe) }"
-                :is-deleting="deletingRecipeId === recipe.id"
-                @delete="deleteRecipe"
-              />
+                class="col-12 col-md-6 col-lg-4"
+              >
+                <RecipeCard
+                  :recipe="{ ...recipe, image_url: imageSrc(recipe) }"
+                  :is-deleting="deletingRecipeId === recipe.id"
+                  @delete="deleteRecipe"
+                />
+              </div>
             </div>
 
             <nav

@@ -104,15 +104,19 @@ const selectedFoodStyle = computed(() => {
 
       <section class="welcome-panel">
         <h2>Hello!</h2>
-        <div class="name-grid">
-          <label>
-            <span>First Name</span>
-            <input v-model="firstName" type="text" placeholder="Example: Minh" />
-          </label>
-          <label>
-            <span>Last Name</span>
-            <input v-model="lastName" type="text" placeholder="Example: Nguyen" />
-          </label>
+        <div class="name-grid row g-3">
+          <div class="col-12 col-md-6">
+            <label>
+              <span>First Name</span>
+              <input v-model="firstName" type="text" placeholder="Example: Minh" />
+            </label>
+          </div>
+          <div class="col-12 col-md-6">
+            <label>
+              <span>Last Name</span>
+              <input v-model="lastName" type="text" placeholder="Example: Nguyen" />
+            </label>
+          </div>
         </div>
         <p class="welcome-message">{{ greeting }}</p>
       </section>

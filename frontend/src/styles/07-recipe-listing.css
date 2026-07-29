@@ -759,9 +759,7 @@
 }
 
 .student-picks-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  align-items: stretch;
 }
 
 .student-pick-card a {
@@ -771,9 +769,7 @@
 }
 
 .healthy-choice-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  align-items: stretch;
 }
 
 .healthy-choice-card {
@@ -834,12 +830,11 @@
 }
 
 .reference-all-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  align-items: stretch;
 }
 
 .reference-all-grid .magazine-recipe-card {
+  height: 100%;
   border-color: var(--recipe-line-strong);
   border-radius: 8px;
   background: rgba(255, 253, 248, 0.9);
@@ -1099,9 +1094,7 @@
 }
 
 @media (max-width: 980px) {
-  .recipe-reference-loading,
-  .reference-all-grid,
-  .healthy-choice-grid {
+  .recipe-reference-loading {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1122,9 +1115,6 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .student-picks-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 760px) {
@@ -1195,9 +1185,7 @@
   }
 
   .recipe-advanced-panel,
-  .recipe-reference-loading,
-  .reference-all-grid,
-  .healthy-choice-grid {
+  .recipe-reference-loading {
     grid-template-columns: 1fr;
   }
 
@@ -1617,12 +1605,8 @@
   bottom: 9px;
 }
 
-.student-picks-grid {
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
-}
-
 .student-pick-card {
+  height: 100%;
   min-height: 146px;
 }
 
@@ -1656,13 +1640,9 @@
   bottom: 10px;
 }
 
-.healthy-choice-grid {
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  align-items: stretch;
-}
-
 .healthy-choice-card,
 .healthy-choice-card a {
+  height: 100%;
   min-height: 100%;
 }
 
@@ -1707,11 +1687,6 @@
 }
 
 @media (max-width: 980px) {
-  .student-picks-grid,
-  .healthy-choice-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .student-pick-card a {
     grid-template-columns: minmax(128px, 38%) minmax(0, 1fr);
   }
@@ -1720,11 +1695,6 @@
 @media (max-width: 760px) {
   .big-right-now-row {
     grid-auto-columns: minmax(238px, 78vw);
-  }
-
-  .student-picks-grid,
-  .healthy-choice-grid {
-    grid-template-columns: 1fr;
   }
 
   .student-pick-card a {
@@ -1871,10 +1841,6 @@
   white-space: nowrap;
 }
 
-.recipe-search-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
 .recipe-search-empty {
   display: grid;
   justify-items: center;
@@ -1929,18 +1895,10 @@
   .recipe-reference-layout.is-searching {
     grid-template-columns: 220px minmax(0, 1fr);
   }
-
-  .recipe-search-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 820px) {
   .recipe-reference-layout.is-searching {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .recipe-search-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }

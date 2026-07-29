@@ -103,7 +103,6 @@ export function useVisionAuto({
     if (elapsedSeconds.value >= 35) {
       return 'Still working — some videos take longer to analyze'
     }
-    if (elapsedSeconds.value >= 35) return 'Still working — some videos take longer to analyze'
     return state.value === 'resolving' ? 'Checking possible places' : state.value === 'deep_analysis' ? 'Looking more closely at the video' : state.value === 'fast_analysis' ? 'Checking the video details' : 'Preparing analysis'
   })
 

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
 import SkeletonCard from '../components/SkeletonCard.vue'
 import api, { getApiError } from '../services/api'
+import localNewsArchive from '../data/news.json'
 
 const keyword = ref('')
 const selectedDate = ref('')
@@ -17,12 +18,13 @@ const categories = ref([])
 const totalPages = ref(1)
 const totalItems = ref(0)
 const isLoading = ref(false)
-const errorMessage = ref('')
 const provider = ref({
   name: 'The Guardian Open Platform',
   homepage: 'https://open-platform.theguardian.com/',
 })
 const isCachedResponse = ref(false)
+const isFallbackMode = ref(false)
+const fallbackReason = ref('')
 let hasLoadedInitialNews = false
 let shouldRefetchAfterCategoryNormalization = false
 let searchTimer = 0
@@ -92,16 +94,42 @@ const pageNumbers = computed(() => {
 
 const popularTags = ['street food', 'seasonal recipes', 'restaurant reviews', 'coffee', 'sustainable food', 'global cuisine']
 const isProviderConfigurationError = computed(() =>
-  /api key|not configured|configuration|guardian|service unavailable|503/i.test(errorMessage.value),
+  /api key|not configured|configuration|guardian|service unavailable|503/i.test(fallbackReason.value),
 )
-const newsErrorTitle = computed(() =>
-  isProviderConfigurationError.value ? 'Live news is not configured yet' : 'News is temporarily unavailable',
-)
-const newsErrorDescription = computed(() =>
+const archiveNoticeDescription = computed(() =>
   isProviderConfigurationError.value
-    ? 'The recipe experience remains available while the external news provider is being configured.'
-    : 'Try again in a moment or continue exploring FoodStory recipes.',
+    ? 'Live news is not configured yet, so these stories come from the FoodStory archive.'
+    : 'Live news is temporarily unavailable, so these stories come from the FoodStory archive.',
 )
+
+const archiveCategories = [...new Set(localNewsArchive.map((item) => item.category))]
+
+function loadArchiveNews(page, reason) {
+  const search = keyword.value.trim().toLowerCase()
+  const matches = localNewsArchive.filter((item) => {
+    const matchesSearch =
+      !search ||
+      item.title.toLowerCase().includes(search) ||
+      item.content.toLowerCase().includes(search)
+    const matchesCategory =
+      selectedCategory.value === 'all' || item.category === selectedCategory.value
+    const matchesDate = !selectedDate.value || item.date === selectedDate.value
+    return matchesSearch && matchesCategory && matchesDate
+  })
+
+  const pages = Math.max(1, Math.ceil(matches.length / pageSize))
+  const safePage = Math.min(Math.max(page, 1), pages)
+
+  categories.value = archiveCategories
+  newsItems.value = matches
+    .slice((safePage - 1) * pageSize, safePage * pageSize)
+    .map((item) => ({ ...item, source: 'FoodStory archive' }))
+  currentPage.value = safePage
+  totalPages.value = pages
+  totalItems.value = matches.length
+  fallbackReason.value = reason
+  isFallbackMode.value = true
+}
 
 async function fetchNews(page = currentPage.value) {
   if (!isAlive) {
@@ -113,7 +141,6 @@ async function fetchNews(page = currentPage.value) {
   newsRequestController = new AbortController()
   const requestId = ++newsRequestId
   isLoading.value = true
-  errorMessage.value = ''
 
   try {
     const response = await api.get('/news/external', {
@@ -136,6 +163,8 @@ async function fetchNews(page = currentPage.value) {
     categories.value = response.data.categories || categories.value
     provider.value = response.data.provider || provider.value
     isCachedResponse.value = Boolean(response.data.cached)
+    isFallbackMode.value = false
+    fallbackReason.value = ''
 
     const normalizedCategory = normalizeCategory(selectedCategory.value)
     if (normalizedCategory !== selectedCategory.value) {
@@ -154,9 +183,12 @@ async function fetchNews(page = currentPage.value) {
     if (!isAlive) {
       return
     }
-    errorMessage.value = getApiError(
-      error,
-      'Unable to load live food news. Check the Guardian API configuration and try again.',
+    loadArchiveNews(
+      page,
+      getApiError(
+        error,
+        'Unable to load live food news. Check the Guardian API configuration and try again.',
+      ),
     )
   } finally {
     if (isAlive && requestId === newsRequestId) {
@@ -299,104 +331,115 @@ onBeforeUnmount(() => {
     </form>
 
     <div class="news-layout">
-      <section class="news-list" aria-live="polite" :aria-busy="isLoading">
-        <div v-if="isLoading" class="news-skeleton-list" aria-label="Loading news">
-          <SkeletonCard v-for="index in 5" :key="index" variant="row" />
-        </div>
-        <section v-else-if="errorMessage" class="news-unavailable-card" role="alert">
-          <span class="news-unavailable-icon" aria-hidden="true">
-            <AppIcon name="newspaper" size="28" />
-          </span>
-          <div>
-            <p class="eyebrow">External provider status</p>
-            <h2>{{ newsErrorTitle }}</h2>
-            <p>{{ newsErrorDescription }}</p>
-            <details>
-              <summary>Technical detail</summary>
-              <p>{{ errorMessage }}</p>
-            </details>
-            <div class="news-unavailable-actions">
-              <button class="btn btn-primary" type="button" @click="retryNews">
-                Try again
-              </button>
-              <RouterLink class="btn btn-outline" to="/recipes">Browse recipes</RouterLink>
-            </div>
+      <section class="news-list row g-3" aria-live="polite" :aria-busy="isLoading">
+        <div v-if="isLoading" class="col-12">
+          <div class="news-skeleton-list" aria-label="Loading news">
+            <SkeletonCard v-for="index in 5" :key="index" variant="row" />
           </div>
-        </section>
+        </div>
 
         <template v-else>
-          <article v-for="item in displayNews" :key="item.id" class="news-card external-news-card">
-            <time :datetime="item.date">
-              <strong>{{ item.day }}</strong>
-              <span>{{ item.month }}</span>
-              <small>{{ item.year }}</small>
-            </time>
-
-            <div class="external-news-content">
-              <img
-                v-if="item.thumbnail"
-                class="news-thumbnail"
-                :src="item.thumbnail"
-                :alt="`Illustration for ${item.title}`"
-                loading="lazy"
-                referrerpolicy="no-referrer"
-                @error="handleImageError"
-              />
-
-              <span class="category-label">
-                <AppIcon name="tags" size="14" />
-                {{ item.category }}
+          <div v-if="isFallbackMode" class="col-12">
+            <section class="news-unavailable-card" role="status">
+              <span class="news-unavailable-icon" aria-hidden="true">
+                <AppIcon name="newspaper" size="28" />
               </span>
-              <h2>{{ item.title }}</h2>
+              <div>
+                <p class="eyebrow">External provider status</p>
+                <h2>Showing FoodStory archive</h2>
+                <p>{{ archiveNoticeDescription }}</p>
+                <details>
+                  <summary>Technical detail</summary>
+                  <p>{{ fallbackReason }}</p>
+                </details>
+                <div class="news-unavailable-actions">
+                  <button class="btn btn-primary" type="button" @click="retryNews">
+                    Try live news again
+                  </button>
+                  <RouterLink class="btn btn-outline" to="/recipes">Browse recipes</RouterLink>
+                </div>
+              </div>
+            </section>
+          </div>
 
-              <p class="news-source-meta">
-                <span>{{ item.source }}</span>
-                <span v-if="item.author">• {{ item.author }}</span>
-              </p>
+          <div v-for="item in displayNews" :key="item.id" class="col-12">
+            <article class="news-card external-news-card">
+              <time :datetime="item.date">
+                <strong>{{ item.day }}</strong>
+                <span>{{ item.month }}</span>
+                <small>{{ item.year }}</small>
+              </time>
 
-              <p>{{ item.content }}</p>
-              <a
-                v-if="item.url"
-                :href="item.url"
-                target="_blank"
-                rel="noopener noreferrer"
-                :aria-label="`Read ${item.title} on ${item.source}`"
-              >
-                <span>Read original article</span>
-                <AppIcon name="arrow-right" size="16" />
-              </a>
-            </div>
-          </article>
+              <div class="external-news-content">
+                <img
+                  v-if="item.thumbnail"
+                  class="news-thumbnail"
+                  :src="item.thumbnail"
+                  :alt="`Illustration for ${item.title}`"
+                  loading="lazy"
+                  referrerpolicy="no-referrer"
+                  @error="handleImageError"
+                />
+
+                <span class="category-label">
+                  <AppIcon name="tags" size="14" />
+                  {{ item.category }}
+                </span>
+                <h2>{{ item.title }}</h2>
+
+                <p class="news-source-meta">
+                  <span>{{ item.source }}</span>
+                  <span v-if="item.author">• {{ item.author }}</span>
+                </p>
+
+                <p>{{ item.content }}</p>
+                <a
+                  v-if="item.url"
+                  :href="item.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  :aria-label="`Read ${item.title} on ${item.source}`"
+                >
+                  <span>Read original article</span>
+                  <AppIcon name="arrow-right" size="16" />
+                </a>
+              </div>
+            </article>
+          </div>
         </template>
 
-        <p v-if="!isLoading && !errorMessage && totalItems === 0" class="empty-state">
-          No matching external articles were found. Try a broader keyword or remove a filter.
-        </p>
+        <div v-if="!isLoading && totalItems === 0" class="col-12">
+          <p class="empty-state">
+            No matching external articles were found. Try a broader keyword or remove a filter.
+          </p>
+        </div>
 
-        <nav v-if="totalItems > 0" class="pagination" aria-label="News pagination">
-          <button :disabled="currentPage === 1" type="button" @click="goToPage(currentPage - 1)">
-            <AppIcon name="arrow-left" size="16" />
-            <span>Previous</span>
-          </button>
-          <button
-            v-for="page in pageNumbers"
-            :key="page"
-            :class="{ active: page === currentPage }"
-            :aria-current="page === currentPage ? 'page' : undefined"
-            type="button"
-            @click="goToPage(page)"
-          >
-            {{ page }}
-          </button>
-          <button
-            :disabled="currentPage === totalPages"
-            type="button"
-            @click="goToPage(currentPage + 1)"
-          >
-            <span>Next</span>
-            <AppIcon name="arrow-right" size="16" />
-          </button>
-        </nav>
+        <div v-if="totalItems > 0" class="col-12">
+          <nav class="pagination" aria-label="News pagination">
+            <button :disabled="currentPage === 1" type="button" @click="goToPage(currentPage - 1)">
+              <AppIcon name="arrow-left" size="16" />
+              <span>Previous</span>
+            </button>
+            <button
+              v-for="page in pageNumbers"
+              :key="page"
+              :class="{ active: page === currentPage }"
+              :aria-current="page === currentPage ? 'page' : undefined"
+              type="button"
+              @click="goToPage(page)"
+            >
+              {{ page }}
+            </button>
+            <button
+              :disabled="currentPage === totalPages"
+              type="button"
+              @click="goToPage(currentPage + 1)"
+            >
+              <span>Next</span>
+              <AppIcon name="arrow-right" size="16" />
+            </button>
+          </nav>
+        </div>
       </section>
 
       <aside class="news-sidebar">
