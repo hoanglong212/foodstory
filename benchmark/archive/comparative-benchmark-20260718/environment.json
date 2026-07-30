@@ -1,0 +1,76 @@
+{
+  "recorded_at_local": "2026-07-18T22:35:09+07:00",
+  "repository": "C:\\COS30043\\foodstory",
+  "final_commit": "c1007231c2bf1dc77091bb381df5462de3dd6b6f",
+  "operating_system": {
+    "caption": "Microsoft Windows 11 Home Single Language",
+    "version": "10.0.26200",
+    "build": "26200"
+  },
+  "cpu": {
+    "model": "Intel(R) Core(TM) i7-14700HX",
+    "physical_cores": 20,
+    "logical_processors": 28
+  },
+  "ram": {
+    "bytes": 16868368384,
+    "gib_rounded": 15.71
+  },
+  "gpus": [
+    {"model": "Intel(R) UHD Graphics", "driver": "32.0.101.7082"},
+    {"model": "NVIDIA GeForce RTX 4050 Laptop GPU", "dedicated_memory_mib_reported_by_nvidia_smi": 6141, "driver": "591.86"}
+  ],
+  "runtime": {
+    "node": "v24.11.0",
+    "npm": "11.6.1",
+    "python": "3.13.0",
+    "chrome": "150.0.7871.127",
+    "edge": "150.0.4078.65",
+    "database": "MySQL 8.0.19"
+  },
+  "inference": {
+    "local_ocr_device": "CPU",
+    "gpu_available": true,
+    "gpu_inference_explicitly_configured": false,
+    "paid_cloud_inference_in_controlled_runs": false,
+    "notes": "Tesseract/FFmpeg and deterministic JavaScript fixtures run locally. Google Vision, Gemini, Groq, Places, and other paid/network providers are disabled or excluded from controlled comparisons."
+  },
+  "network": {
+    "controlled_runs": "Loopback/local services; no artificial throttling",
+    "external_condition": "Uncontrolled and excluded from application-only latency claims",
+    "cache_policy": "One warm-up where applicable; measured runs are warm unless the run_type says otherwise"
+  },
+  "performance_environment_variables": {
+    "PORT": "3000",
+    "AI_SERVICE_URL": "http://127.0.0.1:8001",
+    "DB_HOST": "127.0.0.1",
+    "DB_PORT": "3306",
+    "DB_USER": "root",
+    "DB_PASSWORD": "[REDACTED:PRESENT]",
+    "DB_NAME": "foodstory",
+    "VISION_AUTO_V2_ENABLED": "true",
+    "TRACK2_V3_LOCAL_OCR_PROVIDER": "ensemble",
+    "TRACK2_V3_LOCAL_OCR_TIMEOUT_MS": "240000",
+    "TRACK2_V3_MAX_LOCAL_OCR_IMAGES": "24",
+    "TRACK2_V3_GOOGLE_VISION_ENABLED": "false",
+    "TRACK2_V3_PLACES_ENABLED": "false",
+    "TRACK2_V3_GEMINI_VISION_ENABLED": "false",
+    "TRACK2_V3_ASR_ENABLED": "false",
+    "OCR_PROVIDER": "disabled",
+    "OCR_FALLBACK_TO_TESSERACT": "false",
+    "YOUTUBE_FRAME_SCAN_MODE": "dense_1fps",
+    "YOUTUBE_FRAME_SCAN_MAX_FRAMES": "60",
+    "YOUTUBE_FRAME_SCAN_TIMEOUT_MS": "180000",
+    "FOOD_MAP_EVIDENCE_VALIDATOR": "rule",
+    "GEMINI_API_KEY": "[REDACTED:PRESENT_NOT_USED]",
+    "GOOGLE_VISION_API_KEY": "[REDACTED:PRESENT_NOT_USED]",
+    "YOUTUBE_API_KEY": "[REDACTED:PRESENT_NOT_USED]",
+    "GROQ_API_KEY": "[REDACTED:PRESENT_NOT_USED]",
+    "GUARDIAN_API_KEY": "[REDACTED:PRESENT_NOT_USED_IN_APPLICATION_ONLY_LATENCY]"
+  },
+  "control_notes": [
+    "Power plan and background OS activity were not programmatically pinned; this is an uncontrolled variable.",
+    "Filesystem cache was not flushed between warm production builds.",
+    "Historical snapshots use their committed lockfiles while sharing the same Node/npm executables."
+  ]
+}

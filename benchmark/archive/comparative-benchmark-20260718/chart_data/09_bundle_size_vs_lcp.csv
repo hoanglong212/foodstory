@@ -1,0 +1,4 @@
+version_id,generated_js_bytes,generated_css_bytes,generated_total_bytes,lcp_mean_ms,bundle_unit,lcp_unit,sample_size,run_type,evidence_type,caveat
+frontend_stage1,124997,30274,170319,165.340,bytes,ms,5,measured_warm,build_plus_lighthouse,Generated total includes static assets; correlation does not establish causation.
+frontend_stage2,488291,242545,747208,262.979,bytes,ms,5,measured_warm,build_plus_lighthouse,Generated total includes static assets; correlation does not establish causation.
+final,830251,408739,516439802,147.739,bytes,ms,5,measured_warm,build_plus_lighthouse,Generated total includes static assets; correlation does not establish causation.

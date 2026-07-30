@@ -1,0 +1,4 @@
+version_id,p50_latency_ms,p95_latency_ms,unit,sample_size,run_type,evidence_type,caveat
+vision_early,,,ms,0,unavailable,compatibility_limitation,Earliest Vision implementation cannot accept this later router corpus through an equivalent deterministic interface.
+track2_v3,0.045200,0.190700,ms,150,measured_warm,deterministic_30_case_router_fixture,Only safe routing has labelled ground truth. Place/address/dish accuracy metrics are intentionally blank.
+final,0.048400,0.194600,ms,150,measured_warm,deterministic_30_case_router_fixture,Only safe routing has labelled ground truth. Place/address/dish accuracy metrics are intentionally blank.

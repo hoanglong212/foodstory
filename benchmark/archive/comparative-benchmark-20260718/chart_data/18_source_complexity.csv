@@ -1,0 +1,5 @@
+version_id,commit_sha,metric,value,unit,sample_size,run_type,evidence_type,caveat
+foodmap_monolith,770d84cacd02a76ef7e082a34175b1a7d3cb5697,main_view_lines,8481,lines,1,static_source_measurement,git_blob_line_count,Architectural evidence only.
+foodmap_final,c1007231c2bf1dc77091bb381df5462de3dd6b6f,main_view_lines,3124,lines,1,static_source_measurement,git_blob_line_count,Architectural evidence only.
+foodmap_monolith,770d84cacd02a76ef7e082a34175b1a7d3cb5697,distributed_feature_lines,8481,lines,1,static_source_measurement,git_blob_line_count,Single monolithic Vue file.
+foodmap_final,c1007231c2bf1dc77091bb381df5462de3dd6b6f,distributed_feature_lines,9091,lines,1,static_source_measurement,git_blob_line_count,View plus extracted CSS and five production Vue components; tests excluded.

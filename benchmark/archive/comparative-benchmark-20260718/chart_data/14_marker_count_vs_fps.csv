@@ -1,0 +1,11 @@
+version_id,marker_count,pan_fps,zoom_fps,marker_unit,fps_unit,sample_size,run_type,evidence_type,caveat
+foodmap_monolith,10,,,markers,frames_per_second,0,unavailable,no_equivalent_fixture_seam,Authenticated historical route and deterministic marker injection seam unavailable without modifying production behavior
+foodmap_monolith,50,,,markers,frames_per_second,0,unavailable,no_equivalent_fixture_seam,Authenticated historical route and deterministic marker injection seam unavailable without modifying production behavior
+foodmap_monolith,100,,,markers,frames_per_second,0,unavailable,no_equivalent_fixture_seam,Authenticated historical route and deterministic marker injection seam unavailable without modifying production behavior
+foodmap_monolith,250,,,markers,frames_per_second,0,unavailable,no_equivalent_fixture_seam,Authenticated historical route and deterministic marker injection seam unavailable without modifying production behavior
+foodmap_monolith,500,,,markers,frames_per_second,0,unavailable,no_equivalent_fixture_seam,Authenticated historical route and deterministic marker injection seam unavailable without modifying production behavior
+foodmap_final,10,,,markers,frames_per_second,0,unavailable,no_equivalent_fixture_seam,No production-safe deterministic marker injection seam shared with historical snapshot
+foodmap_final,50,,,markers,frames_per_second,0,unavailable,no_equivalent_fixture_seam,No production-safe deterministic marker injection seam shared with historical snapshot
+foodmap_final,100,,,markers,frames_per_second,0,unavailable,no_equivalent_fixture_seam,No production-safe deterministic marker injection seam shared with historical snapshot
+foodmap_final,250,,,markers,frames_per_second,0,unavailable,no_equivalent_fixture_seam,No production-safe deterministic marker injection seam shared with historical snapshot
+foodmap_final,500,,,markers,frames_per_second,0,unavailable,no_equivalent_fixture_seam,No production-safe deterministic marker injection seam shared with historical snapshot

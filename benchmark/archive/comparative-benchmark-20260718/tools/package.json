@@ -1,0 +1,10 @@
+{
+  "name": "foodstory-comparative-benchmark-tools",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "lighthouse": "^12.8.2",
+    "playwright": "^1.55.0"
+  }
+}

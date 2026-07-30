@@ -1,0 +1,193 @@
+version_id,page_id,viewport_id,viewport_width_px,viewport_height_px,run_index,run_type,evidence_type,navigation_duration_ms,dom_content_loaded_ms,load_event_end_ms,document_transfer_size_bytes,document_encoded_body_size_bytes,sample_size,caveat
+frontend_stage1,home,desktop,1440,900,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage1,home,desktop,1440,900,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage1,home,desktop,1440,900,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage1,home,desktop,1440,900,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage1,home,desktop,1440,900,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage1,home,desktop,1440,900,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage1,home,mobile,390,844,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage1,home,mobile,390,844,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage1,home,mobile,390,844,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage1,home,mobile,390,844,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage1,home,mobile,390,844,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage1,home,mobile,390,844,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,home,desktop,1440,900,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,home,desktop,1440,900,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,home,desktop,1440,900,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,home,desktop,1440,900,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,home,desktop,1440,900,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,home,desktop,1440,900,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,home,mobile,390,844,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,home,mobile,390,844,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,home,mobile,390,844,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,home,mobile,390,844,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,home,mobile,390,844,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,home,mobile,390,844,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipes,desktop,1440,900,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipes,desktop,1440,900,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipes,desktop,1440,900,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipes,desktop,1440,900,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipes,desktop,1440,900,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipes,desktop,1440,900,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipes,mobile,390,844,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipes,mobile,390,844,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipes,mobile,390,844,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipes,mobile,390,844,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipes,mobile,390,844,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipes,mobile,390,844,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipe_detail,desktop,1440,900,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipe_detail,desktop,1440,900,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipe_detail,desktop,1440,900,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipe_detail,desktop,1440,900,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipe_detail,desktop,1440,900,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipe_detail,desktop,1440,900,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipe_detail,mobile,390,844,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipe_detail,mobile,390,844,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipe_detail,mobile,390,844,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipe_detail,mobile,390,844,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipe_detail,mobile,390,844,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage2,recipe_detail,mobile,390,844,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,home,desktop,1440,900,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,home,desktop,1440,900,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,home,desktop,1440,900,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,home,desktop,1440,900,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,home,desktop,1440,900,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,home,desktop,1440,900,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,home,mobile,390,844,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,home,mobile,390,844,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,home,mobile,390,844,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,home,mobile,390,844,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,home,mobile,390,844,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,home,mobile,390,844,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipes,desktop,1440,900,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipes,desktop,1440,900,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipes,desktop,1440,900,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipes,desktop,1440,900,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipes,desktop,1440,900,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipes,desktop,1440,900,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipes,mobile,390,844,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipes,mobile,390,844,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipes,mobile,390,844,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipes,mobile,390,844,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipes,mobile,390,844,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipes,mobile,390,844,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipe_detail,desktop,1440,900,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipe_detail,desktop,1440,900,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipe_detail,desktop,1440,900,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipe_detail,desktop,1440,900,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipe_detail,desktop,1440,900,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipe_detail,desktop,1440,900,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipe_detail,mobile,390,844,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipe_detail,mobile,390,844,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipe_detail,mobile,390,844,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipe_detail,mobile,390,844,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipe_detail,mobile,390,844,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,recipe_detail,mobile,390,844,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,food_map,desktop,1440,900,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,food_map,desktop,1440,900,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,food_map,desktop,1440,900,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,food_map,desktop,1440,900,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,food_map,desktop,1440,900,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,food_map,desktop,1440,900,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,food_map,mobile,390,844,0,warmup,browser_navigation_timing,,,,,,1,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,food_map,mobile,390,844,1,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,food_map,mobile,390,844,2,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,food_map,mobile,390,844,3,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,food_map,mobile,390,844,4,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+final,food_map,mobile,390,844,5,measured_warm,browser_navigation_timing,,,,,,5,Browser Navigation Timing for local production preview; route API completion after load is not included.
+frontend_stage1,home,desktop,1440,900,0,warmup,host_wall_clock_navigation_to_load,141,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage1,home,desktop,1440,900,1,measured_warm,host_wall_clock_navigation_to_load,129,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage1,home,desktop,1440,900,2,measured_warm,host_wall_clock_navigation_to_load,124,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage1,home,desktop,1440,900,3,measured_warm,host_wall_clock_navigation_to_load,129,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage1,home,desktop,1440,900,4,measured_warm,host_wall_clock_navigation_to_load,126,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage1,home,desktop,1440,900,5,measured_warm,host_wall_clock_navigation_to_load,130,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage1,home,mobile,390,844,0,warmup,host_wall_clock_navigation_to_load,124,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage1,home,mobile,390,844,1,measured_warm,host_wall_clock_navigation_to_load,109,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage1,home,mobile,390,844,2,measured_warm,host_wall_clock_navigation_to_load,119,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage1,home,mobile,390,844,3,measured_warm,host_wall_clock_navigation_to_load,116,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage1,home,mobile,390,844,4,measured_warm,host_wall_clock_navigation_to_load,129,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage1,home,mobile,390,844,5,measured_warm,host_wall_clock_navigation_to_load,119,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,home,desktop,1440,900,0,warmup,host_wall_clock_navigation_to_load,165,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,home,desktop,1440,900,1,measured_warm,host_wall_clock_navigation_to_load,177,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,home,desktop,1440,900,2,measured_warm,host_wall_clock_navigation_to_load,178,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,home,desktop,1440,900,3,measured_warm,host_wall_clock_navigation_to_load,132,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,home,desktop,1440,900,4,measured_warm,host_wall_clock_navigation_to_load,169,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,home,desktop,1440,900,5,measured_warm,host_wall_clock_navigation_to_load,162,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,home,mobile,390,844,0,warmup,host_wall_clock_navigation_to_load,117,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,home,mobile,390,844,1,measured_warm,host_wall_clock_navigation_to_load,133,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,home,mobile,390,844,2,measured_warm,host_wall_clock_navigation_to_load,140,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,home,mobile,390,844,3,measured_warm,host_wall_clock_navigation_to_load,146,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,home,mobile,390,844,4,measured_warm,host_wall_clock_navigation_to_load,179,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,home,mobile,390,844,5,measured_warm,host_wall_clock_navigation_to_load,123,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipes,desktop,1440,900,0,warmup,host_wall_clock_navigation_to_load,145,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipes,desktop,1440,900,1,measured_warm,host_wall_clock_navigation_to_load,108,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipes,desktop,1440,900,2,measured_warm,host_wall_clock_navigation_to_load,105,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipes,desktop,1440,900,3,measured_warm,host_wall_clock_navigation_to_load,83,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipes,desktop,1440,900,4,measured_warm,host_wall_clock_navigation_to_load,101,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipes,desktop,1440,900,5,measured_warm,host_wall_clock_navigation_to_load,87,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipes,mobile,390,844,0,warmup,host_wall_clock_navigation_to_load,102,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipes,mobile,390,844,1,measured_warm,host_wall_clock_navigation_to_load,108,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipes,mobile,390,844,2,measured_warm,host_wall_clock_navigation_to_load,116,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipes,mobile,390,844,3,measured_warm,host_wall_clock_navigation_to_load,122,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipes,mobile,390,844,4,measured_warm,host_wall_clock_navigation_to_load,123,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipes,mobile,390,844,5,measured_warm,host_wall_clock_navigation_to_load,108,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipe_detail,desktop,1440,900,0,warmup,host_wall_clock_navigation_to_load,116,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipe_detail,desktop,1440,900,1,measured_warm,host_wall_clock_navigation_to_load,113,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipe_detail,desktop,1440,900,2,measured_warm,host_wall_clock_navigation_to_load,111,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipe_detail,desktop,1440,900,3,measured_warm,host_wall_clock_navigation_to_load,113,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipe_detail,desktop,1440,900,4,measured_warm,host_wall_clock_navigation_to_load,98,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipe_detail,desktop,1440,900,5,measured_warm,host_wall_clock_navigation_to_load,110,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipe_detail,mobile,390,844,0,warmup,host_wall_clock_navigation_to_load,112,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipe_detail,mobile,390,844,1,measured_warm,host_wall_clock_navigation_to_load,108,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipe_detail,mobile,390,844,2,measured_warm,host_wall_clock_navigation_to_load,112,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipe_detail,mobile,390,844,3,measured_warm,host_wall_clock_navigation_to_load,113,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipe_detail,mobile,390,844,4,measured_warm,host_wall_clock_navigation_to_load,110,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+frontend_stage2,recipe_detail,mobile,390,844,5,measured_warm,host_wall_clock_navigation_to_load,104,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,home,desktop,1440,900,0,warmup,host_wall_clock_navigation_to_load,123,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,home,desktop,1440,900,1,measured_warm,host_wall_clock_navigation_to_load,136,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,home,desktop,1440,900,2,measured_warm,host_wall_clock_navigation_to_load,133,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,home,desktop,1440,900,3,measured_warm,host_wall_clock_navigation_to_load,103,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,home,desktop,1440,900,4,measured_warm,host_wall_clock_navigation_to_load,118,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,home,desktop,1440,900,5,measured_warm,host_wall_clock_navigation_to_load,147,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,home,mobile,390,844,0,warmup,host_wall_clock_navigation_to_load,146,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,home,mobile,390,844,1,measured_warm,host_wall_clock_navigation_to_load,125,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,home,mobile,390,844,2,measured_warm,host_wall_clock_navigation_to_load,125,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,home,mobile,390,844,3,measured_warm,host_wall_clock_navigation_to_load,124,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,home,mobile,390,844,4,measured_warm,host_wall_clock_navigation_to_load,118,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,home,mobile,390,844,5,measured_warm,host_wall_clock_navigation_to_load,129,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipes,desktop,1440,900,0,warmup,host_wall_clock_navigation_to_load,133,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipes,desktop,1440,900,1,measured_warm,host_wall_clock_navigation_to_load,117,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipes,desktop,1440,900,2,measured_warm,host_wall_clock_navigation_to_load,117,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipes,desktop,1440,900,3,measured_warm,host_wall_clock_navigation_to_load,116,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipes,desktop,1440,900,4,measured_warm,host_wall_clock_navigation_to_load,127,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipes,desktop,1440,900,5,measured_warm,host_wall_clock_navigation_to_load,113,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipes,mobile,390,844,0,warmup,host_wall_clock_navigation_to_load,112,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipes,mobile,390,844,1,measured_warm,host_wall_clock_navigation_to_load,93,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipes,mobile,390,844,2,measured_warm,host_wall_clock_navigation_to_load,99,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipes,mobile,390,844,3,measured_warm,host_wall_clock_navigation_to_load,121,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipes,mobile,390,844,4,measured_warm,host_wall_clock_navigation_to_load,119,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipes,mobile,390,844,5,measured_warm,host_wall_clock_navigation_to_load,107,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipe_detail,desktop,1440,900,0,warmup,host_wall_clock_navigation_to_load,174,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipe_detail,desktop,1440,900,1,measured_warm,host_wall_clock_navigation_to_load,110,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipe_detail,desktop,1440,900,2,measured_warm,host_wall_clock_navigation_to_load,144,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipe_detail,desktop,1440,900,3,measured_warm,host_wall_clock_navigation_to_load,116,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipe_detail,desktop,1440,900,4,measured_warm,host_wall_clock_navigation_to_load,101,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipe_detail,desktop,1440,900,5,measured_warm,host_wall_clock_navigation_to_load,100,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipe_detail,mobile,390,844,0,warmup,host_wall_clock_navigation_to_load,123,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipe_detail,mobile,390,844,1,measured_warm,host_wall_clock_navigation_to_load,126,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipe_detail,mobile,390,844,2,measured_warm,host_wall_clock_navigation_to_load,120,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipe_detail,mobile,390,844,3,measured_warm,host_wall_clock_navigation_to_load,119,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipe_detail,mobile,390,844,4,measured_warm,host_wall_clock_navigation_to_load,123,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,recipe_detail,mobile,390,844,5,measured_warm,host_wall_clock_navigation_to_load,131,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,food_map,desktop,1440,900,0,warmup,host_wall_clock_navigation_to_load,120,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,food_map,desktop,1440,900,1,measured_warm,host_wall_clock_navigation_to_load,97,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,food_map,desktop,1440,900,2,measured_warm,host_wall_clock_navigation_to_load,96,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,food_map,desktop,1440,900,3,measured_warm,host_wall_clock_navigation_to_load,118,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,food_map,desktop,1440,900,4,measured_warm,host_wall_clock_navigation_to_load,105,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,food_map,desktop,1440,900,5,measured_warm,host_wall_clock_navigation_to_load,124,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,food_map,mobile,390,844,0,warmup,host_wall_clock_navigation_to_load,112,,,,,1,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,food_map,mobile,390,844,1,measured_warm,host_wall_clock_navigation_to_load,98,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,food_map,mobile,390,844,2,measured_warm,host_wall_clock_navigation_to_load,117,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,food_map,mobile,390,844,3,measured_warm,host_wall_clock_navigation_to_load,99,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,food_map,mobile,390,844,4,measured_warm,host_wall_clock_navigation_to_load,105,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.
+final,food_map,mobile,390,844,5,measured_warm,host_wall_clock_navigation_to_load,105,,,,,5,Retry after Navigation Timing API was unavailable; host wall-clock from goto start through browser load state.

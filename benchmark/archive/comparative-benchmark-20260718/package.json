@@ -1,0 +1,18 @@
+{
+  "name": "foodstory-comparative-benchmark",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "builds": "node scripts/run_build_benchmarks.mjs",
+    "lighthouse": "node scripts/run_lighthouse_benchmarks.mjs",
+    "api": "node scripts/run_api_benchmarks.mjs",
+    "realtime": "node scripts/run_realtime_benchmarks.mjs",
+    "vision": "node scripts/run_vision_benchmarks.mjs",
+    "generate": "node scripts/generate_outputs.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "lighthouse": "^12.8.2",
+    "playwright": "^1.55.0"
+  }
+}

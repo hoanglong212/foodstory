@@ -1,0 +1,4 @@
+version_id,frame_count,total_wall_clock_ms,frame_count_unit,latency_unit,sample_size,run_type,evidence_type,caveat
+vision_early,,,frames,ms,0,unavailable,ground_truth_limitation,No identical retained media fixture; frame correlation unavailable.
+track2_v3,,,frames,ms,0,unavailable,ground_truth_limitation,No identical retained media fixture; frame correlation unavailable.
+final,,,frames,ms,0,unavailable,ground_truth_limitation,No identical retained media fixture; frame correlation unavailable.

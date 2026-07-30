@@ -1,0 +1,17 @@
+version_id,commit_sha,page_id,availability,lighthouse_runs,screenshot_viewports,run_type,evidence_type,sample_size,caveat
+frontend_stage1,6df998aa33f1f28a958610dce97a0b1bc83e0556,home,supported,12,"1440x900|390x844",measured_warm,lighthouse_and_browser,10,One warm-up plus five measured runs per viewport
+frontend_stage1,6df998aa33f1f28a958610dce97a0b1bc83e0556,recipes,unavailable,0,,unavailable,route_absent,0,Route does not exist
+frontend_stage1,6df998aa33f1f28a958610dce97a0b1bc83e0556,recipe_detail,unavailable,0,,unavailable,route_absent,0,Route does not exist
+frontend_stage1,6df998aa33f1f28a958610dce97a0b1bc83e0556,food_map,unavailable,0,,unavailable,route_absent,0,Route does not exist
+frontend_stage1,6df998aa33f1f28a958610dce97a0b1bc83e0556,admin,unavailable,0,,unavailable,route_absent,0,Route does not exist
+frontend_stage2,35c8ddb08567e710b4365a9a9cc93af8b1dbd8d5,home,supported,12,"1440x900|390x844",measured_warm,lighthouse_and_browser,10,One warm-up plus five measured runs per viewport
+frontend_stage2,35c8ddb08567e710b4365a9a9cc93af8b1dbd8d5,recipes,supported,12,"1440x900|390x844",measured_warm,lighthouse_and_browser,10,One warm-up plus five measured runs per viewport
+frontend_stage2,35c8ddb08567e710b4365a9a9cc93af8b1dbd8d5,recipe_detail,supported,12,"1440x900|390x844",measured_warm,lighthouse_and_browser,10,Recipe id 1 from shared database fixture
+frontend_stage2,35c8ddb08567e710b4365a9a9cc93af8b1dbd8d5,food_map,unavailable,0,,unavailable,route_absent,0,Route does not exist
+frontend_stage2,35c8ddb08567e710b4365a9a9cc93af8b1dbd8d5,admin,not_benchmarked,0,,unavailable,authenticated_route,0,No standardized isolated authenticated Lighthouse profile
+foodmap_monolith,770d84cacd02a76ef7e082a34175b1a7d3cb5697,food_map,not_benchmarked,0,,unavailable,authenticated_route,0,Protected historical route cannot be compared with final guest preview without auth-state manipulation
+final,c1007231c2bf1dc77091bb381df5462de3dd6b6f,home,supported,12,"1440x900|390x844",measured_warm,lighthouse_and_browser,10,One warm-up plus five measured runs per viewport
+final,c1007231c2bf1dc77091bb381df5462de3dd6b6f,recipes,supported,12,"1440x900|390x844",measured_warm,lighthouse_and_browser,10,One warm-up plus five measured runs per viewport
+final,c1007231c2bf1dc77091bb381df5462de3dd6b6f,recipe_detail,supported,12,"1440x900|390x844",measured_warm,lighthouse_and_browser,10,Recipe id 1 from shared database fixture
+final,c1007231c2bf1dc77091bb381df5462de3dd6b6f,food_map,supported_guest_preview,12,"1440x900|390x844",measured_warm,lighthouse_and_browser,10,Provider availability message may appear; external provider latency is not attributed to app
+final,c1007231c2bf1dc77091bb381df5462de3dd6b6f,admin,not_benchmarked,0,,unavailable,authenticated_route,0,No standardized isolated authenticated Lighthouse profile

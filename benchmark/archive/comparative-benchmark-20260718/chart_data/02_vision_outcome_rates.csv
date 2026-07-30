@@ -1,0 +1,7 @@
+version_id,commit_sha,outcome,sample_size,count,rate_percent,run_type,evidence_type,caveat,unit
+track2_v3,852d5735c5e20abf995ffa3a4e096e04add88586,TRACK_1,30,9,30.00,measured_warm_representative_repeat,deterministic_30_case_router_fixture,"Outcome is router track, not full Vision Auto final status.",percent
+track2_v3,852d5735c5e20abf995ffa3a4e096e04add88586,TRACK_2,30,21,70.00,measured_warm_representative_repeat,deterministic_30_case_router_fixture,"Outcome is router track, not full Vision Auto final status.",percent
+track2_v3,852d5735c5e20abf995ffa3a4e096e04add88586,ERROR,30,0,0.00,measured_warm_representative_repeat,deterministic_30_case_router_fixture,"Outcome is router track, not full Vision Auto final status.",percent
+final,c1007231c2bf1dc77091bb381df5462de3dd6b6f,TRACK_1,30,9,30.00,measured_warm_representative_repeat,deterministic_30_case_router_fixture,"Outcome is router track, not full Vision Auto final status.",percent
+final,c1007231c2bf1dc77091bb381df5462de3dd6b6f,TRACK_2,30,21,70.00,measured_warm_representative_repeat,deterministic_30_case_router_fixture,"Outcome is router track, not full Vision Auto final status.",percent
+final,c1007231c2bf1dc77091bb381df5462de3dd6b6f,ERROR,30,0,0.00,measured_warm_representative_repeat,deterministic_30_case_router_fixture,"Outcome is router track, not full Vision Auto final status.",percent

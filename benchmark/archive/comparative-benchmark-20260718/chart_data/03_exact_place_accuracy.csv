@@ -1,0 +1,4 @@
+version_id,exact_place_accuracy_percent,unit,sample_size,run_type,evidence_type,caveat
+vision_early,,percent,0,unavailable,compatibility_limitation,Unavailable: corpus lacks verified place identity ground truth.
+track2_v3,,percent,150,measured_warm,deterministic_30_case_router_fixture,Unavailable: corpus lacks verified place identity ground truth.
+final,,percent,150,measured_warm,deterministic_30_case_router_fixture,Unavailable: corpus lacks verified place identity ground truth.
