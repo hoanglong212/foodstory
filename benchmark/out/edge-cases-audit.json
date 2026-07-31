@@ -1,0 +1,191 @@
+{
+  "meta": {
+    "commit": "c9e37913cf2e4f9496ac7aeec4b25952d74020d4",
+    "commitShort": "c9e3791",
+    "branch": "codex/render-deployment",
+    "runAtIso": "2026-07-31T16:31:41.990Z",
+    "node": "v24.11.0",
+    "npm": "11.6.1",
+    "chrome": "151.0.7922.71",
+    "os": "Windows_NT 10.0.26200 (win32 x64)",
+    "osCaption": "Microsoft Windows 11 Home Single Language 10.0.26200",
+    "cpu": "Intel(R) Core(TM) i7-14700HX (28 logical)",
+    "cpuCores": 28,
+    "ramGb": 15.71,
+    "load": "cpu_load_percent=16",
+    "harnessVersion": "2.0.0",
+    "measurement": "edge-cases-and-error-states",
+    "method": "API failure simulated by aborting every /api/ request at the network layer"
+  },
+  "results": [
+    {
+      "scenario": "route:/recipes/999999",
+      "path": "/recipes/999999",
+      "title": "Recipe | FoodStory",
+      "textLength": 533,
+      "visibleText": "Skip to main content FoodStory Home News About Us Recipes Login Register Dark mode Recipe not found. Ask FoodBot Recipes, places & FoodStory help FoodStory \"Discover food, preserve memories\" EXPLORE Home Food News About FoodStory CATEGORIES Vietnamese Cuisine Street Food Recipes Trends CONTACT Have ",
+      "hasSpinner": false,
+      "leaksTechnical": false,
+      "hasRetry": false,
+      "pageErrors": []
+    },
+    {
+      "scenario": "route:/recipes/0",
+      "path": "/recipes/0",
+      "title": "Recipe | FoodStory",
+      "textLength": 534,
+      "visibleText": "Skip to main content FoodStory Home News About Us Recipes Login Register Dark mode Invalid recipe id. Ask FoodBot Recipes, places & FoodStory help FoodStory \"Discover food, preserve memories\" EXPLORE Home Food News About FoodStory CATEGORIES Vietnamese Cuisine Street Food Recipes Trends CONTACT Have",
+      "hasSpinner": false,
+      "leaksTechnical": false,
+      "hasRetry": false,
+      "pageErrors": []
+    },
+    {
+      "scenario": "route:/recipes/abc",
+      "path": "/recipes/abc",
+      "title": "Recipe | FoodStory",
+      "textLength": 534,
+      "visibleText": "Skip to main content FoodStory Home News About Us Recipes Login Register Dark mode Invalid recipe id. Ask FoodBot Recipes, places & FoodStory help FoodStory \"Discover food, preserve memories\" EXPLORE Home Food News About FoodStory CATEGORIES Vietnamese Cuisine Street Food Recipes Trends CONTACT Have",
+      "hasSpinner": false,
+      "leaksTechnical": false,
+      "hasRetry": false,
+      "pageErrors": []
+    },
+    {
+      "scenario": "route:/news/999999",
+      "path": "/news/999999",
+      "title": "News Article | FoodStory",
+      "textLength": 549,
+      "visibleText": "Skip to main content FoodStory Home News About Us Recipes Login Register Dark mode Back to News News item not found. Ask FoodBot Recipes, places & FoodStory help FoodStory \"Discover food, preserve memories\" EXPLORE Home Food News About FoodStory CATEGORIES Vietnamese Cuisine Street Food Recipes Tren",
+      "hasSpinner": false,
+      "leaksTechnical": false,
+      "hasRetry": false,
+      "pageErrors": []
+    },
+    {
+      "scenario": "route:/news/abc",
+      "path": "/news/abc",
+      "title": "News Article | FoodStory",
+      "textLength": 545,
+      "visibleText": "Skip to main content FoodStory Home News About Us Recipes Login Register Dark mode Back to News Invalid news id. Ask FoodBot Recipes, places & FoodStory help FoodStory \"Discover food, preserve memories\" EXPLORE Home Food News About FoodStory CATEGORIES Vietnamese Cuisine Street Food Recipes Trends C",
+      "hasSpinner": false,
+      "leaksTechnical": false,
+      "hasRetry": false,
+      "pageErrors": []
+    },
+    {
+      "scenario": "route:/this-route-does-not-exist",
+      "path": "/this-route-does-not-exist",
+      "title": "Page Not Found | FoodStory",
+      "textLength": 653,
+      "visibleText": "Skip to main content FoodStory Home News About Us Recipes Login Register Dark mode 404 Page not found The page you requested does not exist or may have moved. Return to a safe FoodStory page below. Browse recipes Go home Ask FoodBot Recipes, places & FoodStory help FoodStory \"Discover food, preserve",
+      "hasSpinner": false,
+      "leaksTechnical": false,
+      "hasRetry": false,
+      "pageErrors": []
+    },
+    {
+      "scenario": "route:/recipes/1/edit",
+      "path": "/login",
+      "title": "Login | FoodStory",
+      "textLength": 739,
+      "visibleText": "Skip to main content FOODSTORY NOTIFICATION Something went wrong Please login to continue. × FoodStory Home News About Us Recipes Login Register Dark mode FOODSTORY ACCOUNT Login Access favorites, comments, ratings and ingredient checklists. EMAIL ADDRESS PASSWORD Login New to FoodStory? Create an a",
+      "hasSpinner": false,
+      "leaksTechnical": false,
+      "hasRetry": false,
+      "pageErrors": []
+    },
+    {
+      "scenario": "api-down:/",
+      "path": "/",
+      "title": "Home | FoodStory",
+      "textLength": 1617,
+      "visibleText": "Skip to main content FoodStory Home News About Us Recipes Login Register Dark mode VIETNAMESE FOOD BLOG Discover Vietnamese Cuisine Welcome to FoodStory, where every dish tells a story from the home kitchen to the liveliest streets. View News About Us FEATURED RECIPES Our Most Loved Dishes View all ",
+      "hasSpinner": false,
+      "leaksTechnical": false,
+      "hasRetry": false,
+      "pageErrors": []
+    },
+    {
+      "scenario": "api-down:/recipes",
+      "path": "/recipes",
+      "title": "Recipes | FoodStory",
+      "textLength": 1092,
+      "visibleText": "Skip to main content FoodStory Home News About Us Recipes Login Register Dark mode Collections Meal Planner My Cookbook Favorites Recently Viewed EXPLORE Seasonal Recipes Cuisine Dietary Needs Cooking Methods Ingredients Occasions Budget-friendly Create your own collections and save your favorites. ",
+      "hasSpinner": false,
+      "leaksTechnical": false,
+      "hasRetry": true,
+      "pageErrors": []
+    },
+    {
+      "scenario": "api-down:/recipes/1",
+      "path": "/recipes/1",
+      "title": "Recipe | FoodStory",
+      "textLength": 592,
+      "visibleText": "Skip to main content FoodStory Home News About Us Recipes Login Register Dark mode Unable to reach the FoodStory API. Please check that the backend is running. Ask FoodBot Recipes, places & FoodStory help FoodStory \"Discover food, preserve memories\" EXPLORE Home Food News About FoodStory CATEGORIES ",
+      "hasSpinner": false,
+      "leaksTechnical": false,
+      "hasRetry": false,
+      "pageErrors": []
+    },
+    {
+      "scenario": "api-down:/news",
+      "path": "/news",
+      "title": "Food News | FoodStory",
+      "textLength": 2016,
+      "visibleText": "Skip to main content FoodStory Home News About Us Recipes Login Register Dark mode FOODSTORY NEWS Live Food News Explore current food journalism, recipes, restaurant stories, drinks, sustainability, and global cuisine through a secure external API integration. Articles supplied by The Guardian Open ",
+      "hasSpinner": false,
+      "leaksTechnical": false,
+      "hasRetry": false,
+      "pageErrors": []
+    },
+    {
+      "scenario": "api-down:/food-map",
+      "path": "/food-map",
+      "title": "Food Map | FoodStory",
+      "textLength": 410,
+      "visibleText": "Skip to main content FoodStory Home News About Us Recipes Login Register Dark mode Food Map Views All places 0 Exploring as a guest Vision and map browsing work now. Sign in for precise address search and saving. Sign in for more Taste now Live from FoodStory No places match this view yet. Try chang",
+      "hasSpinner": false,
+      "leaksTechnical": false,
+      "hasRetry": false,
+      "pageErrors": []
+    },
+    {
+      "scenario": "login-form",
+      "formInfo": {
+        "hasForm": true,
+        "noValidate": true,
+        "inputs": [
+          {
+            "type": "email",
+            "name": "",
+            "id": "login-email",
+            "required": false,
+            "minLength": -1,
+            "autocomplete": "email",
+            "hasLabel": true,
+            "placeholder": null
+          },
+          {
+            "type": "password",
+            "name": "",
+            "id": "login-password",
+            "required": false,
+            "minLength": -1,
+            "autocomplete": "current-password",
+            "hasLabel": true,
+            "placeholder": null
+          }
+        ]
+      },
+      "emptySubmit": {
+        "path": "/login",
+        "text": "Skip to main content FoodStory Home News About Us Recipes Login Register Dark mode FOODSTORY ACCOUNT Login Access favorites, comments, ratings and ingredient checklists. EMAIL ADDRESS Email is require"
+      },
+      "badCreds": {
+        "path": "/login",
+        "text": "Skip to main content FOODSTORY NOTIFICATION Something went wrong Invalid email or password. × FoodStory Home News About Us Recipes Login Register Dark mode FOODSTORY ACCOUNT Login Access favorites, comments, ratings and ingredient checklists. Invalid email or "
+      }
+    }
+  ]
+}

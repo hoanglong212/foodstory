@@ -1,0 +1,133 @@
+{
+  "launcher": {
+    "text": "Ask FoodBotRecipes, places & FoodStory help",
+    "rect": {
+      "x": 1202,
+      "y": 816,
+      "w": 214,
+      "h": 60
+    },
+    "position": "fixed",
+    "zIndex": "auto",
+    "ariaLabel": "Open FoodBot",
+    "tag": "BUTTON"
+  },
+  "windowInfo": {
+    "rect": {
+      "x": 936,
+      "y": 108,
+      "w": 480,
+      "h": 696
+    },
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "fitsViewport": true,
+    "inputTag": "TEXTAREA",
+    "inputPlaceholder": "Ask about a recipe, a place, or FoodStory...",
+    "initialMessages": 1,
+    "initialText": [
+      "Hi! I’m FoodBot. Ask in English or Tiếng Việt about recipes, places to eat, FoodStory features, or your saved food data."
+    ],
+    "hint": "Enter to send · Shift + Enter for a new line"
+  },
+  "mobileFit": {
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844
+    },
+    "viewport": {
+      "w": 390,
+      "h": 844
+    },
+    "overflowsRight": false,
+    "overflowsBottom": false,
+    "coversViewportPercent": 100
+  },
+  "results": [
+    {
+      "id": "greet_vi",
+      "text": "Xin chao",
+      "elapsed": 46,
+      "answer": "Hello! I can help you find FoodStory recipes, ingredients, nutrition, restaurants, and saved food places."
+    },
+    {
+      "id": "domain_dish",
+      "text": "What is pho and what goes in it?",
+      "elapsed": 587,
+      "answer": "Stored FoodStory ingredients for Hanoi Beef Pho:\n• thinly sliced beef sirloin: 350g\n• flat rice noodles: 450g fresh\n• yellow onion and ginger: 1 onion, 1 thumb\n• beef broth: 1.8L\n• star anise, cinnamon, fish sauce: 3 pods, 1 stick, 3 tbsp\n• bean sprouts, basil, lime, scallions: 1 platter\n• beef meatballs: 200g\n• rock sugar: 1 tbsp\n• low sodium stock or water: as needed\n• kosher salt: to taste"
+    },
+    {
+      "id": "domain_filter",
+      "text": "Recommend a vegetarian recipe under 30 minutes",
+      "elapsed": 44,
+      "answer": "I found 17 FoodStory recipes matching category vegetarian, tag Vegetarian, within 30 minutes. Here are the best 5 sorted by fastest."
+    },
+    {
+      "id": "followup",
+      "text": "What about a dessert instead?",
+      "elapsed": 701,
+      "answer": "There are many delicious dessert options to choose from. What type of dessert are you in the mood for (e.g. cake, ice cream, pastry, fruit-based)?"
+    },
+    {
+      "id": "site_feature",
+      "text": "How do I use the Food Map?",
+      "elapsed": 33,
+      "answer": "Food Map has Community browsing for everyone and, after login, My Map plus personal Statistics. Community shows shared discoveries; My Map contains places owned by your account; Statistics summarizes your private journey. Use the mode switcher to move between them."
+    },
+    {
+      "id": "offdomain",
+      "text": "What is the capital of France?",
+      "elapsed": 570,
+      "answer": "The capital of France is Paris."
+    },
+    {
+      "id": "gibberish",
+      "text": "asdkjhasd qweqwe zzzz",
+      "elapsed": 642,
+      "answer": "It seems like there might be some confusion. Could you please rephrase your question so I can better understand what you're looking for?"
+    }
+  ],
+  "apiCalls": [
+    {
+      "url": "/api/chatbot/ask",
+      "status": 204
+    },
+    {
+      "url": "/api/chatbot/ask",
+      "status": 200
+    },
+    {
+      "url": "/api/chatbot/ask",
+      "status": 200
+    },
+    {
+      "url": "/api/chatbot/ask",
+      "status": 200
+    },
+    {
+      "url": "/api/chatbot/ask",
+      "status": 200
+    },
+    {
+      "url": "/api/chatbot/ask",
+      "status": 204
+    },
+    {
+      "url": "/api/chatbot/ask",
+      "status": 200
+    },
+    {
+      "url": "/api/chatbot/ask",
+      "status": 200
+    },
+    {
+      "url": "/api/chatbot/ask",
+      "status": 200
+    }
+  ],
+  "consoleErrors": []
+}

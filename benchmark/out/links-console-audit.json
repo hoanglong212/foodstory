@@ -1,0 +1,855 @@
+{
+  "meta": {
+    "commit": "c9e37913cf2e4f9496ac7aeec4b25952d74020d4",
+    "commitShort": "c9e3791",
+    "branch": "codex/render-deployment",
+    "runAtIso": "2026-07-31T16:29:23.797Z",
+    "node": "v24.11.0",
+    "npm": "11.6.1",
+    "chrome": "151.0.7922.71",
+    "os": "Windows_NT 10.0.26200 (win32 x64)",
+    "osCaption": "Microsoft Windows 11 Home Single Language 10.0.26200",
+    "cpu": "Intel(R) Core(TM) i7-14700HX (28 logical)",
+    "cpuCores": 28,
+    "ramGb": 15.71,
+    "load": "cpu_load_percent=28",
+    "harnessVersion": "2.0.0",
+    "measurement": "links-and-console-audit",
+    "note": "all console output retained, including Vue warnings which earlier runs filtered out"
+  },
+  "totals": {
+    "routes": 14,
+    "totalConsoleWarnings": 0,
+    "totalConsoleErrors": 0,
+    "totalHttpErrors": 0,
+    "totalFailedRequests": 0,
+    "internalLinksChecked": 73,
+    "internalLinks404": 0,
+    "emptyOrHashLinks": 2
+  },
+  "perRoute": [
+    {
+      "route": "home",
+      "path": "/",
+      "landed": "/",
+      "navErr": null,
+      "consoleCounts": {
+        "debug": 4
+      },
+      "consoleMessages": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "httpErrors": [],
+      "failedRequests": [],
+      "linkCount": 34,
+      "emptyOrHashLinks": 0,
+      "externalBlankWithoutNoopener": []
+    },
+    {
+      "route": "recipes",
+      "path": "/recipes",
+      "landed": "/recipes",
+      "navErr": null,
+      "consoleCounts": {
+        "debug": 4
+      },
+      "consoleMessages": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "httpErrors": [],
+      "failedRequests": [],
+      "linkCount": 135,
+      "emptyOrHashLinks": 0,
+      "externalBlankWithoutNoopener": []
+    },
+    {
+      "route": "recipe_detail",
+      "path": "/recipes/1",
+      "landed": "/recipes/1",
+      "navErr": null,
+      "consoleCounts": {
+        "debug": 4
+      },
+      "consoleMessages": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "httpErrors": [],
+      "failedRequests": [],
+      "linkCount": 32,
+      "emptyOrHashLinks": 0,
+      "externalBlankWithoutNoopener": []
+    },
+    {
+      "route": "news",
+      "path": "/news",
+      "landed": "/news",
+      "navErr": null,
+      "consoleCounts": {
+        "debug": 4
+      },
+      "consoleMessages": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "httpErrors": [],
+      "failedRequests": [],
+      "linkCount": 27,
+      "emptyOrHashLinks": 0,
+      "externalBlankWithoutNoopener": []
+    },
+    {
+      "route": "news_detail",
+      "path": "/news/1",
+      "landed": "/news/1",
+      "navErr": null,
+      "consoleCounts": {
+        "debug": 4
+      },
+      "consoleMessages": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "httpErrors": [],
+      "failedRequests": [],
+      "linkCount": 22,
+      "emptyOrHashLinks": 0,
+      "externalBlankWithoutNoopener": []
+    },
+    {
+      "route": "about",
+      "path": "/about",
+      "landed": "/about",
+      "navErr": null,
+      "consoleCounts": {
+        "debug": 4
+      },
+      "consoleMessages": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "httpErrors": [],
+      "failedRequests": [],
+      "linkCount": 21,
+      "emptyOrHashLinks": 0,
+      "externalBlankWithoutNoopener": []
+    },
+    {
+      "route": "food_map",
+      "path": "/food-map",
+      "landed": "/food-map",
+      "navErr": null,
+      "consoleCounts": {
+        "debug": 4
+      },
+      "consoleMessages": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "httpErrors": [],
+      "failedRequests": [],
+      "linkCount": 25,
+      "emptyOrHashLinks": 2,
+      "externalBlankWithoutNoopener": []
+    },
+    {
+      "route": "login",
+      "path": "/login",
+      "landed": "/login",
+      "navErr": null,
+      "consoleCounts": {
+        "debug": 4
+      },
+      "consoleMessages": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "httpErrors": [],
+      "failedRequests": [],
+      "linkCount": 22,
+      "emptyOrHashLinks": 0,
+      "externalBlankWithoutNoopener": []
+    },
+    {
+      "route": "register",
+      "path": "/register",
+      "landed": "/register",
+      "navErr": null,
+      "consoleCounts": {
+        "debug": 4
+      },
+      "consoleMessages": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "httpErrors": [],
+      "failedRequests": [],
+      "linkCount": 22,
+      "emptyOrHashLinks": 0,
+      "externalBlankWithoutNoopener": []
+    },
+    {
+      "route": "profile",
+      "path": "/profile",
+      "landed": "/profile",
+      "navErr": null,
+      "consoleCounts": {
+        "debug": 4
+      },
+      "consoleMessages": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "httpErrors": [],
+      "failedRequests": [],
+      "linkCount": 21,
+      "emptyOrHashLinks": 0,
+      "externalBlankWithoutNoopener": []
+    },
+    {
+      "route": "favorites",
+      "path": "/favorites",
+      "landed": "/favorites",
+      "navErr": null,
+      "consoleCounts": {
+        "debug": 4
+      },
+      "consoleMessages": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "httpErrors": [],
+      "failedRequests": [],
+      "linkCount": 22,
+      "emptyOrHashLinks": 0,
+      "externalBlankWithoutNoopener": []
+    },
+    {
+      "route": "checklist",
+      "path": "/checklist",
+      "landed": "/checklist",
+      "navErr": null,
+      "consoleCounts": {
+        "debug": 4
+      },
+      "consoleMessages": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "httpErrors": [],
+      "failedRequests": [],
+      "linkCount": 22,
+      "emptyOrHashLinks": 0,
+      "externalBlankWithoutNoopener": []
+    },
+    {
+      "route": "admin",
+      "path": "/admin",
+      "landed": "/",
+      "navErr": null,
+      "consoleCounts": {
+        "debug": 4
+      },
+      "consoleMessages": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "httpErrors": [],
+      "failedRequests": [],
+      "linkCount": 34,
+      "emptyOrHashLinks": 0,
+      "externalBlankWithoutNoopener": []
+    },
+    {
+      "route": "notfound",
+      "path": "/this-route-does-not-exist",
+      "landed": "/this-route-does-not-exist",
+      "navErr": null,
+      "consoleCounts": {
+        "debug": 4
+      },
+      "consoleMessages": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "httpErrors": [],
+      "failedRequests": [],
+      "linkCount": 23,
+      "emptyOrHashLinks": 0,
+      "externalBlankWithoutNoopener": []
+    }
+  ],
+  "internalLinkResults": [
+    {
+      "href": "/",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/about",
+      "landed": "/about",
+      "rendered404": false
+    },
+    {
+      "href": "/checklist",
+      "landed": "/checklist",
+      "rendered404": false
+    },
+    {
+      "href": "/favorites",
+      "landed": "/favorites",
+      "rendered404": false
+    },
+    {
+      "href": "/food-map",
+      "landed": "/food-map",
+      "rendered404": false
+    },
+    {
+      "href": "/login",
+      "landed": "/profile",
+      "rendered404": false
+    },
+    {
+      "href": "/login?redirect=/food-map",
+      "landed": "/profile",
+      "rendered404": false
+    },
+    {
+      "href": "/login?redirect=/recipes/1",
+      "landed": "/profile",
+      "rendered404": false
+    },
+    {
+      "href": "/login?redirect=/recipes/submit",
+      "landed": "/profile",
+      "rendered404": false
+    },
+    {
+      "href": "/news",
+      "landed": "/news",
+      "rendered404": false
+    },
+    {
+      "href": "/news?category=Recipes",
+      "landed": "/news",
+      "rendered404": false
+    },
+    {
+      "href": "/news?category=Street+Food",
+      "landed": "/news",
+      "rendered404": false
+    },
+    {
+      "href": "/news?category=Trends",
+      "landed": "/news",
+      "rendered404": false
+    },
+    {
+      "href": "/news?category=Vietnamese+Cuisine",
+      "landed": "/news",
+      "rendered404": false
+    },
+    {
+      "href": "/profile",
+      "landed": "/profile",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes",
+      "landed": "/recipes",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/304",
+      "landed": "/recipes/304",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/393",
+      "landed": "/recipes/393",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/396",
+      "landed": "/recipes/396",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/398",
+      "landed": "/recipes/398",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/398/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/399",
+      "landed": "/recipes/399",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/399/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/400",
+      "landed": "/recipes/400",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/400/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/401",
+      "landed": "/recipes/401",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/401/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/402",
+      "landed": "/recipes/402",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/402/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/403",
+      "landed": "/recipes/403",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/403/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/404",
+      "landed": "/recipes/404",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/404/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/405",
+      "landed": "/recipes/405",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/405/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/406",
+      "landed": "/recipes/406",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/406/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/407",
+      "landed": "/recipes/407",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/407/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/408",
+      "landed": "/recipes/408",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/408/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/409",
+      "landed": "/recipes/409",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/409/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/410",
+      "landed": "/recipes/410",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/410/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/411",
+      "landed": "/recipes/411",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/411/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/412",
+      "landed": "/recipes/412",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/412/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/413",
+      "landed": "/recipes/413",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/413/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/414",
+      "landed": "/recipes/414",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/414/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/415",
+      "landed": "/recipes/415",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/415/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/416",
+      "landed": "/recipes/416",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/416/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/417",
+      "landed": "/recipes/417",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/417/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/418",
+      "landed": "/recipes/418",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/418/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/419",
+      "landed": "/recipes/419",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/419/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/420",
+      "landed": "/recipes/420",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/420/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/421",
+      "landed": "/recipes/421",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/421/edit",
+      "landed": "/",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/43",
+      "landed": "/recipes/43",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/75",
+      "landed": "/recipes/75",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/79",
+      "landed": "/recipes/79",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes/94",
+      "landed": "/recipes/94",
+      "rendered404": false
+    },
+    {
+      "href": "/recipes?category=Vietnamese",
+      "landed": "/recipes",
+      "rendered404": false
+    },
+    {
+      "href": "/register",
+      "landed": "/profile",
+      "rendered404": false
+    }
+  ],
+  "externalHosts": {
+    "www.instagram.com": 14,
+    "www.youtube.com": 14,
+    "www.facebook.com": 14,
+    "open-platform.theguardian.com": 1,
+    "www.theguardian.com": 4,
+    "leafletjs.com": 1
+  }
+}

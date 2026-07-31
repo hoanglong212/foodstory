@@ -1,0 +1,200 @@
+[
+  {
+    "id": "A_math",
+    "repeat": 1,
+    "prompt": "Solve 17 * 23 and explain the steps",
+    "elapsed": 34,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": false,
+    "recipesFound": null,
+    "answer": "Which recipe do you mean?"
+  },
+  {
+    "id": "A_math",
+    "repeat": 2,
+    "prompt": "Solve 17 * 23 and explain the steps",
+    "elapsed": 36,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": false,
+    "recipesFound": null,
+    "answer": "Which recipe do you mean?"
+  },
+  {
+    "id": "A_math",
+    "repeat": 3,
+    "prompt": "Solve 17 * 23 and explain the steps",
+    "elapsed": 38,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": false,
+    "recipesFound": null,
+    "answer": "Which recipe do you mean?"
+  },
+  {
+    "id": "A_history",
+    "repeat": 1,
+    "prompt": "Who won the 1998 FIFA World Cup?",
+    "elapsed": 41,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": false,
+    "recipesFound": null,
+    "answer": "The 1998 FIFA World Cup was won by France. They defeated Brazil 3-0 in the final on July 12, 1998."
+  },
+  {
+    "id": "A_history",
+    "repeat": 2,
+    "prompt": "Who won the 1998 FIFA World Cup?",
+    "elapsed": 22,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": false,
+    "recipesFound": null,
+    "answer": "The 1998 FIFA World Cup was won by France. They defeated Brazil 3-0 in the final on July 12, 1998."
+  },
+  {
+    "id": "A_history",
+    "repeat": 3,
+    "prompt": "Who won the 1998 FIFA World Cup?",
+    "elapsed": 28,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": false,
+    "recipesFound": null,
+    "answer": "The 1998 FIFA World Cup was won by France. They defeated Brazil 3-0 in the final on July 12, 1998."
+  },
+  {
+    "id": "B_vi_veg",
+    "repeat": 1,
+    "prompt": "Mon chay nao nhanh nhat duoi 30 phut?",
+    "elapsed": 22,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": false,
+    "recipesFound": null,
+    "answer": "Tôi không thể hiểu rõ câu hỏi của bạn. Bạn có thể giải thích rõ hơn không?"
+  },
+  {
+    "id": "B_vi_veg",
+    "repeat": 2,
+    "prompt": "Mon chay nao nhanh nhat duoi 30 phut?",
+    "elapsed": 32,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": false,
+    "recipesFound": null,
+    "answer": "Tôi không thể hiểu rõ câu hỏi của bạn. Bạn có thể giải thích rõ hơn không?"
+  },
+  {
+    "id": "B_vi_veg",
+    "repeat": 3,
+    "prompt": "Mon chay nao nhanh nhat duoi 30 phut?",
+    "elapsed": 14,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": false,
+    "recipesFound": null,
+    "answer": "Tôi không thể hiểu rõ câu hỏi của bạn. Bạn có thể giải thích rõ hơn không?"
+  },
+  {
+    "id": "B_en_veg",
+    "repeat": 1,
+    "prompt": "Which vegetarian dish is fastest under 30 minutes?",
+    "elapsed": 32,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": true,
+    "recipesFound": null,
+    "answer": "A quick vegetarian option is a Spinach and Mushroom Frittata. \n\nIngredients:\n• 6 eggs\n• 1 cup fresh spinach\n• 1 cup sliced mushrooms\n• 1 small onion\n• 2 cloves garlic\n• 1 cup shredded cheddar cheese\n• 1 tsp dried basil\n• Salt and pepper to "
+  },
+  {
+    "id": "B_en_veg",
+    "repeat": 2,
+    "prompt": "Which vegetarian dish is fastest under 30 minutes?",
+    "elapsed": 38,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": true,
+    "recipesFound": null,
+    "answer": "A quick vegetarian option is a Spinach and Mushroom Frittata. \n\nIngredients:\n• 6 eggs\n• 1 cup fresh spinach\n• 1 cup sliced mushrooms\n• 1 small onion\n• 2 cloves garlic\n• 1 cup shredded cheddar cheese\n• 1 tsp dried basil\n• Salt and pepper to "
+  },
+  {
+    "id": "B_en_veg",
+    "repeat": 3,
+    "prompt": "Which vegetarian dish is fastest under 30 minutes?",
+    "elapsed": 33,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": true,
+    "recipesFound": null,
+    "answer": "A quick vegetarian option is a Spinach and Mushroom Frittata. \n\nIngredients:\n• 6 eggs\n• 1 cup fresh spinach\n• 1 cup sliced mushrooms\n• 1 small onion\n• 2 cloves garlic\n• 1 cup shredded cheddar cheese\n• 1 tsp dried basil\n• Salt and pepper to "
+  },
+  {
+    "id": "B_vi_dessert",
+    "repeat": 1,
+    "prompt": "Cho toi mon trang mieng",
+    "elapsed": 40,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": false,
+    "recipesFound": null,
+    "answer": "Tôi không thể xác định được món ăn cụ thể mà bạn đang tìm kiếm. Có thể bạn muốn hỏi về món ăn truyền thống của Việt Nam hay một món ăn đặc biệt nào đó?"
+  },
+  {
+    "id": "B_vi_dessert",
+    "repeat": 2,
+    "prompt": "Cho toi mon trang mieng",
+    "elapsed": 16,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": false,
+    "recipesFound": null,
+    "answer": "Tôi không thể xác định được món ăn cụ thể mà bạn đang tìm kiếm. Có thể bạn muốn hỏi về món ăn truyền thống của Việt Nam hay một món ăn đặc biệt nào đó?"
+  },
+  {
+    "id": "B_vi_dessert",
+    "repeat": 3,
+    "prompt": "Cho toi mon trang mieng",
+    "elapsed": 19,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": false,
+    "recipesFound": null,
+    "answer": "Tôi không thể xác định được món ăn cụ thể mà bạn đang tìm kiếm. Có thể bạn muốn hỏi về món ăn truyền thống của Việt Nam hay một món ăn đặc biệt nào đó?"
+  },
+  {
+    "id": "B_en_dessert",
+    "repeat": 1,
+    "prompt": "Show me a dessert",
+    "elapsed": 30,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": true,
+    "recipesFound": null,
+    "answer": "Lemon Lavender Panna Cotta\n\nThis Italian dessert consists of sweetened cream set with gelatin, flavored with lemon zest and lavender.\n\nIngredients:\n\n1. 1 cup heavy cream\n2. 1/2 cup whole milk\n3. 1/4 cup granulated sugar\n4. 2 tsp vanilla ext"
+  },
+  {
+    "id": "B_en_dessert",
+    "repeat": 2,
+    "prompt": "Show me a dessert",
+    "elapsed": 37,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": true,
+    "recipesFound": null,
+    "answer": "Lemon Lavender Panna Cotta\n\nThis Italian dessert consists of sweetened cream set with gelatin, flavored with lemon zest and lavender.\n\nIngredients:\n\n1. 1 cup heavy cream\n2. 1/2 cup whole milk\n3. 1/4 cup granulated sugar\n4. 2 tsp vanilla ext"
+  },
+  {
+    "id": "B_en_dessert",
+    "repeat": 3,
+    "prompt": "Show me a dessert",
+    "elapsed": 32,
+    "provenance": null,
+    "cards": 0,
+    "looksLikeRecipe": true,
+    "recipesFound": null,
+    "answer": "Lemon Lavender Panna Cotta\n\nThis Italian dessert consists of sweetened cream set with gelatin, flavored with lemon zest and lavender.\n\nIngredients:\n\n1. 1 cup heavy cream\n2. 1/2 cup whole milk\n3. 1/4 cup granulated sugar\n4. 2 tsp vanilla ext"
+  }
+]

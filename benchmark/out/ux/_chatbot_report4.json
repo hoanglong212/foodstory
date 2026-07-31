@@ -1,0 +1,164 @@
+[
+  {
+    "id": "vi_diacritics_veg",
+    "repeat": 1,
+    "prompt": "Món chay nào nhanh nhất dưới 30 phút?",
+    "elapsed": 963,
+    "failed": false,
+    "gaveDish": false,
+    "answer": "Một số món chay nhanh chóng dưới 30 phút bao gồm: • Salad rau củ: Chỉ cần trộn rau củ tươi với gia vị và nước sốt, bạn đã có một bữa ăn nhanh chóng. • Mì xào chay: Sử dụng mì sợi và xào với rau củ, gi"
+  },
+  {
+    "id": "vi_diacritics_veg",
+    "repeat": 2,
+    "prompt": "Món chay nào nhanh nhất dưới 30 phút?",
+    "elapsed": 25,
+    "failed": false,
+    "gaveDish": false,
+    "answer": "Một số món chay nhanh chóng dưới 30 phút bao gồm: • Salad rau củ: Chỉ cần trộn rau củ tươi với gia vị và nước sốt, bạn đã có một bữa ăn nhanh chóng. • Mì xào chay: Sử dụng mì sợi và xào với rau củ, gi"
+  },
+  {
+    "id": "vi_diacritics_veg",
+    "repeat": 3,
+    "prompt": "Món chay nào nhanh nhất dưới 30 phút?",
+    "elapsed": 18,
+    "failed": false,
+    "gaveDish": false,
+    "answer": "Một số món chay nhanh chóng dưới 30 phút bao gồm: • Salad rau củ: Chỉ cần trộn rau củ tươi với gia vị và nước sốt, bạn đã có một bữa ăn nhanh chóng. • Mì xào chay: Sử dụng mì sợi và xào với rau củ, gi"
+  },
+  {
+    "id": "vi_plain_veg",
+    "repeat": 1,
+    "prompt": "Mon chay nao nhanh nhat duoi 30 phut?",
+    "elapsed": 41,
+    "failed": true,
+    "gaveDish": false,
+    "answer": "Tôi không thể hiểu rõ câu hỏi của bạn. Bạn có thể giải thích rõ hơn không?"
+  },
+  {
+    "id": "vi_plain_veg",
+    "repeat": 2,
+    "prompt": "Mon chay nao nhanh nhat duoi 30 phut?",
+    "elapsed": 34,
+    "failed": true,
+    "gaveDish": false,
+    "answer": "Tôi không thể hiểu rõ câu hỏi của bạn. Bạn có thể giải thích rõ hơn không?"
+  },
+  {
+    "id": "vi_plain_veg",
+    "repeat": 3,
+    "prompt": "Mon chay nao nhanh nhat duoi 30 phut?",
+    "elapsed": 31,
+    "failed": true,
+    "gaveDish": false,
+    "answer": "Tôi không thể hiểu rõ câu hỏi của bạn. Bạn có thể giải thích rõ hơn không?"
+  },
+  {
+    "id": "en_veg",
+    "repeat": 1,
+    "prompt": "Which vegetarian dish is fastest under 30 minutes?",
+    "elapsed": 35,
+    "failed": false,
+    "gaveDish": true,
+    "answer": "A quick vegetarian option is a Spinach and Mushroom Frittata. Ingredients: • 6 eggs • 1 cup fresh spinach • 1 cup sliced mushrooms • 1 small onion • 2 cloves garlic • 1 cup shredded cheddar cheese • 1"
+  },
+  {
+    "id": "en_veg",
+    "repeat": 2,
+    "prompt": "Which vegetarian dish is fastest under 30 minutes?",
+    "elapsed": 30,
+    "failed": false,
+    "gaveDish": true,
+    "answer": "A quick vegetarian option is a Spinach and Mushroom Frittata. Ingredients: • 6 eggs • 1 cup fresh spinach • 1 cup sliced mushrooms • 1 small onion • 2 cloves garlic • 1 cup shredded cheddar cheese • 1"
+  },
+  {
+    "id": "en_veg",
+    "repeat": 3,
+    "prompt": "Which vegetarian dish is fastest under 30 minutes?",
+    "elapsed": 32,
+    "failed": false,
+    "gaveDish": true,
+    "answer": "A quick vegetarian option is a Spinach and Mushroom Frittata. Ingredients: • 6 eggs • 1 cup fresh spinach • 1 cup sliced mushrooms • 1 small onion • 2 cloves garlic • 1 cup shredded cheddar cheese • 1"
+  },
+  {
+    "id": "vi_diacritics_des",
+    "repeat": 1,
+    "prompt": "Cho tôi món tráng miệng",
+    "elapsed": 953,
+    "failed": false,
+    "gaveDish": false,
+    "answer": "Một số món tráng miệng phổ biến có thể kể đến như: • Bánh flan: Một loại bánh kem mềm, ngọt và có vị béo. • Bánh mì nướng: Một loại bánh mì được nướng cho đến khi có màu vàng nâu và có vị ngọt. • Kem:"
+  },
+  {
+    "id": "vi_diacritics_des",
+    "repeat": 2,
+    "prompt": "Cho tôi món tráng miệng",
+    "elapsed": 18,
+    "failed": false,
+    "gaveDish": false,
+    "answer": "Một số món tráng miệng phổ biến có thể kể đến như: • Bánh flan: Một loại bánh kem mềm, ngọt và có vị béo. • Bánh mì nướng: Một loại bánh mì được nướng cho đến khi có màu vàng nâu và có vị ngọt. • Kem:"
+  },
+  {
+    "id": "vi_diacritics_des",
+    "repeat": 3,
+    "prompt": "Cho tôi món tráng miệng",
+    "elapsed": 20,
+    "failed": false,
+    "gaveDish": false,
+    "answer": "Một số món tráng miệng phổ biến có thể kể đến như: • Bánh flan: Một loại bánh kem mềm, ngọt và có vị béo. • Bánh mì nướng: Một loại bánh mì được nướng cho đến khi có màu vàng nâu và có vị ngọt. • Kem:"
+  },
+  {
+    "id": "vi_plain_des",
+    "repeat": 1,
+    "prompt": "Cho toi mon trang mieng",
+    "elapsed": 22,
+    "failed": true,
+    "gaveDish": false,
+    "answer": "Tôi không thể xác định được món ăn cụ thể mà bạn đang tìm kiếm. Có thể bạn muốn hỏi về món ăn truyền thống của Việt Nam hay một món ăn đặc biệt nào đó?"
+  },
+  {
+    "id": "vi_plain_des",
+    "repeat": 2,
+    "prompt": "Cho toi mon trang mieng",
+    "elapsed": 19,
+    "failed": true,
+    "gaveDish": false,
+    "answer": "Tôi không thể xác định được món ăn cụ thể mà bạn đang tìm kiếm. Có thể bạn muốn hỏi về món ăn truyền thống của Việt Nam hay một món ăn đặc biệt nào đó?"
+  },
+  {
+    "id": "vi_plain_des",
+    "repeat": 3,
+    "prompt": "Cho toi mon trang mieng",
+    "elapsed": 18,
+    "failed": true,
+    "gaveDish": false,
+    "answer": "Tôi không thể xác định được món ăn cụ thể mà bạn đang tìm kiếm. Có thể bạn muốn hỏi về món ăn truyền thống của Việt Nam hay một món ăn đặc biệt nào đó?"
+  },
+  {
+    "id": "en_des",
+    "repeat": 1,
+    "prompt": "Show me a dessert",
+    "elapsed": 33,
+    "failed": false,
+    "gaveDish": true,
+    "answer": "Lemon Lavender Panna Cotta This Italian dessert consists of sweetened cream set with gelatin, flavored with lemon zest and lavender. Ingredients: 1. 1 cup heavy cream 2. 1/2 cup whole milk 3. 1/4 cup "
+  },
+  {
+    "id": "en_des",
+    "repeat": 2,
+    "prompt": "Show me a dessert",
+    "elapsed": 22,
+    "failed": false,
+    "gaveDish": true,
+    "answer": "Lemon Lavender Panna Cotta This Italian dessert consists of sweetened cream set with gelatin, flavored with lemon zest and lavender. Ingredients: 1. 1 cup heavy cream 2. 1/2 cup whole milk 3. 1/4 cup "
+  },
+  {
+    "id": "en_des",
+    "repeat": 3,
+    "prompt": "Show me a dessert",
+    "elapsed": 32,
+    "failed": false,
+    "gaveDish": true,
+    "answer": "Lemon Lavender Panna Cotta This Italian dessert consists of sweetened cream set with gelatin, flavored with lemon zest and lavender. Ingredients: 1. 1 cup heavy cream 2. 1/2 cup whole milk 3. 1/4 cup "
+  }
+]

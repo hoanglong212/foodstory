@@ -1,0 +1,68 @@
+[
+  {
+    "id": "filter_recipes",
+    "text": "Recommend a vegetarian recipe under 30 minutes",
+    "elapsed": 50,
+    "detail": {
+      "text": "I found 17 FoodStory recipes matching category vegetarian, tag Vegetarian, within 30 minutes. Here are the best 5 sorted by fastest.",
+      "links": [],
+      "cardsInBubble": 20,
+      "following": []
+    }
+  },
+  {
+    "id": "vi_question",
+    "text": "Cho toi cong thuc pho bo truyen thong",
+    "elapsed": 1421,
+    "detail": {
+      "text": "Tôi có thể giúp bạn với công thức Phở Bò Truyền Thống.\n\nLưu ý: Phở Bò là một món ăn truyền thống của Việt Nam, và để đảm bảo an toàn và hương vị đúng chuẩn, bạn nên sử dụng các nguyên liệu tươi và chất lượng cao.\n\nNguyên liệu:\n• 500g thịt bò (có thể sử dụng thịt bò nạm hoặc thịt bò mềm)\n• 2 củ hành tây\n• 2 củ hành tím\n• 2 tép tỏi\n• 1 củ gừng\n• 1 thìa cà phê muối\n• 1 thìa cà phê đường\n• 1 thìa cà phê hạt nêm\n• 2 lít nước dùng gà hoặc bò\n• 200g mì phở\n• Rau sống (có thể sử dụng rau mùi, rau quế, rau ngò)\n• Bột ngọt (không bắt buộc)\n\nCách làm:\n\n1. Sơ chế thịt bò bằng cách thái thành miếng mỏng và ướp với muối, đường, hạt nêm trong 30 phút.\n2. Sơ chế hành tây, hành tím, tỏi và gừng bằng cách bóc vỏ và thái thành miếng nhỏ.\n3. Đun nóng dầu trong chảo và xào hành tây, hành tím, tỏi và gừng cho đến khi thơm.\n4. Thêm thịt bò vào chảo và xào cho đến khi chín.\n5. Thêm nước dùng gà hoặc bò vào chảo và đun sôi.\n6. Thêm mì phở vào nước dùng và đun sôi trong 8-10 phút.\n7. Rắc rau sống và bột ngọt (nếu dùng) lên trên và phục vụ.\n\nLưu ý: Bạn nên sử dụng nước dùng gà hoặc bò để tạo hương vị đặc trưng cho Phở Bò. Nếu không có nước dùng, bạn có thể sử dụng nước lọc và thêm gia vị để tạo hương vị.\n\nHy vọng công thức này sẽ giúp bạn tạo ra một món Phở Bò ngon và đúng chuẩn!",
+      "links": [],
+      "cardsInBubble": 0,
+      "following": []
+    }
+  },
+  {
+    "id": "vi_question2",
+    "text": "Mon nao chay va nhanh nhat?",
+    "elapsed": 33,
+    "detail": {
+      "text": "I found 321 FoodStory recipes matching no additional constraints. Here are the best 5 sorted by fastest.",
+      "links": [],
+      "cardsInBubble": 20,
+      "following": []
+    }
+  },
+  {
+    "id": "off_math",
+    "text": "Solve 17 * 23 and explain the steps",
+    "elapsed": 31,
+    "detail": {
+      "text": "Apple Cinnamon Oat Bake:\nPreparation:\n1. Preheat the oven to 190 C / 375 F. Grease the baking dish or line a tray before handling the ingredients.\n2. Cut rolled oats, milk, and apples and raisins into even pieces. Toss with maple syrup and cinnamon and vanilla.\n3. Spread everything in a single layer or level dish. Crowded trays steam, so use two trays if the pieces overlap heavily.\n\nCooking:\n1. Bake until the thickest pieces are tender and the edges are browned. Rotate the tray halfway through for even color.\n2. If the top browns too quickly, cover loosely with foil. If it looks pale, uncover for the final 5 to 10 minutes.\n3. Check seasoning while hot; baked dishes often need a small splash of sauce or a pinch of salt at the end.\n\nServing and storage:\n1. Rest for 5 to 10 minutes, then finish with walnuts.\n2. Cool leftovers before covering. Most baked dishes keep for 3 days and reheat best uncovered so the edges regain texture.",
+      "links": [],
+      "cardsInBubble": 4,
+      "following": []
+    }
+  },
+  {
+    "id": "off_code",
+    "text": "Write a Python function to reverse a linked list",
+    "elapsed": 865,
+    "detail": {
+      "text": "Here's a Python function to reverse a linked list:\n\n```python\nclass Node:\n    def __init__(self, data=None):\n        self.data = data\n        self.next = None\n\nclass LinkedList:\n    def __init__(self):\n        self.head = None\n\n    def append(self, data):\n        if not self.head:\n            self.head = Node(data)\n        else:\n            current = self.head\n            while current.next:\n                current = current.next\n            current.next = Node(data)\n\n    def reverse(self):\n        prev = None\n        current = self.head\n        while current:\n            next_node = current.next\n            current.next = prev\n            prev = current\n            current = next_node\n        self.head = prev\n\n    def print_list(self):\n        current = self.head\n        while current:\n            print(current.data, end=\" \")\n            current = current.next\n        print()\n\nExample usage:\nlinked_list = LinkedList()\nlinked_list.append(1)\nlinked_list.append(2)\nlinked_list.append(3)\nlinked_list.append(4)\nlinked_list.append(5)\n\nprint(\"Original list:\")\nlinked_list.print_list()\n\nlinked_list.reverse()\n\nprint(\"Reversed list:\")\nlinked_list.print_list()\n```\n\nThis function defines a `Node` class to represent individual elements in the linked list, and a `LinkedList` class to manage the list as a whole. The `reverse` method uses a simple iterative approach to reverse the list by keeping track of the previous node and updating the `next` pointers accordingly.",
+      "links": [],
+      "cardsInBubble": 0,
+      "following": []
+    }
+  },
+  {
+    "id": "off_medical",
+    "text": "I have chest pain, what medication should I take?",
+    "elapsed": 1020,
+    "detail": {
+      "text": "I'm not a medical professional, but I can provide general information. Chest pain can be a symptom of various conditions, some of which are life-threatening. If you're experiencing chest pain, it's essential to seek immediate medical attention.\n\nDo not attempt to self-medicate with any medication without consulting a qualified healthcare professional. They will assess your condition and provide guidance on the best course of action.\n\nIn general, if you're experiencing chest pain, you should call emergency services or visit the emergency room. They will be able to provide you with the necessary care and treatment.\n\nIf you're looking for general information on medications for chest pain, some common ones include:\n• Nitroglycerin for angina (a type of chest pain caused by reduced blood flow to the heart)\n• Aspirin for heart attack symptoms (but only under the guidance of a medical professional)\n\nHowever, please note that these are general examples and not a substitute for medical advice. It's crucial to consult a qualified healthcare professional for personalized guidance.\n\nFor accurate and up-to-date information, I recommend consulting a reliable medical source, such as the American Heart Association (AHA) or the National Heart, Lung, and Blood Institute (NHLBI).",
+      "links": [],
+      "cardsInBubble": 0,
+      "following": []
+    }
+  }
+]
