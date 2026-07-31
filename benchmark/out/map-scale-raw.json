@@ -1,0 +1,1310 @@
+{
+  "meta": {
+    "commit": "1384d59573d0927da3ea0e7828c19d692056bc41",
+    "commitShort": "1384d59",
+    "branch": "codex/render-deployment",
+    "runAtIso": "2026-07-31T05:40:13.529Z",
+    "node": "v24.11.0",
+    "npm": "unknown",
+    "chrome": "151.0.7922.71",
+    "os": "Windows_NT 10.0.26200 (win32 x64)",
+    "osCaption": "Microsoft Windows 11 Home Single Language 10.0.26200",
+    "cpu": "Intel(R) Core(TM) i7-14700HX (28 logical)",
+    "cpuCores": 28,
+    "ramGb": 15.71,
+    "load": "cpu_load_percent=16",
+    "harnessVersion": "2.0.0",
+    "measurement": "leaflet-cluster-scale",
+    "tier": "2E",
+    "scopeCaveat": "standalone harness page, not the assembled FoodMapView component. FoodMapView exposes no marker-injection seam, so an in-app marker sweep is not possible without modifying runtime source, which this benchmark does not do. Library builds and clusterer options are identical to the app.",
+    "leafletVersion": "1.9.4",
+    "markerClusterVersion": "1.5.3",
+    "clusterOptions": "showCoverageOnHover false, maxClusterRadius 92, spiderfyOnMaxZoom false, spiderfyOnEveryZoom false, removeOutsideVisibleBounds true, animateAddingMarkers false, chunkInterval 50, chunkDelay 32",
+    "tileLayer": "none - tile fetching would measure the network rather than clustering",
+    "markerGeneration": "seeded mulberry32 PRNG over the HCMC bbox 10.70-10.88 N, 106.60-106.80 E; identical marker set for every run at a given count",
+    "runsPerCell": 3,
+    "heapSource": "performance.memory with --enable-precise-memory-info"
+  },
+  "results": [
+    {
+      "markerCount": 50,
+      "chunkedLoading": true,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "drawMs": 7.5,
+          "clustersRendered": 18,
+          "panMs": 278.1,
+          "zoomMs": 277.6,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 10.7,
+          "worstZoomFrameMs": 7.1,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 2762640,
+            "totalJsHeapBytes": 6229872
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 2,
+          "drawMs": 6.3,
+          "clustersRendered": 18,
+          "panMs": 276.5,
+          "zoomMs": 277.9,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 7.2,
+          "worstZoomFrameMs": 7.8,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 2776732,
+            "totalJsHeapBytes": 6492016
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 3,
+          "drawMs": 6.9,
+          "clustersRendered": 18,
+          "panMs": 276.9,
+          "zoomMs": 277.8,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 7.2,
+          "worstZoomFrameMs": 7.2,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 2754460,
+            "totalJsHeapBytes": 6492016
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        }
+      ],
+      "aggregate": {
+        "drawMs": {
+          "n": 3,
+          "min": 6.3,
+          "max": 7.5,
+          "mean": 6.9,
+          "stdev": 0.6,
+          "p50": 6.9,
+          "p95": 7.44
+        },
+        "panMs": {
+          "n": 3,
+          "min": 276.5,
+          "max": 278.1,
+          "mean": 277.1667,
+          "stdev": 0.8327,
+          "p50": 276.9,
+          "p95": 277.98
+        },
+        "zoomMs": {
+          "n": 3,
+          "min": 277.6,
+          "max": 277.9,
+          "mean": 277.7667,
+          "stdev": 0.1528,
+          "p50": 277.8,
+          "p95": 277.89
+        },
+        "panFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "zoomFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longTasksOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longestTaskMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "totalBlockingMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "heapUsedBytes": {
+          "n": 3,
+          "min": 2754460,
+          "max": 2776732,
+          "mean": 2764610.6667,
+          "stdev": 11266.0171,
+          "p50": 2762640,
+          "p95": 2775322.8
+        }
+      }
+    },
+    {
+      "markerCount": 200,
+      "chunkedLoading": true,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "drawMs": 8.9,
+          "clustersRendered": 23,
+          "panMs": 271.6,
+          "zoomMs": 278.5,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 7.2,
+          "worstZoomFrameMs": 7.6,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 4110328,
+            "totalJsHeapBytes": 6229872
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 2,
+          "drawMs": 8.7,
+          "clustersRendered": 23,
+          "panMs": 289.5,
+          "zoomMs": 278,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 21.5,
+          "worstZoomFrameMs": 7.2,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 4126424,
+            "totalJsHeapBytes": 6754160
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 3,
+          "drawMs": 8.4,
+          "clustersRendered": 23,
+          "panMs": 273,
+          "zoomMs": 278.3,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 10.5,
+          "worstZoomFrameMs": 12.7,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 4142425,
+            "totalJsHeapBytes": 6754169
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        }
+      ],
+      "aggregate": {
+        "drawMs": {
+          "n": 3,
+          "min": 8.4,
+          "max": 8.9,
+          "mean": 8.6667,
+          "stdev": 0.2517,
+          "p50": 8.7,
+          "p95": 8.88
+        },
+        "panMs": {
+          "n": 3,
+          "min": 271.6,
+          "max": 289.5,
+          "mean": 278.0333,
+          "stdev": 9.9551,
+          "p50": 273,
+          "p95": 287.85
+        },
+        "zoomMs": {
+          "n": 3,
+          "min": 278,
+          "max": 278.5,
+          "mean": 278.2667,
+          "stdev": 0.2517,
+          "p50": 278.3,
+          "p95": 278.48
+        },
+        "panFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "zoomFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longTasksOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longestTaskMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "totalBlockingMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "heapUsedBytes": {
+          "n": 3,
+          "min": 4110328,
+          "max": 4142425,
+          "mean": 4126392.3333,
+          "stdev": 16048.5234,
+          "p50": 4126424,
+          "p95": 4140824.9
+        }
+      }
+    },
+    {
+      "markerCount": 1000,
+      "chunkedLoading": true,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "drawMs": 15.7,
+          "clustersRendered": 25,
+          "panMs": 278.6,
+          "zoomMs": 278.4,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 11.9,
+          "worstZoomFrameMs": 8.7,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 5783060,
+            "totalJsHeapBytes": 9899888
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 2,
+          "drawMs": 15.6,
+          "clustersRendered": 25,
+          "panMs": 357.9,
+          "zoomMs": 278.8,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 29.3,
+          "worstZoomFrameMs": 9.3,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 5390292,
+            "totalJsHeapBytes": 10162032
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 3,
+          "drawMs": 14.1,
+          "clustersRendered": 25,
+          "panMs": 324.9,
+          "zoomMs": 277.8,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 26,
+          "worstZoomFrameMs": 8.7,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 5808768,
+            "totalJsHeapBytes": 9899888
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        }
+      ],
+      "aggregate": {
+        "drawMs": {
+          "n": 3,
+          "min": 14.1,
+          "max": 15.7,
+          "mean": 15.1333,
+          "stdev": 0.8963,
+          "p50": 15.6,
+          "p95": 15.69
+        },
+        "panMs": {
+          "n": 3,
+          "min": 278.6,
+          "max": 357.9,
+          "mean": 320.4667,
+          "stdev": 39.8355,
+          "p50": 324.9,
+          "p95": 354.6
+        },
+        "zoomMs": {
+          "n": 3,
+          "min": 277.8,
+          "max": 278.8,
+          "mean": 278.3333,
+          "stdev": 0.5033,
+          "p50": 278.4,
+          "p95": 278.76
+        },
+        "panFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "zoomFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longTasksOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longestTaskMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "totalBlockingMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "heapUsedBytes": {
+          "n": 3,
+          "min": 5390292,
+          "max": 5808768,
+          "mean": 5660706.6667,
+          "stdev": 234538.4708,
+          "p50": 5783060,
+          "p95": 5806197.2
+        }
+      }
+    },
+    {
+      "markerCount": 5000,
+      "chunkedLoading": true,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "drawMs": 42.4,
+          "clustersRendered": 23,
+          "panMs": 273.8,
+          "zoomMs": 301.1,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 7.9,
+          "worstZoomFrameMs": 16.9,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 10450830,
+            "totalJsHeapBytes": 20898910
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 2,
+          "drawMs": 48.5,
+          "clustersRendered": 23,
+          "panMs": 274.3,
+          "zoomMs": 284.9,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 7.1,
+          "worstZoomFrameMs": 17.7,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 13451841,
+            "totalJsHeapBytes": 19337081
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 3,
+          "drawMs": 44,
+          "clustersRendered": 23,
+          "panMs": 273,
+          "zoomMs": 288.7,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 7.7,
+          "worstZoomFrameMs": 17.7,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 10450270,
+            "totalJsHeapBytes": 20636766
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        }
+      ],
+      "aggregate": {
+        "drawMs": {
+          "n": 3,
+          "min": 42.4,
+          "max": 48.5,
+          "mean": 44.9667,
+          "stdev": 3.1628,
+          "p50": 44,
+          "p95": 48.05
+        },
+        "panMs": {
+          "n": 3,
+          "min": 273,
+          "max": 274.3,
+          "mean": 273.7,
+          "stdev": 0.6557,
+          "p50": 273.8,
+          "p95": 274.25
+        },
+        "zoomMs": {
+          "n": 3,
+          "min": 284.9,
+          "max": 301.1,
+          "mean": 291.5667,
+          "stdev": 8.4719,
+          "p50": 288.7,
+          "p95": 299.86
+        },
+        "panFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "zoomFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longTasksOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longestTaskMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "totalBlockingMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "heapUsedBytes": {
+          "n": 3,
+          "min": 10450270,
+          "max": 13451841,
+          "mean": 11450980.3333,
+          "stdev": 1732796.1894,
+          "p50": 10450830,
+          "p95": 13151739.9
+        }
+      }
+    },
+    {
+      "markerCount": 50,
+      "chunkedLoading": false,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "drawMs": 6,
+          "clustersRendered": 18,
+          "panMs": 275.7,
+          "zoomMs": 277.9,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 7.2,
+          "worstZoomFrameMs": 11,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 2764525,
+            "totalJsHeapBytes": 6492025
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 2,
+          "drawMs": 6,
+          "clustersRendered": 18,
+          "panMs": 272.7,
+          "zoomMs": 278.8,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 10.6,
+          "worstZoomFrameMs": 8,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 2779268,
+            "totalJsHeapBytes": 6492016
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 3,
+          "drawMs": 5.9,
+          "clustersRendered": 18,
+          "panMs": 311.7,
+          "zoomMs": 288.6,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 17.1,
+          "worstZoomFrameMs": 18.4,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 2753205,
+            "totalJsHeapBytes": 6492025
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        }
+      ],
+      "aggregate": {
+        "drawMs": {
+          "n": 3,
+          "min": 5.9,
+          "max": 6,
+          "mean": 5.9667,
+          "stdev": 0.0577,
+          "p50": 6,
+          "p95": 6
+        },
+        "panMs": {
+          "n": 3,
+          "min": 272.7,
+          "max": 311.7,
+          "mean": 286.7,
+          "stdev": 21.7025,
+          "p50": 275.7,
+          "p95": 308.1
+        },
+        "zoomMs": {
+          "n": 3,
+          "min": 277.9,
+          "max": 288.6,
+          "mean": 281.7667,
+          "stdev": 5.9349,
+          "p50": 278.8,
+          "p95": 287.62
+        },
+        "panFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "zoomFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longTasksOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longestTaskMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "totalBlockingMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "heapUsedBytes": {
+          "n": 3,
+          "min": 2753205,
+          "max": 2779268,
+          "mean": 2765666,
+          "stdev": 13068.9098,
+          "p50": 2764525,
+          "p95": 2777793.7
+        }
+      }
+    },
+    {
+      "markerCount": 200,
+      "chunkedLoading": false,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "drawMs": 7.7,
+          "clustersRendered": 23,
+          "panMs": 278.9,
+          "zoomMs": 278.1,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 13.8,
+          "worstZoomFrameMs": 13.8,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 4104157,
+            "totalJsHeapBytes": 6754169
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 2,
+          "drawMs": 9.1,
+          "clustersRendered": 23,
+          "panMs": 276.9,
+          "zoomMs": 279.4,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 7.9,
+          "worstZoomFrameMs": 8.2,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 4106840,
+            "totalJsHeapBytes": 6229872
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 3,
+          "drawMs": 8.4,
+          "clustersRendered": 23,
+          "panMs": 275.3,
+          "zoomMs": 278,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 7.2,
+          "worstZoomFrameMs": 12.2,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 4100929,
+            "totalJsHeapBytes": 6492025
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        }
+      ],
+      "aggregate": {
+        "drawMs": {
+          "n": 3,
+          "min": 7.7,
+          "max": 9.1,
+          "mean": 8.4,
+          "stdev": 0.7,
+          "p50": 8.4,
+          "p95": 9.03
+        },
+        "panMs": {
+          "n": 3,
+          "min": 275.3,
+          "max": 278.9,
+          "mean": 277.0333,
+          "stdev": 1.8037,
+          "p50": 276.9,
+          "p95": 278.7
+        },
+        "zoomMs": {
+          "n": 3,
+          "min": 278,
+          "max": 279.4,
+          "mean": 278.5,
+          "stdev": 0.781,
+          "p50": 278.1,
+          "p95": 279.27
+        },
+        "panFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "zoomFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longTasksOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longestTaskMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "totalBlockingMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "heapUsedBytes": {
+          "n": 3,
+          "min": 4100929,
+          "max": 4106840,
+          "mean": 4103975.3333,
+          "stdev": 2959.6845,
+          "p50": 4104157,
+          "p95": 4106571.7
+        }
+      }
+    },
+    {
+      "markerCount": 1000,
+      "chunkedLoading": false,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "drawMs": 16.2,
+          "clustersRendered": 25,
+          "panMs": 279.9,
+          "zoomMs": 279.1,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 12.1,
+          "worstZoomFrameMs": 10.1,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 5802800,
+            "totalJsHeapBytes": 9899888
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 2,
+          "drawMs": 14.9,
+          "clustersRendered": 25,
+          "panMs": 363.1,
+          "zoomMs": 277.5,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 27.2,
+          "worstZoomFrameMs": 11.1,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 5863628,
+            "totalJsHeapBytes": 9899888
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 3,
+          "drawMs": 14.4,
+          "clustersRendered": 25,
+          "panMs": 304.5,
+          "zoomMs": 278.8,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 16.9,
+          "worstZoomFrameMs": 10,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 5780420,
+            "totalJsHeapBytes": 9899888
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        }
+      ],
+      "aggregate": {
+        "drawMs": {
+          "n": 3,
+          "min": 14.4,
+          "max": 16.2,
+          "mean": 15.1667,
+          "stdev": 0.9292,
+          "p50": 14.9,
+          "p95": 16.07
+        },
+        "panMs": {
+          "n": 3,
+          "min": 279.9,
+          "max": 363.1,
+          "mean": 315.8333,
+          "stdev": 42.7422,
+          "p50": 304.5,
+          "p95": 357.24
+        },
+        "zoomMs": {
+          "n": 3,
+          "min": 277.5,
+          "max": 279.1,
+          "mean": 278.4667,
+          "stdev": 0.8505,
+          "p50": 278.8,
+          "p95": 279.07
+        },
+        "panFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "zoomFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longTasksOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longestTaskMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "totalBlockingMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "heapUsedBytes": {
+          "n": 3,
+          "min": 5780420,
+          "max": 5863628,
+          "mean": 5815616,
+          "stdev": 43059.0317,
+          "p50": 5802800,
+          "p95": 5857545.2
+        }
+      }
+    },
+    {
+      "markerCount": 5000,
+      "chunkedLoading": false,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "drawMs": 42.9,
+          "clustersRendered": 23,
+          "panMs": 296.4,
+          "zoomMs": 359.6,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 1,
+          "worstPanFrameMs": 19.5,
+          "worstZoomFrameMs": 78.9,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [
+            78.9
+          ],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 10890970,
+            "totalJsHeapBytes": 18015338
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 2,
+          "drawMs": 45.5,
+          "clustersRendered": 23,
+          "panMs": 349,
+          "zoomMs": 274.7,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 30.3,
+          "worstZoomFrameMs": 11.2,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 10881833,
+            "totalJsHeapBytes": 18277473
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        },
+        {
+          "run": 3,
+          "drawMs": 42.7,
+          "clustersRendered": 23,
+          "panMs": 276.4,
+          "zoomMs": 296.5,
+          "panFramesOver50ms": 0,
+          "zoomFramesOver50ms": 0,
+          "worstPanFrameMs": 7.1,
+          "worstZoomFrameMs": 18.2,
+          "slowPanFramesMs": [],
+          "slowZoomFramesMs": [],
+          "heapAfterDraw": {
+            "usedJsHeapBytes": 10078594,
+            "totalJsHeapBytes": 18539582
+          },
+          "longTaskCount": 0,
+          "longTasksOver50ms": 0,
+          "longestTaskMs": 0,
+          "totalBlockingMs": 0
+        }
+      ],
+      "aggregate": {
+        "drawMs": {
+          "n": 3,
+          "min": 42.7,
+          "max": 45.5,
+          "mean": 43.7,
+          "stdev": 1.562,
+          "p50": 42.9,
+          "p95": 45.24
+        },
+        "panMs": {
+          "n": 3,
+          "min": 276.4,
+          "max": 349,
+          "mean": 307.2667,
+          "stdev": 37.5,
+          "p50": 296.4,
+          "p95": 343.74
+        },
+        "zoomMs": {
+          "n": 3,
+          "min": 274.7,
+          "max": 359.6,
+          "mean": 310.2667,
+          "stdev": 44.0924,
+          "p50": 296.5,
+          "p95": 353.29
+        },
+        "panFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "zoomFramesOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 1,
+          "mean": 0.3333,
+          "stdev": 0.5774,
+          "p50": 0,
+          "p95": 0.9
+        },
+        "longTasksOver50ms": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "longestTaskMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "totalBlockingMs": {
+          "n": 3,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "stdev": 0,
+          "p50": 0,
+          "p95": 0
+        },
+        "heapUsedBytes": {
+          "n": 3,
+          "min": 10078594,
+          "max": 10890970,
+          "mean": 10617132.3333,
+          "stdev": 466410.2524,
+          "p50": 10881833,
+          "p95": 10890056.3
+        }
+      }
+    }
+  ],
+  "chunkedLoadingEffect": [
+    {
+      "markerCount": 50,
+      "drawMsOn": 6.9,
+      "drawMsOff": 6,
+      "longTasksOver50msOn": 0,
+      "longTasksOver50msOff": 0,
+      "longestTaskMsOn": 0,
+      "longestTaskMsOff": 0,
+      "totalBlockingMsOn": 0,
+      "totalBlockingMsOff": 0,
+      "chunkedReducedLongTasks": false,
+      "chunkedReducedLongestTask": false
+    },
+    {
+      "markerCount": 200,
+      "drawMsOn": 8.7,
+      "drawMsOff": 8.4,
+      "longTasksOver50msOn": 0,
+      "longTasksOver50msOff": 0,
+      "longestTaskMsOn": 0,
+      "longestTaskMsOff": 0,
+      "totalBlockingMsOn": 0,
+      "totalBlockingMsOff": 0,
+      "chunkedReducedLongTasks": false,
+      "chunkedReducedLongestTask": false
+    },
+    {
+      "markerCount": 1000,
+      "drawMsOn": 15.6,
+      "drawMsOff": 14.9,
+      "longTasksOver50msOn": 0,
+      "longTasksOver50msOff": 0,
+      "longestTaskMsOn": 0,
+      "longestTaskMsOff": 0,
+      "totalBlockingMsOn": 0,
+      "totalBlockingMsOff": 0,
+      "chunkedReducedLongTasks": false,
+      "chunkedReducedLongestTask": false
+    },
+    {
+      "markerCount": 5000,
+      "drawMsOn": 44,
+      "drawMsOff": 42.9,
+      "longTasksOver50msOn": 0,
+      "longTasksOver50msOff": 0,
+      "longestTaskMsOn": 0,
+      "longestTaskMsOff": 0,
+      "totalBlockingMsOn": 0,
+      "totalBlockingMsOff": 0,
+      "chunkedReducedLongTasks": false,
+      "chunkedReducedLongestTask": false
+    }
+  ]
+}

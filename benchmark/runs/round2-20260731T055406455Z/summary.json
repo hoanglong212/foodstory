@@ -1,0 +1,2915 @@
+{
+  "meta": {
+    "commit": "1384d59573d0927da3ea0e7828c19d692056bc41",
+    "commitShort": "1384d59",
+    "branch": "codex/render-deployment",
+    "runAtIso": "2026-07-31T05:54:06.455Z",
+    "node": "v24.11.0",
+    "npm": "11.6.1",
+    "chrome": "151.0.7922.71",
+    "os": "Windows_NT 10.0.26200 (win32 x64)",
+    "osCaption": "Microsoft Windows 11 Home Single Language 10.0.26200",
+    "cpu": "Intel(R) Core(TM) i7-14700HX (28 logical)",
+    "cpuCores": 28,
+    "ramGb": 15.71,
+    "load": "cpu_load_percent=12",
+    "harnessVersion": "2.0.0",
+    "measurement": "round-2 summary",
+    "round": 2,
+    "roundDate": "2026-07-30",
+    "supersedes": "the 2026-07-18 comparative benchmark, archived verbatim at benchmark/archive/comparative-benchmark-20260718/ and never used as a round-2 value"
+  },
+  "routeBudget": {
+    "status": "measured",
+    "routesMeasured": 8,
+    "routesUnavailable": 0,
+    "warmupRuns": 1,
+    "measuredRuns": 5,
+    "perRoute": [
+      {
+        "route": "home",
+        "path": "/",
+        "status": "measured",
+        "requestCountP50": 23,
+        "jsRouteChunkBytesP50": 3982,
+        "jsSharedChunkBytesP50": 133351,
+        "jsTotalBytesP50": 137333,
+        "cssBytesP50": 53647,
+        "imageBytesP50": 1001157,
+        "allTransferBytesP50": 1306828,
+        "lcpMsP50": 1334.958,
+        "clsP50": 0,
+        "tbtMsP50": 0,
+        "ttiMsP50": 1334.958
+      },
+      {
+        "route": "news",
+        "path": "/news",
+        "status": "measured",
+        "requestCountP50": 22,
+        "jsRouteChunkBytesP50": 6351,
+        "jsSharedChunkBytesP50": 133351,
+        "jsTotalBytesP50": 139702,
+        "cssBytesP50": 54620,
+        "imageBytesP50": 163965,
+        "allTransferBytesP50": 436020,
+        "lcpMsP50": 1109.314,
+        "clsP50": 0,
+        "tbtMsP50": 0,
+        "ttiMsP50": 1109.314
+      },
+      {
+        "route": "about",
+        "path": "/about",
+        "status": "measured",
+        "requestCountP50": 15,
+        "jsRouteChunkBytesP50": 2232,
+        "jsSharedChunkBytesP50": 133351,
+        "jsTotalBytesP50": 135583,
+        "cssBytesP50": 52584,
+        "imageBytesP50": 100441,
+        "allTransferBytesP50": 362136,
+        "lcpMsP50": 1087.907,
+        "clsP50": 0,
+        "tbtMsP50": 0,
+        "ttiMsP50": 1087.907
+      },
+      {
+        "route": "recipes",
+        "path": "/recipes",
+        "status": "measured",
+        "requestCountP50": 37,
+        "jsRouteChunkBytesP50": 15757,
+        "jsSharedChunkBytesP50": 133351,
+        "jsTotalBytesP50": 149108,
+        "cssBytesP50": 54045,
+        "imageBytesP50": 2817666,
+        "allTransferBytesP50": 3344084,
+        "lcpMsP50": 693.026,
+        "clsP50": 0,
+        "tbtMsP50": 0,
+        "ttiMsP50": 693.026
+      },
+      {
+        "route": "recipe_detail",
+        "path": "/recipes/1",
+        "status": "measured",
+        "requestCountP50": 21,
+        "jsRouteChunkBytesP50": 17301,
+        "jsSharedChunkBytesP50": 133351,
+        "jsTotalBytesP50": 150652,
+        "cssBytesP50": 54459,
+        "imageBytesP50": 240776,
+        "allTransferBytesP50": 557846,
+        "lcpMsP50": 1708.679,
+        "clsP50": 0.005,
+        "tbtMsP50": 0,
+        "ttiMsP50": 1708.679
+      },
+      {
+        "route": "food_map",
+        "path": "/food-map",
+        "status": "measured",
+        "requestCountP50": 57,
+        "jsRouteChunkBytesP50": 33907,
+        "jsSharedChunkBytesP50": 133351,
+        "jsTotalBytesP50": 167258,
+        "cssBytesP50": 70476,
+        "imageBytesP50": 1106340,
+        "allTransferBytesP50": 1441483,
+        "lcpMsP50": 2155.128,
+        "clsP50": 0,
+        "tbtMsP50": 0,
+        "ttiMsP50": 2155.128
+      },
+      {
+        "route": "profile",
+        "path": "/profile",
+        "status": "measured",
+        "requestCountP50": 16,
+        "jsRouteChunkBytesP50": 6370,
+        "jsSharedChunkBytesP50": 133351,
+        "jsTotalBytesP50": 139721,
+        "cssBytesP50": 51550,
+        "imageBytesP50": 0,
+        "allTransferBytesP50": 265978,
+        "lcpMsP50": 775.246,
+        "clsP50": 0,
+        "tbtMsP50": 0,
+        "ttiMsP50": 775.246
+      },
+      {
+        "route": "admin",
+        "path": "/admin",
+        "status": "measured",
+        "requestCountP50": 17,
+        "jsRouteChunkBytesP50": 5963,
+        "jsSharedChunkBytesP50": 133351,
+        "jsTotalBytesP50": 139314,
+        "cssBytesP50": 55300,
+        "imageBytesP50": 0,
+        "allTransferBytesP50": 271369,
+        "lcpMsP50": 776.234,
+        "clsP50": 0,
+        "tbtMsP50": 0,
+        "ttiMsP50": 776.234
+      }
+    ],
+    "sharedVendorFloorBytes": 133351,
+    "routeChunkShareOfJs": [
+      {
+        "route": "home",
+        "routeChunkPercentOfJs": 2.9
+      },
+      {
+        "route": "news",
+        "routeChunkPercentOfJs": 4.55
+      },
+      {
+        "route": "about",
+        "routeChunkPercentOfJs": 1.65
+      },
+      {
+        "route": "recipes",
+        "routeChunkPercentOfJs": 10.57
+      },
+      {
+        "route": "recipe_detail",
+        "routeChunkPercentOfJs": 11.48
+      },
+      {
+        "route": "food_map",
+        "routeChunkPercentOfJs": 20.27
+      },
+      {
+        "route": "profile",
+        "routeChunkPercentOfJs": 4.56
+      },
+      {
+        "route": "admin",
+        "routeChunkPercentOfJs": 4.28
+      }
+    ],
+    "lcpPredictors": {
+      "note": "Pearson r across measured routes, p50 values",
+      "jsTransferVsLcp": 0.721,
+      "imageTransferVsLcp": -0.0484,
+      "totalTransferVsLcp": -0.0549,
+      "requestCountVsLcp": 0.6006
+    }
+  },
+  "cls": {
+    "status": "measured",
+    "throttling": {
+      "network": "downlink/uplink 10240 Kbps, RTT 40 ms (CDP Network.emulateNetworkConditions), matching the Lighthouse desktop profile used in Tier 1A",
+      "cpu": "4x slowdown (CDP Emulation.setCPUThrottlingRate)",
+      "navigationTimeoutMs": 30000,
+      "rationale": "unthrottled loopback delivers every asset before first paint, which hides the image- and font-driven shifts that a grid-to-flex migration risks; the CPU slowdown keeps layout work observable",
+      "rejectedProfile": "a 1.6 Mbps / 150 ms mobile profile was tried first and abandoned: routes that pull remote Unsplash images stalled on third-party CDN transfer until the navigation timeout, which would have measured Unsplash rather than FoodStory. Runs where navigation still timed out are flagged navTimedOut."
+    },
+    "versions": {
+      "pre_bootstrap_migration": {
+        "status": "measured",
+        "commit": "b996954",
+        "combinations": [
+          {
+            "route": "recipes",
+            "migrated": true,
+            "viewport": "390x844",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "recipes",
+            "migrated": true,
+            "viewport": "768x1024",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "recipes",
+            "migrated": true,
+            "viewport": "1024x768",
+            "clsP50": 0.0139,
+            "clsMax": 0.01387,
+            "entryCountP50": 1,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "recipes",
+            "migrated": true,
+            "viewport": "1440x900",
+            "clsP50": 0.0185,
+            "clsMax": 0.01849,
+            "entryCountP50": 2,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "news",
+            "migrated": true,
+            "viewport": "390x844",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "news",
+            "migrated": true,
+            "viewport": "768x1024",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "news",
+            "migrated": true,
+            "viewport": "1024x768",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "news",
+            "migrated": true,
+            "viewport": "1440x900",
+            "clsP50": 0.0001,
+            "clsMax": 0.00012,
+            "entryCountP50": 1,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "about",
+            "migrated": true,
+            "viewport": "390x844",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "about",
+            "migrated": true,
+            "viewport": "768x1024",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "about",
+            "migrated": true,
+            "viewport": "1024x768",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "about",
+            "migrated": true,
+            "viewport": "1440x900",
+            "clsP50": 0.0001,
+            "clsMax": 0.00012,
+            "entryCountP50": 1,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "home",
+            "migrated": false,
+            "viewport": "390x844",
+            "clsP50": 0.077,
+            "clsMax": 0.07701,
+            "entryCountP50": 1,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "home",
+            "migrated": false,
+            "viewport": "768x1024",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "home",
+            "migrated": false,
+            "viewport": "1024x768",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "home",
+            "migrated": false,
+            "viewport": "1440x900",
+            "clsP50": 0.0001,
+            "clsMax": 0.00012,
+            "entryCountP50": 1,
+            "anyRunTimedOut": false
+          }
+        ]
+      },
+      "final_bootstrap_migration": {
+        "status": "measured",
+        "commit": "522c5f2",
+        "combinations": [
+          {
+            "route": "recipes",
+            "migrated": true,
+            "viewport": "390x844",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "recipes",
+            "migrated": true,
+            "viewport": "768x1024",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "recipes",
+            "migrated": true,
+            "viewport": "1024x768",
+            "clsP50": 0.0139,
+            "clsMax": 0.01387,
+            "entryCountP50": 1,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "recipes",
+            "migrated": true,
+            "viewport": "1440x900",
+            "clsP50": 0.0185,
+            "clsMax": 0.01849,
+            "entryCountP50": 2,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "news",
+            "migrated": true,
+            "viewport": "390x844",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "news",
+            "migrated": true,
+            "viewport": "768x1024",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "news",
+            "migrated": true,
+            "viewport": "1024x768",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "news",
+            "migrated": true,
+            "viewport": "1440x900",
+            "clsP50": 0.0001,
+            "clsMax": 0.00012,
+            "entryCountP50": 1,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "about",
+            "migrated": true,
+            "viewport": "390x844",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "about",
+            "migrated": true,
+            "viewport": "768x1024",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "about",
+            "migrated": true,
+            "viewport": "1024x768",
+            "clsP50": 0,
+            "clsMax": 0.00027,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "about",
+            "migrated": true,
+            "viewport": "1440x900",
+            "clsP50": 0.0001,
+            "clsMax": 0.00012,
+            "entryCountP50": 1,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "home",
+            "migrated": false,
+            "viewport": "390x844",
+            "clsP50": 0.077,
+            "clsMax": 0.07701,
+            "entryCountP50": 1,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "home",
+            "migrated": false,
+            "viewport": "768x1024",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "home",
+            "migrated": false,
+            "viewport": "1024x768",
+            "clsP50": 0,
+            "clsMax": 0,
+            "entryCountP50": 0,
+            "anyRunTimedOut": false
+          },
+          {
+            "route": "home",
+            "migrated": false,
+            "viewport": "1440x900",
+            "clsP50": 0.0001,
+            "clsMax": 0.00012,
+            "entryCountP50": 1,
+            "anyRunTimedOut": false
+          }
+        ]
+      }
+    },
+    "beforeAfter": [
+      {
+        "route": "recipes",
+        "migrated": true,
+        "viewport": "390x844",
+        "preClsP50": 0,
+        "postClsP50": 0,
+        "deltaP50": 0,
+        "preEntryP50": 0,
+        "postEntryP50": 0
+      },
+      {
+        "route": "recipes",
+        "migrated": true,
+        "viewport": "768x1024",
+        "preClsP50": 0,
+        "postClsP50": 0,
+        "deltaP50": 0,
+        "preEntryP50": 0,
+        "postEntryP50": 0
+      },
+      {
+        "route": "recipes",
+        "migrated": true,
+        "viewport": "1024x768",
+        "preClsP50": 0.0139,
+        "postClsP50": 0.0139,
+        "deltaP50": 0,
+        "preEntryP50": 1,
+        "postEntryP50": 1
+      },
+      {
+        "route": "recipes",
+        "migrated": true,
+        "viewport": "1440x900",
+        "preClsP50": 0.0185,
+        "postClsP50": 0.0185,
+        "deltaP50": 0,
+        "preEntryP50": 2,
+        "postEntryP50": 2
+      },
+      {
+        "route": "news",
+        "migrated": true,
+        "viewport": "390x844",
+        "preClsP50": 0,
+        "postClsP50": 0,
+        "deltaP50": 0,
+        "preEntryP50": 0,
+        "postEntryP50": 0
+      },
+      {
+        "route": "news",
+        "migrated": true,
+        "viewport": "768x1024",
+        "preClsP50": 0,
+        "postClsP50": 0,
+        "deltaP50": 0,
+        "preEntryP50": 0,
+        "postEntryP50": 0
+      },
+      {
+        "route": "news",
+        "migrated": true,
+        "viewport": "1024x768",
+        "preClsP50": 0,
+        "postClsP50": 0,
+        "deltaP50": 0,
+        "preEntryP50": 0,
+        "postEntryP50": 0
+      },
+      {
+        "route": "news",
+        "migrated": true,
+        "viewport": "1440x900",
+        "preClsP50": 0.0001,
+        "postClsP50": 0.0001,
+        "deltaP50": 0,
+        "preEntryP50": 1,
+        "postEntryP50": 1
+      },
+      {
+        "route": "about",
+        "migrated": true,
+        "viewport": "390x844",
+        "preClsP50": 0,
+        "postClsP50": 0,
+        "deltaP50": 0,
+        "preEntryP50": 0,
+        "postEntryP50": 0
+      },
+      {
+        "route": "about",
+        "migrated": true,
+        "viewport": "768x1024",
+        "preClsP50": 0,
+        "postClsP50": 0,
+        "deltaP50": 0,
+        "preEntryP50": 0,
+        "postEntryP50": 0
+      },
+      {
+        "route": "about",
+        "migrated": true,
+        "viewport": "1024x768",
+        "preClsP50": 0,
+        "postClsP50": 0,
+        "deltaP50": 0,
+        "preEntryP50": 0,
+        "postEntryP50": 0
+      },
+      {
+        "route": "about",
+        "migrated": true,
+        "viewport": "1440x900",
+        "preClsP50": 0.0001,
+        "postClsP50": 0.0001,
+        "deltaP50": 0,
+        "preEntryP50": 1,
+        "postEntryP50": 1
+      },
+      {
+        "route": "home",
+        "migrated": false,
+        "viewport": "390x844",
+        "preClsP50": 0.077,
+        "postClsP50": 0.077,
+        "deltaP50": 0,
+        "preEntryP50": 1,
+        "postEntryP50": 1
+      },
+      {
+        "route": "home",
+        "migrated": false,
+        "viewport": "768x1024",
+        "preClsP50": 0,
+        "postClsP50": 0,
+        "deltaP50": 0,
+        "preEntryP50": 0,
+        "postEntryP50": 0
+      },
+      {
+        "route": "home",
+        "migrated": false,
+        "viewport": "1024x768",
+        "preClsP50": 0,
+        "postClsP50": 0,
+        "deltaP50": 0,
+        "preEntryP50": 0,
+        "postEntryP50": 0
+      },
+      {
+        "route": "home",
+        "migrated": false,
+        "viewport": "1440x900",
+        "preClsP50": 0.0001,
+        "postClsP50": 0.0001,
+        "deltaP50": 0,
+        "preEntryP50": 1,
+        "postEntryP50": 1
+      }
+    ],
+    "migrationVerdict": {
+      "combinationsCompared": 16,
+      "worsenedByOver0_005": 0,
+      "improvedByOver0_005": 0,
+      "unchanged": 16,
+      "worstRegression": null
+    }
+  },
+  "contrast": {
+    "status": "measured",
+    "standard": "WCAG 2.2 AA: 4.5:1 normal text, 3:1 large text (>=24px, or >=18.66px at weight >=700)",
+    "totals": {
+      "combinationsMeasured": 16,
+      "totalFailures": 128,
+      "totalIndeterminate": 287,
+      "totalNodesChecked": 1422,
+      "failuresLightTheme": 71,
+      "failuresDarkTheme": 57
+    },
+    "perCombination": [
+      {
+        "route": "home",
+        "theme": "light",
+        "themeApplied": "light",
+        "themeMatchesRequest": true,
+        "nodesChecked": 82,
+        "failures": 23,
+        "indeterminate": 11,
+        "failRate": 0.3239,
+        "worstRatio": 1.921
+      },
+      {
+        "route": "home",
+        "theme": "dark",
+        "themeApplied": "dark",
+        "themeMatchesRequest": true,
+        "nodesChecked": 82,
+        "failures": 14,
+        "indeterminate": 11,
+        "failRate": 0.1972,
+        "worstRatio": 2.551
+      },
+      {
+        "route": "news",
+        "theme": "light",
+        "themeApplied": "light",
+        "themeMatchesRequest": true,
+        "nodesChecked": 76,
+        "failures": 13,
+        "indeterminate": 11,
+        "failRate": 0.2,
+        "worstRatio": 1.921
+      },
+      {
+        "route": "news",
+        "theme": "dark",
+        "themeApplied": "dark",
+        "themeMatchesRequest": true,
+        "nodesChecked": 76,
+        "failures": 13,
+        "indeterminate": 11,
+        "failRate": 0.2,
+        "worstRatio": 2.058
+      },
+      {
+        "route": "about",
+        "theme": "light",
+        "themeApplied": "light",
+        "themeMatchesRequest": true,
+        "nodesChecked": 54,
+        "failures": 5,
+        "indeterminate": 14,
+        "failRate": 0.125,
+        "worstRatio": 3.545
+      },
+      {
+        "route": "about",
+        "theme": "dark",
+        "themeApplied": "dark",
+        "themeMatchesRequest": true,
+        "nodesChecked": 54,
+        "failures": 4,
+        "indeterminate": 14,
+        "failRate": 0.1,
+        "worstRatio": 3.96
+      },
+      {
+        "route": "recipes",
+        "theme": "light",
+        "themeApplied": "light",
+        "themeMatchesRequest": true,
+        "nodesChecked": 169,
+        "failures": 10,
+        "indeterminate": 18,
+        "failRate": 0.0662,
+        "worstRatio": 2.61
+      },
+      {
+        "route": "recipes",
+        "theme": "dark",
+        "themeApplied": "dark",
+        "themeMatchesRequest": true,
+        "nodesChecked": 169,
+        "failures": 5,
+        "indeterminate": 28,
+        "failRate": 0.0355,
+        "worstRatio": 2.482
+      },
+      {
+        "route": "recipe_detail",
+        "theme": "light",
+        "themeApplied": "light",
+        "themeMatchesRequest": true,
+        "nodesChecked": 145,
+        "failures": 9,
+        "indeterminate": 50,
+        "failRate": 0.0947,
+        "worstRatio": 2.449
+      },
+      {
+        "route": "recipe_detail",
+        "theme": "dark",
+        "themeApplied": "dark",
+        "themeMatchesRequest": true,
+        "nodesChecked": 145,
+        "failures": 6,
+        "indeterminate": 32,
+        "failRate": 0.0531,
+        "worstRatio": 1.496
+      },
+      {
+        "route": "food_map",
+        "theme": "light",
+        "themeApplied": "light",
+        "themeMatchesRequest": true,
+        "nodesChecked": 46,
+        "failures": 0,
+        "indeterminate": 12,
+        "failRate": 0,
+        "worstRatio": null
+      },
+      {
+        "route": "food_map",
+        "theme": "dark",
+        "themeApplied": "dark",
+        "themeMatchesRequest": true,
+        "nodesChecked": 46,
+        "failures": 0,
+        "indeterminate": 12,
+        "failRate": 0,
+        "worstRatio": null
+      },
+      {
+        "route": "profile",
+        "theme": "light",
+        "themeApplied": "light",
+        "themeMatchesRequest": true,
+        "nodesChecked": 48,
+        "failures": 7,
+        "indeterminate": 19,
+        "failRate": 0.2414,
+        "worstRatio": 3.389
+      },
+      {
+        "route": "profile",
+        "theme": "dark",
+        "themeApplied": "dark",
+        "themeMatchesRequest": true,
+        "nodesChecked": 48,
+        "failures": 7,
+        "indeterminate": 19,
+        "failRate": 0.2414,
+        "worstRatio": 3.128
+      },
+      {
+        "route": "admin",
+        "theme": "light",
+        "themeApplied": "light",
+        "themeMatchesRequest": true,
+        "nodesChecked": 91,
+        "failures": 4,
+        "indeterminate": 11,
+        "failRate": 0.05,
+        "worstRatio": 3.545
+      },
+      {
+        "route": "admin",
+        "theme": "dark",
+        "themeApplied": "dark",
+        "themeMatchesRequest": true,
+        "nodesChecked": 91,
+        "failures": 8,
+        "indeterminate": 14,
+        "failRate": 0.1039,
+        "worstRatio": 3.433
+      }
+    ],
+    "worstOffenders": [
+      {
+        "route": "recipe_detail",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "span",
+        "ancestorPath": "div>button>span",
+        "color": "rgb(173, 159, 146)",
+        "colorHex": "#ad9f92",
+        "background": "rgb(200, 197, 192)",
+        "backgroundHex": "#c8c5c0",
+        "backgroundOwner": "section#reviews.recipe-blog-section.comments-panel",
+        "contrastRatio": 1.496,
+        "requiredRatio": 4.5,
+        "shortfall": 3.004,
+        "fontSizePx": 11,
+        "fontWeight": 850,
+        "isLargeText": false,
+        "textSample": "(23 remaining)"
+      },
+      {
+        "route": "recipe_detail",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "button.btn.btn-outline",
+        "ancestorPath": "section>div>button",
+        "color": "rgb(255, 249, 241)",
+        "colorHex": "#fff9f1",
+        "background": "rgb(200, 197, 192)",
+        "backgroundHex": "#c8c5c0",
+        "backgroundOwner": "section#reviews.recipe-blog-section.comments-panel",
+        "contrastRatio": 1.646,
+        "requiredRatio": 4.5,
+        "shortfall": 2.854,
+        "fontSizePx": 16,
+        "fontWeight": 850,
+        "isLargeText": false,
+        "textSample": "Show 5 more"
+      },
+      {
+        "route": "home",
+        "theme": "light",
+        "status": "fail",
+        "selector": "p.eyebrow",
+        "ancestorPath": "section>div>p",
+        "color": "rgb(232, 133, 50)",
+        "colorHex": "#e88532",
+        "background": "rgb(243, 213, 186)",
+        "backgroundHex": "#f3d5ba",
+        "backgroundOwner": "div.app-shell",
+        "contrastRatio": 1.921,
+        "requiredRatio": 4.5,
+        "shortfall": 2.579,
+        "fontSizePx": 13,
+        "fontWeight": 900,
+        "isLargeText": false,
+        "textSample": "TheMealDB API"
+      },
+      {
+        "route": "news",
+        "theme": "light",
+        "status": "fail",
+        "selector": "p.eyebrow",
+        "ancestorPath": "section>div>p",
+        "color": "rgb(232, 133, 50)",
+        "colorHex": "#e88532",
+        "background": "rgb(243, 213, 186)",
+        "backgroundHex": "#f3d5ba",
+        "backgroundOwner": "div.app-shell",
+        "contrastRatio": 1.921,
+        "requiredRatio": 4.5,
+        "shortfall": 2.579,
+        "fontSizePx": 13,
+        "fontWeight": 900,
+        "isLargeText": false,
+        "textSample": "FoodStory News"
+      },
+      {
+        "route": "home",
+        "theme": "light",
+        "status": "fail",
+        "selector": "p",
+        "ancestorPath": "div>section>p",
+        "color": "rgb(155, 169, 204)",
+        "colorHex": "#9ba9cc",
+        "background": "rgb(242, 233, 220)",
+        "backgroundHex": "#f2e9dc",
+        "backgroundOwner": "section.quote-band.page-pad",
+        "contrastRatio": 1.953,
+        "requiredRatio": 4.5,
+        "shortfall": 2.547,
+        "fontSizePx": 15,
+        "fontWeight": 800,
+        "isLargeText": false,
+        "textSample": "- FoodStory"
+      },
+      {
+        "route": "news",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "strong",
+        "ancestorPath": "article>time>strong",
+        "color": "rgb(230, 57, 70)",
+        "colorHex": "#e63946",
+        "background": "rgb(93, 72, 58)",
+        "backgroundHex": "#5d483a",
+        "backgroundOwner": "article.news-card.external-news-card",
+        "contrastRatio": 2.058,
+        "requiredRatio": 3,
+        "shortfall": 0.942,
+        "fontSizePx": 24,
+        "fontWeight": 700,
+        "isLargeText": true,
+        "textSample": "30"
+      },
+      {
+        "route": "news",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "strong",
+        "ancestorPath": "article>time>strong",
+        "color": "rgb(230, 57, 70)",
+        "colorHex": "#e63946",
+        "background": "rgb(93, 72, 58)",
+        "backgroundHex": "#5d483a",
+        "backgroundOwner": "article.news-card.external-news-card",
+        "contrastRatio": 2.058,
+        "requiredRatio": 3,
+        "shortfall": 0.942,
+        "fontSizePx": 24,
+        "fontWeight": 700,
+        "isLargeText": true,
+        "textSample": "29"
+      },
+      {
+        "route": "home",
+        "theme": "light",
+        "status": "fail",
+        "selector": "strong",
+        "ancestorPath": "section>blockquote>strong",
+        "color": "rgb(232, 133, 50)",
+        "colorHex": "#e88532",
+        "background": "rgb(242, 233, 220)",
+        "backgroundHex": "#f2e9dc",
+        "backgroundOwner": "section.quote-band.page-pad",
+        "contrastRatio": 2.23,
+        "requiredRatio": 3,
+        "shortfall": 0.77,
+        "fontSizePx": 56,
+        "fontWeight": 500,
+        "isLargeText": true,
+        "textSample": "every meal is a memory.\""
+      },
+      {
+        "route": "recipe_detail",
+        "theme": "light",
+        "status": "fail",
+        "selector": "span.comment-status",
+        "ancestorPath": "header>div>span",
+        "color": "rgb(232, 133, 50)",
+        "colorHex": "#e88532",
+        "background": "rgb(254, 243, 232)",
+        "backgroundHex": "#fef3e8",
+        "backgroundOwner": "article.comment-item",
+        "contrastRatio": 2.449,
+        "requiredRatio": 4.5,
+        "shortfall": 2.051,
+        "fontSizePx": 12,
+        "fontWeight": 900,
+        "isLargeText": false,
+        "textSample": "Edited"
+      },
+      {
+        "route": "recipes",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "span",
+        "ancestorPath": "header>a>span",
+        "color": "rgb(255, 255, 255)",
+        "colorHex": "#ffffff",
+        "background": "rgb(240, 138, 82)",
+        "backgroundHex": "#f08a52",
+        "backgroundOwner": "a.recipe-submit-cta",
+        "contrastRatio": 2.482,
+        "requiredRatio": 4.5,
+        "shortfall": 2.018,
+        "fontSizePx": 13,
+        "fontWeight": 800,
+        "isLargeText": false,
+        "textSample": "Log in to submit a recipe"
+      },
+      {
+        "route": "home",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "span",
+        "ancestorPath": "div>div>span",
+        "color": "rgb(230, 57, 70)",
+        "colorHex": "#e63946",
+        "background": "rgb(72, 60, 53)",
+        "backgroundHex": "#483c35",
+        "backgroundOwner": "article.random-card",
+        "contrastRatio": 2.551,
+        "requiredRatio": 4.5,
+        "shortfall": 1.949,
+        "fontSizePx": 14,
+        "fontWeight": 850,
+        "isLargeText": false,
+        "textSample": "Chicken"
+      },
+      {
+        "route": "home",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "span",
+        "ancestorPath": "div>div>span",
+        "color": "rgb(230, 57, 70)",
+        "colorHex": "#e63946",
+        "background": "rgb(72, 60, 53)",
+        "backgroundHex": "#483c35",
+        "backgroundOwner": "article.random-card",
+        "contrastRatio": 2.551,
+        "requiredRatio": 4.5,
+        "shortfall": 1.949,
+        "fontSizePx": 14,
+        "fontWeight": 850,
+        "isLargeText": false,
+        "textSample": "Algerian"
+      },
+      {
+        "route": "recipes",
+        "theme": "light",
+        "status": "fail",
+        "selector": "span",
+        "ancestorPath": "div>a>span",
+        "color": "rgb(232, 133, 50)",
+        "colorHex": "#e88532",
+        "background": "rgb(254, 252, 246)",
+        "backgroundHex": "#fefcf6",
+        "backgroundOwner": "section.recipe-reference-page",
+        "contrastRatio": 2.61,
+        "requiredRatio": 4.5,
+        "shortfall": 1.89,
+        "fontSizePx": 14,
+        "fontWeight": 950,
+        "isLargeText": false,
+        "textSample": "View recipe"
+      },
+      {
+        "route": "home",
+        "theme": "light",
+        "status": "fail",
+        "selector": "strong",
+        "ancestorPath": "div>div>strong",
+        "color": "rgb(232, 133, 50)",
+        "colorHex": "#e88532",
+        "background": "rgb(255, 255, 255)",
+        "backgroundHex": "#ffffff",
+        "backgroundOwner": "article.recipe-card",
+        "contrastRatio": 2.681,
+        "requiredRatio": 4.5,
+        "shortfall": 1.819,
+        "fontSizePx": 16,
+        "fontWeight": 700,
+        "isLargeText": false,
+        "textSample": "4.9"
+      },
+      {
+        "route": "home",
+        "theme": "light",
+        "status": "fail",
+        "selector": "strong",
+        "ancestorPath": "div>div>strong",
+        "color": "rgb(232, 133, 50)",
+        "colorHex": "#e88532",
+        "background": "rgb(255, 255, 255)",
+        "backgroundHex": "#ffffff",
+        "backgroundOwner": "article.recipe-card",
+        "contrastRatio": 2.681,
+        "requiredRatio": 4.5,
+        "shortfall": 1.819,
+        "fontSizePx": 16,
+        "fontWeight": 700,
+        "isLargeText": false,
+        "textSample": "4.7"
+      },
+      {
+        "route": "home",
+        "theme": "light",
+        "status": "fail",
+        "selector": "strong",
+        "ancestorPath": "div>div>strong",
+        "color": "rgb(232, 133, 50)",
+        "colorHex": "#e88532",
+        "background": "rgb(255, 255, 255)",
+        "backgroundHex": "#ffffff",
+        "backgroundOwner": "article.recipe-card",
+        "contrastRatio": 2.681,
+        "requiredRatio": 4.5,
+        "shortfall": 1.819,
+        "fontSizePx": 16,
+        "fontWeight": 700,
+        "isLargeText": false,
+        "textSample": "4.5"
+      },
+      {
+        "route": "home",
+        "theme": "light",
+        "status": "fail",
+        "selector": "span.measure",
+        "ancestorPath": "ul>li>span",
+        "color": "rgb(232, 133, 50)",
+        "colorHex": "#e88532",
+        "background": "rgb(255, 255, 255)",
+        "backgroundHex": "#ffffff",
+        "backgroundOwner": "article.random-card",
+        "contrastRatio": 2.681,
+        "requiredRatio": 4.5,
+        "shortfall": 1.819,
+        "fontSizePx": 13,
+        "fontWeight": 600,
+        "isLargeText": false,
+        "textSample": "1 cup"
+      },
+      {
+        "route": "home",
+        "theme": "light",
+        "status": "fail",
+        "selector": "span.measure",
+        "ancestorPath": "ul>li>span",
+        "color": "rgb(232, 133, 50)",
+        "colorHex": "#e88532",
+        "background": "rgb(255, 255, 255)",
+        "backgroundHex": "#ffffff",
+        "backgroundOwner": "article.random-card",
+        "contrastRatio": 2.681,
+        "requiredRatio": 4.5,
+        "shortfall": 1.819,
+        "fontSizePx": 13,
+        "fontWeight": 600,
+        "isLargeText": false,
+        "textSample": "1 chopped"
+      },
+      {
+        "route": "home",
+        "theme": "light",
+        "status": "fail",
+        "selector": "span.measure",
+        "ancestorPath": "ul>li>span",
+        "color": "rgb(232, 133, 50)",
+        "colorHex": "#e88532",
+        "background": "rgb(255, 255, 255)",
+        "backgroundHex": "#ffffff",
+        "backgroundOwner": "article.random-card",
+        "contrastRatio": 2.681,
+        "requiredRatio": 4.5,
+        "shortfall": 1.819,
+        "fontSizePx": 13,
+        "fontWeight": 600,
+        "isLargeText": false,
+        "textSample": "5 tablespoons"
+      },
+      {
+        "route": "recipes",
+        "theme": "light",
+        "status": "fail",
+        "selector": "button.active",
+        "ancestorPath": "section>nav>button",
+        "color": "rgb(255, 255, 255)",
+        "colorHex": "#ffffff",
+        "background": "rgb(232, 133, 50)",
+        "backgroundHex": "#e88532",
+        "backgroundOwner": "button.active",
+        "contrastRatio": 2.681,
+        "requiredRatio": 4.5,
+        "shortfall": 1.819,
+        "fontSizePx": 16,
+        "fontWeight": 850,
+        "isLargeText": false,
+        "textSample": "1"
+      },
+      {
+        "route": "profile",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "button.active",
+        "ancestorPath": "section>nav>button",
+        "color": "rgb(230, 57, 70)",
+        "colorHex": "#e63946",
+        "background": "rgb(59, 46, 39)",
+        "backgroundHex": "#3b2e27",
+        "backgroundOwner": "div.app-shell",
+        "contrastRatio": 3.128,
+        "requiredRatio": 4.5,
+        "shortfall": 1.372,
+        "fontSizePx": 16,
+        "fontWeight": 850,
+        "isLargeText": false,
+        "textSample": "Account"
+      },
+      {
+        "route": "news",
+        "theme": "light",
+        "status": "fail",
+        "selector": "button.active",
+        "ancestorPath": "div>nav>button",
+        "color": "rgb(45, 41, 38)",
+        "colorHex": "#2d2926",
+        "background": "rgb(216, 67, 77)",
+        "backgroundHex": "#d8434d",
+        "backgroundOwner": "button.active",
+        "contrastRatio": 3.315,
+        "requiredRatio": 4.5,
+        "shortfall": 1.185,
+        "fontSizePx": 16,
+        "fontWeight": 850,
+        "isLargeText": false,
+        "textSample": "1"
+      },
+      {
+        "route": "news",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "span",
+        "ancestorPath": "article>time>span",
+        "color": "rgb(163, 161, 158)",
+        "colorHex": "#a3a19e",
+        "background": "rgb(93, 72, 58)",
+        "backgroundHex": "#5d483a",
+        "backgroundOwner": "article.news-card.external-news-card",
+        "contrastRatio": 3.328,
+        "requiredRatio": 4.5,
+        "shortfall": 1.172,
+        "fontSizePx": 16,
+        "fontWeight": 400,
+        "isLargeText": false,
+        "textSample": "TH.07"
+      },
+      {
+        "route": "news",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "small",
+        "ancestorPath": "article>time>small",
+        "color": "rgb(163, 161, 158)",
+        "colorHex": "#a3a19e",
+        "background": "rgb(93, 72, 58)",
+        "backgroundHex": "#5d483a",
+        "backgroundOwner": "article.news-card.external-news-card",
+        "contrastRatio": 3.328,
+        "requiredRatio": 4.5,
+        "shortfall": 1.172,
+        "fontSizePx": 13.3333,
+        "fontWeight": 400,
+        "isLargeText": false,
+        "textSample": "2026"
+      },
+      {
+        "route": "profile",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "p.eyebrow",
+        "ancestorPath": "div>div>p",
+        "color": "rgb(163, 161, 158)",
+        "colorHex": "#a3a19e",
+        "background": "rgb(93, 72, 58)",
+        "backgroundHex": "#5d483a",
+        "backgroundOwner": "div.profile-header",
+        "contrastRatio": 3.328,
+        "requiredRatio": 4.5,
+        "shortfall": 1.172,
+        "fontSizePx": 13,
+        "fontWeight": 900,
+        "isLargeText": false,
+        "textSample": "My FoodStory"
+      },
+      {
+        "route": "profile",
+        "theme": "light",
+        "status": "fail",
+        "selector": "button.active",
+        "ancestorPath": "section>nav>button",
+        "color": "rgb(216, 67, 77)",
+        "colorHex": "#d8434d",
+        "background": "rgb(244, 224, 204)",
+        "backgroundHex": "#f4e0cc",
+        "backgroundOwner": "div.app-shell",
+        "contrastRatio": 3.389,
+        "requiredRatio": 4.5,
+        "shortfall": 1.111,
+        "fontSizePx": 16,
+        "fontWeight": 850,
+        "isLargeText": false,
+        "textSample": "Account"
+      },
+      {
+        "route": "home",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "span",
+        "ancestorPath": "div>a>span",
+        "color": "rgb(230, 57, 70)",
+        "colorHex": "#e63946",
+        "background": "rgb(42, 42, 45)",
+        "backgroundHex": "#2a2a2d",
+        "backgroundOwner": "article.recipe-card",
+        "contrastRatio": 3.433,
+        "requiredRatio": 4.5,
+        "shortfall": 1.067,
+        "fontSizePx": 16,
+        "fontWeight": 850,
+        "isLargeText": false,
+        "textSample": "View More"
+      },
+      {
+        "route": "news",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "span",
+        "ancestorPath": "div>a>span",
+        "color": "rgb(230, 57, 70)",
+        "colorHex": "#e63946",
+        "background": "rgb(42, 42, 45)",
+        "backgroundHex": "#2a2a2d",
+        "backgroundOwner": "article.news-card.external-news-card",
+        "contrastRatio": 3.433,
+        "requiredRatio": 4.5,
+        "shortfall": 1.067,
+        "fontSizePx": 16,
+        "fontWeight": 850,
+        "isLargeText": false,
+        "textSample": "Read original article"
+      },
+      {
+        "route": "admin",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "button",
+        "ancestorPath": "article>header>button",
+        "color": "rgb(230, 57, 70)",
+        "colorHex": "#e63946",
+        "background": "rgb(42, 42, 45)",
+        "backgroundHex": "#2a2a2d",
+        "backgroundOwner": "article.activity-card",
+        "contrastRatio": 3.433,
+        "requiredRatio": 4.5,
+        "shortfall": 1.067,
+        "fontSizePx": 10,
+        "fontWeight": 400,
+        "isLargeText": false,
+        "textSample": "View all"
+      },
+      {
+        "route": "admin",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "button",
+        "ancestorPath": "article>header>button",
+        "color": "rgb(230, 57, 70)",
+        "colorHex": "#e63946",
+        "background": "rgb(42, 42, 45)",
+        "backgroundHex": "#2a2a2d",
+        "backgroundOwner": "article.activity-card",
+        "contrastRatio": 3.433,
+        "requiredRatio": 4.5,
+        "shortfall": 1.067,
+        "fontSizePx": 10,
+        "fontWeight": 400,
+        "isLargeText": false,
+        "textSample": "Manage"
+      },
+      {
+        "route": "admin",
+        "theme": "dark",
+        "status": "fail",
+        "selector": "span",
+        "ancestorPath": "aside>button>span",
+        "color": "rgb(230, 57, 70)",
+        "colorHex": "#e63946",
+        "background": "rgb(53, 38, 42)",
+        "backgroundHex": "#35262a",
+        "backgroundOwner": "aside.admin-sidebar",
+        "contrastRatio": 3.439,
+        "requiredRatio": 4.5,
+        "shortfall": 1.061,
+        "fontSizePx": 16,
+        "fontWeight": 400,
+        "isLargeText": false,
+        "textSample": "Overview"
+      },
+      {
+        "route": "home",
+        "theme": "light",
+        "status": "fail",
+        "selector": "h2",
+        "ancestorPath": "section>div>h2",
+        "color": "rgb(216, 67, 77)",
+        "colorHex": "#d8434d",
+        "background": "rgb(239, 231, 219)",
+        "backgroundHex": "#efe7db",
+        "backgroundOwner": "footer.site-footer",
+        "contrastRatio": 3.545,
+        "requiredRatio": 4.5,
+        "shortfall": 0.955,
+        "fontSizePx": 15,
+        "fontWeight": 900,
+        "isLargeText": false,
+        "textSample": "Explore"
+      },
+      {
+        "route": "home",
+        "theme": "light",
+        "status": "fail",
+        "selector": "h2",
+        "ancestorPath": "section>div>h2",
+        "color": "rgb(216, 67, 77)",
+        "colorHex": "#d8434d",
+        "background": "rgb(239, 231, 219)",
+        "backgroundHex": "#efe7db",
+        "backgroundOwner": "footer.site-footer",
+        "contrastRatio": 3.545,
+        "requiredRatio": 4.5,
+        "shortfall": 0.955,
+        "fontSizePx": 15,
+        "fontWeight": 900,
+        "isLargeText": false,
+        "textSample": "Categories"
+      },
+      {
+        "route": "home",
+        "theme": "light",
+        "status": "fail",
+        "selector": "h2",
+        "ancestorPath": "section>div>h2",
+        "color": "rgb(216, 67, 77)",
+        "colorHex": "#d8434d",
+        "background": "rgb(239, 231, 219)",
+        "backgroundHex": "#efe7db",
+        "backgroundOwner": "footer.site-footer",
+        "contrastRatio": 3.545,
+        "requiredRatio": 4.5,
+        "shortfall": 0.955,
+        "fontSizePx": 15,
+        "fontWeight": 900,
+        "isLargeText": false,
+        "textSample": "Contact"
+      },
+      {
+        "route": "news",
+        "theme": "light",
+        "status": "fail",
+        "selector": "h2",
+        "ancestorPath": "section>div>h2",
+        "color": "rgb(216, 67, 77)",
+        "colorHex": "#d8434d",
+        "background": "rgb(239, 231, 219)",
+        "backgroundHex": "#efe7db",
+        "backgroundOwner": "footer.site-footer",
+        "contrastRatio": 3.545,
+        "requiredRatio": 4.5,
+        "shortfall": 0.955,
+        "fontSizePx": 15,
+        "fontWeight": 900,
+        "isLargeText": false,
+        "textSample": "Explore"
+      },
+      {
+        "route": "news",
+        "theme": "light",
+        "status": "fail",
+        "selector": "h2",
+        "ancestorPath": "section>div>h2",
+        "color": "rgb(216, 67, 77)",
+        "colorHex": "#d8434d",
+        "background": "rgb(239, 231, 219)",
+        "backgroundHex": "#efe7db",
+        "backgroundOwner": "footer.site-footer",
+        "contrastRatio": 3.545,
+        "requiredRatio": 4.5,
+        "shortfall": 0.955,
+        "fontSizePx": 15,
+        "fontWeight": 900,
+        "isLargeText": false,
+        "textSample": "Categories"
+      },
+      {
+        "route": "news",
+        "theme": "light",
+        "status": "fail",
+        "selector": "h2",
+        "ancestorPath": "section>div>h2",
+        "color": "rgb(216, 67, 77)",
+        "colorHex": "#d8434d",
+        "background": "rgb(239, 231, 219)",
+        "backgroundHex": "#efe7db",
+        "backgroundOwner": "footer.site-footer",
+        "contrastRatio": 3.545,
+        "requiredRatio": 4.5,
+        "shortfall": 0.955,
+        "fontSizePx": 15,
+        "fontWeight": 900,
+        "isLargeText": false,
+        "textSample": "Contact"
+      },
+      {
+        "route": "about",
+        "theme": "light",
+        "status": "fail",
+        "selector": "h2",
+        "ancestorPath": "section>div>h2",
+        "color": "rgb(216, 67, 77)",
+        "colorHex": "#d8434d",
+        "background": "rgb(239, 231, 219)",
+        "backgroundHex": "#efe7db",
+        "backgroundOwner": "footer.site-footer",
+        "contrastRatio": 3.545,
+        "requiredRatio": 4.5,
+        "shortfall": 0.955,
+        "fontSizePx": 15,
+        "fontWeight": 900,
+        "isLargeText": false,
+        "textSample": "Explore"
+      },
+      {
+        "route": "about",
+        "theme": "light",
+        "status": "fail",
+        "selector": "h2",
+        "ancestorPath": "section>div>h2",
+        "color": "rgb(216, 67, 77)",
+        "colorHex": "#d8434d",
+        "background": "rgb(239, 231, 219)",
+        "backgroundHex": "#efe7db",
+        "backgroundOwner": "footer.site-footer",
+        "contrastRatio": 3.545,
+        "requiredRatio": 4.5,
+        "shortfall": 0.955,
+        "fontSizePx": 15,
+        "fontWeight": 900,
+        "isLargeText": false,
+        "textSample": "Categories"
+      },
+      {
+        "route": "about",
+        "theme": "light",
+        "status": "fail",
+        "selector": "h2",
+        "ancestorPath": "section>div>h2",
+        "color": "rgb(216, 67, 77)",
+        "colorHex": "#d8434d",
+        "background": "rgb(239, 231, 219)",
+        "backgroundHex": "#efe7db",
+        "backgroundOwner": "footer.site-footer",
+        "contrastRatio": 3.545,
+        "requiredRatio": 4.5,
+        "shortfall": 0.955,
+        "fontSizePx": 15,
+        "fontWeight": 900,
+        "isLargeText": false,
+        "textSample": "Contact"
+      }
+    ]
+  },
+  "darkModeCoverage": {
+    "status": "measured",
+    "totals": {
+      "cssFileCount": 12,
+      "totalCssLines": 17250,
+      "stylesDirLines": 12365,
+      "darkThemeRulesInCssFiles": 125,
+      "lightThemeRulesInCssFiles": 11,
+      "darkThemeRulesInVueBlocks": 6,
+      "lightThemeRulesInVueBlocks": 57,
+      "darkThemeRulesEverywhere": 131,
+      "anyThemeRulesEverywhere": 199
+    },
+    "reportClaimChecks": [
+      {
+        "claim": "frontend CSS totals 12,365 lines",
+        "measured": 17250,
+        "measuredStylesDirOnly": 12365,
+        "matches": true
+      },
+      {
+        "claim": "136 [data-theme] rules",
+        "measuredDarkOnlyCssFiles": 125,
+        "measuredAnyThemeCssFiles": 136,
+        "measuredAnyThemeIncludingVue": 199,
+        "matches": true
+      },
+      {
+        "claim": "five files 02-07 hold ~5,693 lines and 46% of CSS with no dark rules",
+        "fileCount0207": 6,
+        "lines0207": 6623,
+        "shareOfStylesDir": 0.5356,
+        "darkRulesIn0207": 0,
+        "files": [
+          {
+            "file": "styles/02-global-responsive.css",
+            "lines": 474,
+            "darkRules": 0
+          },
+          {
+            "file": "styles/03-recipe-detail-components.css",
+            "lines": 444,
+            "darkRules": 0
+          },
+          {
+            "file": "styles/04-recipe-blog.css",
+            "lines": 760,
+            "darkRules": 0
+          },
+          {
+            "file": "styles/05-recipe-editorial.css",
+            "lines": 1629,
+            "darkRules": 0
+          },
+          {
+            "file": "styles/06-recipe-browse.css",
+            "lines": 1391,
+            "darkRules": 0
+          },
+          {
+            "file": "styles/07-recipe-listing.css",
+            "lines": 1925,
+            "darkRules": 0
+          }
+        ]
+      },
+      {
+        "claim": "only 01-foundation, 08-recipe-detail and 09-recipe-listing-theme-rails carry dark rules",
+        "filesWithDarkRules": [
+          {
+            "file": "styles/08-recipe-detail.css",
+            "darkRules": 58
+          },
+          {
+            "file": "styles/09-recipe-listing-theme-rails.css",
+            "darkRules": 67
+          }
+        ],
+        "filesWithoutDarkRules": [
+          {
+            "file": "styles/01-foundation.css",
+            "lines": 3210
+          },
+          {
+            "file": "styles/02-global-responsive.css",
+            "lines": 474
+          },
+          {
+            "file": "styles/03-recipe-detail-components.css",
+            "lines": 444
+          },
+          {
+            "file": "styles/04-recipe-blog.css",
+            "lines": 760
+          },
+          {
+            "file": "styles/05-recipe-editorial.css",
+            "lines": 1629
+          },
+          {
+            "file": "styles/06-recipe-browse.css",
+            "lines": 1391
+          },
+          {
+            "file": "styles/07-recipe-listing.css",
+            "lines": 1925
+          }
+        ]
+      }
+    ],
+    "perFile": [
+      {
+        "file": "components/ChatBotRedesign.css",
+        "lines": 597,
+        "darkRules": 0,
+        "lightRules": 0,
+        "colourSelectors": 57,
+        "colourSelectorsWithoutDarkCounterpart": 57,
+        "darkCoverageRatio": 0
+      },
+      {
+        "file": "style.css",
+        "lines": 10,
+        "darkRules": 0,
+        "lightRules": 0,
+        "colourSelectors": 0,
+        "colourSelectorsWithoutDarkCounterpart": 0,
+        "darkCoverageRatio": null
+      },
+      {
+        "file": "styles/01-foundation.css",
+        "lines": 3210,
+        "darkRules": 0,
+        "lightRules": 11,
+        "colourSelectors": 291,
+        "colourSelectorsWithoutDarkCounterpart": 291,
+        "darkCoverageRatio": 0
+      },
+      {
+        "file": "styles/02-global-responsive.css",
+        "lines": 474,
+        "darkRules": 0,
+        "lightRules": 0,
+        "colourSelectors": 1,
+        "colourSelectorsWithoutDarkCounterpart": 1,
+        "darkCoverageRatio": 0
+      },
+      {
+        "file": "styles/03-recipe-detail-components.css",
+        "lines": 444,
+        "darkRules": 0,
+        "lightRules": 0,
+        "colourSelectors": 17,
+        "colourSelectorsWithoutDarkCounterpart": 17,
+        "darkCoverageRatio": 0
+      },
+      {
+        "file": "styles/04-recipe-blog.css",
+        "lines": 760,
+        "darkRules": 0,
+        "lightRules": 0,
+        "colourSelectors": 59,
+        "colourSelectorsWithoutDarkCounterpart": 59,
+        "darkCoverageRatio": 0
+      },
+      {
+        "file": "styles/05-recipe-editorial.css",
+        "lines": 1629,
+        "darkRules": 0,
+        "lightRules": 0,
+        "colourSelectors": 178,
+        "colourSelectorsWithoutDarkCounterpart": 178,
+        "darkCoverageRatio": 0
+      },
+      {
+        "file": "styles/06-recipe-browse.css",
+        "lines": 1391,
+        "darkRules": 0,
+        "lightRules": 0,
+        "colourSelectors": 163,
+        "colourSelectorsWithoutDarkCounterpart": 163,
+        "darkCoverageRatio": 0
+      },
+      {
+        "file": "styles/07-recipe-listing.css",
+        "lines": 1925,
+        "darkRules": 0,
+        "lightRules": 0,
+        "colourSelectors": 131,
+        "colourSelectorsWithoutDarkCounterpart": 131,
+        "darkCoverageRatio": 0
+      },
+      {
+        "file": "styles/08-recipe-detail.css",
+        "lines": 2000,
+        "darkRules": 58,
+        "lightRules": 0,
+        "colourSelectors": 108,
+        "colourSelectorsWithoutDarkCounterpart": 0,
+        "darkCoverageRatio": 1
+      },
+      {
+        "file": "styles/09-recipe-listing-theme-rails.css",
+        "lines": 532,
+        "darkRules": 67,
+        "lightRules": 0,
+        "colourSelectors": 1,
+        "colourSelectorsWithoutDarkCounterpart": 0,
+        "darkCoverageRatio": 1
+      },
+      {
+        "file": "views/FoodMapView.css",
+        "lines": 4278,
+        "darkRules": 0,
+        "lightRules": 0,
+        "colourSelectors": 428,
+        "colourSelectorsWithoutDarkCounterpart": 428,
+        "darkCoverageRatio": 0
+      }
+    ]
+  },
+  "visionLifecycle": {
+    "status": "measured",
+    "cancelLatency": {
+      "iterations": 30,
+      "abortObservedCount": 30,
+      "reachedIdleCount": 30,
+      "cancelJobCalledCount": 30,
+      "intervalsLeftBehindCount": 0,
+      "abortLatencyMs": {
+        "n": 30,
+        "min": 0.0543,
+        "max": 0.3667,
+        "mean": 0.1249,
+        "p50": 0.082,
+        "p95": 0.2862
+      },
+      "idleLatencyMs": {
+        "n": 30,
+        "min": 0.0755,
+        "max": 0.5784,
+        "mean": 0.1893,
+        "p50": 0.1228,
+        "p95": 0.4577
+      }
+    },
+    "lifecycleLeak": {
+      "target": "FoodMapView",
+      "mountError": null,
+      "gcAvailable": true,
+      "cycles": 50,
+      "trend": {
+        "heapSlopeBytesPerCycle": 101447,
+        "heapSlopeSecondHalfBytesPerCycle": 19553,
+        "heapSecondHalfFirstBytes": 77887768,
+        "heapSecondHalfLastBytes": 78524544,
+        "slopeInterpretation": "second-half slope is well below the full-range slope: growth is decelerating, consistent with allocator/JIT warm-up rather than an unbounded leak",
+        "heapFirstCycleBytes": 71303024,
+        "heapLastCycleBytes": 78524544,
+        "heapDeltaBytes": 7221520,
+        "listenerDeltaTotal": 0,
+        "timerDeltaTotal": 2,
+        "domNodesFinal": 0
+      }
+    },
+    "staleRunGuard": {
+      "attempts": 30,
+      "staleOverwriteRate": "0/30",
+      "staleOverwriteCount": 0,
+      "freshMarkerPresentCount": 30,
+      "validityCheck": "valid: the fresh run's marker reached state in every attempt, so a stale overwrite would have been detectable"
+    },
+    "pollingCost": {
+      "jobDurationMs": 10000,
+      "pollCount": 7,
+      "totalElapsedMs": 10559.28,
+      "overshootMs": 559.28,
+      "configuredPollDelayMs": 1500,
+      "gapStats": {
+        "n": 6,
+        "min": 1500.16,
+        "max": 1522.71,
+        "mean": 1507.7833,
+        "p50": 1504.755,
+        "p95": 1520.1275
+      }
+    }
+  },
+  "mapScale": {
+    "status": "measured",
+    "scopeCaveat": "standalone harness page, not the assembled FoodMapView component. FoodMapView exposes no marker-injection seam, so an in-app marker sweep is not possible without modifying runtime source, which this benchmark does not do. Library builds and clusterer options are identical to the app.",
+    "cells": [
+      {
+        "markerCount": 50,
+        "chunkedLoading": true,
+        "status": "measured",
+        "drawMsP50": 6.9,
+        "panMsP50": 276.9,
+        "zoomMsP50": 277.8,
+        "panFramesOver50msP50": 0,
+        "longTasksOver50msP50": 0,
+        "longestTaskMsP50": 0,
+        "heapUsedBytesP50": 2762640
+      },
+      {
+        "markerCount": 200,
+        "chunkedLoading": true,
+        "status": "measured",
+        "drawMsP50": 8.7,
+        "panMsP50": 273,
+        "zoomMsP50": 278.3,
+        "panFramesOver50msP50": 0,
+        "longTasksOver50msP50": 0,
+        "longestTaskMsP50": 0,
+        "heapUsedBytesP50": 4126424
+      },
+      {
+        "markerCount": 1000,
+        "chunkedLoading": true,
+        "status": "measured",
+        "drawMsP50": 15.6,
+        "panMsP50": 324.9,
+        "zoomMsP50": 278.4,
+        "panFramesOver50msP50": 0,
+        "longTasksOver50msP50": 0,
+        "longestTaskMsP50": 0,
+        "heapUsedBytesP50": 5783060
+      },
+      {
+        "markerCount": 5000,
+        "chunkedLoading": true,
+        "status": "measured",
+        "drawMsP50": 44,
+        "panMsP50": 273.8,
+        "zoomMsP50": 288.7,
+        "panFramesOver50msP50": 0,
+        "longTasksOver50msP50": 0,
+        "longestTaskMsP50": 0,
+        "heapUsedBytesP50": 10450830
+      },
+      {
+        "markerCount": 50,
+        "chunkedLoading": false,
+        "status": "measured",
+        "drawMsP50": 6,
+        "panMsP50": 275.7,
+        "zoomMsP50": 278.8,
+        "panFramesOver50msP50": 0,
+        "longTasksOver50msP50": 0,
+        "longestTaskMsP50": 0,
+        "heapUsedBytesP50": 2764525
+      },
+      {
+        "markerCount": 200,
+        "chunkedLoading": false,
+        "status": "measured",
+        "drawMsP50": 8.4,
+        "panMsP50": 276.9,
+        "zoomMsP50": 278.1,
+        "panFramesOver50msP50": 0,
+        "longTasksOver50msP50": 0,
+        "longestTaskMsP50": 0,
+        "heapUsedBytesP50": 4104157
+      },
+      {
+        "markerCount": 1000,
+        "chunkedLoading": false,
+        "status": "measured",
+        "drawMsP50": 14.9,
+        "panMsP50": 304.5,
+        "zoomMsP50": 278.8,
+        "panFramesOver50msP50": 0,
+        "longTasksOver50msP50": 0,
+        "longestTaskMsP50": 0,
+        "heapUsedBytesP50": 5802800
+      },
+      {
+        "markerCount": 5000,
+        "chunkedLoading": false,
+        "status": "measured",
+        "drawMsP50": 42.9,
+        "panMsP50": 296.4,
+        "zoomMsP50": 296.5,
+        "panFramesOver50msP50": 0,
+        "longTasksOver50msP50": 0,
+        "longestTaskMsP50": 0,
+        "heapUsedBytesP50": 10881833
+      }
+    ],
+    "chunkedLoadingEffect": [
+      {
+        "markerCount": 50,
+        "drawMsOn": 6.9,
+        "drawMsOff": 6,
+        "longTasksOver50msOn": 0,
+        "longTasksOver50msOff": 0,
+        "longestTaskMsOn": 0,
+        "longestTaskMsOff": 0,
+        "totalBlockingMsOn": 0,
+        "totalBlockingMsOff": 0,
+        "chunkedReducedLongTasks": false,
+        "chunkedReducedLongestTask": false
+      },
+      {
+        "markerCount": 200,
+        "drawMsOn": 8.7,
+        "drawMsOff": 8.4,
+        "longTasksOver50msOn": 0,
+        "longTasksOver50msOff": 0,
+        "longestTaskMsOn": 0,
+        "longestTaskMsOff": 0,
+        "totalBlockingMsOn": 0,
+        "totalBlockingMsOff": 0,
+        "chunkedReducedLongTasks": false,
+        "chunkedReducedLongestTask": false
+      },
+      {
+        "markerCount": 1000,
+        "drawMsOn": 15.6,
+        "drawMsOff": 14.9,
+        "longTasksOver50msOn": 0,
+        "longTasksOver50msOff": 0,
+        "longestTaskMsOn": 0,
+        "longestTaskMsOff": 0,
+        "totalBlockingMsOn": 0,
+        "totalBlockingMsOff": 0,
+        "chunkedReducedLongTasks": false,
+        "chunkedReducedLongestTask": false
+      },
+      {
+        "markerCount": 5000,
+        "drawMsOn": 44,
+        "drawMsOff": 42.9,
+        "longTasksOver50msOn": 0,
+        "longTasksOver50msOff": 0,
+        "longestTaskMsOn": 0,
+        "longestTaskMsOff": 0,
+        "totalBlockingMsOn": 0,
+        "totalBlockingMsOff": 0,
+        "chunkedReducedLongTasks": false,
+        "chunkedReducedLongestTask": false
+      }
+    ]
+  },
+  "apiFanout": {
+    "status": "measured",
+    "perRoute": [
+      {
+        "route": "home",
+        "path": "/",
+        "apiRequestCountMedian": 1,
+        "uniqueEndpoints": [
+          "/api/home/daily-inspiration"
+        ],
+        "maxConcurrentApiCalls": 1,
+        "longestSequentialChainLength": 1,
+        "lastApiEndMinusLcpMsMedian": -502.7,
+        "longTasksOver50msMax": 0
+      },
+      {
+        "route": "about",
+        "path": "/about",
+        "apiRequestCountMedian": 0,
+        "uniqueEndpoints": [],
+        "maxConcurrentApiCalls": 0,
+        "longestSequentialChainLength": 0,
+        "lastApiEndMinusLcpMsMedian": null,
+        "longTasksOver50msMax": 1
+      },
+      {
+        "route": "login",
+        "path": "/login",
+        "apiRequestCountMedian": 0,
+        "uniqueEndpoints": [],
+        "maxConcurrentApiCalls": 0,
+        "longestSequentialChainLength": 0,
+        "lastApiEndMinusLcpMsMedian": null,
+        "longTasksOver50msMax": 0
+      },
+      {
+        "route": "news",
+        "path": "/news",
+        "apiRequestCountMedian": 1,
+        "uniqueEndpoints": [
+          "/api/news/external"
+        ],
+        "maxConcurrentApiCalls": 1,
+        "longestSequentialChainLength": 1,
+        "lastApiEndMinusLcpMsMedian": -349.7,
+        "longTasksOver50msMax": 0
+      },
+      {
+        "route": "recipes",
+        "path": "/recipes",
+        "apiRequestCountMedian": 2,
+        "uniqueEndpoints": [
+          "/api/recipes"
+        ],
+        "maxConcurrentApiCalls": 2,
+        "longestSequentialChainLength": 1,
+        "lastApiEndMinusLcpMsMedian": 382.5,
+        "longTasksOver50msMax": 3
+      },
+      {
+        "route": "recipe_detail",
+        "path": "/recipes/1",
+        "apiRequestCountMedian": 1,
+        "uniqueEndpoints": [
+          "/api/recipes/1"
+        ],
+        "maxConcurrentApiCalls": 1,
+        "longestSequentialChainLength": 1,
+        "lastApiEndMinusLcpMsMedian": -118.3,
+        "longTasksOver50msMax": 0
+      },
+      {
+        "route": "food_map",
+        "path": "/food-map",
+        "apiRequestCountMedian": 2,
+        "uniqueEndpoints": [
+          "/api/food-spots/public",
+          "/api/restaurants"
+        ],
+        "maxConcurrentApiCalls": 1,
+        "longestSequentialChainLength": 2,
+        "lastApiEndMinusLcpMsMedian": -447.1,
+        "longTasksOver50msMax": 0
+      },
+      {
+        "route": "profile",
+        "path": "/profile",
+        "apiRequestCountMedian": 1,
+        "uniqueEndpoints": [
+          "/api/auth/me"
+        ],
+        "maxConcurrentApiCalls": 1,
+        "longestSequentialChainLength": 1,
+        "lastApiEndMinusLcpMsMedian": -704.6,
+        "longTasksOver50msMax": 0
+      },
+      {
+        "route": "admin",
+        "path": "/admin",
+        "apiRequestCountMedian": 3,
+        "uniqueEndpoints": [
+          "/api/admin/stats",
+          "/api/auth/me"
+        ],
+        "maxConcurrentApiCalls": 2,
+        "longestSequentialChainLength": 2,
+        "lastApiEndMinusLcpMsMedian": -348.9,
+        "longTasksOver50msMax": 0
+      }
+    ]
+  },
+  "assetPayload": {
+    "status": "measured",
+    "onDisk": {
+      "fileCount": 325,
+      "totalMb": 49.97,
+      "byExtension": {
+        ".webp": {
+          "count": 200,
+          "bytes": 40241212,
+          "mb": 38.377
+        },
+        ".jpg": {
+          "count": 122,
+          "bytes": 11763286,
+          "mb": 11.218
+        },
+        ".jpeg": {
+          "count": 1,
+          "bytes": 382444,
+          "mb": 0.365
+        },
+        ".svg": {
+          "count": 2,
+          "bytes": 14577,
+          "mb": 0.014
+        }
+      }
+    },
+    "remainingJpg": {
+      "count": 123,
+      "totalOriginalBytes": 12145214,
+      "totalWebpBytes": 10529640,
+      "totalSavedMb": 1.54,
+      "totalSavedPercent": 13.3,
+      "filesWhereWebpIsLarger": 83,
+      "top10Savings": [
+        {
+          "file": "images/Sesame Cucumber Salad.jpg",
+          "originalBytes": 812667,
+          "webpBytes": 388868,
+          "savedBytes": 423799,
+          "savedPercent": 52.15,
+          "width": 1800,
+          "height": 1801
+        },
+        {
+          "file": "images/Masala Dosa Potato Plate.jpg",
+          "originalBytes": 725988,
+          "webpBytes": 378380,
+          "savedBytes": 347608,
+          "savedPercent": 47.88,
+          "width": 2048,
+          "height": 1367
+        },
+        {
+          "file": "images/Hanoi Beef Pho.jpeg",
+          "originalBytes": 382444,
+          "webpBytes": 78976,
+          "savedBytes": 303468,
+          "savedPercent": 79.35,
+          "width": 800,
+          "height": 605
+        },
+        {
+          "file": "images/Green Curry Vegetables.jpg",
+          "originalBytes": 1422790,
+          "webpBytes": 1180878,
+          "savedBytes": 241912,
+          "savedPercent": 17,
+          "width": 2743,
+          "height": 3434
+        },
+        {
+          "file": "images/Hanoi Beef Pho.jpg",
+          "originalBytes": 240567,
+          "webpBytes": 46162,
+          "savedBytes": 194405,
+          "savedPercent": 80.81,
+          "width": 650,
+          "height": 479
+        },
+        {
+          "file": "images/Cucumber Mint Limeade.jpg",
+          "originalBytes": 233232,
+          "webpBytes": 57594,
+          "savedBytes": 175638,
+          "savedPercent": 75.31,
+          "width": 652,
+          "height": 900
+        },
+        {
+          "file": "images/Lamb Kofta Pita Plates.jpg",
+          "originalBytes": 337917,
+          "webpBytes": 177918,
+          "savedBytes": 159999,
+          "savedPercent": 47.35,
+          "width": 1920,
+          "height": 2560
+        },
+        {
+          "file": "images/Vietnamese Coffee Flan.jpg",
+          "originalBytes": 214375,
+          "webpBytes": 72076,
+          "savedBytes": 142299,
+          "savedPercent": 66.38,
+          "width": 1200,
+          "height": 1500
+        },
+        {
+          "file": "images/Cinnamon Baked Apples.jpg",
+          "originalBytes": 515301,
+          "webpBytes": 377460,
+          "savedBytes": 137841,
+          "savedPercent": 26.75,
+          "width": 1456,
+          "height": 2184
+        },
+        {
+          "file": "images/Savory Breakfast Burrito.jpg",
+          "originalBytes": 232329,
+          "webpBytes": 118526,
+          "savedBytes": 113803,
+          "savedPercent": 48.98,
+          "width": 1200,
+          "height": 1800
+        }
+      ]
+    },
+    "transferredByRoute": {
+      "status": "measured",
+      "source": "benchmark/out/route-budget-raw.json (Tier 1A, cold cache, p50 of 5 measured runs)",
+      "routes": [
+        {
+          "route": "home",
+          "path": "/",
+          "imageTransferBytesP50": 1001157,
+          "imageRequestCount": 6,
+          "allTransferBytesP50": 1306828,
+          "imageShareOfTransfer": 0.7661
+        },
+        {
+          "route": "news",
+          "path": "/news",
+          "imageTransferBytesP50": 163965,
+          "imageRequestCount": 5,
+          "allTransferBytesP50": 436020,
+          "imageShareOfTransfer": 0.376
+        },
+        {
+          "route": "about",
+          "path": "/about",
+          "imageTransferBytesP50": 100441,
+          "imageRequestCount": 2,
+          "allTransferBytesP50": 362136,
+          "imageShareOfTransfer": 0.2774
+        },
+        {
+          "route": "recipes",
+          "path": "/recipes",
+          "imageTransferBytesP50": 2817666,
+          "imageRequestCount": 16,
+          "allTransferBytesP50": 3344084,
+          "imageShareOfTransfer": 0.8426
+        },
+        {
+          "route": "recipe_detail",
+          "path": "/recipes/1",
+          "imageTransferBytesP50": 240776,
+          "imageRequestCount": 1,
+          "allTransferBytesP50": 557846,
+          "imageShareOfTransfer": 0.4316
+        },
+        {
+          "route": "food_map",
+          "path": "/food-map",
+          "imageTransferBytesP50": 1106340,
+          "imageRequestCount": 40,
+          "allTransferBytesP50": 1441483,
+          "imageShareOfTransfer": 0.7675
+        },
+        {
+          "route": "profile",
+          "path": "/profile",
+          "imageTransferBytesP50": 0,
+          "imageRequestCount": 0,
+          "allTransferBytesP50": 265978,
+          "imageShareOfTransfer": 0
+        },
+        {
+          "route": "admin",
+          "path": "/admin",
+          "imageTransferBytesP50": 0,
+          "imageRequestCount": 0,
+          "allTransferBytesP50": 271369,
+          "imageShareOfTransfer": 0
+        }
+      ]
+    }
+  },
+  "cssCoverage": {
+    "status": "measured",
+    "totals": {
+      "routesMeasured": 8,
+      "meanUsedBytePercent": 8.77,
+      "minUsedBytePercent": 4.5,
+      "maxUsedBytePercent": 19.94,
+      "meanWastedBytes": 286801,
+      "meanUsedRulePercent": "not reported - see meta.ruleCountCaveat"
+    },
+    "ruleCountCaveat": "IGNORE usedRulePercent. CDP returns entries only for rules it observed as used, so usedRules always equals totalRulesTracked and the ratio is a constant 100% artifact, not a measurement. The valid figure is usedBytes divided by the full stylesheet text length fetched via CSS.getStyleSheetText, reported as usedBytePercent.",
+    "perRoute": [
+      {
+        "route": "home",
+        "stylesheetTotalBytes": 299949,
+        "stylesheetUsedBytes": 20089,
+        "usedBytePercent": 6.7,
+        "wastedBytes": 279860
+      },
+      {
+        "route": "news",
+        "stylesheetTotalBytes": 302036,
+        "stylesheetUsedBytes": 17704,
+        "usedBytePercent": 5.86,
+        "wastedBytes": 284332
+      },
+      {
+        "route": "about",
+        "stylesheetTotalBytes": 296822,
+        "stylesheetUsedBytes": 17714,
+        "usedBytePercent": 5.97,
+        "wastedBytes": 279108
+      },
+      {
+        "route": "recipes",
+        "stylesheetTotalBytes": 299949,
+        "stylesheetUsedBytes": 44437,
+        "usedBytePercent": 14.81,
+        "wastedBytes": 255512
+      },
+      {
+        "route": "recipe_detail",
+        "stylesheetTotalBytes": 301330,
+        "stylesheetUsedBytes": 60086,
+        "usedBytePercent": 19.94,
+        "wastedBytes": 241244
+      },
+      {
+        "route": "food_map",
+        "stylesheetTotalBytes": 400569,
+        "stylesheetUsedBytes": 26975,
+        "usedBytePercent": 6.73,
+        "wastedBytes": 373594
+      },
+      {
+        "route": "profile",
+        "stylesheetTotalBytes": 296822,
+        "stylesheetUsedBytes": 13359,
+        "usedBytePercent": 4.5,
+        "wastedBytes": 283463
+      },
+      {
+        "route": "admin",
+        "stylesheetTotalBytes": 314976,
+        "stylesheetUsedBytes": 17679,
+        "usedBytePercent": 5.61,
+        "wastedBytes": 297297
+      }
+    ]
+  },
+  "build": {
+    "status": "measured",
+    "warmupRuns": 1,
+    "measuredRuns": 5,
+    "wallClockMs": {
+      "n": 5,
+      "min": 1248,
+      "max": 1385,
+      "mean": 1314.2,
+      "stdev": 49.8116,
+      "p50": 1322,
+      "p95": 1372.4
+    },
+    "viteReportedMs": {
+      "n": 5,
+      "min": 641,
+      "max": 696,
+      "mean": 670,
+      "stdev": 21.6217,
+      "p50": 666,
+      "p95": 694
+    },
+    "perRun": [
+      {
+        "kind": "warmup",
+        "wallClockMs": 2435,
+        "viteReportedMs": 1070,
+        "exitCode": 0
+      },
+      {
+        "kind": "measured",
+        "wallClockMs": 1322,
+        "viteReportedMs": 686,
+        "exitCode": 0
+      },
+      {
+        "kind": "measured",
+        "wallClockMs": 1294,
+        "viteReportedMs": 696,
+        "exitCode": 0
+      },
+      {
+        "kind": "measured",
+        "wallClockMs": 1248,
+        "viteReportedMs": 641,
+        "exitCode": 0
+      },
+      {
+        "kind": "measured",
+        "wallClockMs": 1322,
+        "viteReportedMs": 666,
+        "exitCode": 0
+      },
+      {
+        "kind": "measured",
+        "wallClockMs": 1385,
+        "viteReportedMs": 661,
+        "exitCode": 0
+      }
+    ],
+    "dist": {
+      "fileCount": 358,
+      "totalMb": 51.21,
+      "jsTotalGzipBytes": 287814,
+      "jsSharedGzipBytes": 201134,
+      "jsRouteGzipBytes": 86680,
+      "cssTotalGzipBytes": 74821,
+      "byExtension": {
+        ".webp": {
+          "count": 200,
+          "bytes": 40241212,
+          "mb": 38.377
+        },
+        ".jpg": {
+          "count": 122,
+          "bytes": 11763286,
+          "mb": 11.218
+        },
+        ".js": {
+          "count": 23,
+          "bytes": 866410,
+          "mb": 0.826
+        },
+        ".css": {
+          "count": 9,
+          "bytes": 426360,
+          "mb": 0.407
+        },
+        ".jpeg": {
+          "count": 1,
+          "bytes": 382444,
+          "mb": 0.365
+        },
+        ".svg": {
+          "count": 2,
+          "bytes": 14577,
+          "mb": 0.014
+        },
+        ".html": {
+          "count": 1,
+          "bytes": 1841,
+          "mb": 0.002
+        }
+      }
+    }
+  },
+  "api": {
+    "status": "measured",
+    "requestsPerEndpoint": 30,
+    "endpoints": [
+      {
+        "endpoint": "login",
+        "method": "POST",
+        "route": "/auth/login",
+        "n": 30,
+        "p50": 65.104,
+        "p95": 124.3385,
+        "min": 48.436,
+        "max": 128.821,
+        "stdev": 23.3922,
+        "responseBytes": 344
+      },
+      {
+        "endpoint": "recipe_list",
+        "method": "GET",
+        "route": "/recipes",
+        "n": 30,
+        "p50": 37.2455,
+        "p95": 51.4781,
+        "min": 12.478,
+        "max": 91.822,
+        "stdev": 14.1265,
+        "responseBytes": 19725
+      },
+      {
+        "endpoint": "recipe_detail",
+        "method": "GET",
+        "route": "/recipes/1",
+        "n": 30,
+        "p50": 46.5535,
+        "p95": 50.0624,
+        "min": 38.428,
+        "max": 50.247,
+        "stdev": 3.6239,
+        "responseBytes": 22524
+      },
+      {
+        "endpoint": "checklist",
+        "method": "GET",
+        "route": "/checklists",
+        "n": 30,
+        "p50": 1.988,
+        "p95": 2.5074,
+        "min": 1.447,
+        "max": 3.197,
+        "stdev": 0.3732,
+        "responseBytes": 12
+      }
+    ]
+  },
+  "realtime": {
+    "status": "measured",
+    "design": "4 operations x {1,5,10} viewers x 10 iterations",
+    "expectedObservations": 640,
+    "totals": {
+      "observations": 640,
+      "observationsWithSuccessfulHttp": 640,
+      "observationsWithFailedHttp": 0,
+      "operationsExercised": [
+        "new_comment",
+        "comment_updated",
+        "rating_updated",
+        "comment_deleted"
+      ],
+      "operationsNotExercised": [],
+      "lossCount": 0,
+      "lossRate": 0,
+      "duplicateCount": 0,
+      "duplicateRate": 0,
+      "viewerSequencesChecked": 160,
+      "misorderedSequences": 0,
+      "latencyMs": {
+        "n": 640,
+        "min": 10.573,
+        "max": 63.105,
+        "mean": 20.8915,
+        "stdev": 8.1383,
+        "p50": 19.1675,
+        "p95": 34.451
+      }
+    },
+    "cleanupVerified": true,
+    "evidenceForZeroClaims": {
+      "lossMeasuredDirectly": true,
+      "lossCount": 0,
+      "duplicationMeasuredDirectly": true,
+      "duplicateCount": 0,
+      "orderingMeasuredDirectly": true,
+      "misorderedSequences": 0
+    }
+  },
+  "responsive": {
+    "status": "measured",
+    "viewportWidths": [
+      305,
+      360,
+      375,
+      753,
+      1009,
+      1425
+    ],
+    "totalsPerRule": {
+      "documentHorizontalOverflow": 3,
+      "elementOverflowsViewport": 898,
+      "touchTargetTooSmall": 849,
+      "textTooSmall": 398,
+      "imageWithoutDimensions": 374,
+      "innerHorizontalScroll": 6
+    },
+    "perCombination": [
+      {
+        "route": "recipes",
+        "viewportWidth": 305,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 1,
+          "elementOverflowsViewport": 77,
+          "touchTargetTooSmall": 75,
+          "textTooSmall": 6,
+          "imageWithoutDimensions": 33,
+          "innerHorizontalScroll": 1
+        },
+        "totalViolations": 193
+      },
+      {
+        "route": "recipes",
+        "viewportWidth": 360,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 36,
+          "touchTargetTooSmall": 83,
+          "textTooSmall": 6,
+          "imageWithoutDimensions": 33,
+          "innerHorizontalScroll": 1
+        },
+        "totalViolations": 159
+      },
+      {
+        "route": "recipes",
+        "viewportWidth": 375,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 35,
+          "touchTargetTooSmall": 88,
+          "textTooSmall": 6,
+          "imageWithoutDimensions": 33,
+          "innerHorizontalScroll": 1
+        },
+        "totalViolations": 163
+      },
+      {
+        "route": "recipes",
+        "viewportWidth": 753,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 21,
+          "touchTargetTooSmall": 94,
+          "textTooSmall": 7,
+          "imageWithoutDimensions": 36,
+          "innerHorizontalScroll": 1
+        },
+        "totalViolations": 159
+      },
+      {
+        "route": "recipes",
+        "viewportWidth": 1009,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 9,
+          "touchTargetTooSmall": 75,
+          "textTooSmall": 7,
+          "imageWithoutDimensions": 36,
+          "innerHorizontalScroll": 1
+        },
+        "totalViolations": 128
+      },
+      {
+        "route": "recipes",
+        "viewportWidth": 1425,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 8,
+          "touchTargetTooSmall": 96,
+          "textTooSmall": 18,
+          "imageWithoutDimensions": 44,
+          "innerHorizontalScroll": 1
+        },
+        "totalViolations": 167
+      },
+      {
+        "route": "news",
+        "viewportWidth": 305,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 1,
+          "elementOverflowsViewport": 13,
+          "touchTargetTooSmall": 36,
+          "textTooSmall": 0,
+          "imageWithoutDimensions": 0,
+          "innerHorizontalScroll": 0
+        },
+        "totalViolations": 50
+      },
+      {
+        "route": "news",
+        "viewportWidth": 360,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 0,
+          "touchTargetTooSmall": 36,
+          "textTooSmall": 0,
+          "imageWithoutDimensions": 0,
+          "innerHorizontalScroll": 0
+        },
+        "totalViolations": 36
+      },
+      {
+        "route": "news",
+        "viewportWidth": 375,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 0,
+          "touchTargetTooSmall": 36,
+          "textTooSmall": 0,
+          "imageWithoutDimensions": 0,
+          "innerHorizontalScroll": 0
+        },
+        "totalViolations": 36
+      },
+      {
+        "route": "news",
+        "viewportWidth": 753,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 0,
+          "touchTargetTooSmall": 36,
+          "textTooSmall": 1,
+          "imageWithoutDimensions": 0,
+          "innerHorizontalScroll": 0
+        },
+        "totalViolations": 37
+      },
+      {
+        "route": "news",
+        "viewportWidth": 1009,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 0,
+          "touchTargetTooSmall": 36,
+          "textTooSmall": 1,
+          "imageWithoutDimensions": 0,
+          "innerHorizontalScroll": 0
+        },
+        "totalViolations": 37
+      },
+      {
+        "route": "news",
+        "viewportWidth": 1425,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 0,
+          "touchTargetTooSmall": 35,
+          "textTooSmall": 1,
+          "imageWithoutDimensions": 0,
+          "innerHorizontalScroll": 0
+        },
+        "totalViolations": 36
+      },
+      {
+        "route": "food_map",
+        "viewportWidth": 305,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 1,
+          "elementOverflowsViewport": 120,
+          "touchTargetTooSmall": 26,
+          "textTooSmall": 57,
+          "imageWithoutDimensions": 12,
+          "innerHorizontalScroll": 0
+        },
+        "totalViolations": 216
+      },
+      {
+        "route": "food_map",
+        "viewportWidth": 360,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 120,
+          "touchTargetTooSmall": 26,
+          "textTooSmall": 57,
+          "imageWithoutDimensions": 18,
+          "innerHorizontalScroll": 0
+        },
+        "totalViolations": 221
+      },
+      {
+        "route": "food_map",
+        "viewportWidth": 375,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 120,
+          "touchTargetTooSmall": 26,
+          "textTooSmall": 57,
+          "imageWithoutDimensions": 18,
+          "innerHorizontalScroll": 0
+        },
+        "totalViolations": 221
+      },
+      {
+        "route": "food_map",
+        "viewportWidth": 753,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 118,
+          "touchTargetTooSmall": 26,
+          "textTooSmall": 58,
+          "imageWithoutDimensions": 36,
+          "innerHorizontalScroll": 0
+        },
+        "totalViolations": 238
+      },
+      {
+        "route": "food_map",
+        "viewportWidth": 1009,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 117,
+          "touchTargetTooSmall": 10,
+          "textTooSmall": 58,
+          "imageWithoutDimensions": 30,
+          "innerHorizontalScroll": 0
+        },
+        "totalViolations": 215
+      },
+      {
+        "route": "food_map",
+        "viewportWidth": 1425,
+        "violationsPerRule": {
+          "documentHorizontalOverflow": 0,
+          "elementOverflowsViewport": 104,
+          "touchTargetTooSmall": 9,
+          "textTooSmall": 58,
+          "imageWithoutDimensions": 45,
+          "innerHorizontalScroll": 0
+        },
+        "totalViolations": 216
+      }
+    ]
+  },
+  "unavailable": []
+}

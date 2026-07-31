@@ -1,0 +1,1692 @@
+{
+  "meta": {
+    "commit": "1384d59573d0927da3ea0e7828c19d692056bc41",
+    "commitShort": "1384d59",
+    "branch": "codex/render-deployment",
+    "runAtIso": "2026-07-31T05:40:37.837Z",
+    "node": "v24.11.0",
+    "npm": "unknown",
+    "chrome": "151.0.7922.71",
+    "os": "Windows_NT 10.0.26200 (win32 x64)",
+    "osCaption": "Microsoft Windows 11 Home Single Language 10.0.26200",
+    "cpu": "Intel(R) Core(TM) i7-14700HX (28 logical)",
+    "cpuCores": 28,
+    "ramGb": 15.71,
+    "load": "cpu_load_percent=24",
+    "harnessVersion": "2.0.0",
+    "measurement": "asset-payload",
+    "tier": "2G",
+    "publicDir": "C:/COS30043/foodstory/frontend/public",
+    "sharpVersion": {
+      "aom": "3.13.1",
+      "archive": "3.8.2",
+      "cairo": "1.18.4",
+      "cgif": "0.5.0",
+      "exif": "0.6.25",
+      "expat": "2.7.3",
+      "ffi": "3.5.2",
+      "fontconfig": "2.17.1",
+      "freetype": "2.14.1",
+      "fribidi": "1.0.16",
+      "glib": "2.86.1",
+      "harfbuzz": "12.1.0",
+      "heif": "1.20.2",
+      "highway": "1.3.0",
+      "imagequant": "2.4.1",
+      "lcms": "2.17",
+      "mozjpeg": "0826579",
+      "pango": "1.57.0",
+      "pixman": "0.46.4",
+      "png": "1.6.50",
+      "proxy-libintl": "0.5",
+      "rsvg": "2.61.2",
+      "spng": "0.7.4",
+      "tiff": "4.7.1",
+      "vips": "8.17.3",
+      "webp": "1.6.0",
+      "xml2": "2.15.1",
+      "zlib-ng": "2.2.5",
+      "sharp": "0.34.5"
+    },
+    "conversionSettings": "sharp .webp({ quality: 82 }); originals never modified; output written to a temp dir and deleted after measuring"
+  },
+  "onDisk": {
+    "fileCount": 325,
+    "totalBytes": 52401519,
+    "totalMb": 49.97,
+    "byExtension": {
+      ".webp": {
+        "count": 200,
+        "bytes": 40241212,
+        "mb": 38.377
+      },
+      ".jpg": {
+        "count": 122,
+        "bytes": 11763286,
+        "mb": 11.218
+      },
+      ".jpeg": {
+        "count": 1,
+        "bytes": 382444,
+        "mb": 0.365
+      },
+      ".svg": {
+        "count": 2,
+        "bytes": 14577,
+        "mb": 0.014
+      }
+    }
+  },
+  "remainingJpg": {
+    "count": 123,
+    "convertedSuccessfully": 122,
+    "conversionErrors": 1,
+    "totalOriginalBytes": 12145214,
+    "totalWebpBytes": 10529640,
+    "totalSavedBytes": 1615574,
+    "totalSavedMb": 1.54,
+    "totalSavedPercent": 13.3,
+    "savedPercentDistribution": {
+      "n": 122,
+      "min": -75.36,
+      "max": 80.81,
+      "mean": -4.2598,
+      "stdev": 27.1312,
+      "p50": -11.235,
+      "p95": 51.9915
+    },
+    "filesWhereWebpIsLarger": [
+      {
+        "file": "images/Apple Cinnamon Oat Bake.jpg",
+        "originalBytes": 64490,
+        "webpBytes": 80492
+      },
+      {
+        "file": "images/Baklava Yogurt Parfaits.jpg",
+        "originalBytes": 32088,
+        "webpBytes": 32884
+      },
+      {
+        "file": "images/Banana Bread Loaf.jpg",
+        "originalBytes": 48886,
+        "webpBytes": 60520
+      },
+      {
+        "file": "images/Basil Beef Stir Fry.jpg",
+        "originalBytes": 64002,
+        "webpBytes": 79638
+      },
+      {
+        "file": "images/BBQ Chicken Sheet Pan.jpg",
+        "originalBytes": 60550,
+        "webpBytes": 78386
+      },
+      {
+        "file": "images/Beef and Broccoli Stir Fry.jpg",
+        "originalBytes": 50616,
+        "webpBytes": 62520
+      },
+      {
+        "file": "images/Beef Bulgogi Lettuce Bowls.jpg",
+        "originalBytes": 72665,
+        "webpBytes": 89570
+      },
+      {
+        "file": "images/Bibimbap Vegetable Rice Bowl.jpg",
+        "originalBytes": 59058,
+        "webpBytes": 72324
+      },
+      {
+        "file": "images/Black Bean Enchilada Bake.jpg",
+        "originalBytes": 160823,
+        "webpBytes": 199054
+      },
+      {
+        "file": "images/Breakfast Fried Rice.jpg",
+        "originalBytes": 36567,
+        "webpBytes": 40722
+      },
+      {
+        "file": "images/Buffalo Cauliflower Wraps.jpg",
+        "originalBytes": 47598,
+        "webpBytes": 54624
+      },
+      {
+        "file": "images/Butter Chicken Curry.jpg",
+        "originalBytes": 46420,
+        "webpBytes": 57336
+      },
+      {
+        "file": "images/Caprese Farro Salad.jpg",
+        "originalBytes": 69198,
+        "webpBytes": 88916
+      },
+      {
+        "file": "images/Caramelized Pork Clay Pot.jpg",
+        "originalBytes": 71532,
+        "webpBytes": 92446
+      },
+      {
+        "file": "images/Char Siu Pork Bowls.jpg",
+        "originalBytes": 38976,
+        "webpBytes": 41896
+      },
+      {
+        "file": "images/Chicken Katsu Curry.jpg",
+        "originalBytes": 47912,
+        "webpBytes": 58536
+      },
+      {
+        "file": "images/Chicken Pad Thai.jpg",
+        "originalBytes": 44505,
+        "webpBytes": 51980
+      },
+      {
+        "file": "images/Chicken Pesto Pasta.jpg",
+        "originalBytes": 74412,
+        "webpBytes": 96762
+      },
+      {
+        "file": "images/Chicken Tinga Tacos.jpg",
+        "originalBytes": 86187,
+        "webpBytes": 106656
+      },
+      {
+        "file": "images/Chickpea Chana Masala.jpg",
+        "originalBytes": 210582,
+        "webpBytes": 211948
+      },
+      {
+        "file": "images/Chickpea Spinach Curry.jpg",
+        "originalBytes": 59179,
+        "webpBytes": 76348
+      },
+      {
+        "file": "images/Chocolate Chip Skillet Cookie.jpg",
+        "originalBytes": 54070,
+        "webpBytes": 72554
+      },
+      {
+        "file": "images/Coconut Mango Sago.jpg",
+        "originalBytes": 39806,
+        "webpBytes": 45988
+      },
+      {
+        "file": "images/Crab Corn Fritters.jpg",
+        "originalBytes": 34472,
+        "webpBytes": 40830
+      },
+      {
+        "file": "images/Crispy Banh Mi Chicken Sandwich.jpg",
+        "originalBytes": 56525,
+        "webpBytes": 78914
+      },
+      {
+        "file": "images/Falafel Chickpea Salad.jpg",
+        "originalBytes": 43323,
+        "webpBytes": 46252
+      },
+      {
+        "file": "images/Fresh Shrimp Summer Rolls.jpg",
+        "originalBytes": 37715,
+        "webpBytes": 42922
+      },
+      {
+        "file": "images/Garlic Butter Shrimp Rice.jpg",
+        "originalBytes": 43860,
+        "webpBytes": 46916
+      },
+      {
+        "file": "images/Garlic Morning Glory Stir Fry.jpg",
+        "originalBytes": 52556,
+        "webpBytes": 60118
+      },
+      {
+        "file": "images/Ginger Turmeric Tea.jpg",
+        "originalBytes": 33720,
+        "webpBytes": 36280
+      },
+      {
+        "file": "images/Greek Chicken Souvlaki Bowls.jpg",
+        "originalBytes": 46725,
+        "webpBytes": 54548
+      },
+      {
+        "file": "images/Japchae Glass Noodles.jpg",
+        "originalBytes": 144346,
+        "webpBytes": 253124
+      },
+      {
+        "file": "images/Lemon Blueberry Cheesecake Cups.jpg",
+        "originalBytes": 26808,
+        "webpBytes": 26946
+      },
+      {
+        "file": "images/Lemon Herb Salmon Couscous.jpg",
+        "originalBytes": 66265,
+        "webpBytes": 73630
+      },
+      {
+        "file": "images/Lemon Shrimp Linguine.jpg",
+        "originalBytes": 59665,
+        "webpBytes": 90544
+      },
+      {
+        "file": "images/Lentil Dal Tadka.jpg",
+        "originalBytes": 44513,
+        "webpBytes": 51834
+      },
+      {
+        "file": "images/Lentil Mushroom Shepherd Pie.jpg",
+        "originalBytes": 30524,
+        "webpBytes": 33222
+      },
+      {
+        "file": "images/Mango Lassi.jpg",
+        "originalBytes": 28949,
+        "webpBytes": 32854
+      },
+      {
+        "file": "images/Mango Sticky Rice.jpg",
+        "originalBytes": 29150,
+        "webpBytes": 32888
+      },
+      {
+        "file": "images/Mapo Tofu with Mushrooms.jpg",
+        "originalBytes": 41907,
+        "webpBytes": 48802
+      },
+      {
+        "file": "images/Margherita Flatbread.jpg",
+        "originalBytes": 53777,
+        "webpBytes": 64726
+      },
+      {
+        "file": "images/Matcha Chia Pudding.jpg",
+        "originalBytes": 122809,
+        "webpBytes": 126342
+      },
+      {
+        "file": "images/Miso Tofu Soup.jpg",
+        "originalBytes": 42938,
+        "webpBytes": 49390
+      },
+      {
+        "file": "images/Mushroom Risotto.jpg",
+        "originalBytes": 31059,
+        "webpBytes": 32886
+      },
+      {
+        "file": "images/Mussel Tomato Stew.jpg",
+        "originalBytes": 43486,
+        "webpBytes": 45472
+      },
+      {
+        "file": "images/Pineapple Fried Rice.jpg",
+        "originalBytes": 37464,
+        "webpBytes": 39200
+      },
+      {
+        "file": "images/Pork Gyoza Rice Plate.jpg",
+        "originalBytes": 39258,
+        "webpBytes": 42876
+      },
+      {
+        "file": "images/Pork Wonton Soup.jpg",
+        "originalBytes": 38516,
+        "webpBytes": 44446
+      },
+      {
+        "file": "images/Pozole Verde Chicken Soup.jpg",
+        "originalBytes": 44607,
+        "webpBytes": 56534
+      },
+      {
+        "file": "images/Ranch Chicken Salad.jpg",
+        "originalBytes": 44007,
+        "webpBytes": 54722
+      },
+      {
+        "file": "images/Roasted Cauliflower Tacos.jpg",
+        "originalBytes": 69011,
+        "webpBytes": 93836
+      },
+      {
+        "file": "images/Roasted Vegetable Hummus Bowl.jpg",
+        "originalBytes": 43116,
+        "webpBytes": 49608
+      },
+      {
+        "file": "images/Saigon Lemongrass Chicken Rice.jpg",
+        "originalBytes": 45688,
+        "webpBytes": 53000
+      },
+      {
+        "file": "images/Salmon Sushi Bake.jpg",
+        "originalBytes": 52775,
+        "webpBytes": 65162
+      },
+      {
+        "file": "images/Salmon Teriyaki Donburi.jpg",
+        "originalBytes": 71885,
+        "webpBytes": 90678
+      },
+      {
+        "file": "images/Scallop Pea Risotto.jpg",
+        "originalBytes": 38708,
+        "webpBytes": 44282
+      },
+      {
+        "file": "images/Sesame Edamame Rice Bowl.jpg",
+        "originalBytes": 37672,
+        "webpBytes": 41670
+      },
+      {
+        "file": "images/Shakshuka Pepper Skillet.jpg",
+        "originalBytes": 62834,
+        "webpBytes": 80060
+      },
+      {
+        "file": "images/Smoked Salmon Bagel Plate.jpg",
+        "originalBytes": 60936,
+        "webpBytes": 77328
+      },
+      {
+        "file": "images/Soba Noodle Sesame Salad.jpg",
+        "originalBytes": 75470,
+        "webpBytes": 93524
+      },
+      {
+        "file": "images/Soy Garlic Crispy Chicken.jpg",
+        "originalBytes": 170478,
+        "webpBytes": 251776
+      },
+      {
+        "file": "images/Spicy Pork Noodle Stir Fry.jpg",
+        "originalBytes": 52900,
+        "webpBytes": 63616
+      },
+      {
+        "file": "images/Strawberry Shortcake Jars.jpg",
+        "originalBytes": 30808,
+        "webpBytes": 31178
+      },
+      {
+        "file": "images/Street Corn Salad.jpg",
+        "originalBytes": 60295,
+        "webpBytes": 75066
+      },
+      {
+        "file": "images/Sweet Potato Black Bean Chili.jpg",
+        "originalBytes": 34333,
+        "webpBytes": 36602
+      },
+      {
+        "file": "images/Sweet Potato Quesadillas.jpg",
+        "originalBytes": 50960,
+        "webpBytes": 55164
+      },
+      {
+        "file": "images/Tandoori Cauliflower Bowls.jpg",
+        "originalBytes": 36681,
+        "webpBytes": 40366
+      },
+      {
+        "file": "images/Thai Peanut Chicken Salad.jpg",
+        "originalBytes": 63548,
+        "webpBytes": 78618
+      },
+      {
+        "file": "images/Tiramisu Overnight Cups.jpg",
+        "originalBytes": 149111,
+        "webpBytes": 168412
+      },
+      {
+        "file": "images/Tofu Quinoa Power Bowl.jpg",
+        "originalBytes": 42676,
+        "webpBytes": 48670
+      },
+      {
+        "file": "images/Tomato Basil Spaghetti.jpg",
+        "originalBytes": 55501,
+        "webpBytes": 75394
+      },
+      {
+        "file": "images/Tomato Egg Noodle Soup.jpg",
+        "originalBytes": 50010,
+        "webpBytes": 60364
+      },
+      {
+        "file": "images/Tuna Mayo Onigiri Plate.jpg",
+        "originalBytes": 23396,
+        "webpBytes": 24144
+      },
+      {
+        "file": "images/Tuna Poke Bowl.jpg",
+        "originalBytes": 31558,
+        "webpBytes": 32898
+      },
+      {
+        "file": "images/Turkey Meatball Pasta.jpg",
+        "originalBytes": 69781,
+        "webpBytes": 70970
+      },
+      {
+        "file": "images/Turmeric Fish Noodle Bowl.jpg",
+        "originalBytes": 57997,
+        "webpBytes": 70764
+      },
+      {
+        "file": "images/Tuscan White Bean Soup.jpg",
+        "originalBytes": 42492,
+        "webpBytes": 48682
+      },
+      {
+        "file": "images/Vegetable Biryani.jpg",
+        "originalBytes": 52447,
+        "webpBytes": 60722
+      },
+      {
+        "file": "images/Vegetable Chow Mein.jpg",
+        "originalBytes": 47712,
+        "webpBytes": 56004
+      },
+      {
+        "file": "images/Vegetable Yakisoba.jpg",
+        "originalBytes": 71064,
+        "webpBytes": 92394
+      },
+      {
+        "file": "images/Vietnamese Coconut Chicken Curry.jpg",
+        "originalBytes": 42967,
+        "webpBytes": 52030
+      },
+      {
+        "file": "images/Vietnamese Iced Coffee.jpg",
+        "originalBytes": 35543,
+        "webpBytes": 43598
+      },
+      {
+        "file": "images/Zucchini Noodle Primavera.jpg",
+        "originalBytes": 60638,
+        "webpBytes": 73638
+      }
+    ],
+    "perFile": [
+      {
+        "file": "images/Sesame Cucumber Salad.jpg",
+        "originalBytes": 812667,
+        "webpBytes": 388868,
+        "savedBytes": 423799,
+        "savedPercent": 52.15,
+        "width": 1800,
+        "height": 1801
+      },
+      {
+        "file": "images/Masala Dosa Potato Plate.jpg",
+        "originalBytes": 725988,
+        "webpBytes": 378380,
+        "savedBytes": 347608,
+        "savedPercent": 47.88,
+        "width": 2048,
+        "height": 1367
+      },
+      {
+        "file": "images/Hanoi Beef Pho.jpeg",
+        "originalBytes": 382444,
+        "webpBytes": 78976,
+        "savedBytes": 303468,
+        "savedPercent": 79.35,
+        "width": 800,
+        "height": 605
+      },
+      {
+        "file": "images/Green Curry Vegetables.jpg",
+        "originalBytes": 1422790,
+        "webpBytes": 1180878,
+        "savedBytes": 241912,
+        "savedPercent": 17,
+        "width": 2743,
+        "height": 3434
+      },
+      {
+        "file": "images/Hanoi Beef Pho.jpg",
+        "originalBytes": 240567,
+        "webpBytes": 46162,
+        "savedBytes": 194405,
+        "savedPercent": 80.81,
+        "width": 650,
+        "height": 479
+      },
+      {
+        "file": "images/Cucumber Mint Limeade.jpg",
+        "originalBytes": 233232,
+        "webpBytes": 57594,
+        "savedBytes": 175638,
+        "savedPercent": 75.31,
+        "width": 652,
+        "height": 900
+      },
+      {
+        "file": "images/Lamb Kofta Pita Plates.jpg",
+        "originalBytes": 337917,
+        "webpBytes": 177918,
+        "savedBytes": 159999,
+        "savedPercent": 47.35,
+        "width": 1920,
+        "height": 2560
+      },
+      {
+        "file": "images/Vietnamese Coffee Flan.jpg",
+        "originalBytes": 214375,
+        "webpBytes": 72076,
+        "savedBytes": 142299,
+        "savedPercent": 66.38,
+        "width": 1200,
+        "height": 1500
+      },
+      {
+        "file": "images/Cinnamon Baked Apples.jpg",
+        "originalBytes": 515301,
+        "webpBytes": 377460,
+        "savedBytes": 137841,
+        "savedPercent": 26.75,
+        "width": 1456,
+        "height": 2184
+      },
+      {
+        "file": "images/Savory Breakfast Burrito.jpg",
+        "originalBytes": 232329,
+        "webpBytes": 118526,
+        "savedBytes": 113803,
+        "savedPercent": 48.98,
+        "width": 1200,
+        "height": 1800
+      },
+      {
+        "file": "images/Apple Peanut Butter Overnight Oats.jpg",
+        "originalBytes": 100422,
+        "webpBytes": 37060,
+        "savedBytes": 63362,
+        "savedPercent": 63.1,
+        "width": 1200,
+        "height": 1200
+      },
+      {
+        "file": "images/Avocado Egg Toast.jpg",
+        "originalBytes": 158841,
+        "webpBytes": 112588,
+        "savedBytes": 46253,
+        "savedPercent": 29.12,
+        "width": 1200,
+        "height": 1800
+      },
+      {
+        "file": "images/Berry Yogurt Parfait.jpg",
+        "originalBytes": 80173,
+        "webpBytes": 46606,
+        "savedBytes": 33567,
+        "savedPercent": 41.87,
+        "width": 682,
+        "height": 1024
+      },
+      {
+        "file": "images/Turkish Lentil Soup.jpg",
+        "originalBytes": 242928,
+        "webpBytes": 211828,
+        "savedBytes": 31100,
+        "savedPercent": 12.8,
+        "width": 1080,
+        "height": 1350
+      },
+      {
+        "file": "images/Honey Kumquat Iced Tea.jpg",
+        "originalBytes": 53894,
+        "webpBytes": 23174,
+        "savedBytes": 30720,
+        "savedPercent": 57,
+        "width": 405,
+        "height": 720
+      },
+      {
+        "file": "images/Korean Seaweed Beef Soup.jpg",
+        "originalBytes": 89648,
+        "webpBytes": 63216,
+        "savedBytes": 26432,
+        "savedPercent": 29.48,
+        "width": 650,
+        "height": 971
+      },
+      {
+        "file": "images/Watermelon Basil Cooler.jpg",
+        "originalBytes": 77083,
+        "webpBytes": 53798,
+        "savedBytes": 23285,
+        "savedPercent": 30.21,
+        "width": 640,
+        "height": 960
+      },
+      {
+        "file": "images/Creamy Corn Chowder.jpg",
+        "originalBytes": 217520,
+        "webpBytes": 199934,
+        "savedBytes": 17586,
+        "savedPercent": 8.08,
+        "width": 1500,
+        "height": 1500
+      },
+      {
+        "file": "images/Dark Chocolate Brownies.jpg",
+        "originalBytes": 223217,
+        "webpBytes": 206276,
+        "savedBytes": 16941,
+        "savedPercent": 7.59,
+        "width": 1200,
+        "height": 1800
+      },
+      {
+        "file": "images/Coconut Pumpkin Soup.jpg",
+        "originalBytes": 36705,
+        "webpBytes": 25638,
+        "savedBytes": 11067,
+        "savedPercent": 30.15,
+        "width": 399,
+        "height": 501
+      },
+      {
+        "file": "images/Pineapple Coconut Refresher.jpg",
+        "originalBytes": 39830,
+        "webpBytes": 29996,
+        "savedBytes": 9834,
+        "savedPercent": 24.69,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Kimchi Fried Rice with Egg.jpg",
+        "originalBytes": 60518,
+        "webpBytes": 52134,
+        "savedBytes": 8384,
+        "savedPercent": 13.85,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Beef Taco Rice Bowl.jpg",
+        "originalBytes": 59299,
+        "webpBytes": 50924,
+        "savedBytes": 8375,
+        "savedPercent": 14.12,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Ginger Scallion Chicken Rice.jpg",
+        "originalBytes": 43318,
+        "webpBytes": 35296,
+        "savedBytes": 8022,
+        "savedPercent": 18.52,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Spinach Feta Egg Muffins.jpg",
+        "originalBytes": 25713,
+        "webpBytes": 18190,
+        "savedBytes": 7523,
+        "savedPercent": 29.26,
+        "width": 495,
+        "height": 619
+      },
+      {
+        "file": "images/Lemon Dill Cod Bake.jpg",
+        "originalBytes": 45367,
+        "webpBytes": 38932,
+        "savedBytes": 6435,
+        "savedPercent": 14.18,
+        "width": 465,
+        "height": 659
+      },
+      {
+        "file": "images/Shrimp Fajita Skillet.jpg",
+        "originalBytes": 77077,
+        "webpBytes": 70828,
+        "savedBytes": 6249,
+        "savedPercent": 8.11,
+        "width": 468,
+        "height": 655
+      },
+      {
+        "file": "images/Sheet Pan Chicken and Vegetables.jpg",
+        "originalBytes": 200478,
+        "webpBytes": 194932,
+        "savedBytes": 5546,
+        "savedPercent": 2.77,
+        "width": 600,
+        "height": 900
+      },
+      {
+        "file": "images/Gochujang Tofu Stew.jpg",
+        "originalBytes": 67005,
+        "webpBytes": 61592,
+        "savedBytes": 5413,
+        "savedPercent": 8.08,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Classic Beef Burger Bowl.jpg",
+        "originalBytes": 102959,
+        "webpBytes": 97618,
+        "savedBytes": 5341,
+        "savedPercent": 5.19,
+        "width": 944,
+        "height": 630
+      },
+      {
+        "file": "images/Matcha Oat Latte.jpg",
+        "originalBytes": 14551,
+        "webpBytes": 11048,
+        "savedBytes": 3503,
+        "savedPercent": 24.07,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Pesto White Bean Toast.jpg",
+        "originalBytes": 68145,
+        "webpBytes": 65790,
+        "savedBytes": 2355,
+        "savedPercent": 3.46,
+        "width": 512,
+        "height": 640
+      },
+      {
+        "file": "images/Peanut Butter Energy Bites.jpg",
+        "originalBytes": 23050,
+        "webpBytes": 21178,
+        "savedBytes": 1872,
+        "savedPercent": 8.12,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Strawberry Yogurt Smoothie.jpg",
+        "originalBytes": 21943,
+        "webpBytes": 20210,
+        "savedBytes": 1733,
+        "savedPercent": 7.9,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Coconut Fish Curry.jpg",
+        "originalBytes": 29059,
+        "webpBytes": 27814,
+        "savedBytes": 1245,
+        "savedPercent": 4.28,
+        "width": 391,
+        "height": 511
+      },
+      {
+        "file": "images/Banana Oat Pancakes.jpg",
+        "originalBytes": 27877,
+        "webpBytes": 26916,
+        "savedBytes": 961,
+        "savedPercent": 3.45,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Palak Paneer Rice Bowl.jpg",
+        "originalBytes": 37254,
+        "webpBytes": 36720,
+        "savedBytes": 534,
+        "savedPercent": 1.43,
+        "width": 335,
+        "height": 597
+      },
+      {
+        "file": "images/Cinnamon Horchata.jpg",
+        "originalBytes": 27313,
+        "webpBytes": 26962,
+        "savedBytes": 351,
+        "savedPercent": 1.29,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Tom Yum Shrimp Soup.jpg",
+        "originalBytes": 26360,
+        "webpBytes": 26068,
+        "savedBytes": 292,
+        "savedPercent": 1.11,
+        "width": 495,
+        "height": 619
+      },
+      {
+        "file": "images/food-placeholder.jpg",
+        "originalBytes": 516,
+        "status": "error",
+        "error": "VipsJpeg: Invalid SOS parameters for sequential JPEG"
+      },
+      {
+        "file": "images/Lemon Blueberry Cheesecake Cups.jpg",
+        "originalBytes": 26808,
+        "webpBytes": 26946,
+        "savedBytes": -138,
+        "savedPercent": -0.51,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Strawberry Shortcake Jars.jpg",
+        "originalBytes": 30808,
+        "webpBytes": 31178,
+        "savedBytes": -370,
+        "savedPercent": -1.2,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Tuna Mayo Onigiri Plate.jpg",
+        "originalBytes": 23396,
+        "webpBytes": 24144,
+        "savedBytes": -748,
+        "savedPercent": -3.2,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Baklava Yogurt Parfaits.jpg",
+        "originalBytes": 32088,
+        "webpBytes": 32884,
+        "savedBytes": -796,
+        "savedPercent": -2.48,
+        "width": 488,
+        "height": 628
+      },
+      {
+        "file": "images/Turkey Meatball Pasta.jpg",
+        "originalBytes": 69781,
+        "webpBytes": 70970,
+        "savedBytes": -1189,
+        "savedPercent": -1.7,
+        "width": 500,
+        "height": 500
+      },
+      {
+        "file": "images/Tuna Poke Bowl.jpg",
+        "originalBytes": 31558,
+        "webpBytes": 32898,
+        "savedBytes": -1340,
+        "savedPercent": -4.25,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Chickpea Chana Masala.jpg",
+        "originalBytes": 210582,
+        "webpBytes": 211948,
+        "savedBytes": -1366,
+        "savedPercent": -0.65,
+        "width": 1200,
+        "height": 1200
+      },
+      {
+        "file": "images/Pineapple Fried Rice.jpg",
+        "originalBytes": 37464,
+        "webpBytes": 39200,
+        "savedBytes": -1736,
+        "savedPercent": -4.63,
+        "width": 472,
+        "height": 650
+      },
+      {
+        "file": "images/Mushroom Risotto.jpg",
+        "originalBytes": 31059,
+        "webpBytes": 32886,
+        "savedBytes": -1827,
+        "savedPercent": -5.88,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Mussel Tomato Stew.jpg",
+        "originalBytes": 43486,
+        "webpBytes": 45472,
+        "savedBytes": -1986,
+        "savedPercent": -4.57,
+        "width": 447,
+        "height": 447
+      },
+      {
+        "file": "images/Sweet Potato Black Bean Chili.jpg",
+        "originalBytes": 34333,
+        "webpBytes": 36602,
+        "savedBytes": -2269,
+        "savedPercent": -6.61,
+        "width": 672,
+        "height": 456
+      },
+      {
+        "file": "images/Ginger Turmeric Tea.jpg",
+        "originalBytes": 33720,
+        "webpBytes": 36280,
+        "savedBytes": -2560,
+        "savedPercent": -7.59,
+        "width": 640,
+        "height": 480
+      },
+      {
+        "file": "images/Lentil Mushroom Shepherd Pie.jpg",
+        "originalBytes": 30524,
+        "webpBytes": 33222,
+        "savedBytes": -2698,
+        "savedPercent": -8.84,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Char Siu Pork Bowls.jpg",
+        "originalBytes": 38976,
+        "webpBytes": 41896,
+        "savedBytes": -2920,
+        "savedPercent": -7.49,
+        "width": 495,
+        "height": 619
+      },
+      {
+        "file": "images/Falafel Chickpea Salad.jpg",
+        "originalBytes": 43323,
+        "webpBytes": 46252,
+        "savedBytes": -2929,
+        "savedPercent": -6.76,
+        "width": 386,
+        "height": 518
+      },
+      {
+        "file": "images/Garlic Butter Shrimp Rice.jpg",
+        "originalBytes": 43860,
+        "webpBytes": 46916,
+        "savedBytes": -3056,
+        "savedPercent": -6.97,
+        "width": 400,
+        "height": 500
+      },
+      {
+        "file": "images/Matcha Chia Pudding.jpg",
+        "originalBytes": 122809,
+        "webpBytes": 126342,
+        "savedBytes": -3533,
+        "savedPercent": -2.88,
+        "width": 1707,
+        "height": 2560
+      },
+      {
+        "file": "images/Pork Gyoza Rice Plate.jpg",
+        "originalBytes": 39258,
+        "webpBytes": 42876,
+        "savedBytes": -3618,
+        "savedPercent": -9.22,
+        "width": 480,
+        "height": 640
+      },
+      {
+        "file": "images/Tandoori Cauliflower Bowls.jpg",
+        "originalBytes": 36681,
+        "webpBytes": 40366,
+        "savedBytes": -3685,
+        "savedPercent": -10.05,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Mango Sticky Rice.jpg",
+        "originalBytes": 29150,
+        "webpBytes": 32888,
+        "savedBytes": -3738,
+        "savedPercent": -12.82,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Mango Lassi.jpg",
+        "originalBytes": 28949,
+        "webpBytes": 32854,
+        "savedBytes": -3905,
+        "savedPercent": -13.49,
+        "width": 495,
+        "height": 619
+      },
+      {
+        "file": "images/Sesame Edamame Rice Bowl.jpg",
+        "originalBytes": 37672,
+        "webpBytes": 41670,
+        "savedBytes": -3998,
+        "savedPercent": -10.61,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Breakfast Fried Rice.jpg",
+        "originalBytes": 36567,
+        "webpBytes": 40722,
+        "savedBytes": -4155,
+        "savedPercent": -11.36,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Sweet Potato Quesadillas.jpg",
+        "originalBytes": 50960,
+        "webpBytes": 55164,
+        "savedBytes": -4204,
+        "savedPercent": -8.25,
+        "width": 487,
+        "height": 628
+      },
+      {
+        "file": "images/Fresh Shrimp Summer Rolls.jpg",
+        "originalBytes": 37715,
+        "webpBytes": 42922,
+        "savedBytes": -5207,
+        "savedPercent": -13.81,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Scallop Pea Risotto.jpg",
+        "originalBytes": 38708,
+        "webpBytes": 44282,
+        "savedBytes": -5574,
+        "savedPercent": -14.4,
+        "width": 480,
+        "height": 640
+      },
+      {
+        "file": "images/Pork Wonton Soup.jpg",
+        "originalBytes": 38516,
+        "webpBytes": 44446,
+        "savedBytes": -5930,
+        "savedPercent": -15.4,
+        "width": 495,
+        "height": 619
+      },
+      {
+        "file": "images/Tofu Quinoa Power Bowl.jpg",
+        "originalBytes": 42676,
+        "webpBytes": 48670,
+        "savedBytes": -5994,
+        "savedPercent": -14.05,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Coconut Mango Sago.jpg",
+        "originalBytes": 39806,
+        "webpBytes": 45988,
+        "savedBytes": -6182,
+        "savedPercent": -15.53,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Tuscan White Bean Soup.jpg",
+        "originalBytes": 42492,
+        "webpBytes": 48682,
+        "savedBytes": -6190,
+        "savedPercent": -14.57,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Crab Corn Fritters.jpg",
+        "originalBytes": 34472,
+        "webpBytes": 40830,
+        "savedBytes": -6358,
+        "savedPercent": -18.44,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Miso Tofu Soup.jpg",
+        "originalBytes": 42938,
+        "webpBytes": 49390,
+        "savedBytes": -6452,
+        "savedPercent": -15.03,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Roasted Vegetable Hummus Bowl.jpg",
+        "originalBytes": 43116,
+        "webpBytes": 49608,
+        "savedBytes": -6492,
+        "savedPercent": -15.06,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Mapo Tofu with Mushrooms.jpg",
+        "originalBytes": 41907,
+        "webpBytes": 48802,
+        "savedBytes": -6895,
+        "savedPercent": -16.45,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Buffalo Cauliflower Wraps.jpg",
+        "originalBytes": 47598,
+        "webpBytes": 54624,
+        "savedBytes": -7026,
+        "savedPercent": -14.76,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Saigon Lemongrass Chicken Rice.jpg",
+        "originalBytes": 45688,
+        "webpBytes": 53000,
+        "savedBytes": -7312,
+        "savedPercent": -16,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Lentil Dal Tadka.jpg",
+        "originalBytes": 44513,
+        "webpBytes": 51834,
+        "savedBytes": -7321,
+        "savedPercent": -16.45,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Lemon Herb Salmon Couscous.jpg",
+        "originalBytes": 66265,
+        "webpBytes": 73630,
+        "savedBytes": -7365,
+        "savedPercent": -11.11,
+        "width": 480,
+        "height": 638
+      },
+      {
+        "file": "images/Chicken Pad Thai.jpg",
+        "originalBytes": 44505,
+        "webpBytes": 51980,
+        "savedBytes": -7475,
+        "savedPercent": -16.8,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Garlic Morning Glory Stir Fry.jpg",
+        "originalBytes": 52556,
+        "webpBytes": 60118,
+        "savedBytes": -7562,
+        "savedPercent": -14.39,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Greek Chicken Souvlaki Bowls.jpg",
+        "originalBytes": 46725,
+        "webpBytes": 54548,
+        "savedBytes": -7823,
+        "savedPercent": -16.74,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Vietnamese Iced Coffee.jpg",
+        "originalBytes": 35543,
+        "webpBytes": 43598,
+        "savedBytes": -8055,
+        "savedPercent": -22.66,
+        "width": 650,
+        "height": 974
+      },
+      {
+        "file": "images/Vegetable Biryani.jpg",
+        "originalBytes": 52447,
+        "webpBytes": 60722,
+        "savedBytes": -8275,
+        "savedPercent": -15.78,
+        "width": 500,
+        "height": 500
+      },
+      {
+        "file": "images/Vegetable Chow Mein.jpg",
+        "originalBytes": 47712,
+        "webpBytes": 56004,
+        "savedBytes": -8292,
+        "savedPercent": -17.38,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Vietnamese Coconut Chicken Curry.jpg",
+        "originalBytes": 42967,
+        "webpBytes": 52030,
+        "savedBytes": -9063,
+        "savedPercent": -21.09,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Tomato Egg Noodle Soup.jpg",
+        "originalBytes": 50010,
+        "webpBytes": 60364,
+        "savedBytes": -10354,
+        "savedPercent": -20.7,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Chicken Katsu Curry.jpg",
+        "originalBytes": 47912,
+        "webpBytes": 58536,
+        "savedBytes": -10624,
+        "savedPercent": -22.17,
+        "width": 446,
+        "height": 687
+      },
+      {
+        "file": "images/Ranch Chicken Salad.jpg",
+        "originalBytes": 44007,
+        "webpBytes": 54722,
+        "savedBytes": -10715,
+        "savedPercent": -24.35,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Spicy Pork Noodle Stir Fry.jpg",
+        "originalBytes": 52900,
+        "webpBytes": 63616,
+        "savedBytes": -10716,
+        "savedPercent": -20.26,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Butter Chicken Curry.jpg",
+        "originalBytes": 46420,
+        "webpBytes": 57336,
+        "savedBytes": -10916,
+        "savedPercent": -23.52,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Margherita Flatbread.jpg",
+        "originalBytes": 53777,
+        "webpBytes": 64726,
+        "savedBytes": -10949,
+        "savedPercent": -20.36,
+        "width": 678,
+        "height": 452
+      },
+      {
+        "file": "images/Banana Bread Loaf.jpg",
+        "originalBytes": 48886,
+        "webpBytes": 60520,
+        "savedBytes": -11634,
+        "savedPercent": -23.8,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Beef and Broccoli Stir Fry.jpg",
+        "originalBytes": 50616,
+        "webpBytes": 62520,
+        "savedBytes": -11904,
+        "savedPercent": -23.52,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Pozole Verde Chicken Soup.jpg",
+        "originalBytes": 44607,
+        "webpBytes": 56534,
+        "savedBytes": -11927,
+        "savedPercent": -26.74,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Salmon Sushi Bake.jpg",
+        "originalBytes": 52775,
+        "webpBytes": 65162,
+        "savedBytes": -12387,
+        "savedPercent": -23.47,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Turmeric Fish Noodle Bowl.jpg",
+        "originalBytes": 57997,
+        "webpBytes": 70764,
+        "savedBytes": -12767,
+        "savedPercent": -22.01,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Zucchini Noodle Primavera.jpg",
+        "originalBytes": 60638,
+        "webpBytes": 73638,
+        "savedBytes": -13000,
+        "savedPercent": -21.44,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Bibimbap Vegetable Rice Bowl.jpg",
+        "originalBytes": 59058,
+        "webpBytes": 72324,
+        "savedBytes": -13266,
+        "savedPercent": -22.46,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Street Corn Salad.jpg",
+        "originalBytes": 60295,
+        "webpBytes": 75066,
+        "savedBytes": -14771,
+        "savedPercent": -24.5,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Thai Peanut Chicken Salad.jpg",
+        "originalBytes": 63548,
+        "webpBytes": 78618,
+        "savedBytes": -15070,
+        "savedPercent": -23.71,
+        "width": 452,
+        "height": 679
+      },
+      {
+        "file": "images/Basil Beef Stir Fry.jpg",
+        "originalBytes": 64002,
+        "webpBytes": 79638,
+        "savedBytes": -15636,
+        "savedPercent": -24.43,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Apple Cinnamon Oat Bake.jpg",
+        "originalBytes": 64490,
+        "webpBytes": 80492,
+        "savedBytes": -16002,
+        "savedPercent": -24.81,
+        "width": 468,
+        "height": 656
+      },
+      {
+        "file": "images/Smoked Salmon Bagel Plate.jpg",
+        "originalBytes": 60936,
+        "webpBytes": 77328,
+        "savedBytes": -16392,
+        "savedPercent": -26.9,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Beef Bulgogi Lettuce Bowls.jpg",
+        "originalBytes": 72665,
+        "webpBytes": 89570,
+        "savedBytes": -16905,
+        "savedPercent": -23.26,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Chickpea Spinach Curry.jpg",
+        "originalBytes": 59179,
+        "webpBytes": 76348,
+        "savedBytes": -17169,
+        "savedPercent": -29.01,
+        "width": 451,
+        "height": 679
+      },
+      {
+        "file": "images/Shakshuka Pepper Skillet.jpg",
+        "originalBytes": 62834,
+        "webpBytes": 80060,
+        "savedBytes": -17226,
+        "savedPercent": -27.42,
+        "width": 495,
+        "height": 619
+      },
+      {
+        "file": "images/BBQ Chicken Sheet Pan.jpg",
+        "originalBytes": 60550,
+        "webpBytes": 78386,
+        "savedBytes": -17836,
+        "savedPercent": -29.46,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Soba Noodle Sesame Salad.jpg",
+        "originalBytes": 75470,
+        "webpBytes": 93524,
+        "savedBytes": -18054,
+        "savedPercent": -23.92,
+        "width": 553,
+        "height": 554
+      },
+      {
+        "file": "images/Chocolate Chip Skillet Cookie.jpg",
+        "originalBytes": 54070,
+        "webpBytes": 72554,
+        "savedBytes": -18484,
+        "savedPercent": -34.19,
+        "width": 480,
+        "height": 640
+      },
+      {
+        "file": "images/Salmon Teriyaki Donburi.jpg",
+        "originalBytes": 71885,
+        "webpBytes": 90678,
+        "savedBytes": -18793,
+        "savedPercent": -26.14,
+        "width": 452,
+        "height": 679
+      },
+      {
+        "file": "images/Tiramisu Overnight Cups.jpg",
+        "originalBytes": 149111,
+        "webpBytes": 168412,
+        "savedBytes": -19301,
+        "savedPercent": -12.94,
+        "width": 1200,
+        "height": 1680
+      },
+      {
+        "file": "images/Caprese Farro Salad.jpg",
+        "originalBytes": 69198,
+        "webpBytes": 88916,
+        "savedBytes": -19718,
+        "savedPercent": -28.5,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Tomato Basil Spaghetti.jpg",
+        "originalBytes": 55501,
+        "webpBytes": 75394,
+        "savedBytes": -19893,
+        "savedPercent": -35.84,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Chicken Tinga Tacos.jpg",
+        "originalBytes": 86187,
+        "webpBytes": 106656,
+        "savedBytes": -20469,
+        "savedPercent": -23.75,
+        "width": 453,
+        "height": 677
+      },
+      {
+        "file": "images/Caramelized Pork Clay Pot.jpg",
+        "originalBytes": 71532,
+        "webpBytes": 92446,
+        "savedBytes": -20914,
+        "savedPercent": -29.24,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Vegetable Yakisoba.jpg",
+        "originalBytes": 71064,
+        "webpBytes": 92394,
+        "savedBytes": -21330,
+        "savedPercent": -30.02,
+        "width": 554,
+        "height": 554
+      },
+      {
+        "file": "images/Chicken Pesto Pasta.jpg",
+        "originalBytes": 74412,
+        "webpBytes": 96762,
+        "savedBytes": -22350,
+        "savedPercent": -30.04,
+        "width": 555,
+        "height": 553
+      },
+      {
+        "file": "images/Crispy Banh Mi Chicken Sandwich.jpg",
+        "originalBytes": 56525,
+        "webpBytes": 78914,
+        "savedBytes": -22389,
+        "savedPercent": -39.61,
+        "width": 900,
+        "height": 1125
+      },
+      {
+        "file": "images/Roasted Cauliflower Tacos.jpg",
+        "originalBytes": 69011,
+        "webpBytes": 93836,
+        "savedBytes": -24825,
+        "savedPercent": -35.97,
+        "width": 452,
+        "height": 678
+      },
+      {
+        "file": "images/Lemon Shrimp Linguine.jpg",
+        "originalBytes": 59665,
+        "webpBytes": 90544,
+        "savedBytes": -30879,
+        "savedPercent": -51.75,
+        "width": 1200,
+        "height": 1200
+      },
+      {
+        "file": "images/Black Bean Enchilada Bake.jpg",
+        "originalBytes": 160823,
+        "webpBytes": 199054,
+        "savedBytes": -38231,
+        "savedPercent": -23.77,
+        "width": 1200,
+        "height": 1200
+      },
+      {
+        "file": "images/Soy Garlic Crispy Chicken.jpg",
+        "originalBytes": 170478,
+        "webpBytes": 251776,
+        "savedBytes": -81298,
+        "savedPercent": -47.69,
+        "width": 1365,
+        "height": 2048
+      },
+      {
+        "file": "images/Japchae Glass Noodles.jpg",
+        "originalBytes": 144346,
+        "webpBytes": 253124,
+        "savedBytes": -108778,
+        "savedPercent": -75.36,
+        "width": 1500,
+        "height": 1125
+      }
+    ]
+  },
+  "transferredByRoute": {
+    "status": "measured",
+    "source": "benchmark/out/route-budget-raw.json (Tier 1A, cold cache, p50 of 5 measured runs)",
+    "routes": [
+      {
+        "route": "home",
+        "path": "/",
+        "imageTransferBytesP50": 1001157,
+        "imageRequestCount": 6,
+        "allTransferBytesP50": 1306828,
+        "imageShareOfTransfer": 0.7661
+      },
+      {
+        "route": "news",
+        "path": "/news",
+        "imageTransferBytesP50": 163965,
+        "imageRequestCount": 5,
+        "allTransferBytesP50": 436020,
+        "imageShareOfTransfer": 0.376
+      },
+      {
+        "route": "about",
+        "path": "/about",
+        "imageTransferBytesP50": 100441,
+        "imageRequestCount": 2,
+        "allTransferBytesP50": 362136,
+        "imageShareOfTransfer": 0.2774
+      },
+      {
+        "route": "recipes",
+        "path": "/recipes",
+        "imageTransferBytesP50": 2817666,
+        "imageRequestCount": 16,
+        "allTransferBytesP50": 3344084,
+        "imageShareOfTransfer": 0.8426
+      },
+      {
+        "route": "recipe_detail",
+        "path": "/recipes/1",
+        "imageTransferBytesP50": 240776,
+        "imageRequestCount": 1,
+        "allTransferBytesP50": 557846,
+        "imageShareOfTransfer": 0.4316
+      },
+      {
+        "route": "food_map",
+        "path": "/food-map",
+        "imageTransferBytesP50": 1106340,
+        "imageRequestCount": 40,
+        "allTransferBytesP50": 1441483,
+        "imageShareOfTransfer": 0.7675
+      },
+      {
+        "route": "profile",
+        "path": "/profile",
+        "imageTransferBytesP50": 0,
+        "imageRequestCount": 0,
+        "allTransferBytesP50": 265978,
+        "imageShareOfTransfer": 0
+      },
+      {
+        "route": "admin",
+        "path": "/admin",
+        "imageTransferBytesP50": 0,
+        "imageRequestCount": 0,
+        "allTransferBytesP50": 271369,
+        "imageShareOfTransfer": 0
+      }
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "foodstory-benchmark",
+  "private": true,
+  "type": "module",
+  "version": "2.0.0",
+  "description": "FoodStory benchmark round 2 (2026-07-30). Measurement harness only; does not modify runtime source.",
+  "dependencies": {
+    "lighthouse": "^13.4.1",
+    "puppeteer-core": "^24.10.0",
+    "sharp": "^0.34.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.8",
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.10"
+  }
+}

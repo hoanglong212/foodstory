@@ -1,0 +1,1093 @@
+{
+  "meta": {
+    "commit": "1384d59573d0927da3ea0e7828c19d692056bc41",
+    "commitShort": "1384d59",
+    "branch": "codex/render-deployment",
+    "runAtIso": "2026-07-31T05:44:00.220Z",
+    "node": "v24.11.0",
+    "npm": "unknown",
+    "chrome": "151.0.7922.71",
+    "os": "Windows_NT 10.0.26200 (win32 x64)",
+    "osCaption": "Microsoft Windows 11 Home Single Language 10.0.26200",
+    "cpu": "Intel(R) Core(TM) i7-14700HX (28 logical)",
+    "cpuCores": 28,
+    "ramGb": 15.71,
+    "load": "cpu_load_percent=14",
+    "harnessVersion": "2.0.0",
+    "measurement": "api-latency",
+    "tier": "3",
+    "requestsPerEndpoint": 30,
+    "warmup": "1 unrecorded warm-up per endpoint",
+    "transport": "loopback HTTP to 127.0.0.1:3000, no throttling",
+    "scope": "application latency only; external providers disabled",
+    "rateLimitDeviation": "the backend under test was started with API_RATE_LIMIT_MAX and AUTH_RATE_LIMIT_MAX raised via env vars. Shipped defaults are 500 requests / 15 min globally per IP and 25 failed auth attempts. At the defaults a benchmark run exhausts the quota and later endpoints return HTTP 429 instead of being measured. Endpoint statusDistribution is recorded per endpoint so any remaining throttling is visible."
+  },
+  "endpoints": [
+    {
+      "endpoint": "login",
+      "method": "POST",
+      "route": "/auth/login",
+      "note": "includes bcrypt verification, so it is expected to dominate the others",
+      "status": "measured",
+      "requests": 30,
+      "successCount": 30,
+      "nonSuccessCount": 0,
+      "statusDistribution": {
+        "200": 30
+      },
+      "responseBytesFirst": 344,
+      "allValuesMs": [
+        49.318,
+        48.863,
+        49.425,
+        50.451,
+        50.169,
+        49.916,
+        49.175,
+        49.076,
+        48.436,
+        82.507,
+        128.821,
+        70.472,
+        111.097,
+        63.765,
+        69.743,
+        67.82,
+        68.411,
+        68.114,
+        65.332,
+        63.589,
+        64.564,
+        64.553,
+        70.383,
+        65.314,
+        64.894,
+        64.24,
+        84.454,
+        124.771,
+        90.201,
+        123.81
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "ms": 49.318,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 2,
+          "ms": 48.863,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 3,
+          "ms": 49.425,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 4,
+          "ms": 50.451,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 5,
+          "ms": 50.169,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 6,
+          "ms": 49.916,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 7,
+          "ms": 49.175,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 8,
+          "ms": 49.076,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 9,
+          "ms": 48.436,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 10,
+          "ms": 82.507,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 11,
+          "ms": 128.821,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 12,
+          "ms": 70.472,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 13,
+          "ms": 111.097,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 14,
+          "ms": 63.765,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 15,
+          "ms": 69.743,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 16,
+          "ms": 67.82,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 17,
+          "ms": 68.411,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 18,
+          "ms": 68.114,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 19,
+          "ms": 65.332,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 20,
+          "ms": 63.589,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 21,
+          "ms": 64.564,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 22,
+          "ms": 64.553,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 23,
+          "ms": 70.383,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 24,
+          "ms": 65.314,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 25,
+          "ms": 64.894,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 26,
+          "ms": 64.24,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 27,
+          "ms": 84.454,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 28,
+          "ms": 124.771,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 29,
+          "ms": 90.201,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        },
+        {
+          "run": 30,
+          "ms": 123.81,
+          "status": 200,
+          "bytes": 344,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "n": 30,
+        "min": 48.436,
+        "max": 128.821,
+        "mean": 70.7228,
+        "stdev": 23.3922,
+        "p50": 65.104,
+        "p95": 124.3385
+      }
+    },
+    {
+      "endpoint": "recipe_list",
+      "method": "GET",
+      "route": "/recipes",
+      "status": "measured",
+      "requests": 30,
+      "successCount": 30,
+      "nonSuccessCount": 0,
+      "statusDistribution": {
+        "200": 30
+      },
+      "responseBytesFirst": 19725,
+      "allValuesMs": [
+        12.478,
+        15.062,
+        14.386,
+        27.761,
+        40.028,
+        91.822,
+        34.948,
+        41.102,
+        57.316,
+        42.448,
+        41.496,
+        40.232,
+        38.069,
+        29.249,
+        37.461,
+        31.774,
+        21.159,
+        39.21,
+        39.079,
+        28.852,
+        32.319,
+        32.284,
+        38.565,
+        40.195,
+        28.284,
+        44.343,
+        37.03,
+        36.856,
+        40.065,
+        36.879
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "ms": 12.478,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 2,
+          "ms": 15.062,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 3,
+          "ms": 14.386,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 4,
+          "ms": 27.761,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 5,
+          "ms": 40.028,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 6,
+          "ms": 91.822,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 7,
+          "ms": 34.948,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 8,
+          "ms": 41.102,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 9,
+          "ms": 57.316,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 10,
+          "ms": 42.448,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 11,
+          "ms": 41.496,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 12,
+          "ms": 40.232,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 13,
+          "ms": 38.069,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 14,
+          "ms": 29.249,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 15,
+          "ms": 37.461,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 16,
+          "ms": 31.774,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 17,
+          "ms": 21.159,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 18,
+          "ms": 39.21,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 19,
+          "ms": 39.079,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 20,
+          "ms": 28.852,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 21,
+          "ms": 32.319,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 22,
+          "ms": 32.284,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 23,
+          "ms": 38.565,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 24,
+          "ms": 40.195,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 25,
+          "ms": 28.284,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 26,
+          "ms": 44.343,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 27,
+          "ms": 37.03,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 28,
+          "ms": 36.856,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 29,
+          "ms": 40.065,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        },
+        {
+          "run": 30,
+          "ms": 36.879,
+          "status": 200,
+          "bytes": 19725,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "n": 30,
+        "min": 12.478,
+        "max": 91.822,
+        "mean": 36.3584,
+        "stdev": 14.1265,
+        "p50": 37.2455,
+        "p95": 51.4781
+      }
+    },
+    {
+      "endpoint": "recipe_detail",
+      "method": "GET",
+      "route": "/recipes/1",
+      "status": "measured",
+      "requests": 30,
+      "successCount": 30,
+      "nonSuccessCount": 0,
+      "statusDistribution": {
+        "200": 30
+      },
+      "responseBytesFirst": 22524,
+      "allValuesMs": [
+        46.81,
+        49.031,
+        39.571,
+        40.02,
+        44.613,
+        49.932,
+        47.531,
+        49.268,
+        47.455,
+        46.297,
+        40.735,
+        50.247,
+        38.428,
+        40.402,
+        41.678,
+        47.616,
+        41.075,
+        44.083,
+        48.09,
+        43.01,
+        46.881,
+        40.393,
+        48.55,
+        46.28,
+        45.417,
+        44.171,
+        50.169,
+        47.202,
+        48.271,
+        48.916
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "ms": 46.81,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 2,
+          "ms": 49.031,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 3,
+          "ms": 39.571,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 4,
+          "ms": 40.02,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 5,
+          "ms": 44.613,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 6,
+          "ms": 49.932,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 7,
+          "ms": 47.531,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 8,
+          "ms": 49.268,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 9,
+          "ms": 47.455,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 10,
+          "ms": 46.297,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 11,
+          "ms": 40.735,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 12,
+          "ms": 50.247,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 13,
+          "ms": 38.428,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 14,
+          "ms": 40.402,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 15,
+          "ms": 41.678,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 16,
+          "ms": 47.616,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 17,
+          "ms": 41.075,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 18,
+          "ms": 44.083,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 19,
+          "ms": 48.09,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 20,
+          "ms": 43.01,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 21,
+          "ms": 46.881,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 22,
+          "ms": 40.393,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 23,
+          "ms": 48.55,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 24,
+          "ms": 46.28,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 25,
+          "ms": 45.417,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 26,
+          "ms": 44.171,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 27,
+          "ms": 50.169,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 28,
+          "ms": 47.202,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 29,
+          "ms": 48.271,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        },
+        {
+          "run": 30,
+          "ms": 48.916,
+          "status": 200,
+          "bytes": 22524,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "n": 30,
+        "min": 38.428,
+        "max": 50.247,
+        "mean": 45.4047,
+        "stdev": 3.6239,
+        "p50": 46.5535,
+        "p95": 50.0624
+      }
+    },
+    {
+      "endpoint": "checklist",
+      "method": "GET",
+      "route": "/checklists",
+      "note": "the fixture user long@foodstory.test has no checklists, so this endpoint returns {\"items\":[]} (12 bytes). The latency therefore reflects auth plus an empty query, not the cost of serialising a populated checklist. Compare responseBytesFirst before reading anything into how fast it looks.",
+      "status": "measured",
+      "requests": 30,
+      "successCount": 30,
+      "nonSuccessCount": 0,
+      "statusDistribution": {
+        "200": 30
+      },
+      "responseBytesFirst": 12,
+      "allValuesMs": [
+        3.197,
+        2.355,
+        1.992,
+        2.464,
+        2.048,
+        1.977,
+        2.235,
+        2.314,
+        1.82,
+        2.219,
+        2.543,
+        1.984,
+        2.046,
+        1.965,
+        2.072,
+        1.906,
+        2.154,
+        1.477,
+        1.596,
+        2.367,
+        1.913,
+        1.471,
+        1.741,
+        1.931,
+        2.246,
+        1.607,
+        1.904,
+        2.177,
+        1.536,
+        1.447
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "ms": 3.197,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 2,
+          "ms": 2.355,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 3,
+          "ms": 1.992,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 4,
+          "ms": 2.464,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 5,
+          "ms": 2.048,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 6,
+          "ms": 1.977,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 7,
+          "ms": 2.235,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 8,
+          "ms": 2.314,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 9,
+          "ms": 1.82,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 10,
+          "ms": 2.219,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 11,
+          "ms": 2.543,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 12,
+          "ms": 1.984,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 13,
+          "ms": 2.046,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 14,
+          "ms": 1.965,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 15,
+          "ms": 2.072,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 16,
+          "ms": 1.906,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 17,
+          "ms": 2.154,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 18,
+          "ms": 1.477,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 19,
+          "ms": 1.596,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 20,
+          "ms": 2.367,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 21,
+          "ms": 1.913,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 22,
+          "ms": 1.471,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 23,
+          "ms": 1.741,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 24,
+          "ms": 1.931,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 25,
+          "ms": 2.246,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 26,
+          "ms": 1.607,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 27,
+          "ms": 1.904,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 28,
+          "ms": 2.177,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 29,
+          "ms": 1.536,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        },
+        {
+          "run": 30,
+          "ms": 1.447,
+          "status": 200,
+          "bytes": 12,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "n": 30,
+        "min": 1.447,
+        "max": 3.197,
+        "mean": 2.0235,
+        "stdev": 0.3732,
+        "p50": 1.988,
+        "p95": 2.5074
+      }
+    }
+  ]
+}

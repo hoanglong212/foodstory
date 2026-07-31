@@ -1,0 +1,1318 @@
+{
+  "meta": {
+    "commit": "1384d59573d0927da3ea0e7828c19d692056bc41",
+    "commitShort": "1384d59",
+    "branch": "codex/render-deployment",
+    "runAtIso": "2026-07-31T05:37:17.321Z",
+    "node": "v24.11.0",
+    "npm": "unknown",
+    "chrome": "151.0.7922.71",
+    "os": "Windows_NT 10.0.26200 (win32 x64)",
+    "osCaption": "Microsoft Windows 11 Home Single Language 10.0.26200",
+    "cpu": "Intel(R) Core(TM) i7-14700HX (28 logical)",
+    "cpuCores": 28,
+    "ramGb": 15.71,
+    "load": "cpu_load_percent=5",
+    "harnessVersion": "2.0.0",
+    "measurement": "api-fanout",
+    "tier": "2F",
+    "runsPerRoute": 3,
+    "method": "PerformanceResourceTiming for request timing, PerformanceObserver for LCP and longtask, cold HTTP cache per run",
+    "definitions": {
+      "maxConcurrentApiCalls": "peak number of /api/ requests in flight simultaneously",
+      "longestSequentialChain": "longest run of API calls where each starts at or after the previous one finished (within 5ms), i.e. a waterfall rather than a fan-out",
+      "lastApiEndMinusLcpMs": "positive means API traffic was still arriving after LCP"
+    }
+  },
+  "routes": [
+    {
+      "route": "home",
+      "path": "/",
+      "requiresAuth": null,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "navError": null,
+          "landedPathname": "/",
+          "wallClockMs": 2976,
+          "lcpMs": 576,
+          "domContentLoadedMs": 49.1,
+          "loadEventMs": 1221.6,
+          "totalRequests": 19,
+          "apiRequestCount": 1,
+          "uniqueEndpoints": [
+            "/api/home/daily-inspiration"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 489.1,
+          "lastApiEndMs": 794.4,
+          "lastApiEndMinusLcpMs": 218.4,
+          "apiFinishedBeforeLcp": false,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/home/daily-inspiration",
+              "startMs": 489.1,
+              "endMs": 794.4
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/home/daily-inspiration",
+              "startMs": 489.1,
+              "endMs": 794.4,
+              "durationMs": 305.3,
+              "transferSize": 0
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "navError": null,
+          "landedPathname": "/",
+          "wallClockMs": 2842,
+          "lcpMs": 1064,
+          "domContentLoadedMs": 66.7,
+          "loadEventMs": 321.5,
+          "totalRequests": 19,
+          "apiRequestCount": 1,
+          "uniqueEndpoints": [
+            "/api/home/daily-inspiration"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 469.6,
+          "lastApiEndMs": 472.7,
+          "lastApiEndMinusLcpMs": -591.3,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/home/daily-inspiration",
+              "startMs": 469.6,
+              "endMs": 472.7
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/home/daily-inspiration",
+              "startMs": 469.6,
+              "endMs": 472.7,
+              "durationMs": 3.1,
+              "transferSize": 0
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "navError": null,
+          "landedPathname": "/",
+          "wallClockMs": 2820,
+          "lcpMs": 972,
+          "domContentLoadedMs": 79.2,
+          "loadEventMs": 376.7,
+          "totalRequests": 19,
+          "apiRequestCount": 1,
+          "uniqueEndpoints": [
+            "/api/home/daily-inspiration"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 466.7,
+          "lastApiEndMs": 469.3,
+          "lastApiEndMinusLcpMs": -502.7,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/home/daily-inspiration",
+              "startMs": 466.7,
+              "endMs": 469.3
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/home/daily-inspiration",
+              "startMs": 466.7,
+              "endMs": 469.3,
+              "durationMs": 2.6,
+              "transferSize": 0
+            }
+          ]
+        }
+      ],
+      "summary": {
+        "apiRequestCountMedian": 1,
+        "uniqueEndpoints": [
+          "/api/home/daily-inspiration"
+        ],
+        "maxConcurrentApiCalls": 1,
+        "longestSequentialChainLength": 1,
+        "lastApiEndMinusLcpMsMedian": -502.7,
+        "longTasksOver50msMax": 0
+      }
+    },
+    {
+      "route": "about",
+      "path": "/about",
+      "requiresAuth": null,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "navError": null,
+          "landedPathname": "/about",
+          "wallClockMs": 1861,
+          "lcpMs": 704,
+          "domContentLoadedMs": 49.4,
+          "loadEventMs": 50.3,
+          "totalRequests": 12,
+          "apiRequestCount": 0,
+          "uniqueEndpoints": [],
+          "uniqueEndpointCount": 0,
+          "firstApiStartMs": null,
+          "lastApiEndMs": null,
+          "lastApiEndMinusLcpMs": null,
+          "apiFinishedBeforeLcp": null,
+          "maxConcurrentApiCalls": 0,
+          "longestSequentialChainLength": 0,
+          "longestSequentialChain": [],
+          "parallelismRatio": null,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": []
+        },
+        {
+          "run": 2,
+          "navError": null,
+          "landedPathname": "/about",
+          "wallClockMs": 1969,
+          "lcpMs": 672,
+          "domContentLoadedMs": 45.6,
+          "loadEventMs": 46.6,
+          "totalRequests": 12,
+          "apiRequestCount": 0,
+          "uniqueEndpoints": [],
+          "uniqueEndpointCount": 0,
+          "firstApiStartMs": null,
+          "lastApiEndMs": null,
+          "lastApiEndMinusLcpMs": null,
+          "apiFinishedBeforeLcp": null,
+          "maxConcurrentApiCalls": 0,
+          "longestSequentialChainLength": 0,
+          "longestSequentialChain": [],
+          "parallelismRatio": null,
+          "longTasksOver50ms": 1,
+          "longTasks": [
+            {
+              "startMs": 398.10000000009313,
+              "durationMs": 93
+            }
+          ],
+          "apiCalls": []
+        },
+        {
+          "run": 3,
+          "navError": null,
+          "landedPathname": "/about",
+          "wallClockMs": 1914,
+          "lcpMs": 648,
+          "domContentLoadedMs": 54.7,
+          "loadEventMs": 55.8,
+          "totalRequests": 12,
+          "apiRequestCount": 0,
+          "uniqueEndpoints": [],
+          "uniqueEndpointCount": 0,
+          "firstApiStartMs": null,
+          "lastApiEndMs": null,
+          "lastApiEndMinusLcpMs": null,
+          "apiFinishedBeforeLcp": null,
+          "maxConcurrentApiCalls": 0,
+          "longestSequentialChainLength": 0,
+          "longestSequentialChain": [],
+          "parallelismRatio": null,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": []
+        }
+      ],
+      "summary": {
+        "apiRequestCountMedian": 0,
+        "uniqueEndpoints": [],
+        "maxConcurrentApiCalls": 0,
+        "longestSequentialChainLength": 0,
+        "lastApiEndMinusLcpMsMedian": null,
+        "longTasksOver50msMax": 1
+      }
+    },
+    {
+      "route": "login",
+      "path": "/login",
+      "requiresAuth": null,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "navError": null,
+          "landedPathname": "/login",
+          "wallClockMs": 1895,
+          "lcpMs": 764,
+          "domContentLoadedMs": 55.9,
+          "loadEventMs": 57,
+          "totalRequests": 10,
+          "apiRequestCount": 0,
+          "uniqueEndpoints": [],
+          "uniqueEndpointCount": 0,
+          "firstApiStartMs": null,
+          "lastApiEndMs": null,
+          "lastApiEndMinusLcpMs": null,
+          "apiFinishedBeforeLcp": null,
+          "maxConcurrentApiCalls": 0,
+          "longestSequentialChainLength": 0,
+          "longestSequentialChain": [],
+          "parallelismRatio": null,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": []
+        },
+        {
+          "run": 2,
+          "navError": null,
+          "landedPathname": "/login",
+          "wallClockMs": 1901,
+          "lcpMs": 756,
+          "domContentLoadedMs": 51.9,
+          "loadEventMs": 52.9,
+          "totalRequests": 10,
+          "apiRequestCount": 0,
+          "uniqueEndpoints": [],
+          "uniqueEndpointCount": 0,
+          "firstApiStartMs": null,
+          "lastApiEndMs": null,
+          "lastApiEndMinusLcpMs": null,
+          "apiFinishedBeforeLcp": null,
+          "maxConcurrentApiCalls": 0,
+          "longestSequentialChainLength": 0,
+          "longestSequentialChain": [],
+          "parallelismRatio": null,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": []
+        },
+        {
+          "run": 3,
+          "navError": null,
+          "landedPathname": "/login",
+          "wallClockMs": 1889,
+          "lcpMs": 756,
+          "domContentLoadedMs": 47.3,
+          "loadEventMs": 48.3,
+          "totalRequests": 10,
+          "apiRequestCount": 0,
+          "uniqueEndpoints": [],
+          "uniqueEndpointCount": 0,
+          "firstApiStartMs": null,
+          "lastApiEndMs": null,
+          "lastApiEndMinusLcpMs": null,
+          "apiFinishedBeforeLcp": null,
+          "maxConcurrentApiCalls": 0,
+          "longestSequentialChainLength": 0,
+          "longestSequentialChain": [],
+          "parallelismRatio": null,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": []
+        }
+      ],
+      "summary": {
+        "apiRequestCountMedian": 0,
+        "uniqueEndpoints": [],
+        "maxConcurrentApiCalls": 0,
+        "longestSequentialChainLength": 0,
+        "lastApiEndMinusLcpMsMedian": null,
+        "longTasksOver50msMax": 0
+      }
+    },
+    {
+      "route": "news",
+      "path": "/news",
+      "requiresAuth": null,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "navError": null,
+          "landedPathname": "/news",
+          "wallClockMs": 3255,
+          "lcpMs": 796,
+          "domContentLoadedMs": 54.3,
+          "loadEventMs": 60.9,
+          "totalRequests": 18,
+          "apiRequestCount": 1,
+          "uniqueEndpoints": [
+            "/api/news/external"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 412.4,
+          "lastApiEndMs": 415.8,
+          "lastApiEndMinusLcpMs": -380.2,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/news/external",
+              "startMs": 412.4,
+              "endMs": 415.8
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/news/external",
+              "startMs": 412.4,
+              "endMs": 415.8,
+              "durationMs": 3.4,
+              "transferSize": 0
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "navError": null,
+          "landedPathname": "/news",
+          "wallClockMs": 2746,
+          "lcpMs": 768,
+          "domContentLoadedMs": 60.6,
+          "loadEventMs": 68.4,
+          "totalRequests": 18,
+          "apiRequestCount": 1,
+          "uniqueEndpoints": [
+            "/api/news/external"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 415.7,
+          "lastApiEndMs": 418.3,
+          "lastApiEndMinusLcpMs": -349.7,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/news/external",
+              "startMs": 415.7,
+              "endMs": 418.3
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/news/external",
+              "startMs": 415.7,
+              "endMs": 418.3,
+              "durationMs": 2.6,
+              "transferSize": 0
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "navError": null,
+          "landedPathname": "/news",
+          "wallClockMs": 2827,
+          "lcpMs": 720,
+          "domContentLoadedMs": 57.8,
+          "loadEventMs": 70,
+          "totalRequests": 18,
+          "apiRequestCount": 1,
+          "uniqueEndpoints": [
+            "/api/news/external"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 414.7,
+          "lastApiEndMs": 417.4,
+          "lastApiEndMinusLcpMs": -302.6,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/news/external",
+              "startMs": 414.7,
+              "endMs": 417.4
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/news/external",
+              "startMs": 414.7,
+              "endMs": 417.4,
+              "durationMs": 2.7,
+              "transferSize": 0
+            }
+          ]
+        }
+      ],
+      "summary": {
+        "apiRequestCountMedian": 1,
+        "uniqueEndpoints": [
+          "/api/news/external"
+        ],
+        "maxConcurrentApiCalls": 1,
+        "longestSequentialChainLength": 1,
+        "lastApiEndMinusLcpMsMedian": -349.7,
+        "longTasksOver50msMax": 0
+      }
+    },
+    {
+      "route": "recipes",
+      "path": "/recipes",
+      "requiresAuth": null,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "navError": null,
+          "landedPathname": "/recipes",
+          "wallClockMs": 2870,
+          "lcpMs": 72,
+          "domContentLoadedMs": 61.3,
+          "loadEventMs": 75.8,
+          "totalRequests": 32,
+          "apiRequestCount": 2,
+          "uniqueEndpoints": [
+            "/api/recipes"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 437.6,
+          "lastApiEndMs": 474.5,
+          "lastApiEndMinusLcpMs": 402.5,
+          "apiFinishedBeforeLcp": false,
+          "maxConcurrentApiCalls": 2,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/recipes",
+              "startMs": 437.6,
+              "endMs": 453.9
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 2,
+          "longTasks": [
+            {
+              "startMs": 485.70000000006985,
+              "durationMs": 50
+            },
+            {
+              "startMs": 565.9000000000233,
+              "durationMs": 59
+            }
+          ],
+          "apiCalls": [
+            {
+              "endpoint": "/api/recipes",
+              "startMs": 437.6,
+              "endMs": 453.9,
+              "durationMs": 16.3,
+              "transferSize": 0
+            },
+            {
+              "endpoint": "/api/recipes",
+              "startMs": 438.8,
+              "endMs": 474.5,
+              "durationMs": 35.7,
+              "transferSize": 0
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "navError": null,
+          "landedPathname": "/recipes",
+          "wallClockMs": 2855,
+          "lcpMs": 88,
+          "domContentLoadedMs": 74.8,
+          "loadEventMs": 87.8,
+          "totalRequests": 32,
+          "apiRequestCount": 2,
+          "uniqueEndpoints": [
+            "/api/recipes"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 436.8,
+          "lastApiEndMs": 470.5,
+          "lastApiEndMinusLcpMs": 382.5,
+          "apiFinishedBeforeLcp": false,
+          "maxConcurrentApiCalls": 2,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/recipes",
+              "startMs": 436.8,
+              "endMs": 456.6
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 1,
+          "longTasks": [
+            {
+              "startMs": 544.1999999999534,
+              "durationMs": 58
+            }
+          ],
+          "apiCalls": [
+            {
+              "endpoint": "/api/recipes",
+              "startMs": 436.8,
+              "endMs": 456.6,
+              "durationMs": 19.8,
+              "transferSize": 0
+            },
+            {
+              "endpoint": "/api/recipes",
+              "startMs": 437.3,
+              "endMs": 470.5,
+              "durationMs": 33.2,
+              "transferSize": 0
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "navError": null,
+          "landedPathname": "/recipes",
+          "wallClockMs": 2883,
+          "lcpMs": 72,
+          "domContentLoadedMs": 56.5,
+          "loadEventMs": 67,
+          "totalRequests": 32,
+          "apiRequestCount": 2,
+          "uniqueEndpoints": [
+            "/api/recipes"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 418.2,
+          "lastApiEndMs": 440.9,
+          "lastApiEndMinusLcpMs": 368.9,
+          "apiFinishedBeforeLcp": false,
+          "maxConcurrentApiCalls": 2,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/recipes",
+              "startMs": 418.2,
+              "endMs": 440.9
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 3,
+          "longTasks": [
+            {
+              "startMs": 404,
+              "durationMs": 57
+            },
+            {
+              "startMs": 492.9000000000233,
+              "durationMs": 58
+            },
+            {
+              "startMs": 555.2999999999302,
+              "durationMs": 58
+            }
+          ],
+          "apiCalls": [
+            {
+              "endpoint": "/api/recipes",
+              "startMs": 418.2,
+              "endMs": 440.9,
+              "durationMs": 22.7,
+              "transferSize": 0
+            },
+            {
+              "endpoint": "/api/recipes",
+              "startMs": 418.8,
+              "endMs": 438.8,
+              "durationMs": 20,
+              "transferSize": 0
+            }
+          ]
+        }
+      ],
+      "summary": {
+        "apiRequestCountMedian": 2,
+        "uniqueEndpoints": [
+          "/api/recipes"
+        ],
+        "maxConcurrentApiCalls": 2,
+        "longestSequentialChainLength": 1,
+        "lastApiEndMinusLcpMsMedian": 382.5,
+        "longTasksOver50msMax": 3
+      }
+    },
+    {
+      "route": "recipe_detail",
+      "path": "/recipes/1",
+      "requiresAuth": null,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "navError": null,
+          "landedPathname": "/recipes/1",
+          "wallClockMs": 2018,
+          "lcpMs": 592,
+          "domContentLoadedMs": 55.3,
+          "loadEventMs": 64.8,
+          "totalRequests": 17,
+          "apiRequestCount": 1,
+          "uniqueEndpoints": [
+            "/api/recipes/1"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 405.5,
+          "lastApiEndMs": 421.7,
+          "lastApiEndMinusLcpMs": -170.3,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/recipes/1",
+              "startMs": 405.5,
+              "endMs": 421.7
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/recipes/1",
+              "startMs": 405.5,
+              "endMs": 421.7,
+              "durationMs": 16.2,
+              "transferSize": 0
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "navError": null,
+          "landedPathname": "/recipes/1",
+          "wallClockMs": 1999,
+          "lcpMs": 544,
+          "domContentLoadedMs": 53.1,
+          "loadEventMs": 64.5,
+          "totalRequests": 17,
+          "apiRequestCount": 1,
+          "uniqueEndpoints": [
+            "/api/recipes/1"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 408,
+          "lastApiEndMs": 428.9,
+          "lastApiEndMinusLcpMs": -115.1,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/recipes/1",
+              "startMs": 408,
+              "endMs": 428.9
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/recipes/1",
+              "startMs": 408,
+              "endMs": 428.9,
+              "durationMs": 20.9,
+              "transferSize": 0
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "navError": null,
+          "landedPathname": "/recipes/1",
+          "wallClockMs": 2001,
+          "lcpMs": 552,
+          "domContentLoadedMs": 52.5,
+          "loadEventMs": 71.6,
+          "totalRequests": 17,
+          "apiRequestCount": 1,
+          "uniqueEndpoints": [
+            "/api/recipes/1"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 416.1,
+          "lastApiEndMs": 433.7,
+          "lastApiEndMinusLcpMs": -118.3,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/recipes/1",
+              "startMs": 416.1,
+              "endMs": 433.7
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/recipes/1",
+              "startMs": 416.1,
+              "endMs": 433.7,
+              "durationMs": 17.6,
+              "transferSize": 0
+            }
+          ]
+        }
+      ],
+      "summary": {
+        "apiRequestCountMedian": 1,
+        "uniqueEndpoints": [
+          "/api/recipes/1"
+        ],
+        "maxConcurrentApiCalls": 1,
+        "longestSequentialChainLength": 1,
+        "lastApiEndMinusLcpMsMedian": -118.3,
+        "longTasksOver50msMax": 0
+      }
+    },
+    {
+      "route": "food_map",
+      "path": "/food-map",
+      "requiresAuth": null,
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "navError": null,
+          "landedPathname": "/food-map",
+          "wallClockMs": 3170,
+          "lcpMs": 1112,
+          "domContentLoadedMs": 53.5,
+          "loadEventMs": 62,
+          "totalRequests": 58,
+          "apiRequestCount": 2,
+          "uniqueEndpoints": [
+            "/api/food-spots/public",
+            "/api/restaurants"
+          ],
+          "uniqueEndpointCount": 2,
+          "firstApiStartMs": 441.6,
+          "lastApiEndMs": 458,
+          "lastApiEndMinusLcpMs": -654,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 2,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/food-spots/public",
+              "startMs": 441.6,
+              "endMs": 450.8
+            },
+            {
+              "endpoint": "/api/restaurants",
+              "startMs": 455.2,
+              "endMs": 458
+            }
+          ],
+          "parallelismRatio": 0.5,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/food-spots/public",
+              "startMs": 441.6,
+              "endMs": 450.8,
+              "durationMs": 9.2,
+              "transferSize": 0
+            },
+            {
+              "endpoint": "/api/restaurants",
+              "startMs": 455.2,
+              "endMs": 458,
+              "durationMs": 2.8,
+              "transferSize": 0
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "navError": null,
+          "landedPathname": "/food-map",
+          "wallClockMs": 2721,
+          "lcpMs": 904,
+          "domContentLoadedMs": 51.9,
+          "loadEventMs": 58.5,
+          "totalRequests": 58,
+          "apiRequestCount": 2,
+          "uniqueEndpoints": [
+            "/api/food-spots/public",
+            "/api/restaurants"
+          ],
+          "uniqueEndpointCount": 2,
+          "firstApiStartMs": 432,
+          "lastApiEndMs": 456.9,
+          "lastApiEndMinusLcpMs": -447.1,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 2,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/food-spots/public",
+              "startMs": 432,
+              "endMs": 451.2
+            },
+            {
+              "endpoint": "/api/restaurants",
+              "startMs": 453.6,
+              "endMs": 456.9
+            }
+          ],
+          "parallelismRatio": 0.5,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/food-spots/public",
+              "startMs": 432,
+              "endMs": 451.2,
+              "durationMs": 19.2,
+              "transferSize": 0
+            },
+            {
+              "endpoint": "/api/restaurants",
+              "startMs": 453.6,
+              "endMs": 456.9,
+              "durationMs": 3.3,
+              "transferSize": 0
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "navError": null,
+          "landedPathname": "/food-map",
+          "wallClockMs": 2617,
+          "lcpMs": 856,
+          "domContentLoadedMs": 54.3,
+          "loadEventMs": 65.3,
+          "totalRequests": 58,
+          "apiRequestCount": 2,
+          "uniqueEndpoints": [
+            "/api/food-spots/public",
+            "/api/restaurants"
+          ],
+          "uniqueEndpointCount": 2,
+          "firstApiStartMs": 431.9,
+          "lastApiEndMs": 483,
+          "lastApiEndMinusLcpMs": -373,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 2,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/food-spots/public",
+              "startMs": 431.9,
+              "endMs": 463.2
+            },
+            {
+              "endpoint": "/api/restaurants",
+              "startMs": 467.7,
+              "endMs": 483
+            }
+          ],
+          "parallelismRatio": 0.5,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/food-spots/public",
+              "startMs": 431.9,
+              "endMs": 463.2,
+              "durationMs": 31.3,
+              "transferSize": 0
+            },
+            {
+              "endpoint": "/api/restaurants",
+              "startMs": 467.7,
+              "endMs": 483,
+              "durationMs": 15.3,
+              "transferSize": 0
+            }
+          ]
+        }
+      ],
+      "summary": {
+        "apiRequestCountMedian": 2,
+        "uniqueEndpoints": [
+          "/api/food-spots/public",
+          "/api/restaurants"
+        ],
+        "maxConcurrentApiCalls": 1,
+        "longestSequentialChainLength": 2,
+        "lastApiEndMinusLcpMsMedian": -447.1,
+        "longTasksOver50msMax": 0
+      }
+    },
+    {
+      "route": "profile",
+      "path": "/profile",
+      "requiresAuth": "user",
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "navError": null,
+          "landedPathname": "/profile",
+          "wallClockMs": 1861,
+          "lcpMs": 772,
+          "domContentLoadedMs": 59.7,
+          "loadEventMs": 60.7,
+          "totalRequests": 13,
+          "apiRequestCount": 1,
+          "uniqueEndpoints": [
+            "/api/auth/me"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 59.6,
+          "lastApiEndMs": 67.4,
+          "lastApiEndMinusLcpMs": -704.6,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/auth/me",
+              "startMs": 59.6,
+              "endMs": 67.4
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/auth/me",
+              "startMs": 59.6,
+              "endMs": 67.4,
+              "durationMs": 7.8,
+              "transferSize": 0
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "navError": null,
+          "landedPathname": "/profile",
+          "wallClockMs": 1849,
+          "lcpMs": 748,
+          "domContentLoadedMs": 45.1,
+          "loadEventMs": 46.2,
+          "totalRequests": 13,
+          "apiRequestCount": 1,
+          "uniqueEndpoints": [
+            "/api/auth/me"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 45.1,
+          "lastApiEndMs": 49.9,
+          "lastApiEndMinusLcpMs": -698.1,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/auth/me",
+              "startMs": 45.1,
+              "endMs": 49.9
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/auth/me",
+              "startMs": 45.1,
+              "endMs": 49.9,
+              "durationMs": 4.8,
+              "transferSize": 0
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "navError": null,
+          "landedPathname": "/profile",
+          "wallClockMs": 1886,
+          "lcpMs": 788,
+          "domContentLoadedMs": 74.9,
+          "loadEventMs": 75.8,
+          "totalRequests": 13,
+          "apiRequestCount": 1,
+          "uniqueEndpoints": [
+            "/api/auth/me"
+          ],
+          "uniqueEndpointCount": 1,
+          "firstApiStartMs": 74.8,
+          "lastApiEndMs": 80.3,
+          "lastApiEndMinusLcpMs": -707.7,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 1,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/auth/me",
+              "startMs": 74.8,
+              "endMs": 80.3
+            }
+          ],
+          "parallelismRatio": 1,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/auth/me",
+              "startMs": 74.8,
+              "endMs": 80.3,
+              "durationMs": 5.5,
+              "transferSize": 0
+            }
+          ]
+        }
+      ],
+      "summary": {
+        "apiRequestCountMedian": 1,
+        "uniqueEndpoints": [
+          "/api/auth/me"
+        ],
+        "maxConcurrentApiCalls": 1,
+        "longestSequentialChainLength": 1,
+        "lastApiEndMinusLcpMsMedian": -704.6,
+        "longTasksOver50msMax": 0
+      }
+    },
+    {
+      "route": "admin",
+      "path": "/admin",
+      "requiresAuth": "admin",
+      "status": "measured",
+      "runs": [
+        {
+          "run": 1,
+          "navError": null,
+          "landedPathname": "/",
+          "wallClockMs": 2543,
+          "lcpMs": 752,
+          "domContentLoadedMs": 60.7,
+          "loadEventMs": 61.6,
+          "totalRequests": 20,
+          "apiRequestCount": 2,
+          "uniqueEndpoints": [
+            "/api/auth/me",
+            "/api/home/daily-inspiration"
+          ],
+          "uniqueEndpointCount": 2,
+          "firstApiStartMs": 60.7,
+          "lastApiEndMs": 455.4,
+          "lastApiEndMinusLcpMs": -296.6,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 1,
+          "longestSequentialChainLength": 2,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/auth/me",
+              "startMs": 60.7,
+              "endMs": 64.2
+            },
+            {
+              "endpoint": "/api/home/daily-inspiration",
+              "startMs": 450.5,
+              "endMs": 455.4
+            }
+          ],
+          "parallelismRatio": 0.5,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/auth/me",
+              "startMs": 60.7,
+              "endMs": 64.2,
+              "durationMs": 3.5,
+              "transferSize": 0
+            },
+            {
+              "endpoint": "/api/home/daily-inspiration",
+              "startMs": 450.5,
+              "endMs": 455.4,
+              "durationMs": 4.9,
+              "transferSize": 0
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "navError": null,
+          "landedPathname": "/admin",
+          "wallClockMs": 1882,
+          "lcpMs": 792,
+          "domContentLoadedMs": 47.8,
+          "loadEventMs": 49,
+          "totalRequests": 14,
+          "apiRequestCount": 3,
+          "uniqueEndpoints": [
+            "/api/admin/stats",
+            "/api/auth/me"
+          ],
+          "uniqueEndpointCount": 2,
+          "firstApiStartMs": 47,
+          "lastApiEndMs": 443.1,
+          "lastApiEndMinusLcpMs": -348.9,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 2,
+          "longestSequentialChainLength": 2,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/auth/me",
+              "startMs": 47.6,
+              "endMs": 60.3
+            },
+            {
+              "endpoint": "/api/admin/stats",
+              "startMs": 421.5,
+              "endMs": 443.1
+            }
+          ],
+          "parallelismRatio": 0.667,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/admin/stats",
+              "startMs": 47,
+              "endMs": 58.1,
+              "durationMs": 11.1,
+              "transferSize": 0
+            },
+            {
+              "endpoint": "/api/auth/me",
+              "startMs": 47.6,
+              "endMs": 60.3,
+              "durationMs": 12.7,
+              "transferSize": 0
+            },
+            {
+              "endpoint": "/api/admin/stats",
+              "startMs": 421.5,
+              "endMs": 443.1,
+              "durationMs": 21.6,
+              "transferSize": 0
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "navError": null,
+          "landedPathname": "/admin",
+          "wallClockMs": 1898,
+          "lcpMs": 812,
+          "domContentLoadedMs": 72.2,
+          "loadEventMs": 73.1,
+          "totalRequests": 14,
+          "apiRequestCount": 3,
+          "uniqueEndpoints": [
+            "/api/admin/stats",
+            "/api/auth/me"
+          ],
+          "uniqueEndpointCount": 2,
+          "firstApiStartMs": 71.6,
+          "lastApiEndMs": 461.9,
+          "lastApiEndMinusLcpMs": -350.1,
+          "apiFinishedBeforeLcp": true,
+          "maxConcurrentApiCalls": 2,
+          "longestSequentialChainLength": 2,
+          "longestSequentialChain": [
+            {
+              "endpoint": "/api/auth/me",
+              "startMs": 72.1,
+              "endMs": 81.9
+            },
+            {
+              "endpoint": "/api/admin/stats",
+              "startMs": 446.3,
+              "endMs": 461.9
+            }
+          ],
+          "parallelismRatio": 0.667,
+          "longTasksOver50ms": 0,
+          "longTasks": [],
+          "apiCalls": [
+            {
+              "endpoint": "/api/admin/stats",
+              "startMs": 71.6,
+              "endMs": 93.5,
+              "durationMs": 21.9,
+              "transferSize": 0
+            },
+            {
+              "endpoint": "/api/auth/me",
+              "startMs": 72.1,
+              "endMs": 81.9,
+              "durationMs": 9.8,
+              "transferSize": 0
+            },
+            {
+              "endpoint": "/api/admin/stats",
+              "startMs": 446.3,
+              "endMs": 461.9,
+              "durationMs": 15.6,
+              "transferSize": 0
+            }
+          ]
+        }
+      ],
+      "summary": {
+        "apiRequestCountMedian": 3,
+        "uniqueEndpoints": [
+          "/api/admin/stats",
+          "/api/auth/me"
+        ],
+        "maxConcurrentApiCalls": 2,
+        "longestSequentialChainLength": 2,
+        "lastApiEndMinusLcpMsMedian": -348.9,
+        "longTasksOver50msMax": 0
+      }
+    }
+  ]
+}

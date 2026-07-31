@@ -1,0 +1,343 @@
+{
+  "meta": {
+    "commit": "1384d59573d0927da3ea0e7828c19d692056bc41",
+    "commitShort": "1384d59",
+    "branch": "codex/render-deployment",
+    "runAtIso": "2026-07-31T05:42:39.811Z",
+    "node": "v24.11.0",
+    "npm": "unknown",
+    "chrome": "151.0.7922.71",
+    "os": "Windows_NT 10.0.26200 (win32 x64)",
+    "osCaption": "Microsoft Windows 11 Home Single Language 10.0.26200",
+    "cpu": "Intel(R) Core(TM) i7-14700HX (28 logical)",
+    "cpuCores": 28,
+    "ramGb": 15.71,
+    "load": "cpu_load_percent=1",
+    "harnessVersion": "2.0.0",
+    "measurement": "production-build",
+    "tier": "3",
+    "command": "npm run build (vite build) in frontend/",
+    "warmupRuns": 1,
+    "measuredRuns": 5,
+    "note": "wallClockMs includes npm and node startup; viteReportedMs is vite's own bundling time. Filesystem cache is not flushed between runs, matching the 2026-07-18 run's stated limitation."
+  },
+  "status": "measured",
+  "runs": [
+    {
+      "index": 0,
+      "kind": "warmup",
+      "loadAtStart": "cpu_load_percent=1",
+      "wallClockMs": 2435,
+      "viteReportedMs": 1070,
+      "exitCode": 0,
+      "stderrTail": null
+    },
+    {
+      "index": 1,
+      "kind": "measured",
+      "loadAtStart": "cpu_load_percent=2",
+      "wallClockMs": 1322,
+      "viteReportedMs": 686,
+      "exitCode": 0,
+      "stderrTail": null
+    },
+    {
+      "index": 2,
+      "kind": "measured",
+      "loadAtStart": "cpu_load_percent=4",
+      "wallClockMs": 1294,
+      "viteReportedMs": 696,
+      "exitCode": 0,
+      "stderrTail": null
+    },
+    {
+      "index": 3,
+      "kind": "measured",
+      "loadAtStart": "cpu_load_percent=3",
+      "wallClockMs": 1248,
+      "viteReportedMs": 641,
+      "exitCode": 0,
+      "stderrTail": null
+    },
+    {
+      "index": 4,
+      "kind": "measured",
+      "loadAtStart": "cpu_load_percent=2",
+      "wallClockMs": 1322,
+      "viteReportedMs": 666,
+      "exitCode": 0,
+      "stderrTail": null
+    },
+    {
+      "index": 5,
+      "kind": "measured",
+      "loadAtStart": "cpu_load_percent=3",
+      "wallClockMs": 1385,
+      "viteReportedMs": 661,
+      "exitCode": 0,
+      "stderrTail": null
+    }
+  ],
+  "aggregate": {
+    "wallClockMs": {
+      "n": 5,
+      "min": 1248,
+      "max": 1385,
+      "mean": 1314.2,
+      "stdev": 49.8116,
+      "p50": 1322,
+      "p95": 1372.4
+    },
+    "viteReportedMs": {
+      "n": 5,
+      "min": 641,
+      "max": 696,
+      "mean": 670,
+      "stdev": 21.6217,
+      "p50": 666,
+      "p95": 694
+    }
+  },
+  "distBreakdown": {
+    "fileCount": 358,
+    "totalBytes": 53696130,
+    "totalMb": 51.21,
+    "byExtension": {
+      ".webp": {
+        "count": 200,
+        "bytes": 40241212,
+        "mb": 38.377
+      },
+      ".jpg": {
+        "count": 122,
+        "bytes": 11763286,
+        "mb": 11.218
+      },
+      ".js": {
+        "count": 23,
+        "bytes": 866410,
+        "mb": 0.826
+      },
+      ".css": {
+        "count": 9,
+        "bytes": 426360,
+        "mb": 0.407
+      },
+      ".jpeg": {
+        "count": 1,
+        "bytes": 382444,
+        "mb": 0.365
+      },
+      ".svg": {
+        "count": 2,
+        "bytes": 14577,
+        "mb": 0.014
+      },
+      ".html": {
+        "count": 1,
+        "bytes": 1841,
+        "mb": 0.002
+      }
+    },
+    "jsTotalBytes": 866410,
+    "jsTotalGzipBytes": 287814,
+    "jsSharedGzipBytes": 201134,
+    "jsRouteGzipBytes": 86680,
+    "cssTotalBytes": 426360,
+    "cssTotalGzipBytes": 74821,
+    "assets": [
+      {
+        "file": "assets/index-CCdhrs7I.css",
+        "bytes": 229339,
+        "gzipBytes": 38205,
+        "kind": "css"
+      },
+      {
+        "file": "assets/chart-8R4NVX0n.js",
+        "bytes": 203226,
+        "gzipBytes": 69033,
+        "kind": "shared-chunk"
+      },
+      {
+        "file": "assets/vendor-D4pz0iN5.js",
+        "bytes": 189142,
+        "gzipBytes": 57261,
+        "kind": "shared-chunk"
+      },
+      {
+        "file": "assets/FoodMapView-BoO9o7kD.js",
+        "bytes": 114143,
+        "gzipBytes": 33658,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/FoodMapView-BjQ9h8MS.css",
+        "bytes": 103747,
+        "gzipBytes": 17637,
+        "kind": "css"
+      },
+      {
+        "file": "assets/vue-vendor-WxNQ3nbl.js",
+        "bytes": 102998,
+        "gzipBytes": 39172,
+        "kind": "shared-chunk"
+      },
+      {
+        "file": "assets/vendor-DOjGcE26.css",
+        "bytes": 67489,
+        "gzipBytes": 12856,
+        "kind": "css"
+      },
+      {
+        "file": "assets/index-D53Rtma-.js",
+        "bytes": 54381,
+        "gzipBytes": 18396,
+        "kind": "shared-chunk"
+      },
+      {
+        "file": "assets/http-vendor-BGmZl9Qd.js",
+        "bytes": 44718,
+        "gzipBytes": 16850,
+        "kind": "shared-chunk"
+      },
+      {
+        "file": "assets/RecipeDetail-MUFKO0k6.js",
+        "bytes": 37571,
+        "gzipBytes": 11894,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/Recipes-D6Cn52nY.js",
+        "bytes": 28377,
+        "gzipBytes": 8608,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/AdminDashboardView-iHLjmeM3.js",
+        "bytes": 21233,
+        "gzipBytes": 5713,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/AdminDashboardView-Cld1-Wd8.css",
+        "bytes": 18154,
+        "gzipBytes": 3507,
+        "kind": "css"
+      },
+      {
+        "file": "assets/News-BJiv8NnR.js",
+        "bytes": 12379,
+        "gzipBytes": 5227,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/RecipeForm-BEzqKSrS.js",
+        "bytes": 11090,
+        "gzipBytes": 3695,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/recipeStore-CElEwb00.js",
+        "bytes": 7951,
+        "gzipBytes": 2236,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/Profile-DwSTNFjl.js",
+        "bytes": 6976,
+        "gzipBytes": 2579,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/Home-BpmbTt9o.js",
+        "bytes": 6939,
+        "gzipBytes": 2860,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/About-DfnykiQm.js",
+        "bytes": 4463,
+        "gzipBytes": 1981,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/Register-BIUJy3yu.js",
+        "bytes": 4292,
+        "gzipBytes": 1656,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/recipeImage-BUXI4rrM.js",
+        "bytes": 3519,
+        "gzipBytes": 1548,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/RecipeCard-B_Uv9Mh3.js",
+        "bytes": 3372,
+        "gzipBytes": 1494,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/SkeletonCard-D1UFMtFf.js",
+        "bytes": 3266,
+        "gzipBytes": 624,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/SkeletonCard-D4PiPcpG.css",
+        "bytes": 3127,
+        "gzipBytes": 819,
+        "kind": "css"
+      },
+      {
+        "file": "assets/Login-DUG8OOKQ.js",
+        "bytes": 2810,
+        "gzipBytes": 1346,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/News-D-7mbcuu.css",
+        "bytes": 2087,
+        "gzipBytes": 732,
+        "kind": "css"
+      },
+      {
+        "file": "assets/NewsDetail-DmzEJcws.js",
+        "bytes": 2055,
+        "gzipBytes": 1082,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/RecipeDetail-zf4E05lk.css",
+        "bytes": 1381,
+        "gzipBytes": 570,
+        "kind": "css"
+      },
+      {
+        "file": "assets/NotFound-C_JkCXLS.js",
+        "bytes": 815,
+        "gzipBytes": 479,
+        "kind": "route-chunk"
+      },
+      {
+        "file": "assets/rolldown-runtime-QTnfLwEv.js",
+        "bytes": 694,
+        "gzipBytes": 422,
+        "kind": "shared-chunk"
+      },
+      {
+        "file": "assets/RecipeForm-anaKYyDl.css",
+        "bytes": 683,
+        "gzipBytes": 334,
+        "kind": "css"
+      },
+      {
+        "file": "assets/Recipes-PNzUH5fB.css",
+        "bytes": 353,
+        "gzipBytes": 161,
+        "kind": "css"
+      }
+    ]
+  }
+}
