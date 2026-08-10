@@ -31,6 +31,8 @@ test('Render Blueprint keeps secrets external and wires all public services', as
   assert.match(blueprint, /key: DATABASE_URL\s+sync: false/u)
   assert.match(blueprint, /key: JWT_SECRET\s+generateValue: true/u)
   assert.match(blueprint, /key: GROQ_API_KEY\s+sync: false/u)
+  assert.match(blueprint, /key: VISION_SEARCH_PROVIDER\s+value: groq/u)
+  assert.match(blueprint, /key: GROQ_VISION_MODEL\s+value: qwen\/qwen3\.6-27b/u)
   assert.match(blueprint, /key: GEMINI_API_KEY\s+sync: false/u)
   assert.match(blueprint, /key: GEOAPIFY_API_KEY\s+sync: false/u)
   assert.match(blueprint, /key: GUARDIAN_API_KEY\s+sync: false/u)
@@ -45,6 +47,17 @@ test('Render Blueprint keeps secrets external and wires all public services', as
   assert.match(blueprint, /startCommand: uvicorn main:app --host 0\.0\.0\.0 --port \$PORT/u)
   assert.match(blueprint, /key: AI_SERVICE_ENABLE_CLIP\s+value: "false"/u)
   assert.doesNotMatch(blueprint, /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/u)
+})
+
+test('AI embedding repository reuses the DATABASE_URL and SSL-aware shared pool', async () => {
+  const repository = await fs.readFile(
+    path.join(backendRoot, 'services/aiEmbeddingRepository.js'),
+    'utf8'
+  )
+
+  assert.match(repository, /import pool from '\.\.\/db\.js'/u)
+  assert.doesNotMatch(repository, /mysql\.createPool/u)
+  assert.doesNotMatch(repository, /127\.0\.0\.1/u)
 })
 
 test('backend can import the optional Groq provider without an API key', () => {

@@ -27,6 +27,10 @@ services:
         generateValue: true
       - key: GROQ_API_KEY
         sync: false
+      - key: VISION_SEARCH_PROVIDER
+        value: groq
+      - key: GROQ_VISION_MODEL
+        value: qwen/qwen3.6-27b
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
