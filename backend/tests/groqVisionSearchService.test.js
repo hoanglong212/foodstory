@@ -82,13 +82,22 @@ test('recognized dishes map only to matching FoodStory recipes and restaurants',
         return filters.query === 'Cao lầu'
           ? {
               status: 'matched',
-              results: [{
-                id: 42,
-                title: 'Cao Lầu',
-                image_url: '/images/cao-lau.webp',
-                avg_rating: 4.8,
-                category_name: 'Vietnamese',
-              }],
+              results: [
+                {
+                  id: 42,
+                  title: 'Cao Lầu',
+                  image_url: '/images/cao-lau.webp',
+                  avg_rating: 4.8,
+                  category_name: 'Vietnamese',
+                },
+                {
+                  id: 43,
+                  title: 'Vietnamese Lemongrass Chicken',
+                  image_url: '/images/chicken.webp',
+                  avg_rating: 4.7,
+                  category_name: 'Vietnamese',
+                },
+              ],
             }
           : { status: 'no_results', results: [] }
       },

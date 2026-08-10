@@ -6,6 +6,18 @@ import { searchRestaurants } from './restaurantStructuredService.js'
 const DEFAULT_MODEL = 'qwen/qwen3.6-27b'
 const DEFAULT_TIMEOUT_MS = 16_000
 const MAX_CANDIDATES = 3
+const GENERIC_RECIPE_MATCH_TOKENS = new Set([
+  'dish',
+  'food',
+  'indian',
+  'vietnamese',
+  'thai',
+  'chinese',
+  'japanese',
+  'korean',
+  'italian',
+  'mexican',
+])
 
 let groqVisionClient = null
 
@@ -231,6 +243,25 @@ function addUnique(target, seen, result) {
   target.push(result)
 }
 
+function matchingTokens(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/gu, '')
+    .replace(/đ/giu, 'd')
+    .toLowerCase()
+    .match(/[a-z0-9]+/gu) || []
+}
+
+function recipeTitleMatchesVisionTerm(title, term) {
+  const titleTokens = new Set(matchingTokens(title))
+  const termTokens = matchingTokens(term)
+    .filter((token) => !GENERIC_RECIPE_MATCH_TOKENS.has(token))
+  if (!termTokens.length) return false
+
+  const matched = termTokens.filter((token) => titleTokens.has(token)).length
+  return matched >= Math.min(2, termTokens.length)
+}
+
 export async function matchVisionCandidatesToFoodStory(candidates, options = {}) {
   const recipeSearch = options.recipeSearch || findRecipesByFilters
   const restaurantSearch = options.restaurantSearch || searchRestaurants
@@ -249,6 +280,7 @@ export async function matchVisionCandidatesToFoodStory(candidates, options = {})
       ])
 
       for (const recipe of recipeMatches?.results || []) {
+        if (!recipeTitleMatchesVisionTerm(recipe.title, term)) continue
         addUnique(recipes, seen, legacyRecipe(recipe, confidence))
       }
       if (restaurantMatches?.status === 'matched') {
