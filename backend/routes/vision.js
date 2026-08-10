@@ -17,15 +17,15 @@ import {
   searchUploadedImageWithGroq,
 } from '../services/groqVisionSearchService.js'
 
-const router = express.Router()
-
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: MAX_IMAGE_BYTES,
     files: 1,
     fields: 0,
-    parts: 1,
+    // Busboy emits partsLimit when the counter reaches the configured value,
+    // so 2 is the strict ceiling that still permits exactly one file part.
+    parts: 2,
     headerPairs: 50,
     fieldNestingDepth: 0,
   },
@@ -126,45 +126,53 @@ async function searchRemoteImage(imageUrl) {
   }
 }
 
-router.post('/search', uploadSingleImage, async (req, res, next) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No image provided.' })
-  }
+export function createVisionRouter(options = {}) {
+  const router = express.Router()
+  const searchUploaded = options.searchUploadedImage || searchUploadedImage
+  const searchRemote = options.searchRemoteImage || searchRemoteImage
 
-  try {
-    const payload = await searchUploadedImage(req.file)
-
-    if (payload.total === 0) {
-      payload.message ||= 'No similar FoodStory items met the similarity threshold.'
+  router.post('/search', uploadSingleImage, async (req, res, next) => {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image provided.' })
     }
-    return res.json(payload)
-  } catch (error) {
-    if (error instanceof VisualSearchError || error instanceof GroqVisionSearchError) {
-      return upstreamError(error, res)
+
+    try {
+      const payload = await searchUploaded(req.file)
+
+      if (payload.total === 0) {
+        payload.message ||= 'No similar FoodStory items met the similarity threshold.'
+      }
+      return res.json(payload)
+    } catch (error) {
+      if (error instanceof VisualSearchError || error instanceof GroqVisionSearchError) {
+        return upstreamError(error, res)
+      }
+      return next(error)
     }
-    return next(error)
-  }
-})
+  })
 
-router.post('/search-url', async (req, res, next) => {
-  const imageUrl = typeof req.body?.imageUrl === 'string' ? req.body.imageUrl.trim() : ''
-  if (!imageUrl) {
-    return res.status(400).json({ error: 'imageUrl is required.' })
-  }
-
-  try {
-    const payload = await searchRemoteImage(imageUrl)
-
-    if (payload.total === 0) {
-      payload.message ||= 'No similar FoodStory items met the similarity threshold.'
+  router.post('/search-url', async (req, res, next) => {
+    const imageUrl = typeof req.body?.imageUrl === 'string' ? req.body.imageUrl.trim() : ''
+    if (!imageUrl) {
+      return res.status(400).json({ error: 'imageUrl is required.' })
     }
-    return res.json(payload)
-  } catch (error) {
-    if (error instanceof VisualSearchError || error instanceof GroqVisionSearchError) {
-      return upstreamError(error, res)
-    }
-    return next(error)
-  }
-})
 
-export default router
+    try {
+      const payload = await searchRemote(imageUrl)
+
+      if (payload.total === 0) {
+        payload.message ||= 'No similar FoodStory items met the similarity threshold.'
+      }
+      return res.json(payload)
+    } catch (error) {
+      if (error instanceof VisualSearchError || error instanceof GroqVisionSearchError) {
+        return upstreamError(error, res)
+      }
+      return next(error)
+    }
+  })
+
+  return router
+}
+
+export default createVisionRouter()

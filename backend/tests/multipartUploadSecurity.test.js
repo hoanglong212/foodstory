@@ -4,7 +4,7 @@ import express from 'express'
 
 import foodMapDiscoveryRouter from '../routes/foodMapDiscoveryRoutes.js'
 import { createFoodMapSocialDiscoveryRouter } from '../routes/foodMapSocialDiscoveryRoutes.js'
-import visionRouter from '../routes/vision.js'
+import visionRouter, { createVisionRouter } from '../routes/vision.js'
 import { createVisionAutoRouter } from '../routes/visionAutoRoutes.js'
 
 const servers = []
@@ -134,5 +134,35 @@ describe('multipart upload security limits', () => {
       body: nestedForm('url[nested]'),
     })
     assert.equal(response.status, 400)
+  })
+
+  it('accepts exactly one supported image file on the legacy vision route', async () => {
+    let receivedFile = null
+    const router = createVisionRouter({
+      searchUploadedImage: async (file) => {
+        receivedFile = file
+        return {
+          results: [],
+          recipes: [],
+          restaurants: [],
+          total: 0,
+        }
+      },
+    })
+    const base = await startApp('/api/vision', router)
+    const form = new FormData()
+    form.append(
+      'image',
+      new Blob([Buffer.from('RIFF0000WEBPVP8 ')], { type: 'image/webp' }),
+      'dish.webp'
+    )
+    const response = await fetch(`${base}/api/vision/search`, {
+      method: 'POST',
+      body: form,
+    })
+
+    assert.equal(response.status, 200)
+    assert.equal(receivedFile?.mimetype, 'image/webp')
+    assert.equal(receivedFile?.originalname, 'dish.webp')
   })
 })
