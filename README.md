@@ -155,9 +155,9 @@ The automated suites use fakes and injected providers for deterministic external
 
 Secrets stay in Render environment variables. The API accepts a TLS MySQL `DATABASE_URL`, and the frontend receives only public API/WebSocket URLs. See [`docs/DEPLOY_RENDER.md`](docs/DEPLOY_RENDER.md) for the deployment and health-check procedure.
 
-**Current hosted status (23 August 2026):** the static frontend returned HTTP 200, but the API health
-endpoint returned no response before a 75-second timeout. Treat the data-backed live demo as
-unavailable until the API and hosted MySQL dependency pass the documented health check.
+**Current hosted status (23 August 2026):** the frontend, API, and hosted MySQL dependency are live.
+The API health endpoint returned HTTP 200 with `database: connected`, and the recipes endpoint
+returned HTTP 200 after the Aiven free service was restarted.
 
 ## My contribution
 
@@ -174,7 +174,7 @@ I describe optional AI features as integrations and guarded fallbacks, not as a 
 
 | Resource | Link or status |
 |---|---|
-| Hosted frontend | [Open FoodStory](https://foodstory-cos30043-hoanglong212.onrender.com); API unavailable at the latest check |
+| Hosted frontend | [Open FoodStory](https://foodstory-cos30043-hoanglong212.onrender.com) |
 | API health | [Check backend and database status](https://foodstory-api-cos30043-hoanglong212.onrender.com/api/health) |
 | Demo video | Add the final 60–90 second walkthrough before sending applications |
 | Source | [github.com/hoanglong212/foodstory](https://github.com/hoanglong212/foodstory) |
